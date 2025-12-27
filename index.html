@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İmtahan Sistemi</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Navigation -->
+        <nav id="navbar">
+            <div class="logo" onclick="showDashboard()">İmtahan Sistemi</div>
+            <div class="nav-links">
+                <div id="guest-nav" class="hidden">
+                    <button onclick="showLogin()" class="btn-secondary">Giriş</button>
+                    <button onclick="showRegister()" class="btn-primary">Qeydiyyat</button>
+                </div>
+                <div id="user-nav" class="hidden">
+                    <span id="user-display"></span>
+                    <button id="admin-panel-btn" onclick="showAdminDashboard()" class="hidden btn-warning">Admin Panel</button>
+                    <button onclick="logout()" class="btn-secondary">Çıxış</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Auth Pages -->
+        <section id="auth-section">
+            <div class="auth-container">
+                <div class="auth-box" id="login-box">
+                    <h2>Giriş</h2>
+                    <input type="text" id="login-username" placeholder="İstifadəçi adı">
+                    <input type="password" id="login-password" placeholder="Şifrə">
+                    <button onclick="login()" class="btn-primary">Daxil ol</button>
+                    <p>Hesabınız yoxdur? <a href="#" onclick="showRegister()">Qeydiyyat</a></p>
+                    
+                    <div class="import-section" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                        <p style="font-size: 14px; color: #666; margin-bottom: 10px;">Sualları yükləmək üçün:</p>
+                        <button onclick="document.getElementById('import-file').click()" class="btn-secondary" style="width: 100%; font-size: 14px;">📂 Bazanı Yenilə (Import)</button>
+                        <input type="file" id="import-file" accept=".json" style="display: none" onchange="importData(this)">
+                    </div>
+                </div>
+                <div class="auth-box hidden" id="register-box">
+                    <h2>Qeydiyyat</h2>
+                    <input type="text" id="reg-username" placeholder="İstifadəçi adı">
+                    <input type="password" id="reg-password" placeholder="Şifrə">
+                    <button onclick="register()" class="btn-primary">Qeydiyyatdan keç</button>
+                    <p>Hesabınız var? <a href="#" onclick="showLogin()">Giriş</a></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard (Category List) -->
+        <section id="dashboard-section">
+            <div class="container">
+                <div class="header-actions">
+                    <h2>Mövcud İmtahanlar</h2>
+                </div>
+                <div id="categories-grid" class="grid-container">
+                    <!-- Categories will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Dashboard -->
+        <section id="admin-dashboard-section" class="hidden">
+            <div class="container">
+                <div class="header-actions">
+                    <h2>Admin Paneli - Kateqoriyalar</h2>
+                    <div>
+                        <button class="btn-success" onclick="exportData()" style="margin-right: 10px;">💾 Bazanı Yüklə (Export)</button>
+                        <button class="btn-primary" onclick="showAddCategoryModal()">+ Yeni Kateqoriya</button>
+                    </div>
+                </div>
+                <div id="admin-categories-grid" class="grid-container">
+                    <!-- Admin Categories will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Category Details / Admin Panel for Category -->
+        <section id="category-admin-section" class="hidden">
+            <div class="container">
+                <button onclick="showDashboard()" class="btn-back"><i class="fas fa-arrow-left"></i> Geri</button>
+                <div class="category-header">
+                    <h2 id="current-category-title">Kateqoriya Adı</h2>
+                    <button id="start-quiz-btn" class="btn-success" onclick="startQuiz()">Testə Başla</button>
+                </div>
+                
+                <div class="admin-panel-area">
+                    <div class="header-actions">
+                        <h3>Suallar İdarəetmə Paneli</h3>
+                        <button class="btn-primary" onclick="showAddQuestionModal()">+ Sual Əlavə Et</button>
+                    </div>
+                    <div id="questions-list" class="list-container">
+                        <!-- Questions will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quiz Section -->
+        <section id="quiz-section" class="hidden">
+            <div class="quiz-container">
+                <div class="quiz-header">
+                    <div id="timer">00:45</div>
+                    <div id="question-counter">Sual 1/10</div>
+                </div>
+                <div id="question-area">
+                    <img id="question-image" src="" alt="Sual Şəkli" class="hidden">
+                    <h3 id="question-text">Sual mətni</h3>
+                    <div id="options-area" class="options-grid">
+                        <!-- Options will be here -->
+                    </div>
+                    <div id="feedback" class="hidden"></div>
+                </div>
+                <button id="next-btn" class="btn-primary hidden" onclick="nextQuestion()">Növbəti Sual</button>
+            </div>
+        </section>
+
+        <!-- Result Section -->
+        <section id="result-section" class="hidden">
+            <div class="result-box">
+                <h2>Nəticə</h2>
+                <div class="score-circle">
+                    <span id="score-text">0/0</span>
+                </div>
+                <div class="stats">
+                    <p class="correct">Doğru: <span id="correct-count">0</span></p>
+                    <p class="wrong">Yanlış: <span id="wrong-count">0</span></p>
+                </div>
+                <button onclick="showDashboard()" class="btn-primary">Ana Səhifəyə Qayıt</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modals -->
+    <div id="category-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('category-modal')">&times;</span>
+            <h3>Yeni Kateqoriya</h3>
+            <input type="text" id="new-cat-name" placeholder="Kateqoriya adı">
+            <input type="number" id="new-cat-time" placeholder="Müddət (saniyə)" value="45">
+            <button onclick="addCategory()" class="btn-primary">Yarat</button>
+        </div>
+    </div>
+
+    <div id="question-modal" class="modal hidden">
+        <div class="modal-content large-modal">
+            <span class="close" onclick="closeModal('question-modal')">&times;</span>
+            <h3>Yeni Sual</h3>
+            <div class="form-group">
+                <label>Sual mətni:</label>
+                <textarea id="q-text" placeholder="Sualı bura yazın..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Şəkil (istəyə bağlı):</label>
+                <input type="file" id="q-image" accept="image/*">
+            </div>
+            <div id="options-inputs-container">
+                <!-- Option inputs generated by JS -->
+            </div>
+            <div class="modal-actions">
+                <button onclick="addOptionInput()" class="btn-secondary">+ Variant Əlavə Et</button>
+                <button onclick="saveQuestion()" class="btn-save">Yadda Saxla</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
