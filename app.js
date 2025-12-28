@@ -28,6 +28,62 @@ emailjs.init("gwXl5HH3P9Bja5iBN");
 
 // Global State
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+
+// Info Modal Logic
+window.showInfoModal = function(type) {
+    const modal = document.getElementById('info-modal');
+    const body = document.getElementById('info-modal-body');
+    if (!modal || !body) return;
+
+    let content = '';
+    switch(type) {
+        case 'about':
+            content = `
+                <h2><i class="fas fa-info-circle"></i> Haqqımızda</h2>
+                <p><strong>İmtahan</strong> - Təhsil sahəsində innovativ həllər təqdim edən, müəllim və tələbələr üçün nəzərdə tutulmuş müasir imtahan platformasıdır.</p>
+                <p>Missiyamız biliklərin yoxlanılması prosesini daha asan, şəffaf və əlçatan etməkdir. Platformamız vasitəsilə müəllimlər saniyələr içində özəl testlər yarada, tələbələr isə biliklərini istənilən yerdən yoxlaya bilərlər.</p>
+                <div class="security-box">
+                    <i class="fas fa-check-circle"></i> Bizim üçün ən önəmli dəyər istifadəçi məmnuniyyəti və məlumatların təhlükəsizliyidir.
+                </div>
+            `;
+            break;
+        case 'contact':
+            content = `
+                <h2><i class="fas fa-envelope"></i> Əlaqə</h2>
+                <p>Sual, təklif və ya texniki problem ilə bağlı bizimlə əlaqə saxlaya bilərsiniz:</p>
+                <ul style="list-style: none; padding: 0; margin-top: 20px;">
+                    <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+                        <i class="fas fa-at" style="color: var(--primary-color); font-size: 1.5rem;"></i>
+                        <span><strong>Email:</strong> info@imtahan.site</span>
+                    </li>
+                    <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+                        <i class="fas fa-map-marker-alt" style="color: #EF4444; font-size: 1.5rem;"></i>
+                        <span><strong>Ünvan:</strong> Bakı şəhəri, Azərbaycan</span>
+                    </li>
+                </ul>
+            `;
+            break;
+        case 'security':
+            content = `
+                <h2><i class="fas fa-shield-alt"></i> Təhlükəsizlik və Məxfilik</h2>
+                <p><strong>İmtahan</strong> platformasında məlumatların təhlükəsizliyi bizim prioritetimizdir. Bütün özəl testlər və suallar xüsusi şifrələmə sistemləri vasitəsilə qorunur.</p>
+                
+                <div class="security-box" style="background: #e0f2fe; border-color: #7dd3fc; color: #0369a1;">
+                    <i class="fas fa-user-shield"></i> <strong>Sizin Məlumatlarınız Bizimlə Güvəndədir:</strong> 
+                    Şəxsi məlumatlarınız və yaratdığınız suallar heç bir halda 3-cü tərəflərlə paylaşılmır.
+                </div>
+
+                <div class="disclaimer-box">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Məsuliyyətdən İmtina:</strong><br>
+                    Verilən link və şifrənin müəllim və ya onun etibar etdiyi digər şəxs tərəfindən yayılması halında, test suallarının 3-cü şəxslərə ötürülməsinə görə sayt rəhbərliyi məsuliyyət daşımır. Müəllimlərə şifrələrini və test linklərini yalnız etibarlı şəxslərlə paylaşmaq tövsiyə olunur.
+                </div>
+            `;
+            break;
+    }
+
+    body.innerHTML = content;
+    modal.classList.remove('hidden');
+};
 let categories = []; // Will be loaded from DB
 let users = [];      // Will be loaded from DB
 let privateQuizzes = []; // Private quizzes for teachers

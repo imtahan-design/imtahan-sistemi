@@ -1539,10 +1539,131 @@ nav {
 .review-status.correct { color: #10b981; }
 .review-status.wrong { color: #ef4444; }
 
+/* Footer Styles */
+.main-footer {
+    background: #1f2937;
+    color: #f3f4f6;
+    padding: 60px 20px 20px;
+    margin-top: 80px;
+    border-top: 4px solid var(--primary-color);
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.5fr;
+    gap: 40px;
+}
+
+.footer-section h4 {
+    color: var(--primary-light);
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.footer-section h4::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: var(--primary-color);
+}
+
+.footer-section p {
+    line-height: 1.6;
+    color: #9ca3af;
+    font-size: 0.95rem;
+}
+
+.footer-section.brand .logo {
+    margin-bottom: 20px;
+}
+
+.footer-section.brand .logo-main {
+    color: white;
+}
+
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-section ul li {
+    margin-bottom: 12px;
+}
+
+.footer-section ul li a {
+    color: #9ca3af;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer-section ul li a:hover {
+    color: var(--primary-light);
+}
+
+.footer-bottom {
+    max-width: 1200px;
+    margin: 40px auto 0;
+    padding-top: 20px;
+    border-top: 1px solid #374151;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.info-modal-content {
+    max-width: 700px !important;
+    padding: 40px !important;
+    line-height: 1.7;
+}
+
+.info-modal-content h2 {
+    color: var(--primary-color);
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.security-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+    color: #166534;
+}
+
+.disclaimer-box {
+    background: #fffbeb;
+    border: 1px solid #fef3c7;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+    color: #92400e;
+    font-size: 0.9rem;
+    border-left: 5px solid #f59e0b;
+}
+
 @media (max-width: 768px) {
-    .review-container {
-        margin: 10px;
-        padding: 15px;
+    .footer-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+    
+    .footer-section h4::after {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    .main-footer {
+        padding: 40px 15px 20px;
     }
 }
 

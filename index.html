@@ -451,6 +451,45 @@
     </div>
 
     <div id="notification-container" class="notification-container"></div>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-content">
+            <div class="footer-section brand">
+                <div class="logo">
+                <span class="logo-main">İMTAHAN</span>
+                <span class="logo-sub">Peşəkar İmtahan Platforması</span>
+            </div>
+                <p>Biliklərinizi yoxlamaq və inkişaf etdirmək üçün ən müasir platforma.</p>
+            </div>
+            <div class="footer-section links">
+                <h4>Faydalı Linklər</h4>
+                <ul>
+                    <li><a href="#" onclick="showInfoModal('about')">Haqqımızda</a></li>
+                    <li><a href="#" onclick="showInfoModal('contact')">Əlaqə</a></li>
+                    <li><a href="#" onclick="showInfoModal('security')">Təhlükəsizlik</a></li>
+                </ul>
+            </div>
+            <div class="footer-section security">
+                <h4><i class="fas fa-shield-alt"></i> Təhlükəsizlik</h4>
+                <p>Bütün şəxsi məlumatlar və gizli suallar yüksək səviyyəli şifrələmə ilə qorunur.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 İMTAHAN. Bütün hüquqlar qorunur.</p>
+        </div>
+    </footer>
+
+    <!-- Info Modals -->
+    <div id="info-modal" class="modal hidden">
+        <div class="modal-content info-modal-content">
+            <span class="close" onclick="closeModal('info-modal')">&times;</span>
+            <div id="info-modal-body">
+                <!-- Dinamik məzmun -->
+            </div>
+        </div>
+    </div>
+
     <script src="app.js?v=1.2"></script>
 </body>
 </html>
