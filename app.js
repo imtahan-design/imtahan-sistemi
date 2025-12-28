@@ -251,7 +251,8 @@ let verificationCode = null;
 // EmailJS Configuration
 const EMAILJS_CONFIG = {
     SERVICE_ID: "service_rjwl984",
-    TEMPLATE_ID: "template_y8eq8n8"
+    TEMPLATE_ID: "template_y8eq8n8",
+    PUBLIC_KEY: "gwXl5HH3P9Bja5iBN"
 };
 
 async function sendVerificationEmail(email, code) {
@@ -261,19 +262,15 @@ async function sendVerificationEmail(email, code) {
             EMAILJS_CONFIG.SERVICE_ID,
             EMAILJS_CONFIG.TEMPLATE_ID,
             {
-                to_email: email,
-                verification_code: code,
-                subject: "İmtahan Platforması - Təsdiq Kodu"
-            }
+                user_email: email, // Şablonda {{user_email}} olaraq istifadə edin
+                code: code,       // Şablonda {{code}} olaraq istifadə edin
+                reply_to: "no-reply@imtahan.az"
+            },
+            EMAILJS_CONFIG.PUBLIC_KEY
         );
         return true;
     } catch (error) {
         console.error("Email göndərilmə xətası:", error);
-        // Əgər EmailJS hələ sazlanmayıbsa, test üçün konsola yazırıq
-        if (EMAILJS_CONFIG.SERVICE_ID === "YOUR_SERVICE_ID") {
-            console.log("QEYD: EmailJS hələ sazlanmayıb. Test kodu:", code);
-            return true; // Test rejimində davam etmək üçün
-        }
         return false;
     }
 }
