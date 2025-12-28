@@ -268,7 +268,7 @@ function renderCategories() {
             <h3>${cat.name}</h3>
             <p>${cat.questions.length} sual</p>
             <p>Müddət: ${cat.time} san</p>
-            <button class="btn-primary" onclick="startQuizCheck(${cat.id})">Testə Başla</button>
+            <button class="btn-primary" onclick="startQuizCheck('${cat.id}')">Testə Başla</button>
         `;
         grid.appendChild(div);
     });
@@ -284,7 +284,7 @@ function renderAdminCategories() {
             <h3>${cat.name}</h3>
             <p>${cat.questions.length} sual</p>
             <p>Müddət: ${cat.time} san</p>
-            <button class="delete-cat-btn" onclick="deleteCategory(${cat.id}, event)"><i class="fas fa-trash"></i></button>
+            <button class="delete-cat-btn" onclick="deleteCategory('${cat.id}', event)"><i class="fas fa-trash"></i></button>
         `;
         div.onclick = (e) => {
             if(!e.target.closest('.delete-cat-btn')) openCategory(cat.id);
@@ -332,7 +332,7 @@ window.deleteCategory = function(id, event) {
         if (db) {
             db.collection('categories').doc(String(id)).delete().catch(console.error);
         }
-        categories = categories.filter(c => c.id !== id);
+        categories = categories.filter(c => String(c.id) !== String(id));
         saveCategories();
         renderAdminCategories(); // Update admin view
     }
