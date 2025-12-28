@@ -107,6 +107,9 @@
         <!-- Quiz Section -->
         <section id="quiz-section" class="hidden">
             <div class="quiz-container">
+                <div class="progress-container">
+                    <div id="quiz-progress-bar" class="progress-bar"></div>
+                </div>
                 <div class="quiz-header">
                     <div id="timer">00:45</div>
                     <div id="question-counter">Sual 1/10</div>
@@ -126,15 +129,22 @@
         <!-- Result Section -->
         <section id="result-section" class="hidden">
             <div class="result-box">
-                <h2>Nəticə</h2>
+                <h2>İmtahan Bitdi!</h2>
                 <div class="score-circle">
-                    <span id="score-text">0/0</span>
+                    <span id="score-text">0%</span>
+                    <span class="score-label">Ümumi Bal</span>
                 </div>
-                <div class="stats">
-                    <p class="correct">Doğru: <span id="correct-count">0</span></p>
-                    <p class="wrong">Yanlış: <span id="wrong-count">0</span></p>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span id="correct-count" class="stat-value correct">0</span>
+                        <span class="stat-label">Doğru</span>
+                    </div>
+                    <div class="stat-item">
+                        <span id="wrong-count" class="stat-value wrong">0</span>
+                        <span class="stat-label">Yanlış</span>
+                    </div>
                 </div>
-                <button onclick="showDashboard()" class="btn-primary">Ana Səhifəyə Qayıt</button>
+                <button onclick="showDashboard()" class="btn-primary" style="width: 100%;">Ana Səhifəyə Qayıt</button>
             </div>
         </section>
     </div>

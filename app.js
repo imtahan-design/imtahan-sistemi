@@ -288,7 +288,15 @@ function renderCategories() {
     categories.forEach(cat => {
         const div = document.createElement('div');
         div.className = 'category-card';
+        // Simple icon mapping based on name or ID
+        let icon = 'fa-book';
+        if (cat.name.toLowerCase().includes('ingilis')) icon = 'fa-language';
+        if (cat.name.toLowerCase().includes('cinayət')) icon = 'fa-gavel';
+        if (cat.name.toLowerCase().includes('mülki')) icon = 'fa-balance-scale';
+        if (cat.name.toLowerCase().includes('dövlət')) icon = 'fa-university';
+
         div.innerHTML = `
+            <i class="fas ${icon}"></i>
             <h3>${cat.name}</h3>
             <p>${cat.questions.length} sual</p>
             <p>Müddət: ${cat.time} san</p>
@@ -304,7 +312,14 @@ function renderAdminCategories() {
     categories.forEach(cat => {
         const div = document.createElement('div');
         div.className = 'category-card';
+        let icon = 'fa-book';
+        if (cat.name.toLowerCase().includes('ingilis')) icon = 'fa-language';
+        if (cat.name.toLowerCase().includes('cinayət')) icon = 'fa-gavel';
+        if (cat.name.toLowerCase().includes('mülki')) icon = 'fa-balance-scale';
+        if (cat.name.toLowerCase().includes('dövlət')) icon = 'fa-university';
+
         div.innerHTML = `
+            <i class="fas ${icon}"></i>
             <h3>${cat.name}</h3>
             <p>${cat.questions.length} sual</p>
             <p>Müddət: ${cat.time} san</p>
@@ -516,6 +531,13 @@ function loadQuestion() {
     const q = currentQuiz.questions[currentQuiz.currentQuestionIndex];
     const cat = categories.find(c => c.id === currentQuiz.categoryId);
     
+    // Update Progress Bar
+    const progressPercentage = ((currentQuiz.currentQuestionIndex + 1) / currentQuiz.questions.length) * 100;
+    const progressBar = document.getElementById('quiz-progress-bar');
+    if (progressBar) {
+        progressBar.style.width = `${progressPercentage}%`;
+    }
+
     document.getElementById('question-counter').textContent = `Sual ${currentQuiz.currentQuestionIndex + 1}/${currentQuiz.questions.length}`;
     document.getElementById('question-text').textContent = q.text;
     
@@ -599,10 +621,15 @@ function showResult() {
     const total = currentQuiz.questions.length;
     const correct = currentQuiz.score;
     const wrong = total - correct;
+    const accuracy = Math.round((correct / total) * 100) || 0;
     
-    document.getElementById('score-text').textContent = `${correct}/${total}`;
+    document.getElementById('score-text').textContent = `${accuracy}%`;
     document.getElementById('correct-count').textContent = correct;
     document.getElementById('wrong-count').textContent = wrong;
+    
+    // Additional stats if needed
+    const totalQuestionsElem = document.getElementById('total-questions-stat');
+    if (totalQuestionsElem) totalQuestionsElem.textContent = total;
 }
 
 // --- Utils ---
