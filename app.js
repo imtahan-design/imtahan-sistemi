@@ -82,6 +82,30 @@ async function loadData() {
     if (!document.getElementById('admin-dashboard-section').classList.contains('hidden')) {
         renderAdminCategories();
     }
+
+    const hasEnglish = categories.some(c => c.name === 'İngilis' || String(c.id) === 'english_demo');
+    if (!hasEnglish) {
+        const baseId = Date.now();
+        const englishCat = {
+            id: 'english_demo',
+            name: 'İngilis',
+            time: 45,
+            questions: [
+                { id: baseId + 1, text: "Select the synonym of 'big'.", image: null, options: ["large", "small", "tiny", "narrow"], correctIndex: 0 },
+                { id: baseId + 2, text: "I ____ to the gym every day.", image: null, options: ["go", "goes", "going", "gone"], correctIndex: 0 },
+                { id: baseId + 3, text: "She has ____ her homework.", image: null, options: ["done", "did", "do", "doing"], correctIndex: 0 },
+                { id: baseId + 4, text: "Which is an adjective?", image: null, options: ["happy", "run", "quickly", "swim"], correctIndex: 0 },
+                { id: baseId + 5, text: "Which article fits: ___ apple?", image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/itYV+8AAAAASUVORK5CYII=", options: ["an", "a", "the", "no article"], correctIndex: 0 }
+            ],
+            createdBy: users[0] ? users[0].id : 'system'
+        };
+        categories.push(englishCat);
+        saveCategories();
+        renderCategories();
+        if (!document.getElementById('admin-dashboard-section').classList.contains('hidden')) {
+            renderAdminCategories();
+        }
+    }
 }
 
 // Save Helpers
