@@ -235,19 +235,101 @@ window.login = function() {
     }
 }
 
-window.register = function() {
+window.toggleEmailField = function() {
+    const role = document.getElementById('reg-role').value;
+    const emailGroup = document.getElementById('teacher-email-group');
+    if (role === 'teacher') {
+        emailGroup.classList.remove('hidden');
+    } else {
+        emailGroup.classList.add('hidden');
+    }
+}
+
+let pendingUser = null;
+let verificationCode = null;
+
+// EmailJS Configuration
+const EMAILJS_CONFIG = {
+    SERVICE_ID: "service_rjwl984",
+    TEMPLATE_ID: "template_y8eq8n8"
+};
+
+async function sendVerificationEmail(email, code) {
+    try {
+        // Real email göndərmə cəhdi
+        await emailjs.send(
+            EMAILJS_CONFIG.SERVICE_ID,
+            EMAILJS_CONFIG.TEMPLATE_ID,
+            {
+                to_email: email,
+                verification_code: code,
+                subject: "İmtahan Platforması - Təsdiq Kodu"
+            }
+        );
+        return true;
+    } catch (error) {
+        console.error("Email göndərilmə xətası:", error);
+        // Əgər EmailJS hələ sazlanmayıbsa, test üçün konsola yazırıq
+        if (EMAILJS_CONFIG.SERVICE_ID === "YOUR_SERVICE_ID") {
+            console.log("QEYD: EmailJS hələ sazlanmayıb. Test kodu:", code);
+            return true; // Test rejimində davam etmək üçün
+        }
+        return false;
+    }
+}
+
+window.register = async function() {
     const username = document.getElementById('reg-username').value;
     const pass = document.getElementById('reg-password').value;
     const role = document.getElementById('reg-role').value;
+    const email = document.getElementById('reg-email').value;
 
     if (!username || !pass) return alert('Bütün sahələri doldurun!');
+    if (pass.length < 8) return alert('Şifrə minimum 8 işarədən ibarət olmalıdır!');
+    if (role === 'teacher' && (!email || !email.includes('@'))) return alert('Zəhmət olmasa düzgün email ünvanı daxil edin!');
     if (users.find(u => u.username === username)) return alert('Bu istifadəçi adı artıq mövcuddur!');
 
-    const newUser = { id: String(Date.now()), username, password: pass, role: role };
-    users.push(newUser);
-    saveUsers(); // Save to DB
-    alert('Qeydiyyat uğurludur! İndi daxil ola bilərsiniz.');
-    showLogin();
+    if (role === 'teacher') {
+        // Teacher verification flow
+        pendingUser = { id: String(Date.now()), username, password: pass, role: role, email: email };
+        verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        const success = await sendVerificationEmail(email, verificationCode);
+        
+        if (success) {
+            alert(`${email} ünvanına təsdiq kodu göndərildi. Zəhmət olmasa emailinizi yoxlayın.`);
+            document.getElementById('verification-modal').classList.remove('hidden');
+        } else {
+            alert('Email göndərilərkən xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.');
+        }
+    } else {
+        // Normal student registration
+        const newUser = { id: String(Date.now()), username, password: pass, role: role };
+        users.push(newUser);
+        saveUsers();
+        alert('Qeydiyyat uğurludur! İndi daxil ola bilərsiniz.');
+        showLogin();
+    }
+}
+
+window.confirmVerification = function() {
+    const codeInput = document.getElementById('v-code').value;
+    if (codeInput === verificationCode) {
+        users.push(pendingUser);
+        saveUsers();
+        alert('Email təsdiqləndi! Qeydiyyat uğurla tamamlandı.');
+        closeVerification();
+        showLogin();
+    } else {
+        alert('Yanlış təsdiq kodu!');
+    }
+}
+
+window.closeVerification = function() {
+    document.getElementById('verification-modal').classList.add('hidden');
+    document.getElementById('v-code').value = '';
+    pendingUser = null;
+    verificationCode = null;
 }
 
 window.logout = function() {

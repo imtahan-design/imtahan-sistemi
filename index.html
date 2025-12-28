@@ -10,6 +10,15 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            // EmailJS Public Key
+            emailjs.init("gwXl5HH3P9Bja5iBN");
+        })();
+    </script>
 </head>
 <body>
     <div id="app">
@@ -47,19 +56,38 @@
                 <div class="auth-box hidden" id="register-box">
                     <h2>Qeydiyyat</h2>
                     <input type="text" id="reg-username" placeholder="İstifadəçi adı">
-                    <input type="password" id="reg-password" placeholder="Şifrə">
+                    <input type="password" id="reg-password" placeholder="Şifrə (min. 8 işarə)">
                     <div class="form-group" style="margin-top: 10px; text-align: left;">
                         <label style="font-size: 0.9rem; color: #666;">Hesab növü:</label>
-                        <select id="reg-role" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; margin-top: 5px;">
+                        <select id="reg-role" onchange="toggleEmailField()" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; margin-top: 5px;">
                             <option value="student">Şəxsi</option>
                             <option value="teacher">Müəllim</option>
                         </select>
+                    </div>
+                    <div id="teacher-email-group" class="hidden">
+                        <input type="email" id="reg-email" placeholder="Email ünvanınız" style="margin-top: 10px;">
+                        <p style="font-size: 0.75rem; color: #ef4444; margin-top: 4px;">* Müəllim qeydiyyatı üçün email təsdiqi vacibdir.</p>
                     </div>
                     <button onclick="register()" class="btn-primary" style="margin-top: 15px;">Qeydiyyatdan keç</button>
                     <p>Hesabınız var? <a href="#" onclick="showLogin()">Giriş</a></p>
                 </div>
             </div>
         </section>
+
+        <!-- Email Verification Modal -->
+        <div id="verification-modal" class="modal hidden">
+            <div class="modal-content auth-box">
+                <h2>Email Təsdiqi</h2>
+                <p id="verification-msg" style="font-size: 0.9rem; color: #64748b; margin-bottom: 20px;">
+                    Email ünvanınıza göndərilən 6 rəqəmli təsdiq kodunu daxil edin.
+                </p>
+                <div class="verification-code-inputs">
+                    <input type="text" id="v-code" maxlength="6" placeholder="000000" style="text-align: center; font-size: 24px; letter-spacing: 10px; font-weight: 800;">
+                </div>
+                <button onclick="confirmVerification()" class="btn-primary" style="margin-top: 20px; width: 100%;">Təsdiqlə</button>
+                <button onclick="closeVerification()" class="btn-secondary" style="margin-top: 10px; width: 100%;">Ləğv et</button>
+            </div>
+        </div>
 
         <!-- Teacher Dashboard -->
         <section id="teacher-dashboard-section" class="hidden">
