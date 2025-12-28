@@ -800,6 +800,7 @@ window.downloadSampleJSON = function() {
 }
 
 window.showStudentResults = async function(quizId, quizTitle) {
+    console.log("Fetching results for quizId:", quizId);
     const modal = document.getElementById('student-results-modal');
     if (!modal) return;
     document.getElementById('results-modal-title').textContent = `${quizTitle} - Nəticələr`;
@@ -809,16 +810,24 @@ window.showStudentResults = async function(quizId, quizTitle) {
     
     if (db) {
         try {
+            if (!quizId) throw new Error("Quiz ID tapılmadı.");
+
+            // Firestore-da orderBy və where fərqli sahələrdə olduqda indeks tələb edir.
+            // İndeks xətasının qarşısını almaq üçün sadəcə where ilə gətirib, JS tərəfində sıralayırıq.
             const snapshot = await db.collection('student_attempts')
                 .where('quizId', '==', quizId)
-                .orderBy('timestamp', 'desc')
                 .get();
             
-            const attempts = snapshot.docs.map(doc => doc.data());
+            console.log("Results found:", snapshot.size);
+            let attempts = snapshot.docs.map(doc => doc.data());
+            
+            // Tarixə görə azalan sıra ilə (ən yeni birinci) sıralama
+            attempts.sort((a, b) => b.timestamp - a.timestamp);
+            
             renderStudentResultsTable(attempts);
         } catch (e) {
-            console.error(e);
-            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: red;">Xəta baş verdi.</td></tr>';
+            console.error("ShowStudentResults Error:", e);
+            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: red;">Xəta: ${e.message}</td></tr>`;
         }
     } else {
         tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Firebase aktiv deyil.</td></tr>';
