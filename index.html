@@ -76,12 +76,13 @@
         <section id="create-private-quiz-section" class="hidden">
             <div class="container">
                 <div class="card" style="max-width: 900px; margin: 0 auto;">
+                    <input type="hidden" id="editing-quiz-id" value="">
                     <div class="header-actions">
-                        <h2>Özəl Test Parametrləri</h2>
-                        <button onclick="showTeacherDashboard()" class="btn-secondary">Ləğv et</button>
+                        <h2 id="private-quiz-form-title">Yeni Özəl Test Yaradın</h2>
+                        <button onclick="showTeacherDashboard()" class="btn-secondary">Geri</button>
                     </div>
                     
-                    <div class="quiz-setup-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div class="quiz-setup-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
                         <div class="form-group">
                             <label>Testin Adı</label>
                             <input type="text" id="private-quiz-title" placeholder="Məs: Riyaziyyat - Sinif 5">
@@ -89,6 +90,10 @@
                         <div class="form-group">
                             <label>Giriş Şifrəsi</label>
                             <input type="text" id="private-quiz-password" placeholder="Məs: 12345">
+                        </div>
+                        <div class="form-group">
+                            <label>Standart Vaxt (san)</label>
+                            <input type="number" id="private-quiz-default-time" value="45" min="5" placeholder="Məs: 45">
                         </div>
                     </div>
 

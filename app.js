@@ -330,10 +330,78 @@ window.showCreatePrivateQuiz = function() {
     hideAllSections();
     document.getElementById('create-private-quiz-section').classList.remove('hidden');
     // Reset forms
+    document.getElementById('editing-quiz-id').value = '';
+    document.getElementById('private-quiz-form-title').textContent = 'Yeni Özəl Test Yaradın';
+    document.getElementById('private-quiz-title').value = '';
+    document.getElementById('private-quiz-password').value = '';
+    document.getElementById('private-quiz-default-time').value = '45';
     document.getElementById('manual-questions-list').innerHTML = '';
     document.getElementById('bulk-questions-text').value = '';
     document.getElementById('ready-question-count').textContent = '0';
     addManualQuestionForm(); // Add first empty question
+}
+
+window.editPrivateQuiz = function(quizId) {
+    const quiz = privateQuizzes.find(q => q.id === quizId);
+    if (!quiz) return alert('Test tapılmadı!');
+    
+    hideAllSections();
+    document.getElementById('create-private-quiz-section').classList.remove('hidden');
+    
+    // Set form to edit mode
+    document.getElementById('editing-quiz-id').value = quizId;
+    document.getElementById('private-quiz-form-title').textContent = 'Özəl Testdə Düzəliş Et';
+    document.getElementById('private-quiz-title').value = quiz.title;
+    document.getElementById('private-quiz-password').value = quiz.password;
+    document.getElementById('private-quiz-default-time').value = quiz.defaultTime || 45;
+    
+    // Load questions
+    const list = document.getElementById('manual-questions-list');
+    list.innerHTML = '';
+    
+    quiz.questions.forEach((q, idx) => {
+        const uniqueId = Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000);
+        const div = document.createElement('div');
+        div.className = 'manual-question-item';
+        div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <strong>Sual ${idx + 1}</strong>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-size: 0.8rem; color: #666;">Xüsusi vaxt (san):</label>
+                    <input type="number" class="manual-q-time" value="${q.time || ''}" placeholder="Def" style="width: 60px; padding: 4px; border-radius: 4px; border: 1px solid #ddd;">
+                    <button onclick="this.parentElement.parentElement.parentElement.remove(); updateQuestionCount();" class="delete-cat-btn"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+            <div class="manual-q-content">
+                <div class="manual-q-image-container">
+                    <div class="image-preview ${q.image ? '' : 'hidden'}" id="preview_${uniqueId}">
+                        <img src="${q.image || ''}" alt="Sual şəkli">
+                        <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
+                    </div>
+                    <label class="image-upload-label ${q.image ? 'hidden' : ''}" id="label_${uniqueId}">
+                        <i class="fas fa-image"></i> Şəkil Əlavə Et
+                        <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                    </label>
+                    <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}" value="${q.image || ''}">
+                </div>
+                <div class="manual-q-text-container">
+                    <textarea class="manual-q-text" placeholder="Sualın mətni..." style="width:100%; height: 80px; margin-bottom:10px;">${q.text || ''}</textarea>
+                </div>
+            </div>
+            <div class="manual-options-grid">
+                ${q.options.map((opt, optIdx) => `
+                    <div class="manual-option-input">
+                        <input type="radio" name="correct_${uniqueId}" value="${optIdx}" ${optIdx === q.correctIndex ? 'checked' : ''}>
+                        <input type="text" class="manual-opt" value="${opt}" placeholder="Variant ${String.fromCharCode(65 + optIdx)}">
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        list.appendChild(div);
+    });
+    
+    switchQuestionTab('manual');
+    updateQuestionCount();
 }
 
 window.switchQuestionTab = function(method) {
@@ -353,7 +421,11 @@ window.addManualQuestionForm = function() {
     div.innerHTML = `
         <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
             <strong>Yeni Sual</strong>
-            <button onclick="this.parentElement.parentElement.remove(); updateQuestionCount();" class="delete-cat-btn"><i class="fas fa-times"></i></button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="font-size: 0.8rem; color: #666;">Xüsusi vaxt (san):</label>
+                <input type="number" class="manual-q-time" placeholder="Def" style="width: 60px; padding: 4px; border-radius: 4px; border: 1px solid #ddd;">
+                <button onclick="this.parentElement.parentElement.parentElement.remove(); updateQuestionCount();" class="delete-cat-btn"><i class="fas fa-times"></i></button>
+            </div>
         </div>
         <div class="manual-q-content">
             <div class="manual-q-image-container">
@@ -480,7 +552,11 @@ window.parseBulkQuestions = function() {
             div.innerHTML = `
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                     <strong>Sual ${idx + 1}</strong>
-                    <button onclick="this.parentElement.parentElement.remove(); updateQuestionCount();" class="delete-cat-btn"><i class="fas fa-times"></i></button>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="font-size: 0.8rem; color: #666;">Xüsusi vaxt (san):</label>
+                        <input type="number" class="manual-q-time" value="${q.time || ''}" placeholder="Def" style="width: 60px; padding: 4px; border-radius: 4px; border: 1px solid #ddd;">
+                        <button onclick="this.parentElement.parentElement.parentElement.remove(); updateQuestionCount();" class="delete-cat-btn"><i class="fas fa-times"></i></button>
+                    </div>
                 </div>
                 <div class="manual-q-content">
                     <div class="manual-q-image-container">
@@ -519,8 +595,10 @@ window.parseBulkQuestions = function() {
 }
 
 window.savePrivateQuizFinal = async function() {
+    const editingId = document.getElementById('editing-quiz-id').value;
     const title = document.getElementById('private-quiz-title').value;
     const password = document.getElementById('private-quiz-password').value;
+    const defaultTime = parseInt(document.getElementById('private-quiz-default-time').value) || 45;
     
     if (!title || !password) return alert('Zəhmət olmasa testin adını və şifrəsini daxil edin.');
     
@@ -530,6 +608,7 @@ window.savePrivateQuizFinal = async function() {
     questionItems.forEach((item) => {
         const text = item.querySelector('.manual-q-text').value;
         const imageData = item.querySelector('.manual-q-img-data').value;
+        const customTime = item.querySelector('.manual-q-time').value;
         const optionInputs = item.querySelectorAll('.manual-opt');
         const correctInput = item.querySelector('input[type="radio"]:checked');
         
@@ -537,6 +616,7 @@ window.savePrivateQuizFinal = async function() {
             questions.push({
                 text: text,
                 image: imageData || null,
+                time: customTime ? parseInt(customTime) : null,
                 options: Array.from(optionInputs).map(i => i.value),
                 correctIndex: parseInt(correctInput.value)
             });
@@ -545,26 +625,43 @@ window.savePrivateQuizFinal = async function() {
     
     if (questions.length === 0) return alert('Zəhmət olmasa ən azı bir sual əlavə edin.');
     
-    const newQuiz = {
+    const quizData = {
         teacherId: currentUser.id,
         title: title,
         password: password,
+        defaultTime: defaultTime,
         questions: questions,
-        createdAt: new Date().toISOString()
+        updatedAt: new Date().toISOString()
     };
     
+    if (!editingId) {
+        quizData.createdAt = new Date().toISOString();
+    }
+    
     try {
-        if (db) {
-            const docRef = await db.collection('private_quizzes').add(newQuiz);
-            newQuiz.id = docRef.id;
+        if (editingId) {
+            // Update existing
+            if (db) {
+                await db.collection('private_quizzes').doc(editingId).update(quizData);
+            }
+            const index = privateQuizzes.findIndex(q => q.id === editingId);
+            if (index !== -1) {
+                privateQuizzes[index] = { ...privateQuizzes[index], ...quizData };
+            }
+            alert('Özəl test uğurla yeniləndi!');
         } else {
-            newQuiz.id = 'priv_' + Date.now();
+            // Create new
+            if (db) {
+                const docRef = await db.collection('private_quizzes').add(quizData);
+                quizData.id = docRef.id;
+            } else {
+                quizData.id = 'priv_' + Date.now();
+            }
+            privateQuizzes.push(quizData);
+            alert('Özəl test uğurla yaradıldı!');
         }
         
-        privateQuizzes.push(newQuiz);
         localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes));
-        
-        alert('Özəl test uğurla yaradıldı!');
         showTeacherDashboard();
     } catch (e) {
         alert('Xəta: ' + e.message);
@@ -593,6 +690,7 @@ function renderPrivateQuizzes() {
             <div class="cat-card-header">
                 <span></span>
                 <div class="cat-card-tools">
+                    <button onclick="editPrivateQuiz('${quiz.id}')" class="edit-cat-btn" title="Düzəliş et"><i class="fas fa-edit"></i></button>
                     <button onclick="deletePrivateQuiz('${quiz.id}')" class="delete-cat-btn" title="Sil"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
@@ -806,20 +904,18 @@ window.accessPrivateQuiz = function() {
 
 function startPrivateQuiz() {
     currentQuiz = {
-        name: activePrivateQuiz.title,
+        categoryId: 'private',
         questions: activePrivateQuiz.questions,
-        time: 45 // Default time for private quizzes or add to creation
+        currentQuestionIndex: 0,
+        score: 0,
+        timer: null,
+        defaultTime: activePrivateQuiz.defaultTime || 45,
+        timeLeft: 45 // Will be set in loadQuestion
     };
     
     hideAllSections();
     document.getElementById('quiz-section').classList.remove('hidden');
-    
-    currentQuestionIndex = 0;
-    userAnswers = [];
-    score = 0;
-    
     loadQuestion();
-    startTimer(currentQuiz.time);
 }
 
 // --- Dashboard & Categories ---
@@ -1293,7 +1389,16 @@ let selectedAnswerIndex = -1; // Global variable to track selected answer for cu
 
 function loadQuestion() {
     const q = currentQuiz.questions[currentQuiz.currentQuestionIndex];
-    const cat = categories.find(c => c.id === currentQuiz.categoryId);
+    
+    // Find time limit (private quiz has default or individual time, normal quiz uses category time)
+    let timeLimit = 45;
+    if (currentQuiz.categoryId === 'private') {
+        // If question has custom time, use it. Otherwise use quiz default time.
+        timeLimit = q.time || currentQuiz.defaultTime || 45;
+    } else {
+        const cat = categories.find(c => c.id === currentQuiz.categoryId);
+        if (cat) timeLimit = cat.time;
+    }
     
     selectedAnswerIndex = -1; // Reset for new question
 
@@ -1333,7 +1438,7 @@ function loadQuestion() {
     
     // Timer Reset
     clearInterval(currentQuiz.timer);
-    currentQuiz.timeLeft = cat.time;
+    currentQuiz.timeLeft = timeLimit;
     updateTimerDisplay();
     currentQuiz.timer = setInterval(() => {
         currentQuiz.timeLeft--;
