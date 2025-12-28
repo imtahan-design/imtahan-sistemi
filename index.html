@@ -82,25 +82,29 @@
                         <button onclick="showTeacherDashboard()" class="btn-secondary">Geri</button>
                     </div>
                     
-                    <div class="quiz-setup-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div class="quiz-setup-grid">
                         <div class="form-group">
-                            <label>Testin Adı</label>
+                            <label><i class="fas fa-file-signature"></i> Testin Adı</label>
                             <input type="text" id="private-quiz-title" placeholder="Məs: Riyaziyyat - Sinif 5">
                         </div>
                         <div class="form-group">
-                            <label>Giriş Şifrəsi</label>
+                            <label><i class="fas fa-lock"></i> Giriş Şifrəsi</label>
                             <input type="text" id="private-quiz-password" placeholder="Məs: 12345">
                         </div>
                         <div class="form-group">
-                            <label>Standart Vaxt (san)</label>
-                            <input type="number" id="private-quiz-default-time" value="45" min="5" placeholder="Məs: 45">
+                            <label><i class="fas fa-hourglass-half"></i> Standart Vaxt (san)</label>
+                            <input type="number" id="private-quiz-default-time" value="45" min="5">
                         </div>
                     </div>
 
                     <div class="question-input-methods">
-                        <div class="tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
-                            <button onclick="switchQuestionTab('manual')" id="tab-manual" class="tab-btn active">Tək-tək Əlavə Et</button>
-                            <button onclick="switchQuestionTab('bulk')" id="tab-bulk" class="tab-btn">Toplu Əlavə Et (PDF/Mətndən)</button>
+                        <div class="tabs">
+                            <button onclick="switchQuestionTab('manual')" id="tab-manual" class="tab-btn active">
+                                <i class="fas fa-keyboard"></i> Tək-tək Əlavə Et
+                            </button>
+                            <button onclick="switchQuestionTab('bulk')" id="tab-bulk" class="tab-btn">
+                                <i class="fas fa-copy"></i> Toplu Əlavə Et
+                            </button>
                         </div>
 
                         <!-- Manual Entry -->
@@ -108,24 +112,39 @@
                             <div id="manual-questions-list">
                                 <!-- Question forms will be added here -->
                             </div>
-                            <button onclick="addManualQuestionForm()" class="btn-secondary" style="width: 100%; margin-top: 10px;">+ Yeni Sual Sahəsi</button>
+                            <button onclick="addManualQuestionForm()" class="add-q-btn">
+                                <i class="fas fa-plus-circle"></i> Yeni Sual Sahəsi
+                            </button>
                         </div>
 
                         <!-- Bulk Entry -->
                         <div id="method-bulk" class="method-content hidden">
-                            <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
-                                Sualları aşağıdakı formatda yapışdırın (Hər sualın arasında bir boş sətir buraxın):<br>
-                                1. Sual mətni?<br>A) Variant 1<br>B) Variant 2<br>C) Variant 3<br>D) Variant 4<br>
-                                <span style="color: var(--primary-color); font-weight: bold;">Mətni suallara çevirə basdıqdan sonra sualların mətnini və variantlarını yenidən gözdən keçirin!</span>
-                            </p>
-                            <textarea id="bulk-questions-text" style="width: 100%; height: 300px; padding: 15px; border-radius: 8px; border: 1px solid #d1d5db; font-family: monospace;" placeholder="Sualları buraya yapışdırın..."></textarea>
-                            <button onclick="parseBulkQuestions()" class="btn-success" style="width: 100%; margin-top: 10px;">Mətni Suallara Çevir</button>
+                            <div class="bulk-info">
+                                <p>Sualları aşağıdakı formatda yapışdırın:</p>
+                                <div class="format-example">
+                                    1. Sual mətni?<br>
+                                    A) Variant 1<br>
+                                    B) Variant 2<br>
+                                    C) Variant 3<br>
+                                    D) Variant 4<br>
+                                    Doğru: B
+                                </div>
+                            </div>
+                            <textarea id="bulk-questions-text" placeholder="Sualları buraya yapışdırın..."></textarea>
+                            <button onclick="parseBulkQuestions()" class="btn-success" style="width: 100%;">
+                                <i class="fas fa-magic"></i> Mətni Suallara Çevir
+                            </button>
                         </div>
                     </div>
 
-                    <div class="category-actions" style="margin-top: 30px; border-top: 2px solid #eee; pt-20">
-                        <div id="question-count-badge" style="margin-bottom: 10px; font-weight: 600; color: var(--primary-color);">Hazır olan sual sayı: <span id="ready-question-count">0</span></div>
-                        <button onclick="savePrivateQuizFinal()" class="btn-primary" style="width: 100%; font-size: 1.1rem; padding: 15px;">Testi Yadda Saxla və Link Yarat</button>
+                    <div class="category-actions" style="margin-top: 30px; border-top: 2px solid #eee; padding-top: 25px;">
+                        <div id="question-count-badge" class="count-badge">
+                            <i class="fas fa-check-circle"></i> 
+                            Hazır olan sual sayı: <span id="ready-question-count">0</span>
+                        </div>
+                        <button onclick="savePrivateQuizFinal()" class="btn-primary save-quiz-btn">
+                            <i class="fas fa-save"></i> Testi Yadda Saxla və Link Yarat
+                        </button>
                     </div>
                 </div>
             </div>
@@ -137,9 +156,15 @@
                 <div class="auth-container">
                     <div class="auth-box">
                         <h2 id="join-quiz-title">Özəl Testə Giriş</h2>
-                        <div class="form-group">
-                            <label>Adınız və Soyadınız</label>
-                            <input type="text" id="student-name" placeholder="Ad Soyad">
+                        <div class="form-group" style="display: flex; gap: 10px;">
+                            <div style="flex: 1;">
+                                <label>Adınız</label>
+                                <input type="text" id="student-first-name" placeholder="Ad">
+                            </div>
+                            <div style="flex: 1;">
+                                <label>Soyadınız</label>
+                                <input type="text" id="student-last-name" placeholder="Soyad">
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Test Şifrəsi</label>

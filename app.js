@@ -364,12 +364,20 @@ window.editPrivateQuiz = function(quizId) {
         const div = document.createElement('div');
         div.className = 'manual-question-item';
         div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <strong>Sual ${idx + 1}</strong>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <label style="font-size: 0.8rem; color: #666;">Xüsusi vaxt (san):</label>
-                    <input type="number" class="manual-q-time" value="${q.time || ''}" placeholder="Def" style="width: 60px; padding: 4px; border-radius: 4px; border: 1px solid #ddd;">
-                    <button onclick="this.parentElement.parentElement.parentElement.remove(); updateQuestionCount();" class="delete-cat-btn"><i class="fas fa-times"></i></button>
+            <div class="manual-q-header">
+                <div class="manual-q-title">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Sual ${idx + 1}</span>
+                </div>
+                <div class="manual-q-actions">
+                    <div class="time-input-group">
+                        <i class="far fa-clock"></i>
+                        <input type="number" class="manual-q-time" value="${q.time || ''}" placeholder="Def">
+                        <span>san</span>
+                    </div>
+                    <button onclick="this.closest('.manual-question-item').remove(); updateQuestionCount();" class="delete-q-btn" title="Sualı sil">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
                 </div>
             </div>
             <div class="manual-q-content">
@@ -379,20 +387,24 @@ window.editPrivateQuiz = function(quizId) {
                         <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
                     </div>
                     <label class="image-upload-label ${q.image ? 'hidden' : ''}" id="label_${uniqueId}">
-                        <i class="fas fa-image"></i> Şəkil Əlavə Et
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Şəkil Əlavə Et</span>
                         <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
                     </label>
                     <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}" value="${q.image || ''}">
                 </div>
                 <div class="manual-q-text-container">
-                    <textarea class="manual-q-text" placeholder="Sualın mətni..." style="width:100%; height: 80px; margin-bottom:10px;">${q.text || ''}</textarea>
+                    <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin...">${q.text || ''}</textarea>
                 </div>
             </div>
             <div class="manual-options-grid">
                 ${q.options.map((opt, optIdx) => `
                     <div class="manual-option-input">
-                        <input type="radio" name="correct_${uniqueId}" value="${optIdx}" ${optIdx === q.correctIndex ? 'checked' : ''}>
-                        <input type="text" class="manual-opt" value="${opt}" placeholder="Variant ${String.fromCharCode(65 + optIdx)}">
+                        <div class="option-radio-wrapper">
+                            <input type="radio" name="correct_${uniqueId}" value="${optIdx}" ${optIdx === q.correctIndex ? 'checked' : ''} id="opt_${uniqueId}_${optIdx}">
+                            <label for="opt_${uniqueId}_${optIdx}"></label>
+                        </div>
+                        <input type="text" class="manual-opt" value="${opt}" placeholder="${String.fromCharCode(65 + optIdx)} variantı">
                     </div>
                 `).join('')}
             </div>
@@ -419,12 +431,20 @@ window.addManualQuestionForm = function() {
     const div = document.createElement('div');
     div.className = 'manual-question-item';
     div.innerHTML = `
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <strong>Yeni Sual</strong>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <label style="font-size: 0.8rem; color: #666;">Xüsusi vaxt (san):</label>
-                <input type="number" class="manual-q-time" placeholder="Def" style="width: 60px; padding: 4px; border-radius: 4px; border: 1px solid #ddd;">
-                <button onclick="this.parentElement.parentElement.parentElement.remove(); updateQuestionCount();" class="delete-cat-btn"><i class="fas fa-times"></i></button>
+        <div class="manual-q-header">
+            <div class="manual-q-title">
+                <i class="fas fa-plus-circle"></i>
+                <span>Yeni Sual</span>
+            </div>
+            <div class="manual-q-actions">
+                <div class="time-input-group">
+                    <i class="far fa-clock"></i>
+                    <input type="number" class="manual-q-time" placeholder="Def">
+                    <span>san</span>
+                </div>
+                <button onclick="this.closest('.manual-question-item').remove(); updateQuestionCount();" class="delete-q-btn" title="Sualı sil">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
             </div>
         </div>
         <div class="manual-q-content">
@@ -434,30 +454,43 @@ window.addManualQuestionForm = function() {
                     <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
                 </div>
                 <label class="image-upload-label" id="label_${uniqueId}">
-                    <i class="fas fa-image"></i> Şəkil Əlavə Et
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Şəkil Əlavə Et</span>
                     <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
                 </label>
                 <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
             </div>
             <div class="manual-q-text-container">
-                <textarea class="manual-q-text" placeholder="Sualın mətni..." style="width:100%; height: 80px; margin-bottom:10px;"></textarea>
+                <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin..."></textarea>
             </div>
         </div>
         <div class="manual-options-grid">
             <div class="manual-option-input">
-                <input type="radio" name="correct_${uniqueId}" value="0" checked>
+                <div class="option-radio-wrapper">
+                    <input type="radio" name="correct_${uniqueId}" value="0" checked id="opt_${uniqueId}_0">
+                    <label for="opt_${uniqueId}_0"></label>
+                </div>
                 <input type="text" class="manual-opt" placeholder="A variantı">
             </div>
             <div class="manual-option-input">
-                <input type="radio" name="correct_${uniqueId}" value="1">
+                <div class="option-radio-wrapper">
+                    <input type="radio" name="correct_${uniqueId}" value="1" id="opt_${uniqueId}_1">
+                    <label for="opt_${uniqueId}_1"></label>
+                </div>
                 <input type="text" class="manual-opt" placeholder="B variantı">
             </div>
             <div class="manual-option-input">
-                <input type="radio" name="correct_${uniqueId}" value="2">
+                <div class="option-radio-wrapper">
+                    <input type="radio" name="correct_${uniqueId}" value="2" id="opt_${uniqueId}_2">
+                    <label for="opt_${uniqueId}_2"></label>
+                </div>
                 <input type="text" class="manual-opt" placeholder="C variantı">
             </div>
             <div class="manual-option-input">
-                <input type="radio" name="correct_${uniqueId}" value="3">
+                <div class="option-radio-wrapper">
+                    <input type="radio" name="correct_${uniqueId}" value="3" id="opt_${uniqueId}_3">
+                    <label for="opt_${uniqueId}_3"></label>
+                </div>
                 <input type="text" class="manual-opt" placeholder="D variantı">
             </div>
         </div>
@@ -901,16 +934,19 @@ function showPrivateAccess(title) {
 }
 
 window.accessPrivateQuiz = function() {
-    const name = document.getElementById('student-name').value;
+    const firstName = document.getElementById('student-first-name').value.trim();
+    const lastName = document.getElementById('student-last-name').value.trim();
     const pass = document.getElementById('student-quiz-password').value;
     
-    if (!name || !pass) return alert('Zəhmət olmasa bütün xanaları doldurun.');
+    if (!firstName || !lastName || !pass) {
+        return alert('Zəhmət olmasa bütün xanaları (Ad, Soyad və Şifrə) doldurun.');
+    }
     
     if (pass !== activePrivateQuiz.password) {
         return alert('Yanlış şifrə!');
     }
     
-    studentName = name;
+    studentName = `${firstName} ${lastName}`;
     startPrivateQuiz();
 }
 
