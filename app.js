@@ -27,6 +27,7 @@ try {
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 let categories = []; // Will be loaded from DB
 let users = [];      // Will be loaded from DB
+let privateQuizzes = []; // Private quizzes for teachers
 let currentParentId = null; // Track current level in dashboard
 let currentAdminParentId = null; // Track current level in admin dashboard
 
@@ -49,16 +50,22 @@ async function loadData() {
             const userSnapshot = await db.collection('users').get();
             users = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+            // Load Private Quizzes
+            const privateSnapshot = await db.collection('private_quizzes').get();
+            privateQuizzes = privateSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
             console.log("Data loaded from Firebase");
         } catch (error) {
             console.error("Error loading from Firebase:", error);
             // Fallback to local if error (e.g. offline)
             categories = JSON.parse(localStorage.getItem('categories')) || [];
             users = JSON.parse(localStorage.getItem('users')) || [];
+            privateQuizzes = JSON.parse(localStorage.getItem('privateQuizzes')) || [];
         }
     } else {
         categories = JSON.parse(localStorage.getItem('categories')) || [];
         users = JSON.parse(localStorage.getItem('users')) || [];
+        privateQuizzes = JSON.parse(localStorage.getItem('privateQuizzes')) || [];
     }
 
     // Ensure all categories have a parentId property
@@ -151,6 +158,7 @@ async function saveUsers() {
 // Initialization
 document.addEventListener('DOMContentLoaded', async () => {
     await loadData();
+    handleUrlParams();
     updateUI();
 });
 
@@ -161,6 +169,13 @@ function updateUI() {
         document.getElementById('guest-nav').classList.add('hidden');
         document.getElementById('user-nav').classList.remove('hidden');
         document.getElementById('user-display').textContent = `Salam, ${currentUser.username}`;
+        
+        const teacherBtn = document.getElementById('teacher-panel-btn');
+        if (currentUser.role === 'teacher' || currentUser.role === 'admin') {
+            teacherBtn.classList.remove('hidden');
+        } else {
+            teacherBtn.classList.add('hidden');
+        }
         
         const adminBtn = document.getElementById('admin-panel-btn');
         if (currentUser.role === 'admin') {
@@ -178,6 +193,8 @@ function updateUI() {
     } else {
         document.getElementById('guest-nav').classList.remove('hidden');
         document.getElementById('user-nav').classList.add('hidden');
+        const teacherBtn = document.getElementById('teacher-panel-btn');
+        if (teacherBtn) teacherBtn.classList.add('hidden');
         showDashboard();
     }
 }
@@ -214,11 +231,12 @@ window.login = function() {
 window.register = function() {
     const username = document.getElementById('reg-username').value;
     const pass = document.getElementById('reg-password').value;
+    const role = document.getElementById('reg-role').value;
 
     if (!username || !pass) return alert('Bütün sahələri doldurun!');
     if (users.find(u => u.username === username)) return alert('Bu istifadəçi adı artıq mövcuddur!');
 
-    const newUser = { id: String(Date.now()), username, password: pass, role: 'user' };
+    const newUser = { id: String(Date.now()), username, password: pass, role: role };
     users.push(newUser);
     saveUsers(); // Save to DB
     alert('Qeydiyyat uğurludur! İndi daxil ola bilərsiniz.');
@@ -281,15 +299,531 @@ window.importData = function(input) {
 
 // --- Navigation Helpers ---
 function hideAllSections() {
-    const sections = ['auth-section', 'dashboard-section', 'admin-dashboard-section', 'category-admin-section', 'quiz-section', 'result-section', 'profile-section'];
+    const sections = [
+        'auth-section', 'dashboard-section', 'admin-dashboard-section', 
+        'category-admin-section', 'quiz-section', 'result-section', 
+        'profile-section', 'teacher-dashboard-section', 
+        'create-private-quiz-section', 'private-access-section'
+    ];
     sections.forEach(id => {
         const elem = document.getElementById(id);
         if (elem) elem.classList.add('hidden');
     });
 }
 
+// --- Teacher Dashboard Functions ---
+window.showTeacherDashboard = function() {
+    if (!currentUser) return showLogin();
+    hideAllSections();
+    document.getElementById('teacher-dashboard-section').classList.remove('hidden');
+    renderPrivateQuizzes();
+}
+
+window.showCreatePrivateQuiz = function() {
+    hideAllSections();
+    document.getElementById('create-private-quiz-section').classList.remove('hidden');
+    // Reset forms
+    document.getElementById('manual-questions-list').innerHTML = '';
+    document.getElementById('bulk-questions-text').value = '';
+    document.getElementById('ready-question-count').textContent = '0';
+    addManualQuestionForm(); // Add first empty question
+}
+
+window.switchQuestionTab = function(method) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.method-content').forEach(c => c.classList.add('hidden'));
+    
+    document.getElementById(`tab-${method}`).classList.add('active');
+    document.getElementById(`method-${method}`).classList.remove('hidden');
+}
+
+window.addManualQuestionForm = function() {
+    const list = document.getElementById('manual-questions-list');
+    const uniqueId = Date.now() + '_' + Math.floor(Math.random() * 1000);
+    
+    const div = document.createElement('div');
+    div.className = 'manual-question-item';
+    div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <strong>Yeni Sual</strong>
+            <button onclick="this.parentElement.parentElement.remove(); updateQuestionCount();" class="delete-cat-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="manual-q-content">
+            <div class="manual-q-image-container">
+                <div class="image-preview hidden" id="preview_${uniqueId}">
+                    <img src="" alt="Sual şəkli">
+                    <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
+                </div>
+                <label class="image-upload-label" id="label_${uniqueId}">
+                    <i class="fas fa-image"></i> Şəkil Əlavə Et
+                    <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                </label>
+                <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
+            </div>
+            <div class="manual-q-text-container">
+                <textarea class="manual-q-text" placeholder="Sualın mətni..." style="width:100%; height: 80px; margin-bottom:10px;"></textarea>
+            </div>
+        </div>
+        <div class="manual-options-grid">
+            <div class="manual-option-input">
+                <input type="radio" name="correct_${uniqueId}" value="0" checked>
+                <input type="text" class="manual-opt" placeholder="A variantı">
+            </div>
+            <div class="manual-option-input">
+                <input type="radio" name="correct_${uniqueId}" value="1">
+                <input type="text" class="manual-opt" placeholder="B variantı">
+            </div>
+            <div class="manual-option-input">
+                <input type="radio" name="correct_${uniqueId}" value="2">
+                <input type="text" class="manual-opt" placeholder="C variantı">
+            </div>
+            <div class="manual-option-input">
+                <input type="radio" name="correct_${uniqueId}" value="3">
+                <input type="text" class="manual-opt" placeholder="D variantı">
+            </div>
+        </div>
+    `;
+    list.appendChild(div);
+    updateQuestionCount();
+}
+
+window.handleQuestionImage = function(input, index) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Check file size (limit to 1MB for base64 storage)
+    if (file.size > 1024 * 1024) {
+        alert('Şəkil ölçüsü 1MB-dan çox olmamalıdır.');
+        input.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64Data = e.target.result;
+        document.getElementById(`data_${index}`).value = base64Data;
+        const preview = document.getElementById(`preview_${index}`);
+        preview.querySelector('img').src = base64Data;
+        preview.classList.remove('hidden');
+        document.getElementById(`label_${index}`).classList.add('hidden');
+    };
+    reader.readAsDataURL(file);
+}
+
+window.removeQuestionImage = function(index) {
+    document.getElementById(`data_${index}`).value = '';
+    document.getElementById(`preview_${index}`).classList.add('hidden');
+    document.getElementById(`label_${index}`).classList.remove('hidden');
+}
+
+window.updateQuestionCount = function() {
+    const manualCount = document.querySelectorAll('.manual-question-item').length;
+    document.getElementById('ready-question-count').textContent = manualCount;
+}
+
+window.parseBulkQuestions = function() {
+    const text = document.getElementById('bulk-questions-text').value;
+    if (!text.trim()) return alert('Zəhmət olmasa mətni daxil edin.');
+    
+    // Simple parser for:
+    // 1. Question?
+    // A) Opt 1
+    // B) Opt 2
+    // C) Opt 3
+    // D) Opt 4
+    // Doğru: B
+    
+    const questions = [];
+    const blocks = text.split(/\n\s*\n/); // Split by empty lines
+    
+    blocks.forEach(block => {
+        const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+        if (lines.length < 3) return;
+        
+        const questionText = lines[0].replace(/^\d+[\s.)]*/, ''); // Remove leading numbers
+        const options = [];
+        let correctIndex = 0;
+        
+        lines.slice(1).forEach(line => {
+            if (line.match(/^[A-E][\s.)]/i)) {
+                options.push(line.replace(/^[A-E][\s.)]*/i, ''));
+            } else if (line.toLowerCase().includes('doğru:') || line.toLowerCase().includes('cavab:')) {
+                const ansChar = line.split(':')[1].trim().toUpperCase();
+                correctIndex = ansChar.charCodeAt(0) - 65; // A=0, B=1, etc.
+            }
+        });
+        
+        if (questionText && options.length > 0) {
+            questions.push({
+                text: questionText,
+                options: options,
+                correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0
+            });
+        }
+    });
+    
+    if (questions.length > 0) {
+        // Convert bulk to manual forms for review
+        const list = document.getElementById('manual-questions-list');
+        list.innerHTML = '';
+        questions.forEach((q, idx) => {
+            const uniqueId = Date.now() + '_' + idx;
+            const div = document.createElement('div');
+            div.className = 'manual-question-item';
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <strong>Sual ${idx + 1}</strong>
+                    <button onclick="this.parentElement.parentElement.remove(); updateQuestionCount();" class="delete-cat-btn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="manual-q-content">
+                    <div class="manual-q-image-container">
+                        <div class="image-preview hidden" id="preview_${uniqueId}">
+                            <img src="" alt="Sual şəkli">
+                            <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
+                        </div>
+                        <label class="image-upload-label" id="label_${uniqueId}">
+                            <i class="fas fa-image"></i> Şəkil Əlavə Et
+                            <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                        </label>
+                        <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
+                    </div>
+                    <div class="manual-q-text-container">
+                        <textarea class="manual-q-text" style="width:100%; height: 80px; margin-bottom:10px;">${q.text}</textarea>
+                    </div>
+                </div>
+                <div class="manual-options-grid">
+                    ${q.options.map((opt, i) => `
+                        <div class="manual-option-input">
+                            <input type="radio" name="correct_${uniqueId}" value="${i}" ${i === q.correctIndex ? 'checked' : ''}>
+                            <input type="text" class="manual-opt" value="${opt}">
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            list.appendChild(div);
+        });
+        
+        switchQuestionTab('manual');
+        updateQuestionCount();
+        alert(`${questions.length} sual uğurla köçürüldü. İndi yoxlayıb yadda saxlaya bilərsiniz.`);
+    } else {
+        alert('Heç bir sual tapılmadı. Zəhmət olmasa formatı yoxlayın.');
+    }
+}
+
+window.savePrivateQuizFinal = async function() {
+    const title = document.getElementById('private-quiz-title').value;
+    const password = document.getElementById('private-quiz-password').value;
+    
+    if (!title || !password) return alert('Zəhmət olmasa testin adını və şifrəsini daxil edin.');
+    
+    const questionItems = document.querySelectorAll('.manual-question-item');
+    const questions = [];
+    
+    questionItems.forEach((item) => {
+        const text = item.querySelector('.manual-q-text').value;
+        const imageData = item.querySelector('.manual-q-img-data').value;
+        const optionInputs = item.querySelectorAll('.manual-opt');
+        const correctInput = item.querySelector('input[type="radio"]:checked');
+        
+        if ((text || imageData) && optionInputs.length > 0 && correctInput) {
+            questions.push({
+                text: text,
+                image: imageData || null,
+                options: Array.from(optionInputs).map(i => i.value),
+                correctIndex: parseInt(correctInput.value)
+            });
+        }
+    });
+    
+    if (questions.length === 0) return alert('Zəhmət olmasa ən azı bir sual əlavə edin.');
+    
+    const newQuiz = {
+        teacherId: currentUser.id,
+        title: title,
+        password: password,
+        questions: questions,
+        createdAt: new Date().toISOString()
+    };
+    
+    try {
+        if (db) {
+            const docRef = await db.collection('private_quizzes').add(newQuiz);
+            newQuiz.id = docRef.id;
+        } else {
+            newQuiz.id = 'priv_' + Date.now();
+        }
+        
+        privateQuizzes.push(newQuiz);
+        localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes));
+        
+        alert('Özəl test uğurla yaradıldı!');
+        showTeacherDashboard();
+    } catch (e) {
+        alert('Xəta: ' + e.message);
+    }
+}
+
+function renderPrivateQuizzes() {
+    const grid = document.getElementById('private-quizzes-grid');
+    grid.innerHTML = '';
+    
+    const myQuizzes = privateQuizzes.filter(q => q.teacherId === currentUser.id);
+    
+    if (myQuizzes.length === 0) {
+        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 20px;">Hələ heç bir özəl test yaratmamısınız.</p>';
+        return;
+    }
+    
+    myQuizzes.forEach(quiz => {
+        const card = document.createElement('div');
+        card.className = 'category-card';
+        
+        const baseUrl = window.location.origin + window.location.pathname;
+        const quizLink = `${baseUrl}?quiz=${quiz.id}`;
+        
+        card.innerHTML = `
+            <div class="cat-card-header">
+                <span></span>
+                <div class="cat-card-tools">
+                    <button onclick="deletePrivateQuiz('${quiz.id}')" class="delete-cat-btn" title="Sil"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="icon-box"><i class="fas fa-link"></i></div>
+            <h3>${quiz.title}</h3>
+            <p>${quiz.questions.length} sual</p>
+            <div class="category-actions">
+                <button onclick="copyQuizLink('${quizLink}')" class="btn-primary" style="width:100%"><i class="fas fa-copy"></i> Linki Kopyala</button>
+                <button onclick="showStudentResults('${quiz.id}', '${quiz.title}')" class="btn-secondary" style="width:100%"><i class="fas fa-poll"></i> Nəticələr</button>
+                <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">Şifrə: <strong>${quiz.password}</strong></div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+window.savePrivateQuiz = function() {
+    const title = document.getElementById('private-quiz-title').value;
+    const password = document.getElementById('private-quiz-password').value;
+    const fileInput = document.getElementById('private-quiz-file');
+    
+    if (!title || !password || !fileInput.files[0]) {
+        return alert('Zəhmət olmasa bütün xanaları doldurun və sual faylını seçin.');
+    }
+    
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const questions = JSON.parse(e.target.result);
+            if (!Array.isArray(questions)) throw new Error('Düzgün sual formatı deyil.');
+            
+            const newQuiz = {
+                teacherId: currentUser.id,
+                title: title,
+                password: password,
+                questions: questions,
+                createdAt: new Date().toISOString()
+            };
+            
+            if (db) {
+                const docRef = await db.collection('private_quizzes').add(newQuiz);
+                newQuiz.id = docRef.id;
+            } else {
+                newQuiz.id = 'priv_' + Date.now();
+            }
+            
+            privateQuizzes.push(newQuiz);
+            localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes));
+            
+            alert('Özəl test uğurla yaradıldı!');
+            showTeacherDashboard();
+            
+            // Clear inputs
+            document.getElementById('private-quiz-title').value = '';
+            document.getElementById('private-quiz-password').value = '';
+            document.getElementById('private-quiz-file').value = '';
+            
+        } catch (error) {
+            alert('Xəta: ' + error.message);
+        }
+    };
+    reader.readAsText(fileInput.files[0]);
+}
+
+window.copyQuizLink = function(link) {
+    navigator.clipboard.writeText(link).then(() => {
+        alert('Link kopyalandı! Tələbələrinizə göndərə bilərsiniz.');
+    });
+}
+
+window.deletePrivateQuiz = async function(id) {
+    if (!confirm('Bu testi silmək istədiyinizə əminsiniz?')) return;
+    
+    if (db) {
+        await db.collection('private_quizzes').doc(id).delete();
+    }
+    
+    privateQuizzes = privateQuizzes.filter(q => q.id !== id);
+    localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes));
+    renderPrivateQuizzes();
+}
+
+window.downloadSampleJSON = function() {
+    const sampleData = [
+        {
+            "text": "Sual mətni bura yazılır",
+            "options": ["Variant 1", "Variant 2", "Variant 3", "Variant 4"],
+            "correctIndex": 0
+        },
+        {
+            "text": "İkinci sual nümunəsi",
+            "options": ["A", "B", "C", "D"],
+            "correctIndex": 1
+        }
+    ];
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sampleData, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "numune_suallar.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+window.showStudentResults = async function(quizId, quizTitle) {
+    const modal = document.getElementById('student-results-modal');
+    if (!modal) return;
+    document.getElementById('results-modal-title').textContent = `${quizTitle} - Nəticələr`;
+    modal.classList.remove('hidden');
+    const tableBody = document.getElementById('student-results-body');
+    tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Yüklənir...</td></tr>';
+    
+    if (db) {
+        try {
+            const snapshot = await db.collection('student_attempts')
+                .where('quizId', '==', quizId)
+                .orderBy('timestamp', 'desc')
+                .get();
+            
+            const attempts = snapshot.docs.map(doc => doc.data());
+            renderStudentResultsTable(attempts);
+        } catch (e) {
+            console.error(e);
+            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: red;">Xəta baş verdi.</td></tr>';
+        }
+    } else {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Firebase aktiv deyil.</td></tr>';
+    }
+}
+
+function renderStudentResultsTable(attempts) {
+    const tableBody = document.getElementById('student-results-body');
+    tableBody.innerHTML = '';
+    
+    if (attempts.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Hələ heç bir nəticə yoxdur.</td></tr>';
+        return;
+    }
+    
+    attempts.forEach(attempt => {
+        const date = new Date(attempt.timestamp).toLocaleDateString('az-AZ', {
+            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        const accuracy = Math.round((attempt.score / attempt.total) * 100);
+        const badgeClass = accuracy >= 80 ? 'accuracy-high' : (accuracy >= 50 ? 'accuracy-mid' : 'accuracy-low');
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${attempt.studentName}</td>
+            <td><span class="accuracy-badge ${badgeClass}">${accuracy}%</span></td>
+            <td>${date}</td>
+            <td>${attempt.score} / ${attempt.total}</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
+
+// --- Private Quiz Access Functions ---
+let activePrivateQuiz = null;
+let studentName = '';
+
+function handleUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const quizId = urlParams.get('quiz');
+    
+    if (quizId) {
+        const quiz = privateQuizzes.find(q => q.id === quizId);
+        if (quiz) {
+            activePrivateQuiz = quiz;
+            showPrivateAccess(quiz.title);
+        } else {
+            // If quiz not in memory, try to fetch from Firebase
+            if (db) {
+                db.collection('private_quizzes').doc(quizId).get().then(doc => {
+                    if (doc.exists) {
+                        activePrivateQuiz = { id: doc.id, ...doc.data() };
+                        showPrivateAccess(activePrivateQuiz.title);
+                    } else {
+                        alert('Test tapılmadı.');
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                });
+            } else {
+                alert('Test tapılmadı.');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+    }
+}
+
+function showPrivateAccess(title) {
+    hideAllSections();
+    document.getElementById('private-access-section').classList.remove('hidden');
+    document.getElementById('join-quiz-title').textContent = title;
+}
+
+window.accessPrivateQuiz = function() {
+    const name = document.getElementById('student-name').value;
+    const pass = document.getElementById('student-quiz-password').value;
+    
+    if (!name || !pass) return alert('Zəhmət olmasa bütün xanaları doldurun.');
+    
+    if (pass !== activePrivateQuiz.password) {
+        return alert('Yanlış şifrə!');
+    }
+    
+    studentName = name;
+    startPrivateQuiz();
+}
+
+function startPrivateQuiz() {
+    currentQuiz = {
+        name: activePrivateQuiz.title,
+        questions: activePrivateQuiz.questions,
+        time: 45 // Default time for private quizzes or add to creation
+    };
+    
+    hideAllSections();
+    document.getElementById('quiz-section').classList.remove('hidden');
+    
+    currentQuestionIndex = 0;
+    userAnswers = [];
+    score = 0;
+    
+    loadQuestion();
+    startTimer(currentQuiz.time);
+}
+
 // --- Dashboard & Categories ---
 window.showDashboard = function() {
+    activePrivateQuiz = null;
+    studentName = '';
+    // Remove query params from URL
+    if (window.location.search.includes('quiz=')) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
     currentParentId = null; // Reset to top level
     hideAllSections();
     document.getElementById('dashboard-section').classList.remove('hidden');
@@ -861,8 +1395,18 @@ function showResult() {
     document.getElementById('correct-count').textContent = correct;
     document.getElementById('wrong-count').textContent = wrong;
     
-    // Save attempt if user is logged in
-    if (currentUser) {
+    // Save attempt logic
+    if (activePrivateQuiz) {
+        const attempt = {
+            quizId: activePrivateQuiz.id,
+            quizTitle: activePrivateQuiz.title,
+            studentName: studentName,
+            score: correct,
+            total: total,
+            timestamp: Date.now()
+        };
+        saveStudentAttempt(attempt);
+    } else if (currentUser) {
         const cat = categories.find(c => c.id === currentQuiz.categoryId);
         const attempt = {
             userId: currentUser.id,
@@ -877,6 +1421,18 @@ function showResult() {
     // Additional stats if needed
     const totalQuestionsElem = document.getElementById('total-questions-stat');
     if (totalQuestionsElem) totalQuestionsElem.textContent = total;
+}
+
+async function saveStudentAttempt(attempt) {
+    if (db) {
+        try {
+            await db.collection('student_attempts').add(attempt);
+        } catch (e) {
+            console.error("Firebase student attempt error:", e);
+        }
+    }
+    // Also save to teacher's local storage if they are viewing? 
+    // Actually, student attempts should be viewed by teacher.
 }
 
 async function saveAttempt(attempt) {
