@@ -1477,6 +1477,44 @@ nav {
     }
 }
 
+.warning-text {
+    background: #fffbeb;
+    color: #92400e;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    border: 1px solid #fde68a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.warning-text i {
+    color: #f59e0b;
+}
+
+.option-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 5px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.option-input-group:hover {
+    background: #f8fafc;
+}
+
+.option-input-group input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
 /* Notifications */
 .notification-container {
     position: fixed;

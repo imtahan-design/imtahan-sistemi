@@ -1539,7 +1539,7 @@ window.saveQuestion = function() {
 
     if (!text) return showNotification('Sual mətnini daxil edin!', 'error');
     if (options.length < 2) return showNotification('Ən azı 2 variant olmalıdır!', 'error');
-    if (realCorrectIndex === -1) return showNotification('Düzgün variantı seçin!', 'error');
+    if (realCorrectIndex === -1) return showNotification('Zəhmət olmasa düzgün variantı işarələyin!', 'error');
 
     const processSave = (base64Img = null) => {
         const cat = categories.find(c => c.id === activeCategoryId);
