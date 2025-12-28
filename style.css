@@ -1271,49 +1271,70 @@ nav {
 /* Responsive */
 @media (max-width: 768px) {
     #app {
-        padding: 10px;
+        padding: 8px;
     }
 
     nav {
-        padding: 12px 15px;
-        margin-bottom: 20px;
-        top: 10px;
-        flex-direction: column;
-        gap: 15px;
+        padding: 8px 12px;
+        margin-bottom: 15px;
+        flex-direction: row; /* Yan-yana düzülüş */
+        justify-content: space-between;
+        align-items: center;
+        gap: 5px;
         height: auto;
+        flex-wrap: nowrap; /* Sətirə sığdırma */
     }
     
     .logo {
-        text-align: center;
+        text-align: left;
+        min-width: fit-content;
     }
 
     .logo-main {
-        font-size: 20px;
+        font-size: 16px; /* Kiçildilmiş loqo */
     }
 
     .logo-sub {
-        font-size: 9px;
+        display: none; /* Mobildə alt mətni gizlədirik ki, yer qalsın */
     }
 
     .nav-links div {
-        width: 100%;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 10px;
+        width: auto;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        gap: 6px;
     }
 
     #user-display {
-        width: 100%;
-        text-align: center;
-        order: -1;
+        width: auto;
+        text-align: right;
+        font-size: 12px;
+        margin-right: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80px; /* Uzun adları qısaldırıq */
     }
 
     .btn-secondary {
-        padding: 8px 15px;
-        font-size: 14px;
-        flex: 1;
-        text-align: center;
-        justify-content: center;
+        padding: 6px 10px;
+        font-size: 11px; /* Kiçik düymələr */
+        flex: none;
+        white-space: nowrap;
+        min-width: auto;
+    }
+
+    .btn-secondary i {
+        margin-right: 3px;
+        font-size: 12px;
+    }
+
+    /* Çıxış düyməsi üçün ikonu önə çıxarırıq, mətni gizlədirik (isteğe bağlı) */
+    .btn-secondary[onclick="logout()"] span {
+        display: none;
+    }
+    .btn-secondary[onclick="logout()"] {
+        padding: 6px 8px;
     }
 
     /* Dashboard */
