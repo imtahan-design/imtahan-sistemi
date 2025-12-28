@@ -464,7 +464,7 @@ window.addManualQuestionForm = function() {
                 <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin..."></textarea>
             </div>
         </div>
-        <div class="manual-options-grid">
+        <div class="manual-options-grid" id="options_grid_${uniqueId}">
             <div class="manual-option-input">
                 <div class="option-radio-wrapper">
                     <input type="radio" name="correct_${uniqueId}" value="0" checked id="opt_${uniqueId}_0">
@@ -494,6 +494,9 @@ window.addManualQuestionForm = function() {
                 <input type="text" class="manual-opt" placeholder="D variantı">
             </div>
         </div>
+        <button onclick="addManualOption('${uniqueId}')" class="btn-add-option">
+            <i class="fas fa-plus"></i> Variant Əlavə Et
+        </button>
     `;
     list.appendChild(div);
     updateQuestionCount();
@@ -520,6 +523,43 @@ window.handleQuestionImage = function(input, index) {
         document.getElementById(`label_${index}`).classList.add('hidden');
     };
     reader.readAsDataURL(file);
+}
+
+window.addManualOption = function(uniqueId) {
+    const grid = document.getElementById(`options_grid_${uniqueId}`);
+    const optionCount = grid.querySelectorAll('.manual-option-input').length;
+    if (optionCount >= 10) return alert('Maksimum 10 variant əlavə edə bilərsiniz.');
+
+    const div = document.createElement('div');
+    div.className = 'manual-option-input';
+    const char = String.fromCharCode(65 + optionCount); // A, B, C...
+    
+    div.innerHTML = `
+        <div class="option-radio-wrapper">
+            <input type="radio" name="correct_${uniqueId}" value="${optionCount}" id="opt_${uniqueId}_${optionCount}">
+            <label for="opt_${uniqueId}_${optionCount}"></label>
+        </div>
+        <input type="text" class="manual-opt" placeholder="${char} variantı">
+        <button onclick="this.parentElement.remove(); updateOptionValues('${uniqueId}');" class="remove-option-btn" title="Variantı sil">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    grid.appendChild(div);
+}
+
+window.updateOptionValues = function(uniqueId) {
+    const grid = document.getElementById(`options_grid_${uniqueId}`);
+    const options = grid.querySelectorAll('.manual-option-input');
+    options.forEach((opt, idx) => {
+        const radio = opt.querySelector('input[type="radio"]');
+        const input = opt.querySelector('.manual-opt');
+        const char = String.fromCharCode(65 + idx);
+        
+        radio.value = idx;
+        radio.id = `opt_${uniqueId}_${idx}`;
+        opt.querySelector('label').setAttribute('for', radio.id);
+        input.placeholder = `${char} variantı`;
+    });
 }
 
 window.removeQuestionImage = function(index) {
@@ -556,8 +596,8 @@ window.parseBulkQuestions = function() {
         let correctIndex = 0;
         
         lines.slice(1).forEach(line => {
-            if (line.match(/^[A-E][\s.)]/i)) {
-                options.push(line.replace(/^[A-E][\s.)]*/i, ''));
+            if (line.match(/^[A-J][\s.)]/i)) {
+                options.push(line.replace(/^[A-J][\s.)]*/i, ''));
             } else if (line.toLowerCase().includes('doğru:') || line.toLowerCase().includes('cavab:')) {
                 const parts = line.split(':');
                 if (parts.length > 1) {
