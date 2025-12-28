@@ -469,18 +469,32 @@
 
                             <!-- File Upload (JSON) -->
                             <div id="admin-method-file" class="admin-method-content hidden">
-                                <div style="text-align: center; padding: 60px 20px; border: 2px dashed #e2e8f0; border-radius: 16px; background: #f8fafc;">
-                                    <i class="fas fa-file-upload" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 20px; opacity: 0.5;"></i>
-                                    <h3 style="margin-bottom: 10px;">JSON Faylı Yüklə</h3>
-                                    <p style="color: var(--text-muted); margin-bottom: 30px;">Sistemə uyğun formatda olan JSON faylını seçin.</p>
-                                    <input type="file" id="admin-bulk-file" accept=".json" style="display: none;" onchange="handleAdminBulkFileUpload(this)">
-                                    <button onclick="document.getElementById('admin-bulk-file').click()" class="btn-primary">
-                                        <i class="fas fa-upload"></i> Fayl Seçin
-                                    </button>
-                                    <div style="margin-top: 25px;">
-                                        <a href="#" onclick="downloadSampleJSON()" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
-                                            <i class="fas fa-download"></i> Nümunə JSON yüklə
-                                        </a>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                    <div style="text-align: center; padding: 40px 20px; border: 2px dashed #e2e8f0; border-radius: 16px; background: #f8fafc;">
+                                        <i class="fas fa-file-upload" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 15px; opacity: 0.5;"></i>
+                                        <h3 style="margin-bottom: 10px;">JSON Faylı Yüklə</h3>
+                                        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">Sistemə uyğun formatda olan JSON faylını seçin.</p>
+                                        <input type="file" id="admin-bulk-file" accept=".json" style="display: none;" onchange="handleAdminBulkFileUpload(this)">
+                                        <button onclick="document.getElementById('admin-bulk-file').click()" class="btn-primary">
+                                            <i class="fas fa-upload"></i> Fayl Seçin
+                                        </button>
+                                        <div style="margin-top: 20px;">
+                                            <a href="#" onclick="downloadSampleJSON()" style="color: var(--primary-color); text-decoration: none; font-weight: 600; font-size: 0.85rem;">
+                                                <i class="fas fa-download"></i> Nümunə JSON yüklə
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="padding: 25px; border-radius: 16px; background: #fff5f5; border: 1px solid #fed7d7;">
+                                        <h4 style="color: #c53030; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                            <i class="fas fa-robot"></i> Digər saytlardan köçür
+                                        </h4>
+                                        <p style="font-size: 0.85rem; line-height: 1.5; color: #742a2a; margin-bottom: 15px;">
+                                            Testbook.az və digər saytlardan sualları avtomatik köçürmək üçün xüsusi skriptimizdən istifadə edə bilərsiniz.
+                                        </p>
+                                        <button onclick="showScraperInstructions()" class="btn-secondary" style="width: 100%; background: #fff; border-color: #feb2b2; color: #c53030;">
+                                            <i class="fas fa-terminal"></i> Skripti və Təlimatı Göstər
+                                        </button>
                                     </div>
                                 </div>
                             </div>
