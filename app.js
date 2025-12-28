@@ -543,7 +543,6 @@ window.parseBulkQuestions = function() {
     // B) Opt 2
     // C) Opt 3
     // D) Opt 4
-    // Doğru: B
     
     const questions = [];
     const blocks = text.split(/\n\s*\n/); // Split by empty lines

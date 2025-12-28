@@ -98,13 +98,15 @@
                     </div>
 
                     <div class="question-input-methods">
-                        <div class="tabs">
-                            <button onclick="switchQuestionTab('manual')" id="tab-manual" class="tab-btn active">
-                                <i class="fas fa-keyboard"></i> Tək-tək Əlavə Et
-                            </button>
-                            <button onclick="switchQuestionTab('bulk')" id="tab-bulk" class="tab-btn">
-                                <i class="fas fa-copy"></i> Toplu Əlavə Et
-                            </button>
+                        <div class="tabs-wrapper">
+                            <div class="tabs">
+                                <button onclick="switchQuestionTab('manual')" id="tab-manual" class="tab-btn active">
+                                    <i class="fas fa-keyboard"></i> Tək-tək Əlavə Et
+                                </button>
+                                <button onclick="switchQuestionTab('bulk')" id="tab-bulk" class="tab-btn">
+                                    <i class="fas fa-copy"></i> Toplu Əlavə Et
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Manual Entry -->
@@ -120,15 +122,16 @@
                         <!-- Bulk Entry -->
                         <div id="method-bulk" class="method-content hidden">
                             <div class="bulk-info">
-                                <p>Sualları aşağıdakı formatda yapışdırın:</p>
+                                <p><i class="fas fa-info-circle"></i> Sualları aşağıdakı formatda yapışdırın:</p>
                                 <div class="format-example">
                                     1. Sual mətni?<br>
                                     A) Variant 1<br>
                                     B) Variant 2<br>
                                     C) Variant 3<br>
-                                    D) Variant 4<br>
-                                    Doğru: B
+                                    D) Variant 4
                                 </div>
+                                <p class="bulk-warning"><i class="fas fa-exclamation-triangle"></i> Hər sualın arasında bir boş sətir buraxın!</p>
+                                <p class="bulk-warning-red"><i class="fas fa-check-double"></i> Mətni suallara çevirə basdıqdan sonra sualların mətnini və variantlarını yenidən gözdən keçirin!</p>
                             </div>
                             <textarea id="bulk-questions-text" placeholder="Sualları buraya yapışdırın..."></textarea>
                             <button onclick="parseBulkQuestions()" class="btn-success" style="width: 100%;">

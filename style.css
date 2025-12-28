@@ -334,19 +334,56 @@ nav {
 .accuracy-mid { background: #fef9c3; color: #854d0e; }
 .accuracy-low { background: #fee2e2; color: #991b1b; }
 
+.tabs-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.tabs {
+    display: flex;
+    gap: 20px;
+    position: relative;
+    bottom: -2px;
+}
+
 .tab-btn {
-    padding: 10px 20px;
+    padding: 12px 25px;
     background: none;
     border: none;
     cursor: pointer;
     font-weight: 600;
-    color: #666;
+    color: #64748b;
     transition: all 0.3s;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn:hover {
+    color: var(--primary-color);
 }
 
 .tab-btn.active {
     color: var(--primary-color);
-    border-bottom: 2px solid var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.bulk-warning {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #b45309;
+    font-weight: 600;
+}
+
+.bulk-warning-red {
+    margin-top: 8px;
+    font-size: 14px;
+    color: #dc2626;
+    font-weight: 700;
 }
 
 .manual-q-header {
@@ -654,31 +691,14 @@ nav {
     box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
 }
 
+
+
 .question-input-methods {
-    background: #f8fafc;
-    padding: 8px;
-    border-radius: 12px;
-    display: inline-flex;
-    gap: 5px;
-    margin-bottom: 25px;
+    margin-top: 20px;
 }
 
-.tab-btn {
-    padding: 10px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    border: none;
-    background: transparent;
-    color: #64748b;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.tab-btn.active {
-    background: var(--white);
-    color: var(--primary-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+.method-content {
+    padding: 10px 0;
 }
 
 .delete-cat-btn {
@@ -755,28 +775,7 @@ nav {
     z-index: 10;
 }
 
-.manual-options-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 10px;
-}
 
-.manual-option-input {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.manual-option-input input[type="text"] {
-    flex: 1;
-}
-
-.manual-option-input input[type="radio"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
 
 /* Category Cards Enhancements */
 .category-card {
