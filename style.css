@@ -150,16 +150,32 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-    padding: 15px 30px;
-    border-radius: 15px;
+    padding: 12px 20px;
+    border-radius: 12px;
     box-shadow: var(--shadow);
-    margin-bottom: 40px;
-    position: sticky;
-    top: 20px;
+    margin-bottom: 25px;
+    position: relative; /* Sticky-ni ləğv etdik */
+    top: 0;
     z-index: 100;
     border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+    nav {
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+    }
+    
+    .logo-main {
+        font-size: 20px;
+    }
+    
+    .logo-sub {
+        font-size: 9px;
+    }
 }
 
 .logo {
@@ -539,32 +555,40 @@ nav {
 
 .option-radio-wrapper {
     position: relative;
-    width: 20px;
-    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
 }
 
 .option-radio-wrapper input[type="radio"] {
-    position: absolute;
-    opacity: 0;
+    width: 25px !important;
+    height: 25px !important;
     cursor: pointer;
+    accent-color: #f59e0b !important;
+    margin: 0;
+    z-index: 2;
 }
 
 .option-radio-wrapper label {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 20px;
-    height: 20px;
-    background: var(--white);
-    border: 2px solid #cbd5e1;
-    border-radius: 50%;
-    cursor: pointer;
+    display: none !important; /* Duplicate dairəni gizlədirik */
 }
 
-.option-radio-wrapper input[type="radio"]:checked + label {
-    border-color: var(--primary-color);
-    background: var(--primary-color);
-    box-shadow: inset 0 0 0 4px var(--white);
+.manual-option-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.manual-option-input:hover {
+    background: #fffbeb !important;
+    border-color: #f59e0b !important;
 }
 
 /* Quiz Setup Grid */
@@ -1497,22 +1521,52 @@ nav {
 .option-input-group {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-    padding: 5px;
+    gap: 12px;
+    margin-bottom: 12px;
+    background: #f9fafb;
+    padding: 10px;
     border-radius: 8px;
-    transition: background 0.2s;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s;
 }
 
 .option-input-group:hover {
-    background: #f8fafc;
+    border-color: #f59e0b;
+    background: #fffbeb;
 }
 
 .option-input-group input[type="radio"] {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     cursor: pointer;
-    accent-color: var(--primary-color);
+    accent-color: #f59e0b;
+}
+
+.option-input-group input[type="text"] {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    outline: none;
+}
+
+.option-input-group input[type="text"]:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
+}
+
+.option-input-group .btn-remove {
+    background: #fee2e2;
+    color: #ef4444;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.option-input-group .btn-remove:hover {
+    background: #fecaca;
 }
 
 /* Notifications */

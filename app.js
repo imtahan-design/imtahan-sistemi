@@ -567,6 +567,10 @@ window.addManualQuestionForm = function() {
             </div>
         </div>
         <div class="manual-options-grid" id="options_grid_${uniqueId}">
+            <div style="grid-column: 1 / -1; background: #fffbeb; border: 2px dashed #f59e0b; padding: 12px; border-radius: 8px; margin-bottom: 10px; color: #92400e; font-weight: bold; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 1.2rem;"></i>
+                <span>DİQQƏT: Düzgün cavabın yanındakı dairəni mütləq işarələyin!</span>
+            </div>
             <div class="manual-option-input">
                 <div class="option-radio-wrapper">
                     <input type="radio" name="correct_${uniqueId}" value="0" checked id="opt_${uniqueId}_0">
@@ -1495,6 +1499,7 @@ function renderQuestions() {
 }
 
 window.showAddQuestionModal = function() {
+    console.log("Sual modalı açıldı - Düzəlişlər aktivdir!");
     // Reset modal fields
     document.getElementById('q-text').value = '';
     document.getElementById('q-image').value = '';
@@ -1512,9 +1517,11 @@ window.addOptionInput = function() {
     const div = document.createElement('div');
     div.className = 'option-input-group';
     div.innerHTML = `
-        <input type="radio" name="correct-option" value="${index}">
-        <input type="text" placeholder="Variant ${index + 1}" class="option-text">
-        <button onclick="this.parentElement.remove()" class="btn-secondary" style="padding: 5px 10px;">X</button>
+        <input type="radio" name="correct-option" value="${index}" title="Bu variantı düzgün cavab kimi işarələ">
+        <input type="text" placeholder="Variant ${index + 1} mətnini daxil edin" class="option-text">
+        <button onclick="this.parentElement.remove()" class="btn-remove" title="Sil">
+            <i class="fas fa-trash"></i>
+        </button>
     `;
     container.appendChild(div);
 }
