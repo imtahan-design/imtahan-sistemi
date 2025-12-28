@@ -165,6 +165,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function updateUI() {
     navbar.classList.remove('hidden');
     
+    // Check if we are in a private quiz link
+    const isPrivateQuiz = new URLSearchParams(window.location.search).has('quiz');
+    
     if (currentUser) {
         document.getElementById('guest-nav').classList.add('hidden');
         document.getElementById('user-nav').classList.remove('hidden');
@@ -185,7 +188,8 @@ function updateUI() {
         }
         
         // If not already in admin view or quiz, show public dashboard
-        if (document.getElementById('admin-dashboard-section').classList.contains('hidden') && 
+        if (!isPrivateQuiz &&
+            document.getElementById('admin-dashboard-section').classList.contains('hidden') && 
             document.getElementById('category-admin-section').classList.contains('hidden') &&
             document.getElementById('quiz-section').classList.contains('hidden')) {
             showDashboard();
@@ -195,7 +199,10 @@ function updateUI() {
         document.getElementById('user-nav').classList.add('hidden');
         const teacherBtn = document.getElementById('teacher-panel-btn');
         if (teacherBtn) teacherBtn.classList.add('hidden');
-        showDashboard();
+        
+        if (!isPrivateQuiz) {
+            showDashboard();
+        }
     }
 }
 
@@ -817,12 +824,13 @@ function startPrivateQuiz() {
 
 // --- Dashboard & Categories ---
 window.showDashboard = function() {
+    // Only clear and redirect if we are not on a private quiz page
+    if (window.location.search.includes('quiz=')) {
+        return;
+    }
+    
     activePrivateQuiz = null;
     studentName = '';
-    // Remove query params from URL
-    if (window.location.search.includes('quiz=')) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
     
     currentParentId = null; // Reset to top level
     hideAllSections();
