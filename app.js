@@ -23,6 +23,9 @@ try {
     console.error("Firebase initialization error:", e);
 }
 
+// Initialize EmailJS
+emailjs.init("gwXl5HH3P9Bja5iBN");
+
 // Global State
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 let categories = []; // Will be loaded from DB
@@ -248,29 +251,19 @@ window.toggleEmailField = function() {
 let pendingUser = null;
 let verificationCode = null;
 
-// EmailJS Configuration
-const EMAILJS_CONFIG = {
-    SERVICE_ID: "service_rjwl984",
-    TEMPLATE_ID: "template_y8eq8n8",
-    PUBLIC_KEY: "gwXl5HH3P9Bja5iBN"
-};
-
 async function sendVerificationEmail(email, code) {
     try {
-        // Real email göndərmə cəhdi
         await emailjs.send(
-            EMAILJS_CONFIG.SERVICE_ID,
-            EMAILJS_CONFIG.TEMPLATE_ID,
+            "service_rjwl984",
+            "template_y8eq8n8",
             {
-                user_email: email, // Şablonda {{user_email}} olaraq istifadə edin
-                code: code,       // Şablonda {{code}} olaraq istifadə edin
-                reply_to: "no-reply@imtahan.az"
-            },
-            EMAILJS_CONFIG.PUBLIC_KEY
+                user_email: email,
+                code: code
+            }
         );
         return true;
     } catch (error) {
-        console.error("Email göndərilmə xətası:", error);
+        console.error("EmailJS xətası:", error);
         return false;
     }
 }
