@@ -579,18 +579,27 @@ window.parseBulkQuestions = function() {
     if (questions.length > 0) {
         // Convert bulk to manual forms for review
         const list = document.getElementById('manual-questions-list');
-        list.innerHTML = '';
+        const currentCount = document.querySelectorAll('.manual-question-item').length;
+        
         questions.forEach((q, idx) => {
-            const uniqueId = Date.now() + '_' + idx;
+            const uniqueId = Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000);
             const div = document.createElement('div');
             div.className = 'manual-question-item';
             div.innerHTML = `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                    <strong>Sual ${idx + 1}</strong>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <label style="font-size: 0.8rem; color: #666;">Xüsusi vaxt (san):</label>
-                        <input type="number" class="manual-q-time" value="${q.time || ''}" placeholder="Def" style="width: 60px; padding: 4px; border-radius: 4px; border: 1px solid #ddd;">
-                        <button onclick="this.parentElement.parentElement.parentElement.remove(); updateQuestionCount();" class="delete-cat-btn"><i class="fas fa-times"></i></button>
+                <div class="manual-q-header">
+                    <div class="manual-q-title">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Sual ${currentCount + idx + 1}</span>
+                    </div>
+                    <div class="manual-q-actions">
+                        <div class="time-input-group">
+                            <i class="far fa-clock"></i>
+                            <input type="number" class="manual-q-time" value="${q.time || ''}" placeholder="Def">
+                            <span>san</span>
+                        </div>
+                        <button onclick="this.closest('.manual-question-item').remove(); updateQuestionCount();" class="delete-q-btn" title="Sualı sil">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="manual-q-content">
@@ -600,26 +609,33 @@ window.parseBulkQuestions = function() {
                             <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
                         </div>
                         <label class="image-upload-label" id="label_${uniqueId}">
-                            <i class="fas fa-image"></i> Şəkil Əlavə Et
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Şəkil Əlavə Et</span>
                             <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
                         </label>
                         <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
                     </div>
                     <div class="manual-q-text-container">
-                        <textarea class="manual-q-text" style="width:100%; height: 80px; margin-bottom:10px;">${q.text}</textarea>
+                        <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin...">${q.text}</textarea>
                     </div>
                 </div>
                 <div class="manual-options-grid">
                     ${q.options.map((opt, i) => `
                         <div class="manual-option-input">
-                            <input type="radio" name="correct_${uniqueId}" value="${i}" ${i === q.correctIndex ? 'checked' : ''}>
-                            <input type="text" class="manual-opt" value="${opt}">
+                            <div class="option-radio-wrapper">
+                                <input type="radio" name="correct_${uniqueId}" value="${i}" ${i === q.correctIndex ? 'checked' : ''} id="opt_${uniqueId}_${i}">
+                                <label for="opt_${uniqueId}_${i}"></label>
+                            </div>
+                            <input type="text" class="manual-opt" value="${opt}" placeholder="Variant ${i + 1}">
                         </div>
                     `).join('')}
                 </div>
             `;
             list.appendChild(div);
         });
+        
+        // Clear textarea after success
+        document.getElementById('bulk-questions-text').value = '';
         
         switchQuestionTab('manual');
         updateQuestionCount();
