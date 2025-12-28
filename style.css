@@ -1445,6 +1445,30 @@ nav {
     .btn-secondary {
         width: 100%;
     }
+
+    /* Review Header fix for mobile */
+    .review-header {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        gap: 10px;
+    }
+
+    .review-header h2 {
+        font-size: 1.1rem;
+        margin: 0;
+    }
+
+    .review-header .btn-secondary {
+        width: auto !important;
+        padding: 6px 12px;
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+
+    .review-container {
+        padding: 15px;
+        margin: 10px auto;
+    }
 }
 
 /* Quiz Review */
