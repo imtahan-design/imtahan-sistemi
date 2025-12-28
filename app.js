@@ -27,6 +27,8 @@ try {
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 let categories = []; // Will be loaded from DB
 let users = [];      // Will be loaded from DB
+let currentParentId = null; // Track current level in dashboard
+let currentAdminParentId = null; // Track current level in admin dashboard
 
 // Load Data Function
 async function loadData() {
@@ -34,7 +36,14 @@ async function loadData() {
         try {
             // Load Categories
             const catSnapshot = await db.collection('categories').get();
-            categories = catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            categories = catSnapshot.docs.map(doc => {
+                const data = doc.data();
+                return { 
+                    id: doc.id, 
+                    parentId: data.parentId || null, // Ensure parentId exists
+                    ...data 
+                };
+            });
             
             // Load Users
             const userSnapshot = await db.collection('users').get();
@@ -52,12 +61,18 @@ async function loadData() {
         users = JSON.parse(localStorage.getItem('users')) || [];
     }
 
+    // Ensure all categories have a parentId property
+    categories = categories.map(cat => ({
+        ...cat,
+        parentId: cat.parentId || null
+    }));
+
     // Seed Data if Empty
     if (categories.length === 0) {
         categories = [
-            { id: '1', name: 'Dövlət qulluğu', time: 45, questions: [] },
-            { id: '2', name: 'Cinayət Məcəlləsi', time: 45, questions: [] },
-            { id: '3', name: 'Mülki Məcəllə', time: 45, questions: [] }
+            { id: '1', name: 'Dövlət qulluğu', time: 45, questions: [], parentId: null },
+            { id: '2', name: 'Cinayət Məcəlləsi', time: 45, questions: [], parentId: null },
+            { id: '3', name: 'Mülki Məcəllə', time: 45, questions: [], parentId: null }
         ];
         saveCategories(); // Save to DB/Local
     }
@@ -176,6 +191,8 @@ window.showLogin = function() {
 }
 
 window.showRegister = function() {
+    hideAllSections();
+    document.getElementById('auth-section').classList.remove('hidden');
     document.getElementById('login-box').classList.add('hidden');
     document.getElementById('register-box').classList.remove('hidden');
 }
@@ -264,12 +281,16 @@ window.importData = function(input) {
 
 // --- Navigation Helpers ---
 function hideAllSections() {
-    const sections = ['auth-section', 'dashboard-section', 'admin-dashboard-section', 'category-admin-section', 'quiz-section', 'result-section'];
-    sections.forEach(id => document.getElementById(id).classList.add('hidden'));
+    const sections = ['auth-section', 'dashboard-section', 'admin-dashboard-section', 'category-admin-section', 'quiz-section', 'result-section', 'profile-section'];
+    sections.forEach(id => {
+        const elem = document.getElementById(id);
+        if (elem) elem.classList.add('hidden');
+    });
 }
 
 // --- Dashboard & Categories ---
 window.showDashboard = function() {
+    currentParentId = null; // Reset to top level
     hideAllSections();
     document.getElementById('dashboard-section').classList.remove('hidden');
     renderCategories();
@@ -277,59 +298,210 @@ window.showDashboard = function() {
 
 window.showAdminDashboard = function() {
     if (!currentUser || currentUser.role !== 'admin') return alert('Bu səhifə yalnız adminlər üçündür!');
+    currentAdminParentId = null; // Reset to top level
     hideAllSections();
     document.getElementById('admin-dashboard-section').classList.remove('hidden');
     renderAdminCategories();
 }
 
+window.showProfile = function() {
+    if (!currentUser) return showLogin();
+    hideAllSections();
+    document.getElementById('profile-section').classList.remove('hidden');
+    
+    // Update profile info
+    document.getElementById('profile-username').textContent = currentUser.username;
+    document.getElementById('profile-role').textContent = currentUser.role === 'admin' ? 'Admin' : 'İstifadəçi';
+    
+    renderHistory();
+}
+
+async function renderHistory() {
+    const tableBody = document.getElementById('history-table-body');
+    tableBody.innerHTML = '';
+    
+    let history = [];
+    if (db) {
+        try {
+            const snapshot = await db.collection('attempts')
+                .where('userId', '==', currentUser.id)
+                .orderBy('timestamp', 'desc')
+                .limit(20)
+                .get();
+            history = snapshot.docs.map(doc => doc.data());
+        } catch (e) {
+            console.error("Firebase history error:", e);
+            history = JSON.parse(localStorage.getItem(`history_${currentUser.id}`)) || [];
+        }
+    } else {
+        history = JSON.parse(localStorage.getItem(`history_${currentUser.id}`)) || [];
+    }
+
+    if (history.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Hələ heç bir test edilməyib.</td></tr>';
+        document.getElementById('total-tests-count').textContent = '0';
+        document.getElementById('avg-score-val').textContent = '0%';
+        return;
+    }
+
+    let totalAccuracy = 0;
+    history.forEach(attempt => {
+        const date = new Date(attempt.timestamp).toLocaleDateString('az-AZ', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        const accuracy = Math.round((attempt.score / attempt.total) * 100);
+        totalAccuracy += accuracy;
+        
+        const badgeClass = accuracy >= 80 ? 'accuracy-high' : (accuracy >= 50 ? 'accuracy-mid' : 'accuracy-low');
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${attempt.categoryName}</td>
+            <td>${date}</td>
+            <td><span class="accuracy-badge ${badgeClass}">${accuracy}%</span></td>
+            <td>${attempt.score} / ${attempt.total}</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+
+    document.getElementById('total-tests-count').textContent = history.length;
+    document.getElementById('avg-score-val').textContent = Math.round(totalAccuracy / history.length) + '%';
+}
+
 function renderCategories() {
     const grid = document.getElementById('categories-grid');
     grid.innerHTML = '';
-    categories.forEach(cat => {
+    
+    // Filter categories by parentId
+    const filteredCategories = categories.filter(cat => cat.parentId === currentParentId);
+    
+    // Update Title and Back Button
+    const title = document.getElementById('dashboard-title');
+    const backBtn = document.getElementById('dashboard-back-btn');
+    
+    if (currentParentId) {
+        const parent = categories.find(c => c.id === currentParentId);
+        title.textContent = parent ? parent.name : 'Kateqoriyalar';
+        backBtn.classList.remove('hidden');
+    } else {
+        title.textContent = 'Mövcud İmtahanlar';
+        backBtn.classList.add('hidden');
+    }
+
+    filteredCategories.forEach(cat => {
         const div = document.createElement('div');
         div.className = 'category-card';
-        // Simple icon mapping based on name or ID
+        
+        // Simple icon mapping
         let icon = 'fa-book';
         if (cat.name.toLowerCase().includes('ingilis')) icon = 'fa-language';
         if (cat.name.toLowerCase().includes('cinayət')) icon = 'fa-gavel';
         if (cat.name.toLowerCase().includes('mülki')) icon = 'fa-balance-scale';
         if (cat.name.toLowerCase().includes('dövlət')) icon = 'fa-university';
+        if (cat.name.toLowerCase().includes('konstitusiya')) icon = 'fa-scroll';
+
+        // Check if it has subcategories
+        const hasSub = categories.some(c => c.parentId === cat.id);
+        const hasQuestions = cat.questions && cat.questions.length > 0;
 
         div.innerHTML = `
             <i class="fas ${icon}"></i>
             <h3>${cat.name}</h3>
-            <p>${cat.questions.length} sual</p>
-            <p>Müddət: ${cat.time} san</p>
-            <button class="btn-primary" onclick="startQuizCheck('${cat.id}')">Testə Başla</button>
+            <p>${cat.questions ? cat.questions.length : 0} sual</p>
+            ${hasSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
+            <div class="category-actions">
+                ${hasSub ? `<button class="btn-secondary" onclick="enterCategory('${cat.id}')">Bölmələrə Bax</button>` : ''}
+                ${hasQuestions ? `<button class="btn-primary" onclick="startQuizCheck('${cat.id}')">Testə Başla</button>` : ''}
+                ${!hasSub && !hasQuestions ? '<p style="color: #888; font-size: 0.8rem;">Tezliklə...</p>' : ''}
+            </div>
         `;
         grid.appendChild(div);
     });
 }
 
+window.enterCategory = function(id) {
+    currentParentId = id;
+    renderCategories();
+}
+
+window.navigateUp = function() {
+    if (!currentParentId) return;
+    const current = categories.find(c => c.id === currentParentId);
+    currentParentId = current ? current.parentId : null;
+    renderCategories();
+}
+
 function renderAdminCategories() {
     const grid = document.getElementById('admin-categories-grid');
     grid.innerHTML = '';
-    categories.forEach(cat => {
+    
+    const filteredCategories = categories.filter(cat => cat.parentId === currentAdminParentId);
+    
+    // Update Admin Title and Back Button
+    const title = document.getElementById('admin-dashboard-title');
+    const backBtn = document.getElementById('admin-back-btn');
+    
+    if (currentAdminParentId) {
+        const parent = categories.find(c => c.id === currentAdminParentId);
+        title.textContent = `Bölmə: ${parent ? parent.name : '...'}`;
+        backBtn.classList.remove('hidden');
+    } else {
+        title.textContent = 'Admin Paneli - Kateqoriyalar';
+        backBtn.classList.add('hidden');
+    }
+
+    filteredCategories.forEach(cat => {
         const div = document.createElement('div');
         div.className = 'category-card';
+        
         let icon = 'fa-book';
         if (cat.name.toLowerCase().includes('ingilis')) icon = 'fa-language';
         if (cat.name.toLowerCase().includes('cinayət')) icon = 'fa-gavel';
         if (cat.name.toLowerCase().includes('mülki')) icon = 'fa-balance-scale';
         if (cat.name.toLowerCase().includes('dövlət')) icon = 'fa-university';
+        if (cat.name.toLowerCase().includes('konstitusiya')) icon = 'fa-scroll';
+
+        const hasSub = categories.some(c => c.parentId === cat.id);
 
         div.innerHTML = `
-            <i class="fas ${icon}"></i>
+            <div class="cat-card-header">
+                <i class="fas ${icon}"></i>
+                <div class="cat-card-tools">
+                    <button class="edit-cat-btn" onclick="showEditCategoryModal('${cat.id}', event)"><i class="fas fa-edit"></i></button>
+                    <button class="delete-cat-btn" onclick="deleteCategory('${cat.id}', event)"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
             <h3>${cat.name}</h3>
-            <p>${cat.questions.length} sual</p>
-            <p>Müddət: ${cat.time} san</p>
-            <button class="delete-cat-btn" onclick="deleteCategory('${cat.id}', event)"><i class="fas fa-trash"></i></button>
+            <p>${cat.questions ? cat.questions.length : 0} sual</p>
+            ${hasSub ? '<p style="font-size: 0.8rem; color: var(--primary-color);"><i class="fas fa-folder"></i> Alt bölmələr var</p>' : ''}
+            <div class="category-actions">
+                <button class="btn-secondary" onclick="enterAdminCategory('${cat.id}')">Bölməyə Bax</button>
+                <button class="btn-primary" onclick="openCategoryQuestions('${cat.id}')">Suallar (${cat.questions ? cat.questions.length : 0})</button>
+            </div>
         `;
-        div.onclick = (e) => {
-            if(!e.target.closest('.delete-cat-btn')) openCategory(cat.id);
-        };
         grid.appendChild(div);
     });
+}
+
+window.enterAdminCategory = function(id) {
+    currentAdminParentId = id;
+    renderAdminCategories();
+}
+
+window.navigateAdminUp = function() {
+    if (!currentAdminParentId) return;
+    const current = categories.find(c => c.id === currentAdminParentId);
+    currentAdminParentId = current ? current.parentId : null;
+    renderAdminCategories();
+}
+
+window.openCategoryQuestions = function(id) {
+    openCategory(id); // Existing function
 }
 
 window.startQuizCheck = function(catId) {
@@ -342,27 +514,74 @@ window.startQuizCheck = function(catId) {
 }
 
 window.showAddCategoryModal = function() {
+    document.getElementById('category-modal-title').textContent = 'Yeni Kateqoriya';
+    document.getElementById('edit-cat-id').value = '';
+    document.getElementById('new-cat-name').value = '';
+    document.getElementById('new-cat-time').value = '45';
+    document.getElementById('save-category-btn').textContent = 'Yarat';
     document.getElementById('category-modal').classList.remove('hidden');
 }
 
-window.addCategory = function() {
+window.showEditCategoryModal = function(id, event) {
+    if (event) event.stopPropagation();
+    const cat = categories.find(c => c.id === id);
+    if (!cat) return;
+
+    document.getElementById('category-modal-title').textContent = 'Kateqoriyanı Redaktə Et';
+    document.getElementById('edit-cat-id').value = cat.id;
+    document.getElementById('new-cat-name').value = cat.name;
+    document.getElementById('new-cat-time').value = cat.time;
+    document.getElementById('save-category-btn').textContent = 'Yadda Saxla';
+    document.getElementById('category-modal').classList.remove('hidden');
+}
+
+window.saveCategory = function() {
+    const id = document.getElementById('edit-cat-id').value;
     const name = document.getElementById('new-cat-name').value;
     const time = parseInt(document.getElementById('new-cat-time').value);
 
     if (!name) return alert('Ad daxil edin!');
 
-    const newCat = {
-        id: String(Date.now()),
-        name,
-        time: time || 45,
-        questions: [],
-        createdBy: currentUser.id
-    };
+    if (id) {
+        // Edit existing
+        const index = categories.findIndex(c => c.id === id);
+        if (index !== -1) {
+            categories[index].name = name;
+            categories[index].time = time || 45;
+            updateCategoryInDB(categories[index]);
+        }
+    } else {
+        // Add new
+        const newCat = {
+            id: String(Date.now()),
+            name,
+            time: time || 45,
+            questions: [],
+            createdBy: currentUser.id,
+            parentId: currentAdminParentId // Set parent to current level
+        };
+        categories.push(newCat);
+        addCategoryToDB(newCat);
+    }
 
-    categories.push(newCat);
-    saveCategories();
+    saveCategories(); // Local fallback
     closeModal('category-modal');
-    renderAdminCategories(); // Update admin view
+    renderAdminCategories();
+}
+
+async function addCategoryToDB(cat) {
+    if (db) {
+        await db.collection('categories').doc(String(cat.id)).set(cat);
+    }
+}
+
+async function updateCategoryInDB(cat) {
+    if (db) {
+        await db.collection('categories').doc(String(cat.id)).update({
+            name: cat.name,
+            time: cat.time
+        });
+    }
 }
 
 window.deleteCategory = function(id, event) {
@@ -527,10 +746,15 @@ window.startQuiz = function() {
     loadQuestion();
 }
 
+let currentQuiz = null;
+let selectedAnswerIndex = -1; // Global variable to track selected answer for current question
+
 function loadQuestion() {
     const q = currentQuiz.questions[currentQuiz.currentQuestionIndex];
     const cat = categories.find(c => c.id === currentQuiz.categoryId);
     
+    selectedAnswerIndex = -1; // Reset for new question
+
     // Update Progress Bar
     const progressPercentage = ((currentQuiz.currentQuestionIndex + 1) / currentQuiz.questions.length) * 100;
     const progressBar = document.getElementById('quiz-progress-bar');
@@ -561,7 +785,8 @@ function loadQuestion() {
         optionsArea.appendChild(btn);
     });
 
-    document.getElementById('next-btn').classList.add('hidden');
+    document.getElementById('next-btn').classList.remove('hidden'); // Show Next button by default
+    document.getElementById('next-btn').disabled = true; // Disable until an answer is selected
     document.getElementById('feedback').classList.add('hidden');
     
     // Timer Reset
@@ -583,29 +808,38 @@ function updateTimerDisplay() {
 }
 
 function selectAnswer(selectedIndex) {
-    clearInterval(currentQuiz.timer);
-    const q = currentQuiz.questions[currentQuiz.currentQuestionIndex];
+    selectedAnswerIndex = selectedIndex;
     const options = document.querySelectorAll('.option-btn');
     
-    // Disable all buttons
-    options.forEach(btn => btn.classList.add('disabled'));
+    // Remove selected class from all and add to the current one
+    options.forEach((btn, idx) => {
+        btn.classList.remove('selected');
+        if (idx === selectedIndex) {
+            btn.classList.add('selected');
+        }
+    });
 
-    if (selectedIndex === q.correctIndex) {
-        if(selectedIndex !== -1) options[selectedIndex].classList.add('correct');
-        currentQuiz.score++;
-    } else {
-        if (selectedIndex !== -1) options[selectedIndex].classList.add('wrong');
-        options[q.correctIndex].classList.add('correct');
-    }
-
-    document.getElementById('next-btn').classList.remove('hidden');
+    // Enable next button
+    document.getElementById('next-btn').disabled = false;
 }
 
 function timeIsUp() {
-    selectAnswer(-1); // -1 indicates no answer selected (wrong)
+    // If time is up and no answer selected, it's wrong. If selected, process it.
+    processCurrentQuestion();
 }
 
 window.nextQuestion = function() {
+    processCurrentQuestion();
+}
+
+function processCurrentQuestion() {
+    clearInterval(currentQuiz.timer);
+    const q = currentQuiz.questions[currentQuiz.currentQuestionIndex];
+    
+    if (selectedAnswerIndex === q.correctIndex) {
+        currentQuiz.score++;
+    }
+
     currentQuiz.currentQuestionIndex++;
     if (currentQuiz.currentQuestionIndex < currentQuiz.questions.length) {
         loadQuestion();
@@ -627,9 +861,41 @@ function showResult() {
     document.getElementById('correct-count').textContent = correct;
     document.getElementById('wrong-count').textContent = wrong;
     
+    // Save attempt if user is logged in
+    if (currentUser) {
+        const cat = categories.find(c => c.id === currentQuiz.categoryId);
+        const attempt = {
+            userId: currentUser.id,
+            categoryName: cat ? cat.name : 'Naməlum',
+            score: correct,
+            total: total,
+            timestamp: Date.now()
+        };
+        saveAttempt(attempt);
+    }
+
     // Additional stats if needed
     const totalQuestionsElem = document.getElementById('total-questions-stat');
     if (totalQuestionsElem) totalQuestionsElem.textContent = total;
+}
+
+async function saveAttempt(attempt) {
+    if (db) {
+        try {
+            await db.collection('attempts').add(attempt);
+        } catch (e) {
+            console.error("Firebase save attempt error:", e);
+            saveAttemptLocal(attempt);
+        }
+    } else {
+        saveAttemptLocal(attempt);
+    }
+}
+
+function saveAttemptLocal(attempt) {
+    const history = JSON.parse(localStorage.getItem(`history_${currentUser.id}`)) || [];
+    history.unshift(attempt); // Add to beginning
+    localStorage.setItem(`history_${currentUser.id}`, JSON.stringify(history.slice(0, 50))); // Keep last 50
 }
 
 // --- Utils ---

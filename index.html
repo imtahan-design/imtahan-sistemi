@@ -23,6 +23,7 @@
                 </div>
                 <div id="user-nav" class="hidden">
                     <span id="user-display"></span>
+                    <button onclick="showProfile()" class="btn-secondary">Profil</button>
                     <button id="admin-panel-btn" onclick="showAdminDashboard()" class="hidden btn-warning">Admin Panel</button>
                     <button onclick="logout()" class="btn-secondary">Çıxış</button>
                 </div>
@@ -38,12 +39,6 @@
                     <input type="password" id="login-password" placeholder="Şifrə">
                     <button onclick="login()" class="btn-primary">Daxil ol</button>
                     <p>Hesabınız yoxdur? <a href="#" onclick="showRegister()">Qeydiyyat</a></p>
-                    
-                    <div class="import-section" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-                        <p style="font-size: 14px; color: #666; margin-bottom: 10px;">Sualları yükləmək üçün:</p>
-                        <button onclick="document.getElementById('import-file').click()" class="btn-secondary" style="width: 100%; font-size: 14px;">📂 Bazanı Yenilə (Import)</button>
-                        <input type="file" id="import-file" accept=".json" style="display: none" onchange="importData(this)">
-                    </div>
                 </div>
                 <div class="auth-box hidden" id="register-box">
                     <h2>Qeydiyyat</h2>
@@ -59,10 +54,58 @@
         <section id="dashboard-section">
             <div class="container">
                 <div class="header-actions">
-                    <h2>Mövcud İmtahanlar</h2>
+                    <h2 id="dashboard-title">Mövcud İmtahanlar</h2>
+                    <button id="dashboard-back-btn" class="btn-secondary hidden" onclick="navigateUp()"><i class="fas fa-arrow-left"></i> Geri</button>
                 </div>
                 <div id="categories-grid" class="grid-container">
                     <!-- Categories will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- User Profile Section -->
+        <section id="profile-section" class="hidden">
+            <div class="container">
+                <div class="header-actions">
+                    <h2>İstifadəçi Profili</h2>
+                    <button onclick="showDashboard()" class="btn-secondary">Geri</button>
+                </div>
+                
+                <div class="profile-grid">
+                    <div class="profile-info-card card">
+                        <i class="fas fa-user-circle" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                        <h3 id="profile-username">İstifadəçi Adı</h3>
+                        <p id="profile-role" style="color: var(--text-light); margin-bottom: 1rem;">Rolu</p>
+                        <div class="profile-stats-mini">
+                            <div class="stat-item">
+                                <span class="stat-label">Cəmi Test</span>
+                                <span id="total-tests-count" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Ortalama Bal</span>
+                                <span id="avg-score-val" class="stat-value">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="history-card card">
+                        <h3>Test Tarixçəsi</h3>
+                        <div class="table-container">
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Kateqoriya</th>
+                                        <th>Tarix</th>
+                                        <th>Nəticə</th>
+                                        <th>Doğru/Səhv</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body">
+                                    <!-- History rows will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -71,8 +114,9 @@
         <section id="admin-dashboard-section" class="hidden">
             <div class="container">
                 <div class="header-actions">
-                    <h2>Admin Paneli - Kateqoriyalar</h2>
-                    <div>
+                    <h2 id="admin-dashboard-title">Admin Paneli - Kateqoriyalar</h2>
+                    <div class="admin-top-actions">
+                        <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()" style="margin-right: 10px;"><i class="fas fa-arrow-left"></i> Geri</button>
                         <button class="btn-success" onclick="exportData()" style="margin-right: 10px;">💾 Bazanı Yüklə (Export)</button>
                         <button class="btn-primary" onclick="showAddCategoryModal()">+ Yeni Kateqoriya</button>
                     </div>
@@ -153,10 +197,17 @@
     <div id="category-modal" class="modal hidden">
         <div class="modal-content">
             <span class="close" onclick="closeModal('category-modal')">&times;</span>
-            <h3>Yeni Kateqoriya</h3>
-            <input type="text" id="new-cat-name" placeholder="Kateqoriya adı">
-            <input type="number" id="new-cat-time" placeholder="Müddət (saniyə)" value="45">
-            <button onclick="addCategory()" class="btn-primary">Yarat</button>
+            <h3 id="category-modal-title">Yeni Kateqoriya</h3>
+            <input type="hidden" id="edit-cat-id">
+            <div class="form-group">
+                <label>Kateqoriya Adı:</label>
+                <input type="text" id="new-cat-name" placeholder="Kateqoriya adı">
+            </div>
+            <div class="form-group">
+                <label>Müddət (saniyə):</label>
+                <input type="number" id="new-cat-time" placeholder="Müddət (saniyə)" value="45">
+            </div>
+            <button id="save-category-btn" onclick="saveCategory()" class="btn-primary">Yarat</button>
         </div>
     </div>
 
