@@ -408,47 +408,93 @@
         </div>
     </div>
 
-    <div id="question-modal" class="modal hidden">
-        <div class="modal-content large-modal" style="border: 3px solid #f59e0b;">
-            <span class="close" onclick="closeModal('question-modal')">&times;</span>
-            <h2 style="color: #d97706; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #fef3c7; padding-bottom: 10px;">
-                <i class="fas fa-plus-circle"></i> Yeni Sual Əlavə Et
-            </h2>
-            
-            <div style="background: #fffbeb; border: 2px dashed #f59e0b; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                <h4 style="color: #92400e; margin-top: 0; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-lightbulb"></i> Vacib Qeyd:
-                </h4>
-                <p style="color: #b45309; font-weight: 600; margin-bottom: 0;">
-                    Zəhmət olmasa aşağıdakı variantlardan düzgün olanın yanındakı 
-                    <span style="background: #f59e0b; color: white; padding: 2px 6px; border-radius: 50%;">○</span> 
-                    dairəni işarələməyi unutmayın. Bu, testin düzgün yoxlanılması üçün mütləqdir.
-                </p>
-            </div>
+        <!-- Admin Add Question Section -->
+        <section id="admin-question-section" class="hidden">
+            <div class="container">
+                <div class="card" style="max-width: 1100px; margin: 0 auto; padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: 95vh;">
+                    <div class="modal-header" style="border-radius: 12px 12px 0 0;">
+                        <h2><i class="fas fa-plus-circle" style="color: var(--primary-color);"></i> Sual Əlavə Et</h2>
+                        <button onclick="hideAdminQuestionPage()" class="btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Geri
+                        </button>
+                    </div>
+                    
+                    <div class="modal-body" style="padding: 30px; overflow-y: auto; flex: 1;">
+                        <!-- Admin Question Tabs -->
+                        <div class="question-input-methods">
+                            <div class="tabs-wrapper">
+                                <div class="tabs">
+                                    <button onclick="switchAdminQuestionTab('manual')" id="admin-tab-manual" class="tab-btn active">
+                                        <i class="fas fa-keyboard"></i> Tək-tək Əlavə Et
+                                    </button>
+                                    <button onclick="switchAdminQuestionTab('bulk')" id="admin-tab-bulk" class="tab-btn">
+                                        <i class="fas fa-copy"></i> Toplu Əlavə Et
+                                    </button>
+                                    <button onclick="switchAdminQuestionTab('file')" id="admin-tab-file" class="tab-btn">
+                                        <i class="fas fa-file-code"></i> JSON Faylı
+                                    </button>
+                                </div>
+                            </div>
 
-            <div class="form-group">
-                <label style="font-weight: bold; color: #4b5563;">Sualın Mətni:</label>
-                <textarea id="q-text" placeholder="Sualı bura daxil edin..." style="width: 100%; min-height: 100px; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px;"></textarea>
-            </div>
+                            <!-- Manual Entry -->
+                            <div id="admin-method-manual" class="admin-method-content">
+                                <div id="admin-questions-list" class="manual-questions-list">
+                                    <!-- Suallar bura gələcək -->
+                                </div>
+                                <div class="add-q-btn-container" style="margin-top: 20px;">
+                                    <button onclick="addAdminQuestionForm()" class="add-q-btn">
+                                        <i class="fas fa-plus-circle"></i> Yeni Sual Sətri
+                                    </button>
+                                </div>
+                            </div>
 
-            <div class="form-group" style="margin-top: 15px;">
-                <label style="font-weight: bold; color: #4b5563;">Şəkil (istəyə bağlı):</label>
-                <input type="file" id="q-image" accept="image/*" style="width: 100%;">
-            </div>
+                            <!-- Bulk Entry (Text) -->
+                            <div id="admin-method-bulk" class="admin-method-content hidden">
+                                <div class="bulk-info">
+                                    <p><i class="fas fa-info-circle"></i> Sualları aşağıdakı formatda yapışdırın:</p>
+                                    <div class="format-example">
+                                        1. Sual mətni?<br>
+                                        A) Variant 1<br>
+                                        B) Variant 2<br>
+                                        C) Variant 3<br>
+                                        D) Variant 4
+                                    </div>
+                                    <p class="bulk-warning"><i class="fas fa-exclamation-triangle"></i> Hər sualın arasında bir boş sətir buraxın!</p>
+                                </div>
+                                <textarea id="admin-bulk-questions-text" placeholder="Sualları buraya yapışdırın..." style="min-height: 300px;"></textarea>
+                                <button onclick="parseAdminBulkQuestions()" class="btn-primary" style="width: 100%; margin-top: 15px;">
+                                    <i class="fas fa-magic"></i> Mətni Suallara Çevir
+                                </button>
+                            </div>
 
-            <div style="margin-top: 25px;">
-                <label style="font-weight: bold; color: #4b5563; display: block; margin-bottom: 10px;">Variantlar:</label>
-                <div id="options-inputs-container">
-                    <!-- Variantlar bura gələcək -->
+                            <!-- File Upload (JSON) -->
+                            <div id="admin-method-file" class="admin-method-content hidden">
+                                <div style="text-align: center; padding: 60px 20px; border: 2px dashed #e2e8f0; border-radius: 16px; background: #f8fafc;">
+                                    <i class="fas fa-file-upload" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 20px; opacity: 0.5;"></i>
+                                    <h3 style="margin-bottom: 10px;">JSON Faylı Yüklə</h3>
+                                    <p style="color: var(--text-muted); margin-bottom: 30px;">Sistemə uyğun formatda olan JSON faylını seçin.</p>
+                                    <input type="file" id="admin-bulk-file" accept=".json" style="display: none;" onchange="handleAdminBulkFileUpload(this)">
+                                    <button onclick="document.getElementById('admin-bulk-file').click()" class="btn-primary">
+                                        <i class="fas fa-upload"></i> Fayl Seçin
+                                    </button>
+                                    <div style="margin-top: 25px;">
+                                        <a href="#" onclick="downloadSampleJSON()" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
+                                            <i class="fas fa-download"></i> Nümunə JSON yüklə
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer" id="admin-modal-footer">
+                        <button onclick="saveAdminQuestions()" class="btn-save">
+                            <i class="fas fa-check-double"></i> Hamısını Yadda Saxla
+                        </button>
+                    </div>
                 </div>
             </div>
-
-            <div class="modal-actions" style="margin-top: 30px; display: flex; gap: 10px; justify-content: flex-end;">
-                <button onclick="addOptionInput()" class="btn-secondary" style="background: #f3f4f6; color: #374151;">+ Yeni Variant</button>
-                <button onclick="saveQuestion()" class="btn-save" style="background: #10b981; color: white; padding: 10px 25px; border-radius: 8px; font-weight: bold;">Sualı Yadda Saxla</button>
-            </div>
-        </div>
-    </div>
+        </section>
 
     <div id="notification-container" class="notification-container"></div>
 

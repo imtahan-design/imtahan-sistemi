@@ -468,12 +468,22 @@ function hideAllSections() {
         'auth-section', 'dashboard-section', 'admin-dashboard-section', 
         'category-admin-section', 'quiz-section', 'result-section', 
         'profile-section', 'teacher-dashboard-section', 
-        'create-private-quiz-section', 'private-access-section'
+        'create-private-quiz-section', 'private-access-section',
+        'admin-question-section'
     ];
     sections.forEach(id => {
         const elem = document.getElementById(id);
         if (elem) elem.classList.add('hidden');
     });
+}
+
+window.hideAdminQuestionPage = function() {
+    hideAllSections();
+    if (activeCategoryId) {
+        openCategory(activeCategoryId);
+    } else {
+        showAdminDashboard();
+    }
 }
 
 // --- Teacher Dashboard Functions ---
@@ -1554,78 +1564,285 @@ function renderQuestions() {
     });
 }
 
-window.showAddQuestionModal = function() {
-    console.log("Sual modalı açıldı - Düzəlişlər aktivdir!");
-    // Reset modal fields
-    document.getElementById('q-text').value = '';
-    document.getElementById('q-image').value = '';
-    document.getElementById('options-inputs-container').innerHTML = '';
+window.switchAdminQuestionTab = function(method) {
+    // Hide all contents
+    document.querySelectorAll('.admin-method-content').forEach(c => c.classList.add('hidden'));
+    // Remove active from all tabs
+    document.querySelectorAll('[id^="admin-tab-"]').forEach(b => b.classList.remove('active'));
     
-    // Add default 4 options
-    for(let i=0; i<4; i++) addOptionInput();
-    
-    document.getElementById('question-modal').classList.remove('hidden');
+    // Show selected content and activate tab
+    document.getElementById(`admin-method-${method}`).classList.remove('hidden');
+    document.getElementById(`admin-tab-${method}`).classList.add('active');
 }
 
-window.addOptionInput = function() {
-    const container = document.getElementById('options-inputs-container');
-    const index = container.children.length;
-    const div = document.createElement('div');
-    div.className = 'option-input-group';
-    div.innerHTML = `
-        <input type="radio" name="correct-option" value="${index}" title="Bu variantı düzgün cavab kimi işarələ">
-        <input type="text" placeholder="Variant ${index + 1} mətnini daxil edin" class="option-text">
-        <button onclick="this.parentElement.remove()" class="btn-remove" title="Sil">
-            <i class="fas fa-trash"></i>
-        </button>
-    `;
-    container.appendChild(div);
-}
-
-window.saveQuestion = function() {
-    const text = document.getElementById('q-text').value;
-    const imageInput = document.getElementById('q-image');
+window.parseAdminBulkQuestions = function() {
+    const text = document.getElementById('admin-bulk-questions-text').value;
+    if (!text.trim()) return showNotification('Zəhmət olmasa mətni daxil edin.', 'error');
     
-    const options = [];
-    let realCorrectIndex = -1;
-    let tempIndex = 0;
+    const questions = [];
+    const blocks = text.split(/\n\s*\n/);
     
-    document.querySelectorAll('.option-input-group').forEach((group) => {
-        const radio = group.querySelector('input[type="radio"]');
-        const input = group.querySelector('input[type="text"]');
-        if (input.value.trim()) {
-            options.push(input.value);
-            if (radio.checked) realCorrectIndex = tempIndex;
-            tempIndex++;
+    blocks.forEach(block => {
+        const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+        if (lines.length < 3) return;
+        
+        const questionText = lines[0].replace(/^\d+[\s.)]*/, '');
+        const options = [];
+        let correctIndex = 0;
+        
+        lines.slice(1).forEach(line => {
+            if (line.match(/^[A-J][\s.)]/i)) {
+                options.push(line.replace(/^[A-J][\s.)]*/i, ''));
+            } else if (line.toLowerCase().includes('doğru:') || line.toLowerCase().includes('cavab:')) {
+                const parts = line.split(':');
+                if (parts.length > 1) {
+                    const ansChar = parts[1].trim().toUpperCase();
+                    correctIndex = ansChar.charCodeAt(0) - 65;
+                }
+            }
+        });
+        
+        if (questionText && options.length > 0) {
+            questions.push({
+                text: questionText,
+                options: options,
+                correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0
+            });
         }
     });
+    
+    if (questions.length > 0) {
+        const list = document.getElementById('admin-questions-list');
+        // Clear or append? Usually, bulk import into a list is meant to populate the manual review.
+        // Let's clear and switch to manual tab for review.
+        list.innerHTML = '';
+        
+        questions.forEach((q, idx) => {
+            const uniqueId = 'admin_bulk_' + Date.now() + '_' + idx;
+            const div = document.createElement('div');
+            div.className = 'manual-question-item';
 
-    if (!text) return showNotification('Sual mətnini daxil edin!', 'error');
-    if (options.length < 2) return showNotification('Ən azı 2 variant olmalıdır!', 'error');
-    if (realCorrectIndex === -1) return showNotification('Zəhmət olmasa düzgün variantı işarələyin!', 'error');
-
-    const processSave = (base64Img = null) => {
-        const cat = categories.find(c => c.id === activeCategoryId);
-        const newQ = {
-            id: Date.now(),
-            text,
-            image: base64Img,
-            options,
-            correctIndex: realCorrectIndex
-        };
-        cat.questions.push(newQ);
-        saveCategories();
-        closeModal('question-modal');
-        openCategory(activeCategoryId); // Re-render
-    };
-
-    if (imageInput.files && imageInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = (e) => processSave(e.target.result);
-        reader.readAsDataURL(imageInput.files[0]);
+            div.innerHTML = `
+                <div class="manual-q-header">
+                    <div class="manual-q-title">
+                        <i class="fas fa-question-circle"></i>
+                        <span>Sual #${idx + 1}</span>
+                    </div>
+                    <button onclick="this.closest('.manual-question-item').remove();" class="delete-q-btn" title="Sualı sil">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+                <div class="manual-q-content">
+                    <div class="manual-q-image-container">
+                        <div class="image-preview hidden" id="preview_${uniqueId}">
+                            <img src="" alt="Sual şəkli">
+                            <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn">&times;</button>
+                        </div>
+                        <label class="image-upload-label" id="label_${uniqueId}">
+                            <i class="fas fa-image"></i>
+                            <span>Şəkil Əlavə Et</span>
+                            <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                        </label>
+                        <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
+                    </div>
+                    <div class="manual-q-text-container">
+                        <textarea class="manual-q-text" placeholder="Sualın mətnini daxil edin...">${q.text}</textarea>
+                    </div>
+                </div>
+                <div class="manual-options-grid">
+                    ${q.options.map((opt, i) => `
+                        <div class="manual-option-input">
+                            <input type="radio" name="correct_${uniqueId}" value="${i}" ${i === q.correctIndex ? 'checked' : ''} id="opt_${uniqueId}_${i}">
+                            <input type="text" class="manual-opt" value="${opt}" placeholder="${String.fromCharCode(65 + i)} variantı">
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            list.appendChild(div);
+        });
+        
+        switchAdminQuestionTab('manual');
+        showNotification(`${questions.length} sual uğurla mətndən çevrildi.`, 'success');
     } else {
-        processSave();
+        showNotification('Heç bir sual tapılmadı. Formatı yoxlayın.', 'error');
     }
+}
+
+window.handleAdminBulkFileUpload = function(input) {
+    if (!input.files || !input.files[0]) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const questions = JSON.parse(e.target.result);
+            if (!Array.isArray(questions)) throw new Error('JSON massiv formatında olmalıdır.');
+            
+            const list = document.getElementById('admin-questions-list');
+            list.innerHTML = '';
+            
+            questions.forEach((q, idx) => {
+                const uniqueId = 'admin_file_' + Date.now() + '_' + idx;
+                const div = document.createElement('div');
+                div.className = 'manual-question-item';
+
+                div.innerHTML = `
+                    <div class="manual-q-header">
+                        <div class="manual-q-title">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Sual #${idx + 1}</span>
+                        </div>
+                        <button onclick="this.closest('.manual-question-item').remove();" class="delete-q-btn" title="Sualı sil">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    <div class="manual-q-content">
+                        <div class="manual-q-image-container">
+                            <div class="image-preview ${q.image ? '' : 'hidden'}" id="preview_${uniqueId}">
+                                <img src="${q.image || ''}" alt="Sual şəkli">
+                                <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn">&times;</button>
+                            </div>
+                            <label class="image-upload-label ${q.image ? 'hidden' : ''}" id="label_${uniqueId}">
+                                <i class="fas fa-image"></i>
+                                <span>Şəkil Əlavə Et</span>
+                                <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                            </label>
+                            <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}" value="${q.image || ''}">
+                        </div>
+                        <div class="manual-q-text-container">
+                            <textarea class="manual-q-text" placeholder="Sualın mətnini daxil edin...">${q.text}</textarea>
+                        </div>
+                    </div>
+                    <div class="manual-options-grid">
+                        ${q.options.map((opt, i) => `
+                            <div class="manual-option-input">
+                                <input type="radio" name="correct_${uniqueId}" value="${i}" ${i === q.correctIndex ? 'checked' : ''} id="opt_${uniqueId}_${i}">
+                                <input type="text" class="manual-opt" value="${opt}" placeholder="${String.fromCharCode(65 + i)} variantı">
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            
+            switchAdminQuestionTab('manual');
+            showNotification(`${questions.length} sual fayldan yükləndi.`, 'success');
+            input.value = ''; // Reset input
+        } catch (err) {
+            showNotification('JSON xətası: ' + err.message, 'error');
+        }
+    };
+    reader.readAsText(input.files[0]);
+}
+
+window.showAddQuestionModal = function() {
+    hideAllSections();
+    const list = document.getElementById('admin-questions-list');
+    list.innerHTML = '';
+    addAdminQuestionForm();
+    switchAdminQuestionTab('manual'); // Reset to manual tab
+    document.getElementById('admin-question-section').classList.remove('hidden');
+}
+
+window.addAdminQuestionForm = function() {
+    const list = document.getElementById('admin-questions-list');
+    const uniqueId = 'admin_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    
+    const div = document.createElement('div');
+    div.className = 'manual-question-item';
+
+    div.innerHTML = `
+        <div class="manual-q-header">
+            <div class="manual-q-title">
+                <i class="fas fa-question-circle"></i>
+                <span>Sual #${list.children.length + 1}</span>
+            </div>
+            <button onclick="this.closest('.manual-question-item').remove();" class="delete-q-btn" title="Sualı sil">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
+        <div class="manual-q-content">
+            <div class="manual-q-image-container">
+                <div class="image-preview hidden" id="preview_${uniqueId}">
+                    <img src="" alt="Sual şəkli">
+                    <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn">&times;</button>
+                </div>
+                <label class="image-upload-label" id="label_${uniqueId}">
+                    <i class="fas fa-image"></i>
+                    <span>Şəkil Əlavə Et</span>
+                    <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                </label>
+                <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
+            </div>
+            <div class="manual-q-text-container">
+                <textarea class="manual-q-text" placeholder="Sualın mətnini daxil edin..."></textarea>
+            </div>
+        </div>
+        <div class="manual-options-grid">
+            <div style="grid-column: 1 / -1; background: #fffbeb; border: 1px solid #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 10px; color: #92400e; font-size: 0.9rem; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-info-circle"></i>
+                <span>Düzgün variantı seçməyi unutmayın!</span>
+            </div>
+            ${[0, 1, 2, 3].map(i => `
+                <div class="manual-option-input">
+                    <input type="radio" name="correct_${uniqueId}" value="${i}" ${i === 0 ? 'checked' : ''} id="opt_${uniqueId}_${i}">
+                    <input type="text" class="manual-opt" placeholder="${String.fromCharCode(65 + i)} variantı">
+                </div>
+            `).join('')}
+        </div>
+    `;
+    list.appendChild(div);
+    list.scrollTop = list.scrollHeight;
+}
+
+window.saveAdminQuestions = function() {
+    const questionItems = document.querySelectorAll('#admin-questions-list .manual-question-item');
+    const newQuestions = [];
+    
+    for (const item of questionItems) {
+        const text = item.querySelector('.manual-q-text').value.trim();
+        const image = item.querySelector('.manual-q-img-data').value;
+        const optionInputs = item.querySelectorAll('.manual-opt');
+        const correctRadio = item.querySelector('input[type="radio"]:checked');
+        
+        const options = [];
+        optionInputs.forEach(opt => {
+            if (opt.value.trim()) options.push(opt.value.trim());
+        });
+
+        if (!text) {
+            showNotification('Bütün sualların mətnini daxil edin!', 'error');
+            return;
+        }
+        if (options.length < 2) {
+            showNotification('Hər sualda ən azı 2 variant olmalıdır!', 'error');
+            return;
+        }
+        if (!correctRadio) {
+            showNotification('Bütün suallar üçün düzgün variantı seçin!', 'error');
+            return;
+        }
+
+        newQuestions.push({
+            id: Date.now() + Math.random(),
+            text,
+            image,
+            options,
+            correctIndex: parseInt(correctRadio.value)
+        });
+    }
+
+    if (newQuestions.length === 0) {
+        showNotification('Heç bir sual əlavə edilməyib!', 'error');
+        return;
+    }
+
+    const cat = categories.find(c => c.id === activeCategoryId);
+    if (!cat) return;
+
+    cat.questions.push(...newQuestions);
+    saveCategories();
+    hideAdminQuestionPage();
+    showNotification(`${newQuestions.length} yeni sual əlavə edildi!`, 'success');
 }
 
 window.deleteQuestion = function(qId) {
