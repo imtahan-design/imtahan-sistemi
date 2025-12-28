@@ -527,8 +527,11 @@ window.parseBulkQuestions = function() {
             if (line.match(/^[A-E][\s.)]/i)) {
                 options.push(line.replace(/^[A-E][\s.)]*/i, ''));
             } else if (line.toLowerCase().includes('doğru:') || line.toLowerCase().includes('cavab:')) {
-                const ansChar = line.split(':')[1].trim().toUpperCase();
-                correctIndex = ansChar.charCodeAt(0) - 65; // A=0, B=1, etc.
+                const parts = line.split(':');
+                if (parts.length > 1) {
+                    const ansChar = parts[1].trim().toUpperCase();
+                    correctIndex = ansChar.charCodeAt(0) - 65; 
+                }
             }
         });
         
@@ -1068,6 +1071,10 @@ window.enterCategory = function(id) {
 }
 
 window.navigateUp = function() {
+    if (activePrivateQuiz) {
+        window.location.href = window.location.origin + window.location.pathname;
+        return;
+    }
     if (!currentParentId) return;
     const current = categories.find(c => c.id === currentParentId);
     currentParentId = current ? current.parentId : null;
@@ -1518,6 +1525,7 @@ function showResult() {
             total: total,
             timestamp: Date.now()
         };
+        console.log("Saving student attempt:", attempt);
         saveStudentAttempt(attempt);
     } else if (currentUser) {
         const cat = categories.find(c => c.id === currentQuiz.categoryId);
@@ -1534,6 +1542,19 @@ function showResult() {
     // Additional stats if needed
     const totalQuestionsElem = document.getElementById('total-questions-stat');
     if (totalQuestionsElem) totalQuestionsElem.textContent = total;
+}
+
+window.showDashboard = function() {
+    // If it was a private quiz, we should clear the URL and reload to fully reset
+    if (activePrivateQuiz) {
+        window.location.href = window.location.origin + window.location.pathname;
+        return;
+    }
+    
+    hideAllSections();
+    document.getElementById('dashboard-section').classList.remove('hidden');
+    currentParentId = null;
+    renderCategories();
 }
 
 async function saveStudentAttempt(attempt) {
