@@ -34,6 +34,35 @@ let privateQuizzes = []; // Private quizzes for teachers
 let currentParentId = null; // Track current level in dashboard
 let currentAdminParentId = null; // Track current level in admin dashboard
 
+// Notification System
+function showNotification(message, type = 'info') {
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    
+    let icon = 'info-circle';
+    if (type === 'success') icon = 'check-circle';
+    if (type === 'error') icon = 'exclamation-circle';
+
+    notification.innerHTML = `
+        <i class="fas fa-${icon}"></i>
+        <span>${message}</span>
+    `;
+
+    container.appendChild(notification);
+
+    // Trigger animation
+    setTimeout(() => notification.classList.add('show'), 10);
+
+    // Remove after 4 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 400);
+    }, 4000);
+}
+
 // Load Data Function
 async function loadData() {
     if (db) {
@@ -233,8 +262,9 @@ window.login = function() {
         currentUser = user;
         localStorage.setItem('currentUser', JSON.stringify(user));
         updateUI();
+        showNotification('Xoş gəldiniz, ' + user.username + '!', 'success');
     } else {
-        alert('İstifadəçi adı və ya şifrə yanlışdır!');
+        showNotification('İstifadəçi adı və ya şifrə yanlışdır!', 'error');
     }
 }
 
@@ -274,10 +304,10 @@ window.register = async function() {
     const role = document.getElementById('reg-role').value;
     const email = document.getElementById('reg-email').value;
 
-    if (!username || !pass) return alert('Bütün sahələri doldurun!');
-    if (pass.length < 8) return alert('Şifrə minimum 8 işarədən ibarət olmalıdır!');
-    if (role === 'teacher' && (!email || !email.includes('@'))) return alert('Zəhmət olmasa düzgün email ünvanı daxil edin!');
-    if (users.find(u => u.username === username)) return alert('Bu istifadəçi adı artıq mövcuddur!');
+    if (!username || !pass) return showNotification('Bütün sahələri doldurun!', 'error');
+    if (pass.length < 8) return showNotification('Şifrə minimum 8 işarədən ibarət olmalıdır!', 'error');
+    if (role === 'teacher' && (!email || !email.includes('@'))) return showNotification('Zəhmət olmasa düzgün email ünvanı daxil edin!', 'error');
+    if (users.find(u => u.username === username)) return showNotification('Bu istifadəçi adı artıq mövcuddur!', 'error');
 
     if (role === 'teacher') {
         // Teacher verification flow
@@ -287,17 +317,17 @@ window.register = async function() {
         const success = await sendVerificationEmail(email, verificationCode);
         
         if (success) {
-            alert(`${email} ünvanına təsdiq kodu göndərildi. Zəhmət olmasa emailinizi yoxlayın.`);
+            showNotification(`${email} ünvanına təsdiq kodu göndərildi. Zəhmət olmasa emailinizi yoxlayın.`, 'success');
             document.getElementById('verification-modal').classList.remove('hidden');
         } else {
-            alert('Email göndərilərkən xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.');
+            showNotification('Email göndərilərkən xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.', 'error');
         }
     } else {
         // Normal student registration
         const newUser = { id: String(Date.now()), username, password: pass, role: role };
         users.push(newUser);
         saveUsers();
-        alert('Qeydiyyat uğurludur! İndi daxil ola bilərsiniz.');
+        showNotification('Qeydiyyat uğurludur! İndi daxil ola bilərsiniz.', 'success');
         showLogin();
     }
 }
@@ -307,11 +337,11 @@ window.confirmVerification = function() {
     if (codeInput === verificationCode) {
         users.push(pendingUser);
         saveUsers();
-        alert('Email təsdiqləndi! Qeydiyyat uğurla tamamlandı.');
+        showNotification('Email təsdiqləndi! Qeydiyyat uğurla tamamlandı.', 'success');
         closeVerification();
         showLogin();
     } else {
-        alert('Yanlış təsdiq kodu!');
+        showNotification('Yanlış təsdiq kodu!', 'error');
     }
 }
 
@@ -365,12 +395,12 @@ window.importData = function(input) {
                 users = data.users;
                 localStorage.setItem('users', JSON.stringify(users));
             }
-            alert('Baza uğurla yeniləndi! İndi suallar görünəcək.');
+            showNotification('Baza uğurla yeniləndi! İndi suallar görünəcək.', 'success');
             renderCategories();
             renderAdminCategories();
         } catch (error) {
             console.error(error);
-            alert('Fayl oxunarkən xəta baş verdi. Düzgün JSON faylı seçdiyinizə əmin olun.');
+            showNotification('Fayl oxunarkən xəta baş verdi. Düzgün JSON faylı seçdiyinizə əmin olun.', 'error');
         }
     };
     reader.readAsText(file);
@@ -415,7 +445,7 @@ window.showCreatePrivateQuiz = function() {
 
 window.editPrivateQuiz = function(quizId) {
     const quiz = privateQuizzes.find(q => q.id === quizId);
-    if (!quiz) return alert('Test tapılmadı!');
+    if (!quiz) return showNotification('Test tapılmadı!', 'error');
     
     hideAllSections();
     document.getElementById('create-private-quiz-section').classList.remove('hidden');
@@ -580,7 +610,7 @@ window.handleQuestionImage = function(input, index) {
 
     // Check file size (limit to 1MB for base64 storage)
     if (file.size > 1024 * 1024) {
-        alert('Şəkil ölçüsü 1MB-dan çox olmamalıdır.');
+        showNotification('Şəkil ölçüsü 1MB-dan çox olmamalıdır.', 'error');
         input.value = '';
         return;
     }
@@ -600,7 +630,7 @@ window.handleQuestionImage = function(input, index) {
 window.addManualOption = function(uniqueId) {
     const grid = document.getElementById(`options_grid_${uniqueId}`);
     const optionCount = grid.querySelectorAll('.manual-option-input').length;
-    if (optionCount >= 10) return alert('Maksimum 10 variant əlavə edə bilərsiniz.');
+    if (optionCount >= 10) return showNotification('Maksimum 10 variant əlavə edə bilərsiniz.', 'error');
 
     const div = document.createElement('div');
     div.className = 'manual-option-input';
@@ -647,7 +677,7 @@ window.updateQuestionCount = function() {
 
 window.parseBulkQuestions = function() {
     const text = document.getElementById('bulk-questions-text').value;
-    if (!text.trim()) return alert('Zəhmət olmasa mətni daxil edin.');
+    if (!text.trim()) return showNotification('Zəhmət olmasa mətni daxil edin.', 'error');
     
     // Simple parser for:
     // 1. Question?
@@ -751,9 +781,9 @@ window.parseBulkQuestions = function() {
         
         switchQuestionTab('manual');
         updateQuestionCount();
-        alert(`${questions.length} sual uğurla köçürüldü. İndi yoxlayıb yadda saxlaya bilərsiniz.`);
+        showNotification(`${questions.length} sual uğurla köçürüldü. İndi yoxlayıb yadda saxlaya bilərsiniz.`, 'success');
     } else {
-        alert('Heç bir sual tapılmadı. Zəhmət olmasa formatı yoxlayın.');
+        showNotification('Heç bir sual tapılmadı. Zəhmət olmasa formatı yoxlayın.', 'error');
     }
 }
 
@@ -763,7 +793,7 @@ window.savePrivateQuizFinal = async function() {
     const password = document.getElementById('private-quiz-password').value;
     const defaultTime = parseInt(document.getElementById('private-quiz-default-time').value) || 45;
     
-    if (!title || !password) return alert('Zəhmət olmasa testin adını və şifrəsini daxil edin.');
+    if (!title || !password) return showNotification('Zəhmət olmasa testin adını və şifrəsini daxil edin.', 'error');
     
     const questionItems = document.querySelectorAll('.manual-question-item');
     const questions = [];
@@ -786,7 +816,7 @@ window.savePrivateQuizFinal = async function() {
         }
     });
     
-    if (questions.length === 0) return alert('Zəhmət olmasa ən azı bir sual əlavə edin.');
+    if (questions.length === 0) return showNotification('Zəhmət olmasa ən azı bir sual əlavə edin.', 'error');
     
     const quizData = {
         teacherId: currentUser.id,
@@ -811,7 +841,7 @@ window.savePrivateQuizFinal = async function() {
             if (index !== -1) {
                 privateQuizzes[index] = { ...privateQuizzes[index], ...quizData };
             }
-            alert('Özəl test uğurla yeniləndi!');
+            showNotification('Özəl test uğurla yeniləndi!', 'success');
         } else {
             // Create new
             if (db) {
@@ -821,13 +851,13 @@ window.savePrivateQuizFinal = async function() {
                 quizData.id = 'priv_' + Date.now();
             }
             privateQuizzes.push(quizData);
-            alert('Özəl test uğurla yaradıldı!');
+            showNotification('Özəl test uğurla yaradıldı!', 'success');
         }
         
         localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes));
         showTeacherDashboard();
     } catch (e) {
-        alert('Xəta: ' + e.message);
+        showNotification('Xəta: ' + e.message, 'error');
     }
 }
 
@@ -876,7 +906,7 @@ window.savePrivateQuiz = function() {
     const fileInput = document.getElementById('private-quiz-file');
     
     if (!title || !password || !fileInput.files[0]) {
-        return alert('Zəhmət olmasa bütün xanaları doldurun və sual faylını seçin.');
+        return showNotification('Zəhmət olmasa bütün xanaları doldurun və sual faylını seçin.', 'error');
     }
     
     const reader = new FileReader();
@@ -903,7 +933,7 @@ window.savePrivateQuiz = function() {
             privateQuizzes.push(newQuiz);
             localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes));
             
-            alert('Özəl test uğurla yaradıldı!');
+            showNotification('Özəl test uğurla yaradıldı!', 'success');
             showTeacherDashboard();
             
             // Clear inputs
@@ -912,7 +942,7 @@ window.savePrivateQuiz = function() {
             document.getElementById('private-quiz-file').value = '';
             
         } catch (error) {
-            alert('Xəta: ' + error.message);
+            showNotification('Xəta: ' + error.message, 'error');
         }
     };
     reader.readAsText(fileInput.files[0]);
@@ -920,7 +950,7 @@ window.savePrivateQuiz = function() {
 
 window.copyQuizLink = function(link) {
     navigator.clipboard.writeText(link).then(() => {
-        alert('Link kopyalandı! Tələbələrinizə göndərə bilərsiniz.');
+        showNotification('Link kopyalandı! Tələbələrinizə göndərə bilərsiniz.', 'success');
     });
 }
 
@@ -1042,12 +1072,12 @@ function handleUrlParams() {
                         activePrivateQuiz = { id: doc.id, ...doc.data() };
                         showPrivateAccess(activePrivateQuiz.title);
                     } else {
-                        alert('Test tapılmadı.');
+                        showNotification('Test tapılmadı.', 'error');
                         window.history.replaceState({}, document.title, window.location.pathname);
                     }
                 });
             } else {
-                alert('Test tapılmadı.');
+                showNotification('Test tapılmadı.', 'error');
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
@@ -1066,11 +1096,11 @@ window.accessPrivateQuiz = function() {
     const pass = document.getElementById('student-quiz-password').value;
     
     if (!firstName || !lastName || !pass) {
-        return alert('Zəhmət olmasa bütün xanaları (Ad, Soyad və Şifrə) doldurun.');
+        return showNotification('Zəhmət olmasa bütün xanaları (Ad, Soyad və Şifrə) doldurun.', 'error');
     }
     
     if (pass !== activePrivateQuiz.password) {
-        return alert('Yanlış şifrə!');
+        return showNotification('Yanlış şifrə!', 'error');
     }
     
     studentName = `${firstName} ${lastName}`;
@@ -1110,7 +1140,7 @@ window.showDashboard = function() {
 }
 
 window.showAdminDashboard = function() {
-    if (!currentUser || currentUser.role !== 'admin') return alert('Bu səhifə yalnız adminlər üçündür!');
+    if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu səhifə yalnız adminlər üçündür!', 'error');
     currentAdminParentId = null; // Reset to top level
     hideAllSections();
     document.getElementById('admin-dashboard-section').classList.remove('hidden');
@@ -1357,7 +1387,7 @@ window.saveCategory = function() {
     const name = document.getElementById('new-cat-name').value;
     const time = parseInt(document.getElementById('new-cat-time').value);
 
-    if (!name) return alert('Ad daxil edin!');
+    if (!name) return showNotification('Ad daxil edin!', 'error');
 
     if (id) {
         // Edit existing
@@ -1507,9 +1537,9 @@ window.saveQuestion = function() {
         }
     });
 
-    if (!text) return alert('Sual mətnini daxil edin!');
-    if (options.length < 2) return alert('Ən azı 2 variant olmalıdır!');
-    if (realCorrectIndex === -1) return alert('Düzgün variantı seçin!');
+    if (!text) return showNotification('Sual mətnini daxil edin!', 'error');
+    if (options.length < 2) return showNotification('Ən azı 2 variant olmalıdır!', 'error');
+    if (realCorrectIndex === -1) return showNotification('Düzgün variantı seçin!', 'error');
 
     const processSave = (base64Img = null) => {
         const cat = categories.find(c => c.id === activeCategoryId);
@@ -1662,6 +1692,10 @@ function processCurrentQuestion() {
     clearInterval(currentQuiz.timer);
     const q = currentQuiz.questions[currentQuiz.currentQuestionIndex];
     
+    // Track answer for review
+    if (!currentQuiz.userAnswers) currentQuiz.userAnswers = [];
+    currentQuiz.userAnswers.push(selectedAnswerIndex);
+
     if (selectedAnswerIndex === q.correctIndex) {
         currentQuiz.score++;
     }
@@ -1763,6 +1797,49 @@ function saveAttemptLocal(attempt) {
 // --- Utils ---
 window.closeModal = function(id) {
     document.getElementById(id).classList.add('hidden');
+}
+
+window.showQuizReview = function() {
+    hideAllSections();
+    const reviewSection = document.getElementById('review-section');
+    const reviewList = document.getElementById('review-list');
+    reviewList.innerHTML = '';
+    reviewSection.classList.remove('hidden');
+
+    currentQuiz.questions.forEach((q, idx) => {
+        const userAnswer = currentQuiz.userAnswers[idx];
+        const isCorrect = userAnswer === q.correctIndex;
+        
+        const reviewItem = document.createElement('div');
+        reviewItem.className = `review-item ${isCorrect ? 'correct' : 'wrong'}`;
+        
+        let optionsHtml = '';
+        q.options.forEach((opt, optIdx) => {
+            let optClass = 'review-option';
+            if (optIdx === q.correctIndex) optClass += ' correct-ans';
+            else if (optIdx === userAnswer) optClass += ' wrong-ans';
+            
+            optionsHtml += `<div class="${optClass}">${opt}</div>`;
+        });
+
+        reviewItem.innerHTML = `
+            <div class="review-question">${idx + 1}. ${q.text}</div>
+            ${q.image ? `<img src="${q.image}" style="max-width: 100%; border-radius: 8px; margin-bottom: 10px;">` : ''}
+            <div class="review-options">
+                ${optionsHtml}
+            </div>
+            <div class="review-status ${isCorrect ? 'correct' : 'wrong'}">
+                <i class="fas fa-${isCorrect ? 'check' : 'times'}-circle"></i>
+                ${isCorrect ? 'Düzgün' : 'Yanlış'}
+            </div>
+        `;
+        reviewList.appendChild(reviewItem);
+    });
+}
+
+window.hideReview = function() {
+    hideAllSections();
+    document.getElementById('result-section').classList.remove('hidden');
 }
 
 window.onclick = function(event) {

@@ -368,7 +368,22 @@
                         <span class="stat-label">Yanlış</span>
                     </div>
                 </div>
+                <button id="review-btn" onclick="showQuizReview()" class="btn-secondary" style="width: 100%; margin-bottom: 10px;">Suallara Bax</button>
                 <button onclick="showDashboard()" class="btn-primary" style="width: 100%;">Ana Səhifəyə Qayıt</button>
+            </div>
+        </section>
+
+        <!-- Quiz Review Section -->
+        <section id="review-section" class="hidden">
+            <div class="review-container">
+                <div class="review-header">
+                    <h2>Sualların İzahı</h2>
+                    <button onclick="hideReview()" class="btn-secondary">Geri</button>
+                </div>
+                <div id="review-list">
+                    <!-- Reviewed questions will be here -->
+                </div>
+                <button onclick="showDashboard()" class="btn-primary" style="width: 100%; margin-top: 20px;">Ana Səhifəyə Qayıt</button>
             </div>
         </section>
     </div>
@@ -413,6 +428,7 @@
         </div>
     </div>
 
+    <div id="notification-container" class="notification-container"></div>
     <script src="app.js"></script>
 </body>
 </html>
