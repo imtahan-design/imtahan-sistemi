@@ -121,8 +121,10 @@ function showNotification(message, type = 'info') {
 
 // Load Data Function
 async function loadData() {
+    console.log("loadData started...");
     if (db) {
         try {
+            console.log("Fetching categories from Firebase...");
             // Load Categories
             const catSnapshot = await db.collection('categories').get();
             categories = catSnapshot.docs.map(doc => {
@@ -133,29 +135,40 @@ async function loadData() {
                     ...data 
                 };
             });
+            console.log("Categories loaded from Firebase:", categories.length);
             
             // Load Users
+            console.log("Fetching users from Firebase...");
             const userSnapshot = await db.collection('users').get();
             users = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
             // Load Private Quizzes
+            console.log("Fetching private quizzes from Firebase...");
             const privateSnapshot = await db.collection('private_quizzes').get();
             privateQuizzes = privateSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-            console.log("Data loaded from Firebase");
+            console.log("Data loaded from Firebase successfully");
         } catch (error) {
             console.error("Error loading from Firebase:", error);
-            // Fallback to local if error (e.g. offline)
-            categories = JSON.parse(localStorage.getItem('categories')) || [];
-            users = JSON.parse(localStorage.getItem('users')) || [];
-            privateQuizzes = JSON.parse(localStorage.getItem('privateQuizzes')) || [];
+            loadFromLocalStorage();
         }
     } else {
-        categories = JSON.parse(localStorage.getItem('categories')) || [];
-        users = JSON.parse(localStorage.getItem('users')) || [];
-        privateQuizzes = JSON.parse(localStorage.getItem('privateQuizzes')) || [];
+        console.log("Firebase not initialized, using LocalStorage");
+        loadFromLocalStorage();
     }
 
+    processCategories();
+}
+
+function loadFromLocalStorage() {
+    categories = JSON.parse(localStorage.getItem('categories')) || [];
+    users = JSON.parse(localStorage.getItem('users')) || [];
+    privateQuizzes = JSON.parse(localStorage.getItem('privateQuizzes')) || [];
+    console.log("Loaded from LocalStorage - Categories:", categories.length);
+}
+
+function processCategories() {
+    console.log("Processing categories...");
     // Ensure all categories have a parentId property
     categories = categories.map(cat => ({
         ...cat,
@@ -164,6 +177,7 @@ async function loadData() {
 
     // Seed Data if Empty
     if (categories.length === 0) {
+        console.log("Seeding initial categories because list is empty");
         categories = [
             { id: '1', name: 'Dövlət qulluğu', time: 45, questions: [], parentId: null },
             { id: '2', name: 'Cinayət Məcəlləsi', time: 45, questions: [], parentId: null },
@@ -188,13 +202,17 @@ async function loadData() {
         }
     }
 
+    console.log("Calling renderCategories from processCategories");
     renderCategories();
-    if (!document.getElementById('admin-dashboard-section').classList.contains('hidden')) {
+    
+    const adminDash = document.getElementById('admin-dashboard-section');
+    if (adminDash && !adminDash.classList.contains('hidden')) {
         renderAdminCategories();
     }
 
     const hasEnglish = categories.some(c => c.name === 'İngilis' || String(c.id) === 'english_demo');
     if (!hasEnglish) {
+        console.log("Seeding English demo...");
         const baseId = Date.now();
         const englishCat = {
             id: 'english_demo',
@@ -212,7 +230,7 @@ async function loadData() {
         categories.push(englishCat);
         saveCategories();
         renderCategories();
-        if (!document.getElementById('admin-dashboard-section').classList.contains('hidden')) {
+        if (adminDash && !adminDash.classList.contains('hidden')) {
             renderAdminCategories();
         }
     }
@@ -251,40 +269,57 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function updateUI() {
-    navbar.classList.remove('hidden');
+    const nav = document.getElementById('navbar');
+    if (nav) nav.classList.remove('hidden');
     
     // Check if we are in a private quiz link
     const isPrivateQuiz = new URLSearchParams(window.location.search).has('quiz');
     
     if (currentUser) {
-        document.getElementById('guest-nav').classList.add('hidden');
-        document.getElementById('user-nav').classList.remove('hidden');
-        document.getElementById('user-display').textContent = `Salam, ${currentUser.username}`;
+        const guestNav = document.getElementById('guest-nav');
+        const userNav = document.getElementById('user-nav');
+        if (guestNav) guestNav.classList.add('hidden');
+        if (userNav) {
+            userNav.classList.remove('hidden');
+            const display = document.getElementById('user-display');
+            if (display) display.textContent = `Salam, ${currentUser.username}`;
+        }
         
         const teacherBtn = document.getElementById('teacher-panel-btn');
-        if (currentUser.role === 'teacher' || currentUser.role === 'admin') {
-            teacherBtn.classList.remove('hidden');
-        } else {
-            teacherBtn.classList.add('hidden');
+        if (teacherBtn) {
+            if (currentUser.role === 'teacher' || currentUser.role === 'admin') {
+                teacherBtn.classList.remove('hidden');
+            } else {
+                teacherBtn.classList.add('hidden');
+            }
         }
         
         const adminBtn = document.getElementById('admin-panel-btn');
-        if (currentUser.role === 'admin') {
-            adminBtn.classList.remove('hidden');
-        } else {
-            adminBtn.classList.add('hidden');
+        if (adminBtn) {
+            if (currentUser.role === 'admin') {
+                adminBtn.classList.remove('hidden');
+            } else {
+                adminBtn.classList.add('hidden');
+            }
         }
         
         // If not already in admin view or quiz, show public dashboard
+        const adminDash = document.getElementById('admin-dashboard-section');
+        const catAdmin = document.getElementById('category-admin-section');
+        const quizSec = document.getElementById('quiz-section');
+        
         if (!isPrivateQuiz &&
-            document.getElementById('admin-dashboard-section').classList.contains('hidden') && 
-            document.getElementById('category-admin-section').classList.contains('hidden') &&
-            document.getElementById('quiz-section').classList.contains('hidden')) {
+            (!adminDash || adminDash.classList.contains('hidden')) && 
+            (!catAdmin || catAdmin.classList.contains('hidden')) &&
+            (!quizSec || quizSec.classList.contains('hidden'))) {
             showDashboard();
         }
     } else {
-        document.getElementById('guest-nav').classList.remove('hidden');
-        document.getElementById('user-nav').classList.add('hidden');
+        const guestNav = document.getElementById('guest-nav');
+        const userNav = document.getElementById('user-nav');
+        if (guestNav) guestNav.classList.remove('hidden');
+        if (userNav) userNav.classList.add('hidden');
+        
         const teacherBtn = document.getElementById('teacher-panel-btn');
         if (teacherBtn) teacherBtn.classList.add('hidden');
         
@@ -1303,13 +1338,11 @@ function startPrivateQuiz() {
 
 // --- Dashboard & Categories ---
 window.showDashboard = function() {
-    // Only clear and redirect if we are not on a private quiz page
-    if (window.location.search.includes('quiz=')) {
+    // If it was a private quiz, we should clear the URL and reload to fully reset
+    if (activePrivateQuiz) {
+        window.location.href = window.location.origin + window.location.pathname;
         return;
     }
-    
-    activePrivateQuiz = null;
-    studentName = '';
     
     currentParentId = null; // Reset to top level
     hideAllSections();
@@ -1395,23 +1428,44 @@ async function renderHistory() {
 }
 
 function renderCategories() {
+    console.log("renderCategories called. currentParentId:", currentParentId);
     const grid = document.getElementById('categories-grid');
+    if (!grid) {
+        console.error("categories-grid element not found!");
+        return;
+    }
     grid.innerHTML = '';
     
-    // Filter categories by parentId
-    const filteredCategories = categories.filter(cat => cat.parentId === currentParentId);
+    // Filter categories by parentId with more robust check
+    const filteredCategories = categories.filter(cat => {
+        const catParentId = cat.parentId || null;
+        const targetParentId = currentParentId || null;
+        return String(catParentId) === String(targetParentId);
+    });
+    
+    console.log("Filtered categories count:", filteredCategories.length);
     
     // Update Title and Back Button
     const title = document.getElementById('dashboard-title');
     const backBtn = document.getElementById('dashboard-back-btn');
     
     if (currentParentId) {
-        const parent = categories.find(c => c.id === currentParentId);
-        title.textContent = parent ? parent.name : 'Kateqoriyalar';
-        backBtn.classList.remove('hidden');
+        const parent = categories.find(c => String(c.id) === String(currentParentId));
+        if (title) title.textContent = parent ? parent.name : 'Kateqoriyalar';
+        if (backBtn) backBtn.classList.remove('hidden');
     } else {
-        title.textContent = 'Mövcud İmtahanlar';
-        backBtn.classList.add('hidden');
+        if (title) title.textContent = 'Mövcud İmtahanlar';
+        if (backBtn) backBtn.classList.add('hidden');
+    }
+
+    if (filteredCategories.length === 0) {
+        grid.innerHTML = `
+            <div style="text-align: center; grid-column: 1/-1; padding: 40px; color: #666; background: #f9fafb; border-radius: 12px; border: 2px dashed #e5e7eb;">
+                <i class="fas fa-folder-open" style="font-size: 3rem; color: #d1d5db; margin-bottom: 15px; display: block;"></i>
+                <p style="font-size: 1.1rem; font-weight: 500;">Bu bölmədə hələ ki, kateqoriya yoxdur.</p>
+                <p style="font-size: 0.9rem; margin-top: 5px;">Zəhmət olmasa bir az sonra yenidən yoxlayın və ya adminlə əlaqə saxlayın.</p>
+            </div>
+        `;
     }
 
     filteredCategories.forEach(cat => {
@@ -1420,18 +1474,23 @@ function renderCategories() {
         
         // Simple icon mapping
         let icon = 'fa-book';
-        if (cat.name.toLowerCase().includes('ingilis')) icon = 'fa-language';
-        if (cat.name.toLowerCase().includes('cinayət')) icon = 'fa-gavel';
-        if (cat.name.toLowerCase().includes('mülki')) icon = 'fa-balance-scale';
-        if (cat.name.toLowerCase().includes('dövlət')) icon = 'fa-university';
-        if (cat.name.toLowerCase().includes('konstitusiya')) icon = 'fa-scroll';
+        const nameLower = cat.name.toLowerCase();
+        if (nameLower.includes('ingilis')) icon = 'fa-language';
+        else if (nameLower.includes('cinayət')) icon = 'fa-gavel';
+        else if (nameLower.includes('mülki')) icon = 'fa-balance-scale';
+        else if (nameLower.includes('dövlət')) icon = 'fa-university';
+        else if (nameLower.includes('konstitusiya')) icon = 'fa-scroll';
+        else if (nameLower.includes('məntiq')) icon = 'fa-brain';
+        else if (nameLower.includes('informatika')) icon = 'fa-laptop-code';
 
         // Check if it has subcategories
-        const hasSub = categories.some(c => c.parentId === cat.id);
+        const hasSub = categories.some(c => String(c.parentId) === String(cat.id));
         const hasQuestions = cat.questions && cat.questions.length > 0;
 
         div.innerHTML = `
-            <i class="fas ${icon}"></i>
+            <div class="icon-box">
+                <i class="fas ${icon}"></i>
+            </div>
             <h3>${cat.name}</h3>
             <p>${cat.questions ? cat.questions.length : 0} sual</p>
             ${hasSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
@@ -1463,50 +1522,81 @@ window.navigateUp = function() {
 
 function renderAdminCategories() {
     const grid = document.getElementById('admin-categories-grid');
+    if (!grid) return;
     grid.innerHTML = '';
     
-    const filteredCategories = categories.filter(cat => cat.parentId === currentAdminParentId);
+    // Filter categories by parentId with more robust check
+    const filteredCategories = categories.filter(cat => {
+        const catParentId = cat.parentId || null;
+        const targetParentId = currentAdminParentId || null;
+        return String(catParentId) === String(targetParentId);
+    });
+    
+    console.log("Admin filtered categories count:", filteredCategories.length);
     
     // Update Admin Title and Back Button
     const title = document.getElementById('admin-dashboard-title');
     const backBtn = document.getElementById('admin-back-btn');
     
     if (currentAdminParentId) {
-        const parent = categories.find(c => c.id === currentAdminParentId);
-        title.textContent = `Bölmə: ${parent ? parent.name : '...'}`;
-        backBtn.classList.remove('hidden');
+        const parent = categories.find(c => String(c.id) === String(currentAdminParentId));
+        if (title) title.textContent = `Bölmə: ${parent ? parent.name : '...'}`;
+        if (backBtn) backBtn.classList.remove('hidden');
     } else {
-        title.textContent = 'Admin Paneli - Kateqoriyalar';
-        backBtn.classList.add('hidden');
+        if (title) title.textContent = 'Admin Paneli - Kateqoriyalar';
+        if (backBtn) backBtn.classList.add('hidden');
+    }
+
+    if (filteredCategories.length === 0) {
+        grid.innerHTML = `
+            <div style="text-align: center; grid-column: 1/-1; padding: 40px; color: #666; background: #f9fafb; border-radius: 12px; border: 2px dashed #e5e7eb;">
+                <i class="fas fa-folder-plus" style="font-size: 3rem; color: #d1d5db; margin-bottom: 15px; display: block;"></i>
+                <p style="font-size: 1.1rem; font-weight: 500;">Bu bölmədə hələ ki, kateqoriya yoxdur.</p>
+                <button class="btn-primary" onclick="showAddCategoryModal()" style="margin-top: 15px;">
+                    <i class="fas fa-plus"></i> Yeni Kateqoriya Əlavə Et
+                </button>
+            </div>
+        `;
     }
 
     filteredCategories.forEach(cat => {
         const div = document.createElement('div');
         div.className = 'category-card';
         
+        // Simple icon mapping
         let icon = 'fa-book';
-        if (cat.name.toLowerCase().includes('ingilis')) icon = 'fa-language';
-        if (cat.name.toLowerCase().includes('cinayət')) icon = 'fa-gavel';
-        if (cat.name.toLowerCase().includes('mülki')) icon = 'fa-balance-scale';
-        if (cat.name.toLowerCase().includes('dövlət')) icon = 'fa-university';
-        if (cat.name.toLowerCase().includes('konstitusiya')) icon = 'fa-scroll';
+        const nameLower = cat.name.toLowerCase();
+        if (nameLower.includes('ingilis')) icon = 'fa-language';
+        else if (nameLower.includes('cinayət')) icon = 'fa-gavel';
+        else if (nameLower.includes('mülki')) icon = 'fa-balance-scale';
+        else if (nameLower.includes('dövlət')) icon = 'fa-university';
+        else if (nameLower.includes('konstitusiya')) icon = 'fa-scroll';
+        else if (nameLower.includes('məntiq')) icon = 'fa-brain';
+        else if (nameLower.includes('informatika')) icon = 'fa-laptop-code';
 
-        const hasSub = categories.some(c => c.parentId === cat.id);
+        const hasSub = categories.some(c => String(c.parentId) === String(cat.id));
 
         div.innerHTML = `
             <div class="cat-card-header">
-                <i class="fas ${icon}"></i>
+                <div class="icon-box" style="margin-bottom: 0; width: 40px; height: 40px; font-size: 16px;">
+                    <i class="fas ${icon}"></i>
+                </div>
                 <div class="cat-card-tools">
-                    <button class="edit-cat-btn" onclick="showEditCategoryModal('${cat.id}', event)"><i class="fas fa-edit"></i></button>
-                    <button class="delete-cat-btn" onclick="deleteCategory('${cat.id}', event)"><i class="fas fa-trash"></i></button>
+                    <button class="edit-cat-btn" onclick="showEditCategoryModal('${cat.id}', event)" title="Redaktə et">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="delete-cat-btn" onclick="deleteCategory('${cat.id}', event)" title="Sil">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
                 </div>
             </div>
-            <h3>${cat.name}</h3>
+            <h3 style="margin-top: 15px;">${cat.name}</h3>
             <p>${cat.questions ? cat.questions.length : 0} sual</p>
-            ${hasSub ? '<p style="font-size: 0.8rem; color: var(--primary-color);"><i class="fas fa-folder"></i> Alt bölmələr var</p>' : ''}
+            ${hasSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
-                <button class="btn-secondary" onclick="enterAdminCategory('${cat.id}')">Bölməyə Bax</button>
                 <button class="btn-primary" onclick="openCategoryQuestions('${cat.id}')">Suallar (${cat.questions ? cat.questions.length : 0})</button>
+                ${hasSub ? `<button class="btn-secondary" onclick="enterAdminCategory('${cat.id}')">Alt Bölmələrə Bax</button>` : ''}
+                ${!hasSub ? `<button class="btn-secondary" onclick="enterAdminCategory('${cat.id}')">Alt Bölmə Artır</button>` : ''}
             </div>
         `;
         grid.appendChild(div);
@@ -2136,19 +2226,6 @@ function showResult() {
     // Additional stats if needed
     const totalQuestionsElem = document.getElementById('total-questions-stat');
     if (totalQuestionsElem) totalQuestionsElem.textContent = total;
-}
-
-window.showDashboard = function() {
-    // If it was a private quiz, we should clear the URL and reload to fully reset
-    if (activePrivateQuiz) {
-        window.location.href = window.location.origin + window.location.pathname;
-        return;
-    }
-    
-    hideAllSections();
-    document.getElementById('dashboard-section').classList.remove('hidden');
-    currentParentId = null;
-    renderCategories();
 }
 
 async function saveStudentAttempt(attempt) {
