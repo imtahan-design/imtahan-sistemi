@@ -1961,8 +1961,9 @@ nav {
         color: var(--text-muted);
         font-style: italic;
     }
-    }
+}
 
+@media (max-width: 768px) {
     /* Modal daxilindəki "İmtahana başla" düyməsi üçün xüsusi nizam */
     .start-quiz-btn {
         height: auto !important;
@@ -1991,7 +1992,47 @@ nav {
 
     .grid-container {
         grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        gap: 10px;
+    }
+
+    .category-card {
+        padding: 15px !important;
+        padding-top: 35px !important;
+        border-radius: 15px !important;
+    }
+
+    .category-card h3 {
+        font-size: 15px !important;
+        margin-bottom: 8px !important;
+        line-height: 1.2 !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        height: 36px;
+    }
+
+    .category-card .icon-box {
+        width: 45px !important;
+        height: 45px !important;
+        font-size: 18px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .sub-indicator {
+        font-size: 10px !important;
+        margin: 5px 0 !important;
+    }
+
+    .category-actions {
+        gap: 8px !important;
+        margin-top: 10px !important;
+    }
+
+    .category-actions button {
+        padding: 8px 10px !important;
+        font-size: 11px !important;
+        height: 38px !important;
     }
 
     /* Quiz Interface */
@@ -2023,9 +2064,15 @@ nav {
 
     /* Modals */
     .modal-content {
-        width: 95%;
+        width: 92%;
         padding: 20px;
-        margin: 10px;
+        margin: 15px auto;
+    }
+
+    .quiz-setup-content {
+        padding: 20px !important;
+        margin: 10px auto !important;
+        width: 95% !important;
     }
 
     /* Quiz Setup */
@@ -2307,6 +2354,21 @@ nav {
 
     .question-count-selector {
         grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    .count-card {
+        padding: 10px !important;
+    }
+
+    .count-number {
+        font-size: 16px !important;
+    }
+
+    .quiz-setup-content {
+        max-width: 95% !important;
+        padding: 20px !important;
+        margin: 10px auto !important;
     }
 }
 

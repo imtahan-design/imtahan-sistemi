@@ -1760,10 +1760,10 @@ async function renderHistory() {
         try {
             const snapshot = await db.collection('attempts')
                 .where('userId', '==', currentUser.id)
-                .orderBy('timestamp', 'desc')
-                .limit(20)
                 .get();
-            history = snapshot.docs.map(doc => doc.data());
+            history = snapshot.docs.map(doc => doc.data())
+                .sort((a, b) => b.timestamp - a.timestamp)
+                .slice(0, 20);
         } catch (e) {
             console.error("Firebase history error:", e);
             history = JSON.parse(localStorage.getItem(`history_${currentUser.id}`)) || [];
