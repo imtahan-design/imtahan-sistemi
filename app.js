@@ -523,11 +523,18 @@ window.login = function() {
         showNotification('Xoş gəldiniz, ' + user.username + '!', 'success');
         
         if (redirectAfterAuth === 'teacher_panel' && user.role === 'teacher') {
-            showTeacherDashboard();
-            setTimeout(() => {
-                showNotification('Sınaq hazırlamaq üçün "Yeni özəl test" düyməsinə klikləyin.', 'info');
-            }, 500);
             redirectAfterAuth = null;
+            showTeacherDashboard();
+            
+            // Show the floating guide tooltip
+            setTimeout(() => {
+                const tooltip = document.getElementById('quiz-guide-tooltip');
+                if (tooltip) {
+                    tooltip.classList.remove('hidden');
+                    // Hide tooltip after 8 seconds
+                    setTimeout(() => tooltip.classList.add('hidden'), 8000);
+                }
+            }, 1000);
         }
     } else {
         showNotification('İstifadəçi adı və ya şifrə yanlışdır!', 'error');
@@ -708,8 +715,15 @@ window.prepareQuizAction = function() {
     if (currentUser) {
         if (currentUser.role === 'teacher') {
             showTeacherDashboard();
+            
+            // Show the floating guide tooltip
             setTimeout(() => {
-                showNotification('Sınaq hazırlamaq üçün "Yeni özəl test" düyməsinə klikləyin.', 'info');
+                const tooltip = document.getElementById('quiz-guide-tooltip');
+                if (tooltip) {
+                    tooltip.classList.remove('hidden');
+                    // Hide tooltip after 8 seconds
+                    setTimeout(() => tooltip.classList.add('hidden'), 8000);
+                }
             }, 500);
         } else {
             showNotification('Sınaq hazırlamaq üçün müəllim hesabı lazımdır. Müəllim kimi qeydiyyatdan keçməyiniz üçün səhifəyə yönləndirilirsiniz.', 'info');
