@@ -1415,85 +1415,116 @@ nav {
     }
 
     nav {
-        padding: 15px;
-        margin-bottom: 20px;
-        flex-direction: column; /* 2 sətirə keçid */
+        padding: 6px 10px;
+        margin-bottom: 10px;
+        flex-direction: column;
         align-items: stretch;
-        gap: 15px;
+        gap: 4px;
         height: auto;
     }
     
     .logo {
-        text-align: center;
-        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        width: auto;
     }
 
     .logo-main {
-        font-size: 22px;
+        font-size: 16px;
         font-weight: 800;
-        margin-bottom: 2px;
+        line-height: 1;
     }
 
     .logo-sub {
-        display: block; /* Geri qaytarıldı */
-        font-size: 10px;
-        opacity: 0.8;
-        line-height: 1.2;
+        display: block;
+        font-size: 8px;
+        opacity: 0.6;
+        line-height: 1;
+        margin-top: 2px;
     }
 
     .nav-links {
         width: 100%;
-        display: flex;
-        justify-content: center;
+        margin-top: 4px;
     }
 
     .nav-links div {
         width: 100%;
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
-        flex-wrap: wrap; /* Düymələr sığmasa növbəti sətirə keçsin */
-        gap: 8px;
+        flex-wrap: nowrap;
+        gap: 4px;
     }
 
     #user-display {
-        display: block !important;
-        width: 100%;
-        text-align: center;
-        margin-bottom: 8px;
-        font-size: 14px;
-        font-weight: 700;
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        width: auto;
+        text-align: right;
+        margin-bottom: 0;
+        font-size: 11px;
+        font-weight: 600;
         color: var(--primary-color);
-        background: rgba(79, 70, 229, 0.05);
-        padding: 8px;
-        border-radius: 10px;
-        max-width: 100%;
+        background: transparent;
+        padding: 0;
     }
 
     .btn-secondary, .btn-primary, .btn-warning {
-        padding: 10px 14px;
-        font-size: 12px;
+        padding: 4px 6px;
+        font-size: 10px;
         font-weight: 600;
-        border-radius: 10px;
-        flex: 1; /* Düymələr bərabər bölünsün */
-        min-width: calc(33% - 10px); /* Bir sətirdə 3 düymə */
-        height: 40px;
+        border-radius: 6px;
+        flex: 1;
+        min-width: 0; /* Sığması üçün */
+        height: 30px;
         display: flex;
-        flex-direction: column; /* İkon yuxarıda, mətn aşağıda */
-        gap: 2px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        white-space: nowrap;
+        overflow: hidden;
     }
 
     .btn-secondary i, .btn-primary i, .btn-warning i {
-        font-size: 14px;
-        margin: 0;
+        font-size: 11px;
     }
 
     .btn-secondary span, .btn-primary span, .btn-warning span {
-        font-size: 10px;
+        font-size: 9px;
+    }
+
+    /* Çox kiçik ekranlarda mətni gizlət, yalnız ikon qalsın */
+    @media (max-width: 400px) {
+        .btn-secondary span, .btn-primary span, .btn-warning span {
+            display: none;
+        }
+        .btn-secondary, .btn-primary, .btn-warning {
+            padding: 4px;
+        }
     }
 
     #teacher-panel-btn, #admin-panel-btn {
-        min-width: calc(50% - 10px); /* Böyük düymələr yarı-yarıya */
+        min-width: 0;
+    }
+
+    /* Modal daxilindəki "İmtahana başla" düyməsi üçün xüsusi nizam */
+    .start-quiz-btn {
+        height: auto !important;
+        min-height: 45px;
+        flex-direction: row !important;
+        font-size: 16px !important;
+        width: 100%;
+        margin-top: 10px;
+    }
+    
+    .start-quiz-btn i {
+        font-size: 18px !important;
+        margin-right: 8px !important;
     }
 
     /* Dashboard */
@@ -1785,9 +1816,25 @@ nav {
     border-radius: 16px;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+    .start-quiz-btn {
+        height: auto !important;
+        min-height: 50px !important;
+        padding: 12px !important;
+        font-size: 16px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .start-quiz-btn i {
+        margin-right: 10px !important;
+        font-size: 18px !important;
+    }
+
     .question-count-selector {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, 1fr) !important;
     }
 }
 
