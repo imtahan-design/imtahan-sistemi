@@ -907,10 +907,11 @@ nav {
     background: rgba(15, 23, 42, 0.6);
     backdrop-filter: blur(4px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     z-index: 2000;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 20px;
     -webkit-overflow-scrolling: touch;
 }
@@ -923,7 +924,9 @@ nav {
     max-width: 400px;
     text-align: center;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    margin: auto;
+    margin: 20px auto;
+    position: relative;
+    flex-shrink: 0;
 }
 
 .verification-code-inputs input:focus {
@@ -2533,7 +2536,9 @@ nav {
     .modal-content {
         width: 92%;
         padding: 20px;
-        margin: 15px auto;
+        margin: 20px auto;
+        max-height: none;
+        overflow: visible;
     }
 
     .quiz-setup-content {
