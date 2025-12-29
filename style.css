@@ -1415,66 +1415,81 @@ nav {
     }
 
     nav {
-        padding: 8px 12px;
+        padding: 10px 15px;
         margin-bottom: 15px;
-        flex-direction: row; /* Yan-yana düzülüş */
+        flex-direction: row;
         justify-content: space-between;
         align-items: center;
-        gap: 5px;
+        gap: 10px;
         height: auto;
-        flex-wrap: nowrap; /* Sətirə sığdırma */
+        flex-wrap: nowrap;
     }
     
     .logo {
         text-align: left;
         min-width: fit-content;
+        flex: 0 0 auto;
     }
 
     .logo-main {
-        font-size: 16px; /* Kiçildilmiş loqo */
+        font-size: 18px;
+        font-weight: 800;
     }
 
     .logo-sub {
-        display: none; /* Mobildə alt mətni gizlədirik ki, yer qalsın */
+        display: none;
+    }
+
+    .nav-links {
+        flex: 1;
+        display: flex;
+        justify-content: flex-end;
     }
 
     .nav-links div {
-        width: auto;
+        width: 100%;
+        display: flex;
         justify-content: flex-end;
+        align-items: center;
         flex-wrap: nowrap;
-        gap: 6px;
+        gap: 5px;
     }
 
     #user-display {
-        width: auto;
-        text-align: right;
-        font-size: 12px;
-        margin-right: 5px;
-        white-space: nowrap;
+        display: inline-block !important;
+        visibility: visible !important;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-right: 4px;
+        max-width: 70px;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 80px; /* Uzun adları qısaldırıq */
+        white-space: nowrap;
     }
 
-    .btn-secondary {
-        padding: 6px 10px;
-        font-size: 11px; /* Kiçik düymələr */
+    .btn-secondary, .btn-primary, .btn-warning {
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 8px;
         flex: none;
         white-space: nowrap;
         min-width: auto;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .btn-secondary i {
-        margin-right: 3px;
-        font-size: 12px;
+    /* Mobildə bəzi düymələri ikonla əvəzləyirik və ya qısaldırıq */
+    #teacher-panel-btn, #admin-panel-btn {
+        padding: 8px;
     }
 
-    /* Çıxış düyməsi üçün ikonu önə çıxarırıq, mətni gizlədirik (isteğe bağlı) */
-    .btn-secondary[onclick="logout()"] span {
+    /* Mobildə Salam sözünü gizlədib yalnız adı saxlaya bilərik ki yer qalsın */
+    #user-display i {
         display: none;
-    }
-    .btn-secondary[onclick="logout()"] {
-        padding: 6px 8px;
     }
 
     /* Dashboard */
