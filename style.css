@@ -1845,8 +1845,108 @@ nav {
         }
     }
 
-    #teacher-panel-btn, #admin-panel-btn {
-        min-width: 0;
+    .profile-info-card {
+        padding: 1.5rem;
+    }
+
+    .history-card {
+        padding: 1rem;
+    }
+
+    .history-table th, 
+    .history-table td {
+        padding: 0.8rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .profile-stats-mini {
+        gap: 0.5rem;
+    }
+
+    .history-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Inbox Styles */
+    .inbox-card {
+        margin-top: 2rem;
+        padding: 1.5rem;
+    }
+
+    .inbox-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .inbox-item {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.2rem;
+        transition: all 0.3s ease;
+    }
+
+    .inbox-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--primary-color);
+    }
+
+    .inbox-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.8rem;
+    }
+
+    .report-type {
+        font-weight: 600;
+        color: var(--primary-color);
+        font-size: 0.9rem;
+    }
+
+    .report-date {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .report-content {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+    }
+
+    .admin-reply {
+        background: rgba(124, 58, 237, 0.1);
+        border-left: 3px solid var(--primary-color);
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin-top: 0.5rem;
+    }
+
+    .admin-reply-header {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .admin-reply-content {
+        font-size: 0.9rem;
+        font-style: italic;
+    }
+
+    .no-messages {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-muted);
+        font-style: italic;
+    }
     }
 
     /* Modal daxilindəki "İmtahana başla" düyməsi üçün xüsusi nizam */

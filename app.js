@@ -3503,6 +3503,121 @@ window.markReportAsResolved = async function(reportId) {
     }
 }
 
+// --- Inbox & Reply Functions ---
+
+window.openReplyModal = function(reportId, message) {
+    document.getElementById('reply-report-id').value = reportId;
+    document.getElementById('reply-user-msg').textContent = message;
+    document.getElementById('reply-message').value = '';
+    document.getElementById('reply-modal').classList.remove('hidden');
+}
+
+window.submitReply = async function() {
+    const reportId = document.getElementById('reply-report-id').value;
+    const message = document.getElementById('reply-message').value.trim();
+    
+    if (!message) return showNotification('Cavab mətni boş ola bilməz', 'warning');
+    
+    try {
+        const replyData = {
+            adminReply: message,
+            status: 'resolved',
+            replyTimestamp: Date.now()
+        };
+
+        if (db) {
+            await db.collection('reports').doc(reportId).update(replyData);
+        } else {
+            let reports = JSON.parse(localStorage.getItem('reports') || '[]');
+            const idx = reports.findIndex(r => r.id == reportId);
+            if (idx !== -1) {
+                reports[idx] = { ...reports[idx], ...replyData };
+                localStorage.setItem('reports', JSON.stringify(reports));
+            }
+        }
+        
+        closeModal('reply-modal');
+        showNotification('Cavab uğurla göndərildi', 'success');
+        loadReports();
+    } catch (e) {
+        console.error(e);
+        showNotification('Xəta baş verdi', 'error');
+    }
+}
+
+window.loadUserInbox = async function() {
+    const list = document.getElementById('user-inbox-list');
+    const countBadge = document.getElementById('user-inbox-count');
+    
+    if (!currentUser) return;
+    
+    list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Yüklənir...</div>';
+    
+    try {
+        let reports = [];
+        if (db) {
+            // orderBy composite index tələb edə bilər, ona görə in-memory sort edirik
+            const snapshot = await db.collection('reports')
+                .where('userId', '==', currentUser.id)
+                .get();
+            reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+                .sort((a, b) => b.timestamp - a.timestamp);
+        } else {
+            reports = JSON.parse(localStorage.getItem('reports') || '[]')
+                .filter(r => r.userId == currentUser.id)
+                .sort((a, b) => b.timestamp - a.timestamp);
+        }
+
+        countBadge.textContent = `${reports.length} mesaj`;
+
+        if (reports.length === 0) {
+            list.innerHTML = '<div class="no-messages">Hələ heç bir şikayətiniz yoxdur.</div>';
+            return;
+        }
+
+        list.innerHTML = '';
+        reports.forEach(report => {
+            const div = document.createElement('div');
+            div.className = 'inbox-item';
+            
+            const date = new Date(report.timestamp).toLocaleString('az-AZ');
+            const replyDate = report.replyTimestamp ? new Date(report.replyTimestamp).toLocaleString('az-AZ') : '';
+            
+            div.innerHTML = `
+                <div class="inbox-header">
+                    <span class="report-type">
+                        <i class="fas fa-flag"></i> ${report.questionType === 'public' ? 'Ümumi Sual' : 'Kateqoriya Sualı'}
+                    </span>
+                    <span class="report-date">${date}</span>
+                </div>
+                <div class="report-content">
+                    <strong>Şikayətiniz:</strong> "${report.message}"
+                </div>
+                ${report.adminReply ? `
+                    <div class="admin-reply">
+                        <div class="admin-reply-header">
+                            <span><i class="fas fa-user-shield"></i> Admin Cavabı:</span>
+                            <span style="font-size: 0.75rem; opacity: 0.8;">${replyDate}</span>
+                        </div>
+                        <div class="admin-reply-content">
+                            "${report.adminReply}"
+                        </div>
+                    </div>
+                ` : `
+                    <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">
+                        <i class="fas fa-clock"></i> Cavab gözlənilir...
+                    </div>
+                `}
+            `;
+            list.appendChild(div);
+        });
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = '<div style="text-align:center; padding: 20px; color: #ef4444;">Inboxu yükləmək mümkün olmadı.</div>';
+    }
+}
+
+
 window.deleteReport = async function(reportId) {
     if (!confirm('Bu şikayəti silmək istədiyinizə əminsiniz?')) return;
     
@@ -3563,113 +3678,6 @@ window.goToReportedQuestion = function(catId, qId, qType) {
                 }
             }
         }, 800);
-    }
-}
-
-// --- Inbox & Reply Functions ---
-
-window.openReplyModal = function(reportId, userMsg) {
-    document.getElementById('reply-report-id').value = reportId;
-    document.getElementById('reply-user-msg').textContent = userMsg;
-    document.getElementById('reply-message').value = '';
-    document.getElementById('reply-modal').classList.remove('hidden');
-}
-
-window.submitReply = async function() {
-    const reportId = document.getElementById('reply-report-id').value;
-    const replyText = document.getElementById('reply-message').value.trim();
-    
-    if (!replyText) {
-        return showNotification('Zəhmət olmasa cavabınızı daxil edin.', 'error');
-    }
-
-    try {
-        const replyData = {
-            reply: replyText,
-            replyTimestamp: Date.now(),
-            status: 'replied'
-        };
-
-        if (db) {
-            await db.collection('reports').doc(reportId).update(replyData);
-        } else {
-            let reports = JSON.parse(localStorage.getItem('reports') || '[]');
-            const idx = reports.findIndex(r => r.id == reportId);
-            if (idx !== -1) {
-                reports[idx] = { ...reports[idx], ...replyData };
-                localStorage.setItem('reports', JSON.stringify(reports));
-            }
-        }
-        
-        showNotification('Cavabınız göndərildi.');
-        closeModal('reply-modal');
-        loadReports();
-    } catch (e) {
-        console.error(e);
-        showNotification('Xəta baş verdi.', 'error');
-    }
-}
-
-window.loadUserInbox = async function() {
-    if (!currentUser) return;
-    
-    const list = document.getElementById('user-inbox-list');
-    const countBadge = document.getElementById('user-inbox-count');
-    list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">Yüklənir...</p>';
-    
-    try {
-        let reports = [];
-        if (db) {
-            const snapshot = await db.collection('reports')
-                .where('userId', '==', currentUser.id)
-                .orderBy('timestamp', 'desc')
-                .get();
-            reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        } else {
-            reports = JSON.parse(localStorage.getItem('reports') || '[]')
-                .filter(r => r.userId === currentUser.id)
-                .sort((a, b) => b.timestamp - a.timestamp);
-        }
-
-        countBadge.textContent = `${reports.length} mesaj`;
-
-        if (reports.length === 0) {
-            list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">Hələ heç bir şikayətiniz yoxdur.</p>';
-            return;
-        }
-
-        list.innerHTML = '';
-        reports.forEach(report => {
-            const date = new Date(report.timestamp).toLocaleString('az-AZ');
-            const replyDate = report.replyTimestamp ? new Date(report.replyTimestamp).toLocaleString('az-AZ') : '';
-            
-            const div = document.createElement('div');
-            div.className = `inbox-item ${report.status === 'replied' && !report.read ? 'unread' : ''}`;
-            
-            div.innerHTML = `
-                <div class="inbox-q-info">
-                    <span><i class="fas fa-hashtag"></i> ID: ${report.questionId} | ${report.questionType === 'public' ? 'Ümumi Sual' : 'Kateqoriya Sualı'}</span>
-                    <span class="inbox-status status-${report.status}">${report.status === 'pending' ? 'Gözləmədə' : 'Cavablandırılıb'}</span>
-                </div>
-                <div class="inbox-message">
-                    <strong>Mənim şikayətim (${date}):</strong><br>
-                    ${report.message}
-                </div>
-                ${report.reply ? `
-                    <div class="inbox-reply">
-                        <div class="inbox-reply-header">
-                            <span><i class="fas fa-user-shield"></i> Adminin Cavabı</span>
-                            <span>${replyDate}</span>
-                        </div>
-                        <div class="inbox-reply-text">${report.reply}</div>
-                    </div>
-                ` : ''}
-            `;
-            list.appendChild(div);
-        });
-    } catch (e) {
-        console.error(e);
-        list.innerHTML = '<p style="text-align: center; color: #ef4444; padding: 20px;">Inbox yüklənərkən xəta baş verdi.</p>';
     }
 }
 
