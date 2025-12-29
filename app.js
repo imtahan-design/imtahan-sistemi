@@ -226,6 +226,9 @@ async function loadData() {
     if (!document.getElementById('admin-dashboard-section').classList.contains('hidden')) {
         renderAdminCategories();
     }
+    
+    // Qlobal təhlükəsizlik sistemini aktivləşdir
+    setupGlobalSecurity();
 }
 
 // Save Helpers
@@ -1250,19 +1253,9 @@ function startPrivateQuiz() {
         timeLeft: 45 // Will be set in loadQuestion
     };
     
-    // Apply protection for private quizzes
-    document.body.classList.add('no-select');
-    document.addEventListener('contextmenu', preventDefaultAction);
-    document.addEventListener('keydown', preventProtectionKeys);
-    document.addEventListener('touchstart', handleTouchStart, { passive: false });
-    window.addEventListener('blur', applyPrivacyBlur);
-    window.addEventListener('focus', removePrivacyBlur);
-    window.addEventListener('resize', applyPrivacyBlur);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Aggressive focus checking interval
+    // Apply aggressive protection for quizzes
     window.securityInterval = setInterval(() => {
-        if (activePrivateQuiz && !document.hasFocus()) {
+        if (!document.hasFocus()) {
             applyPrivacyBlur();
         }
     }, 200);
@@ -1297,14 +1290,6 @@ function preventProtectionKeys(e) {
 }
 
 function removeProtection() {
-    document.body.classList.remove('no-select');
-    document.removeEventListener('contextmenu', preventDefaultAction);
-    document.removeEventListener('keydown', preventProtectionKeys);
-    document.removeEventListener('touchstart', handleTouchStart);
-    window.removeEventListener('blur', applyPrivacyBlur);
-    window.removeEventListener('focus', removePrivacyBlur);
-    window.removeEventListener('resize', applyPrivacyBlur);
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
     if (window.securityInterval) clearInterval(window.securityInterval);
     removePrivacyBlur();
 }
@@ -1317,10 +1302,12 @@ function handleTouchStart(e) {
 }
 
 function applyPrivacyBlur() {
-    if (activePrivateQuiz) {
-        document.getElementById('app').classList.add('privacy-blur');
-        createWatermark();
-    }
+    // Qeydiyyat/Giriş səhifəsində bluru aktiv etməyək ki, istifadəçi çaşmasın
+    const authSection = document.getElementById('auth-section');
+    if (authSection && !authSection.classList.contains('hidden')) return;
+
+    document.getElementById('app').classList.add('privacy-blur');
+    createWatermark();
 }
 
 function removePrivacyBlur() {
@@ -1334,19 +1321,70 @@ function createWatermark() {
     
     const watermark = document.createElement('div');
     watermark.id = 'security-watermark';
-    const userName = currentUser ? (currentUser.displayName || currentUser.email) : 'Anonim Tələbə';
+    
+    let displayInfo = 'İmtahan Sistemi';
+    if (currentUser) {
+        displayInfo = currentUser.username || currentUser.email;
+    }
+    
     const date = new Date().toLocaleString();
-    const ipText = "Təhlükəsizlik İzləmə Sistemi";
     
     watermark.innerHTML = `
         <div class="wm-content">
-            <p>${userName}</p>
-            <p>${date}</p>
-            <p>${ipText}</p>
+            <p><i class="fas fa-shield-alt"></i> Məxfi Məlumat</p>
+            <p style="font-size: 1.2rem; margin: 10px 0;">${displayInfo}</p>
+            <p style="font-size: 0.9rem; opacity: 0.8;">${date}</p>
+            <p style="font-size: 0.8rem; margin-top: 15px; color: #ff4757;">Screenshot çəkmək qadağandır!</p>
         </div>
     `;
     document.body.appendChild(watermark);
 }
+
+// Qlobal Təhlükəsizlik Sistemi - Saytın strukturunu pozmadan
+function setupGlobalSecurity() {
+    // 1. Sağ düyməni bağla
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // 2. Kopyalamağı bağla
+    document.body.classList.add('no-select');
+
+    // 3. Klaviatura qısayollarını bağla
+    document.addEventListener('keydown', function(e) {
+        if (
+            (e.ctrlKey && (e.key === 'c' || e.key === 'u' || e.key === 'p' || e.key === 's' || e.key === 'i' || e.key === 'j')) ||
+            e.key === 'F12' ||
+            e.key === 'PrintScreen' ||
+            e.code === 'PrintScreen' ||
+            e.key === 'VolumeUp' || 
+            e.key === 'VolumeDown'
+        ) {
+            if (e.key === 'VolumeUp' || e.key === 'VolumeDown') {
+                applyPrivacyBlur();
+                setTimeout(removePrivacyBlur, 2000); // 2 saniyəlik müvəqqəti blok
+            } else {
+                e.preventDefault();
+                showNotification('Təhlükəsizlik səbəbiylə bu hərəkət qadağandır!', 'error');
+            }
+            return false;
+        }
+    });
+
+    // 4. Fokus itəndə ekranı dumanla (Screenshot qarşısını almaq üçün)
+    window.addEventListener('blur', applyPrivacyBlur);
+    window.addEventListener('focus', removePrivacyBlur);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) applyPrivacyBlur();
+        else removePrivacyBlur();
+    });
+
+    console.log("Qlobal təhlükəsizlik sistemi aktivləşdirildi.");
+}
+
+// Səhifə yüklənəndə təhlükəsizliyi işə sal (amma login səhifəsində mane olmasın)
+document.addEventListener('DOMContentLoaded', () => {
+    // Digər DOMContentLoaded məntiqləri buraya gələ bilər
+    // setupGlobalSecurity() funksiyasını loadData-dan sonra çağırmaq daha yaxşıdır
+});
 
 function handleVisibilityChange() {
     if (document.hidden) {
