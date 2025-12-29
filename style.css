@@ -92,13 +92,33 @@ body {
     -moz-user-select: none !important;
     -ms-user-select: none !important;
     user-select: none !important;
-    -webkit-touch-callout: none !important; /* Prevents callout menu on mobile */
+    -webkit-touch-callout: none !important;
 }
 
-/* Blurring effect for mobile screenshot mitigation */
+/* Aggressive Protection for mobile screenshot mitigation */
 .privacy-blur {
-    filter: blur(15px) !important;
+    filter: blur(25px) grayscale(100%) !important;
     pointer-events: none !important;
+}
+
+.privacy-blur::before {
+    content: "TƏHLÜKƏSİZLİK QORUMASI AKTİVDİR: Screenshot qadağandır!";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.98);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+    z-index: 999999;
+    padding: 20px;
+    filter: none !important;
 }
 
 @media print {
