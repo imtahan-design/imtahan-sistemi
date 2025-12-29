@@ -469,7 +469,7 @@ function hideAllSections() {
         'category-admin-section', 'quiz-section', 'result-section', 
         'profile-section', 'teacher-dashboard-section', 
         'create-private-quiz-section', 'private-access-section',
-        'admin-question-section'
+        'admin-question-section', 'review-section'
     ];
     sections.forEach(id => {
         const elem = document.getElementById(id);
@@ -1194,21 +1194,6 @@ function startPrivateQuiz() {
 }
 
 // --- Dashboard & Categories ---
-window.showDashboard = function() {
-    // Only clear and redirect if we are not on a private quiz page
-    if (window.location.search.includes('quiz=')) {
-        return;
-    }
-    
-    activePrivateQuiz = null;
-    studentName = '';
-    
-    currentParentId = null; // Reset to top level
-    hideAllSections();
-    document.getElementById('dashboard-section').classList.remove('hidden');
-    renderCategories();
-}
-
 window.showAdminDashboard = function() {
     if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu səhifə yalnız adminlər üçündür!', 'error');
     currentAdminParentId = null; // Reset to top level
@@ -2031,11 +2016,20 @@ function showResult() {
 }
 
 window.showDashboard = function() {
+    // If a quiz is in progress, stop the timer
+    if (currentQuiz && currentQuiz.timer) {
+        clearInterval(currentQuiz.timer);
+    }
+    currentQuiz = null;
+
     // If it was a private quiz, we should clear the URL and reload to fully reset
-    if (activePrivateQuiz) {
+    if (activePrivateQuiz || window.location.search.includes('quiz=')) {
         window.location.href = window.location.origin + window.location.pathname;
         return;
     }
+    
+    activePrivateQuiz = null;
+    studentName = '';
     
     hideAllSections();
     document.getElementById('dashboard-section').classList.remove('hidden');
