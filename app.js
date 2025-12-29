@@ -2104,17 +2104,61 @@ window.showAddPublicQuestionModal = function() {
         return;
     }
     document.getElementById('public-question-modal').classList.remove('hidden');
-    // Clear form
+    // Clear form and reset options to 4
     document.getElementById('pub-q-text').value = '';
-    const opts = document.querySelectorAll('.pub-opt');
-    opts.forEach(o => o.value = '');
+    const optionsContainer = document.getElementById('pub-q-options');
+    optionsContainer.innerHTML = `
+        <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <input type="radio" name="pub-q-correct" value="0" checked id="pub-opt-0" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
+            <input type="text" class="pub-opt" placeholder="A variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+        </div>
+        <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <input type="radio" name="pub-q-correct" value="1" id="pub-opt-1" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
+            <input type="text" class="pub-opt" placeholder="B variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+        </div>
+        <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <input type="radio" name="pub-q-correct" value="2" id="pub-opt-2" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
+            <input type="text" class="pub-opt" placeholder="C variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+        </div>
+        <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <input type="radio" name="pub-q-correct" value="3" id="pub-opt-3" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
+            <input type="text" class="pub-opt" placeholder="D variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+        </div>
+    `;
+}
+
+window.addPublicOption = function() {
+    const optionsContainer = document.getElementById('pub-q-options');
+    const optionCount = optionsContainer.querySelectorAll('.manual-option-input').length;
+    
+    if (optionCount >= 10) {
+        showNotification('Maksimum 10 variant əlavə edə bilərsiniz.', 'error');
+        return;
+    }
+
+    const charCode = 65 + optionCount; // A=65, B=66, etc.
+    const char = String.fromCharCode(charCode);
+    
+    const div = document.createElement('div');
+    div.className = 'manual-option-input';
+    div.style.cssText = 'display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;';
+    div.innerHTML = `
+        <input type="radio" name="pub-q-correct" value="${optionCount}" id="pub-opt-${optionCount}" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
+        <input type="text" class="pub-opt" placeholder="${char} variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+        <button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ef4444; cursor:pointer; padding: 5px;"><i class="fas fa-times"></i></button>
+    `;
+    optionsContainer.appendChild(div);
 }
 
 window.submitPublicQuestion = async function() {
     const text = document.getElementById('pub-q-text').value.trim();
-    const opts = Array.from(document.querySelectorAll('.pub-opt')).map(o => o.value.trim());
-    const correctRadio = document.querySelector('input[name="pub-q-correct"]:checked');
-    const correct = correctRadio ? parseInt(correctRadio.value) : 0;
+    const optInputs = Array.from(document.querySelectorAll('.pub-opt'));
+    const opts = optInputs.map(o => o.value.trim());
+    
+    // Find index of the checked radio button among all radio buttons in the container
+    const allRadios = Array.from(document.querySelectorAll('input[name="pub-q-correct"]'));
+    const checkedRadioIndex = allRadios.findIndex(r => r.checked);
+    const correct = checkedRadioIndex !== -1 ? checkedRadioIndex : 0;
 
     if (!text || opts.some(o => !o)) {
         return showNotification('Zəhmət olmasa bütün sahələri doldurun.', 'error');
