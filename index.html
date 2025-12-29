@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İmtahan – Onlayn Qiymətləndirmə Platforması</title>
-    <link rel="stylesheet" href="style.css?v=1.2">
+    <link rel="stylesheet" href="style.css?v=1.7">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Firebase SDKs -->
@@ -149,14 +149,17 @@
                             <div class="bulk-info">
                                 <p><i class="fas fa-info-circle"></i> Sualları aşağıdakı formatda yapışdırın:</p>
                                 <div class="format-example">
-                                    1. Sual mətni?<br>
+                                    1. Birinci sual mətni?<br>
                                     A) Variant 1<br>
-                                    B) Variant 2<br>
-                                    C) Variant 3<br>
-                                    D) Variant 4
+                                    B) Variant 2<br><br>
+                                    2. İkinci sual mətni?<br>
+                                    A) Variant 1<br>
+                                    B) Variant 2
                                 </div>
-                                <p class="bulk-warning"><i class="fas fa-list-ol"></i> Sualları ardıcıl olaraq alt-alta əlavə edin!</p>
-                                <p class="bulk-warning"><i class="fas fa-exclamation-triangle"></i> Hər sualın arasında bir boş sətir buraxın!</p>
+                                <p class="bulk-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Hər sualın arasında bir boş sətir buraxın!<br>
+                                    <i class="fas fa-exclamation-circle"></i> Sual mətni ilə variantlar arasında və variantların özləri arasında boş sətir buraxmayın!
+                                </p>
                                 <p class="bulk-warning-red"><i class="fas fa-check-double"></i> Mətni suallara çevirə basdıqdan sonra sualların mətnini və variantlarını yenidən gözdən keçirin!</p>
                             </div>
                             <textarea id="bulk-questions-text" placeholder="Sualları buraya yapışdırın..."></textarea>
@@ -313,7 +316,14 @@
                 <button onclick="showDashboard()" class="btn-back"><i class="fas fa-arrow-left"></i> Geri</button>
                 <div class="category-header">
                     <h2 id="current-category-title">Kateqoriya Adı</h2>
-                    <button id="start-quiz-btn" class="btn-success" onclick="startQuiz()">Testə Başla</button>
+                    <div class="category-header-btns">
+                        <button id="start-quiz-btn" class="btn-success" onclick="startQuiz()">
+                            <i class="fas fa-play"></i> Testə Başla
+                        </button>
+                        <button id="public-questions-btn" class="btn-primary" onclick="showPublicQuestions()">
+                            <i class="fas fa-users"></i> Ümumi Suallar
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="admin-panel-area">
@@ -327,6 +337,75 @@
                 </div>
             </div>
         </section>
+
+        <!-- Public Questions Section -->
+        <section id="public-questions-section" class="hidden">
+            <div class="container">
+                <div class="header-actions">
+                    <button onclick="hidePublicQuestions()" class="btn-secondary"><i class="fas fa-arrow-left"></i> Geri</button>
+                    <h2 id="public-questions-title">Ümumi Suallar</h2>
+                    <button id="add-public-q-btn" class="btn-primary hidden" onclick="showAddPublicQuestionModal()">
+                        <i class="fas fa-plus"></i> Sual Əlavə Et
+                    </button>
+                </div>
+                
+                <div class="public-questions-filter">
+                    <p class="text-muted">Bu bölmədə istifadəçilər tərəfindən əlavə edilmiş açıq suallar yer alır.</p>
+                </div>
+
+                <div id="public-questions-list" class="public-questions-grid">
+                    <!-- Public questions will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Add Public Question Modal -->
+        <div id="public-question-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 600px;">
+                <span class="close" onclick="closeModal('public-question-modal')">&times;</span>
+                <h2>Ümumi Sual Əlavə Et</h2>
+                <div class="form-group">
+                    <label>Sualın mətni:</label>
+                    <textarea id="pub-q-text" placeholder="Sualı daxil edin..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Variantlar (Hər variantdan sonra Enter basın):</label>
+                    <div id="pub-q-options" class="manual-options-grid">
+                        <input type="text" class="pub-opt" placeholder="A variantı">
+                        <input type="text" class="pub-opt" placeholder="B variantı">
+                        <input type="text" class="pub-opt" placeholder="C variantı">
+                        <input type="text" class="pub-opt" placeholder="D variantı">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Düzgün variant:</label>
+                    <select id="pub-q-correct">
+                        <option value="0">A</option>
+                        <option value="1">B</option>
+                        <option value="2">C</option>
+                        <option value="3">D</option>
+                    </select>
+                </div>
+                <button onclick="submitPublicQuestion()" class="btn-primary" style="width: 100%;">Göndər</button>
+            </div>
+        </div>
+
+        <!-- Discussion Modal -->
+        <div id="discussion-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 700px; height: 80vh; display: flex; flex-direction: column;">
+                <span class="close" onclick="closeModal('discussion-modal')">&times;</span>
+                <h2 id="discussion-title">Müzakirə</h2>
+                <div id="discussion-question-text" class="discussion-q-preview"></div>
+                <hr>
+                <div id="comments-list" class="comments-container" style="flex: 1; overflow-y: auto;">
+                    <!-- Comments will be loaded here -->
+                </div>
+                <div class="comment-input-area">
+                    <textarea id="new-comment-text" placeholder="Fikrinizi bildirin..."></textarea>
+                    <button onclick="sendComment()" class="btn-primary"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
 
         <!-- Quiz Section -->
         <section id="quiz-section" class="hidden">
@@ -453,13 +532,17 @@
                                 <div class="bulk-info">
                                     <p><i class="fas fa-info-circle"></i> Sualları aşağıdakı formatda yapışdırın:</p>
                                     <div class="format-example">
-                                        1. Sual mətni?<br>
+                                        1. Birinci sual mətni?<br>
                                         A) Variant 1<br>
-                                        B) Variant 2<br>
-                                        C) Variant 3<br>
-                                        D) Variant 4
+                                        B) Variant 2<br><br>
+                                        2. İkinci sual mətni?<br>
+                                        A) Variant 1<br>
+                                        B) Variant 2
                                     </div>
-                                    <p class="bulk-warning"><i class="fas fa-exclamation-triangle"></i> Hər sualın arasında bir boş sətir buraxın!</p>
+                                    <p class="bulk-warning">
+                                        <i class="fas fa-exclamation-triangle"></i> Hər sualın arasında bir boş sətir buraxın!<br>
+                                        <i class="fas fa-exclamation-circle"></i> Sual mətni ilə variantlar arasında və variantların özləri arasında boş sətir buraxmayın!
+                                    </p>
                                 </div>
                                 <textarea id="admin-bulk-questions-text" placeholder="Sualları buraya yapışdırın..." style="min-height: 300px;"></textarea>
                                 <button onclick="parseAdminBulkQuestions()" class="btn-primary" style="width: 100%; margin-top: 15px;">
@@ -577,14 +660,17 @@
                     </label>
                 </div>
             </div>
-            <div class="setup-footer">
+            <div class="setup-footer" style="display: flex; flex-direction: column; gap: 10px;">
                 <button onclick="confirmStartQuiz()" class="btn-primary start-quiz-btn">
                     <i class="fas fa-play"></i> İmtahana Başla
+                </button>
+                <button onclick="closeModal('quiz-setup-modal'); showPublicQuestions();" class="btn-outline">
+                    <i class="fas fa-users"></i> Ümumi Suallara Bax
                 </button>
             </div>
         </div>
     </div>
 
-    <script src="app.js?v=1.2"></script>
+    <script src="app.js?v=1.7"></script>
 </body>
 </html>

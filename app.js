@@ -492,7 +492,7 @@ function hideAllSections() {
         'category-admin-section', 'quiz-section', 'result-section', 
         'profile-section', 'teacher-dashboard-section', 
         'create-private-quiz-section', 'private-access-section',
-        'admin-question-section', 'review-section'
+        'admin-question-section', 'review-section', 'public-questions-section'
     ];
     sections.forEach(id => {
         const elem = document.getElementById(id);
@@ -1512,6 +1512,7 @@ function renderCategories() {
             <div class="category-actions">
                 ${hasSub ? `<button class="btn-secondary" onclick="enterCategory('${cat.id}')">Bölmələrə Bax</button>` : ''}
                 ${hasQuestions ? `<button class="btn-primary" onclick="startQuizCheck('${cat.id}')">Testə Başla</button>` : ''}
+                ${!hasSub ? `<button class="btn-outline" onclick="openPublicQuestionsFromDash('${cat.id}')"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
                 ${!hasSub && !hasQuestions ? '<p style="color: #888; font-size: 0.8rem;">Tezliklə...</p>' : ''}
             </div>
         `;
@@ -1597,6 +1598,7 @@ function renderAdminCategories() {
             <div class="category-actions">
                 <button class="btn-secondary" onclick="enterAdminCategory('${cat.id}')">Bölməyə Bax</button>
                 <button class="btn-primary" onclick="openCategoryQuestions('${cat.id}')">Suallar (${cat.questions ? cat.questions.length : 0})</button>
+                ${!hasSub ? `<button class="btn-outline" onclick="openPublicQuestionsFromDash('${cat.id}')"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
             </div>
         `;
         grid.appendChild(div);
@@ -1715,27 +1717,299 @@ window.deleteCategory = function(id, event) {
 
 // --- Category Admin & Questions ---
 let activeCategoryId = null;
+let currentDiscussionQuestionId = null;
+
+// --- Public Questions Logic ---
+window.openPublicQuestionsFromDash = function(id) {
+    activeCategoryId = id;
+    showPublicQuestions();
+}
+
+window.showPublicQuestions = function() {
+    if (!activeCategoryId) return;
+    const cat = categories.find(c => c.id === activeCategoryId);
+    if (!cat) return;
+
+    hideAllSections();
+    document.getElementById('public-questions-section').classList.remove('hidden');
+    document.getElementById('public-questions-title').textContent = `${cat.name} - Ümumi Suallar`;
+    
+    // Check if user can add questions (logged in)
+    const addBtn = document.getElementById('add-public-q-btn');
+    if (currentUser) {
+        addBtn.classList.remove('hidden');
+    } else {
+        addBtn.classList.add('hidden');
+    }
+
+    loadPublicQuestions();
+}
+
+window.hidePublicQuestions = function() {
+    if (activeCategoryId) {
+        // Əgər istifadəçi admin və ya moderatordursa admin panelinə, deyilsə dashboard-a qaytar
+        if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator')) {
+            openCategory(activeCategoryId);
+        } else {
+            showDashboard();
+        }
+    } else {
+        showDashboard();
+    }
+}
+
+window.showAddPublicQuestionModal = function() {
+    if (!currentUser) return showLogin();
+    document.getElementById('public-question-modal').classList.remove('hidden');
+    // Clear form
+    document.getElementById('pub-q-text').value = '';
+    const opts = document.querySelectorAll('.pub-opt');
+    opts.forEach(o => o.value = '');
+}
+
+window.submitPublicQuestion = async function() {
+    const text = document.getElementById('pub-q-text').value.trim();
+    const opts = Array.from(document.querySelectorAll('.pub-opt')).map(o => o.value.trim());
+    const correct = parseInt(document.getElementById('pub-q-correct').value);
+
+    if (!text || opts.some(o => !o)) {
+        return showNotification('Zəhmət olmasa bütün sahələri doldurun.', 'error');
+    }
+
+    const newQ = {
+        categoryId: activeCategoryId,
+        text: text,
+        options: opts,
+        correctIndex: correct,
+        authorId: currentUser.id,
+        authorName: currentUser.username,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        if (db) {
+            await db.collection('public_questions').add(newQ);
+        } else {
+            // Local fallback (simplified)
+            let localPQ = JSON.parse(localStorage.getItem('public_questions') || '[]');
+            newQ.id = Date.now();
+            newQ.createdAt = new Date().toISOString();
+            localPQ.push(newQ);
+            localStorage.setItem('public_questions', JSON.stringify(localPQ));
+        }
+        showNotification('Sual uğurla əlavə edildi!');
+        closeModal('public-question-modal');
+        loadPublicQuestions();
+    } catch (e) {
+        console.error(e);
+        showNotification('Sual əlavə edilərkən xəta baş verdi.', 'error');
+    }
+}
+
+window.loadPublicQuestions = async function() {
+    const list = document.getElementById('public-questions-list');
+    list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Yüklənir...</div>';
+
+    try {
+        let questions = [];
+        if (db) {
+            const snapshot = await db.collection('public_questions')
+                .where('categoryId', '==', activeCategoryId)
+                .get();
+            questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Client-side sort (missing index avoidance)
+            questions.sort((a, b) => {
+                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : 0;
+                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : 0;
+                return timeB - timeA;
+            });
+        } else {
+            const localPQ = JSON.parse(localStorage.getItem('public_questions') || '[]');
+            questions = localPQ.filter(q => q.categoryId === activeCategoryId)
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+
+        renderPublicQuestions(questions);
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = '<p style="text-align:center; color:red;">Sualları yükləmək mümkün olmadı.</p>';
+    }
+}
+
+function renderPublicQuestions(questions) {
+    const list = document.getElementById('public-questions-list');
+    if (questions.length === 0) {
+        list.innerHTML = '<p style="text-align:center; color:#888; padding: 40px;">Hələ heç kim sual əlavə etməyib. İlk sualı siz əlavə edin!</p>';
+        return;
+    }
+
+    list.innerHTML = '';
+    questions.forEach(q => {
+        const div = document.createElement('div');
+        div.className = 'public-q-card';
+        div.innerHTML = `
+            <div class="public-q-header">
+                <span><i class="fas fa-user"></i> ${q.authorName || 'Anonim'}</span>
+                <span>${q.createdAt ? (db ? new Date(q.createdAt.toDate()).toLocaleDateString() : new Date(q.createdAt).toLocaleDateString()) : ''}</span>
+            </div>
+            <div class="public-q-text">${q.text}</div>
+            <div class="public-q-options">
+                ${q.options.map((opt, idx) => `
+                    <div class="pub-opt-item ${idx === q.correctIndex ? 'correct' : ''}">
+                        ${String.fromCharCode(65 + idx)}) ${opt}
+                    </div>
+                `).join('')}
+            </div>
+            <div class="public-q-actions">
+                <button onclick="showDiscussion('${q.id}')" class="btn-outline">
+                    <i class="fas fa-comments"></i> Müzakirə Et
+                </button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+// --- Discussion Logic ---
+window.showDiscussion = async function(questionId) {
+    currentDiscussionQuestionId = questionId;
+    const modal = document.getElementById('discussion-modal');
+    modal.classList.remove('hidden');
+
+    // Find the question to show preview
+    let questions = [];
+    if (db) {
+        const doc = await db.collection('public_questions').doc(questionId).get();
+        if (doc.exists) {
+            const data = doc.data();
+            document.getElementById('discussion-question-text').textContent = data.text;
+        }
+    } else {
+        const localPQ = JSON.parse(localStorage.getItem('public_questions') || '[]');
+        const q = localPQ.find(q => q.id == questionId);
+        if (q) document.getElementById('discussion-question-text').textContent = q.text;
+    }
+
+    loadComments();
+}
+
+async function loadComments() {
+    const list = document.getElementById('comments-list');
+    list.innerHTML = '<div style="text-align:center; padding: 10px;"><i class="fas fa-spinner fa-spin"></i></div>';
+
+    try {
+        let comments = [];
+        if (db) {
+            const snapshot = await db.collection('discussions')
+                .where('questionId', '==', currentDiscussionQuestionId)
+                .get();
+            comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Client-side sort (missing index avoidance)
+            comments.sort((a, b) => {
+                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : 0;
+                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : 0;
+                return timeA - timeB; // ascending for comments
+            });
+        } else {
+            const localC = JSON.parse(localStorage.getItem('discussions') || '[]');
+            comments = localC.filter(c => c.questionId == currentDiscussionQuestionId)
+                .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        }
+        renderComments(comments);
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = '<p style="font-size:0.8rem; color:red;">Şərhləri yükləmək mümkün olmadı.</p>';
+    }
+}
+
+function renderComments(comments) {
+    const list = document.getElementById('comments-list');
+    if (comments.length === 0) {
+        list.innerHTML = '<p style="text-align:center; color:#888; padding: 20px; font-size:0.9rem;">Hələ müzakirə yoxdur. Fikrinizi bildirin!</p>';
+        return;
+    }
+
+    list.innerHTML = '';
+    comments.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'comment-item';
+        div.innerHTML = `
+            <div class="comment-author">
+                ${c.userName}
+                <span class="comment-date">${c.createdAt ? (db ? new Date(c.createdAt.toDate()).toLocaleString() : new Date(c.createdAt).toLocaleString()) : ''}</span>
+            </div>
+            <div class="comment-text">${c.text}</div>
+        `;
+        list.appendChild(div);
+    });
+    // Scroll to bottom
+    list.scrollTop = list.scrollHeight;
+}
+
+window.sendComment = async function() {
+    if (!currentUser) return showLogin();
+    const text = document.getElementById('new-comment-text').value.trim();
+    if (!text) return;
+
+    const newComment = {
+        questionId: currentDiscussionQuestionId,
+        userId: currentUser.id,
+        userName: currentUser.username,
+        text: text,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        if (db) {
+            await db.collection('discussions').add(newComment);
+        } else {
+            let localC = JSON.parse(localStorage.getItem('discussions') || '[]');
+            newComment.id = Date.now();
+            newComment.createdAt = new Date().toISOString();
+            localC.push(newComment);
+            localStorage.setItem('discussions', JSON.stringify(localC));
+        }
+        document.getElementById('new-comment-text').value = '';
+        loadComments();
+    } catch (e) {
+        console.error(e);
+        showNotification('Şərh göndərilərkən xəta baş verdi.', 'error');
+    }
+}
 
 function openCategory(id) {
     activeCategoryId = id;
     const cat = categories.find(c => c.id === id);
     hideAllSections();
-    document.getElementById('category-admin-section').classList.remove('hidden');
-    document.getElementById('current-category-title').textContent = cat.name;
     
-    // Start button logic
-    const startBtn = document.getElementById('start-quiz-btn');
-    if (cat.questions.length === 0) {
-        startBtn.disabled = true;
-        startBtn.style.opacity = 0.5;
-        startBtn.textContent = "Sual yoxdur";
-    } else {
-        startBtn.disabled = false;
-        startBtn.style.opacity = 1;
-        startBtn.textContent = "Testə Başla";
-    }
+    // Təhlükəsizlik: Yalnız səlahiyyətli şəxslər (admin və ya moderator) admin panelini görə bilər
+    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator')) {
+        document.getElementById('category-admin-section').classList.remove('hidden');
+        document.getElementById('current-category-title').textContent = cat.name;
+        
+        const adminArea = document.querySelector('.admin-panel-area');
+        adminArea.classList.remove('hidden');
+        
+        // Start button logic inside admin view
+        const startBtn = document.getElementById('start-quiz-btn');
+        if (cat.questions.length === 0) {
+            startBtn.disabled = true;
+            startBtn.style.opacity = 0.5;
+            startBtn.textContent = "Sual yoxdur";
+        } else {
+            startBtn.disabled = false;
+            startBtn.style.opacity = 1;
+            startBtn.textContent = "Testə Başla";
+        }
 
-    renderQuestions();
+        renderQuestions();
+    } else {
+        // Əgər admin deyilsə, testi başlama modalını göstər və ya dashboard-a qaytar
+        showDashboard();
+        startQuizCheck(id);
+    }
 }
 
 function renderQuestions() {
