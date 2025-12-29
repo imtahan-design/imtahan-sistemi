@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İmtahan – Onlayn Qiymətləndirmə Platforması</title>
-    <link rel="stylesheet" href="style.css?v=2.7">
+    <link rel="stylesheet" href="style.css?v=3.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Firebase SDKs -->
@@ -24,6 +24,9 @@
                 <div class="logo-sub">onlayn qiymətləndirmə platforması</div>
             </div>
             <div class="nav-links">
+                <button onclick="showTopUsers()" class="btn-secondary" style="background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color);">
+                    <i class="fas fa-trophy"></i> <span>Liderlər</span>
+                </button>
                 <div id="guest-nav" class="hidden">
                     <button onclick="showLogin()" class="btn-secondary"><i class="fas fa-sign-in-alt"></i> <span>Giriş</span></button>
                     <button onclick="showRegister()" class="btn-primary"><i class="fas fa-user-plus"></i> <span>Qeydiyyat</span></button>
@@ -301,6 +304,36 @@
                     <div id="user-questions-list" class="list-container">
                         <!-- User's questions will be loaded here -->
                         <p style="text-align: center; color: #888; padding: 20px;">Yüklənir...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Users Section -->
+        <section id="top-users-section" class="hidden">
+            <div class="container">
+                <div class="header-actions">
+                    <h2><i class="fas fa-medal" style="color: #f59e0b;"></i> Liderlər Siyahısı</h2>
+                    <button onclick="showDashboard()" class="btn-secondary">Geri</button>
+                </div>
+                
+                <div class="leaderboard-container card">
+                    <div class="leaderboard-info-banner">
+                        <div class="info-item"><i class="fas fa-plus-circle"></i> Paylaşılan sual: <b>+5 xal</b></div>
+                        <div class="info-item"><i class="fas fa-thumbs-up"></i> Hər bəyəni: <b>+1 xal</b></div>
+                    </div>
+                    <div class="leaderboard-tabs" id="leaderboard-time-tabs">
+                        <div class="tab-item active" onclick="changeLeaderboardPeriod('all')">Ümumi</div>
+                        <div class="tab-item" onclick="changeLeaderboardPeriod('monthly')">Aylıq</div>
+                        <div class="tab-item" onclick="changeLeaderboardPeriod('weekly')">Həftəlik</div>
+                        <div class="tab-item" onclick="changeLeaderboardPeriod('daily')">Günlük</div>
+                    </div>
+                    <div id="top-users-list" class="leaderboard-list">
+                        <!-- Top users will be loaded here -->
+                        <div style="text-align:center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p style="margin-top: 10px;">Hesablanır...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -752,6 +785,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=2.7"></script>
+    <script src="app.js?v=3.2"></script>
 </body>
 </html>

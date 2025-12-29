@@ -492,7 +492,8 @@ function hideAllSections() {
         'category-admin-section', 'quiz-section', 'result-section', 
         'profile-section', 'teacher-dashboard-section', 
         'create-private-quiz-section', 'private-access-section',
-        'admin-question-section', 'review-section', 'public-questions-section'
+        'admin-question-section', 'review-section', 'public-questions-section',
+        'top-users-section'
     ];
     sections.forEach(id => {
         const elem = document.getElementById(id);
@@ -2014,10 +2015,16 @@ function renderPublicQuestions(questions) {
 
         const div = document.createElement('div');
         div.className = 'public-q-card';
+        
+        const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+
         div.innerHTML = `
             <div class="public-q-header">
                 <span><i class="fas fa-user"></i> ${q.authorName || 'Anonim'}</span>
-                <span>${q.createdAt ? (db ? new Date(q.createdAt.toDate()).toLocaleDateString() : new Date(q.createdAt).toLocaleDateString()) : ''}</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span>${q.createdAt ? (db ? new Date(q.createdAt.toDate()).toLocaleDateString() : new Date(q.createdAt).toLocaleDateString()) : ''}</span>
+                    ${isAdmin ? `<button onclick="deletePublicQuestion('${q.id}')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size: 0.9rem;" title="Sualı sil"><i class="fas fa-trash"></i></button>` : ''}
+                </div>
             </div>
             <div class="public-q-text">${q.text}</div>
             <div class="public-q-options" id="pub-options-${q.id}">
@@ -2142,6 +2149,140 @@ window.checkPublicAnswer = function(questionId, selectedIdx, correctIdx) {
     optionsContainer.classList.add('answered');
 }
 
+window.deletePublicQuestion = async function(qId) {
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) {
+        return showNotification('Bu hərəkət üçün səlahiyyətiniz yoxdur.', 'error');
+    }
+
+    showCustomConfirm('Sualı sil', 'Bu ümumi sualı silmək istədiyinizə əminsiniz?', async () => {
+        try {
+            if (db) {
+                await db.collection('public_questions').doc(qId).delete();
+            } else {
+                let localPQ = JSON.parse(localStorage.getItem('public_questions') || '[]');
+                localPQ = localPQ.filter(q => q.id != qId);
+                localStorage.setItem('public_questions', JSON.stringify(localPQ));
+            }
+            showNotification('Sual silindi', 'success');
+            loadPublicQuestions();
+        } catch (e) {
+            console.error(e);
+            showNotification('Sual silinərkən xəta baş verdi', 'error');
+        }
+    });
+}
+
+window.currentLeaderboardPeriod = 'all';
+
+window.changeLeaderboardPeriod = function(period) {
+    window.currentLeaderboardPeriod = period;
+    const tabs = document.querySelectorAll('#leaderboard-time-tabs .tab-item');
+    tabs.forEach(tab => {
+        if (tab.getAttribute('onclick').includes(`'${period}'`)) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    showTopUsers();
+};
+
+window.showTopUsers = async function() {
+    hideAllSections();
+    document.getElementById('top-users-section').classList.remove('hidden');
+    const list = document.getElementById('top-users-list');
+    list.innerHTML = '<div style="text-align:center; padding: 40px;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">Hesablanır...</p></div>';
+
+    try {
+        let questions = [];
+        if (db) {
+            const snapshot = await db.collection('public_questions').get();
+            questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } else {
+            questions = JSON.parse(localStorage.getItem('public_questions') || '[]');
+        }
+
+        const userStats = {};
+        const now = new Date();
+        const period = window.currentLeaderboardPeriod || 'all';
+
+        questions.forEach(q => {
+            if (!q.authorId) return;
+
+            // Time filter
+            if (q.createdAt) {
+                const qDate = db ? q.createdAt.toDate() : new Date(q.createdAt);
+                const diffTime = Math.abs(now - qDate);
+                const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+                if (period === 'daily' && diffDays > 1) return;
+                if (period === 'weekly' && diffDays > 7) return;
+                if (period === 'monthly' && diffDays > 30) return;
+            } else if (period !== 'all') {
+                return; // No date, skip if period is specific
+            }
+
+            if (!userStats[q.authorId]) {
+                userStats[q.authorId] = {
+                    id: q.authorId,
+                    name: q.authorName || 'Anonim',
+                    questions: 0,
+                    likes: 0,
+                    dislikes: 0
+                };
+            }
+            userStats[q.authorId].questions += 1;
+            userStats[q.authorId].likes += (q.likes ? q.likes.length : 0);
+            userStats[q.authorId].dislikes += (q.dislikes ? q.dislikes.length : 0);
+        });
+
+        const sortedUsers = Object.values(userStats).sort((a, b) => {
+            const scoreA = (a.questions * 5) + a.likes - (a.dislikes * 0.5);
+            const scoreB = (b.questions * 5) + b.likes - (b.dislikes * 0.5);
+            return scoreB - scoreA;
+        });
+
+        if (sortedUsers.length === 0) {
+            const periodText = period === 'daily' ? 'günlük' : period === 'weekly' ? 'həftəlik' : period === 'monthly' ? 'aylıq' : 'ümumi';
+            list.innerHTML = `<div style="text-align:center; padding: 40px; color: #888;">Bu müddət ərzində (${periodText}) hələ heç bir aktivlik yoxdur.</div>`;
+            return;
+        }
+
+        list.innerHTML = '';
+        sortedUsers.slice(0, 20).forEach((user, idx) => {
+            const rank = idx + 1;
+            const score = Math.round((user.questions * 5) + user.likes - (user.dislikes * 0.5));
+            const div = document.createElement('div');
+            div.className = 'leader-item';
+            div.innerHTML = `
+                <div class="leader-rank ${rank <= 3 ? 'top-' + rank : ''}">${rank}</div>
+                <div class="leader-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="leader-info">
+                    <div class="leader-name">${user.name}</div>
+                    <div class="leader-stats">
+                        <div class="leader-stat" title="Paylaşılan sual sayı">
+                            <i class="fas fa-question-circle" style="color: var(--primary-color);"></i> ${user.questions} sual
+                        </div>
+                        <div class="leader-stat" title="Toplam bəyəni">
+                            <i class="fas fa-thumbs-up" style="color: #3b82f6;"></i> ${user.likes}
+                        </div>
+                    </div>
+                </div>
+                <div class="leader-score">
+                    <span class="score-value">${score}</span>
+                    <span class="score-label">XAL</span>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = '<div style="text-align:center; padding: 40px; color: #ef4444;">Xəta baş verdi. Zəhmət olmasa yenidən yoxlayın.</div>';
+    }
+}
+
 // --- Discussion Logic ---
 let discussionUnsubscribe = null;
 
@@ -2258,6 +2399,8 @@ function renderComments(comments) {
     list.innerHTML = '';
     comments.forEach(c => {
         const isOwn = c.userId == currentUserId;
+        const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+        
         const div = document.createElement('div');
         div.className = `comment-item ${isOwn ? 'own' : 'other'}`;
         
@@ -2270,7 +2413,7 @@ function renderComments(comments) {
             <div class="comment-text">${c.text}</div>
             <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
                 <div class="comment-date" style="margin: 0;">${dateStr}</div>
-                ${isOwn ? `<button onclick="deleteComment('${c.id}')" style="background:none; border:none; color:inherit; opacity:0.5; cursor:pointer; font-size:0.7rem; padding:0;"><i class="fas fa-trash"></i></button>` : ''}
+                ${(isOwn || isAdmin) ? `<button onclick="deleteComment('${c.id}')" style="background:none; border:none; color:inherit; opacity:0.5; cursor:pointer; font-size:0.7rem; padding:0;" title="Mesajı sil"><i class="fas fa-trash"></i></button>` : ''}
             </div>
         `;
         list.appendChild(div);
