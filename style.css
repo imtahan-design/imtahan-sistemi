@@ -97,9 +97,8 @@ body {
 
 /* Aggressive Protection for mobile screenshot mitigation */
 .privacy-blur {
-    filter: blur(20px) grayscale(100%) !important;
+    filter: blur(15px) grayscale(90%) !important;
     pointer-events: none !important;
-    user-select: none !important;
 }
 
 #security-watermark {

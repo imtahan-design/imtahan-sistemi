@@ -1270,23 +1270,9 @@ function preventDefaultAction(e) {
 }
 
 function preventProtectionKeys(e) {
-    // Prevent Ctrl+C, Ctrl+U, Ctrl+P, Ctrl+S, F12, PrintScreen
-    if (
-        (e.ctrlKey && (e.key === 'c' || e.key === 'u' || e.key === 'p' || e.key === 's' || e.key === 'C' || e.key === 'U' || e.key === 'P' || e.key === 'S')) ||
-        e.key === 'F12' ||
-        e.key === 'PrintScreen' ||
-        e.code === 'PrintScreen' ||
-        e.key === 'VolumeUp' || 
-        e.key === 'VolumeDown'
-    ) {
-        if (e.key === 'VolumeUp' || e.key === 'VolumeDown') {
-            applyPrivacyBlur();
-            setTimeout(removePrivacyBlur, 2000); // 2 saniyəlik blokla
-        }
-        e.preventDefault();
-        showNotification('Təhlükəsizlik səbəbiylə bu hərəkət qadağandır!', 'error');
-        return false;
-    }
+    // Screenshot qadağasını ləğv etdik, sadəcə lazımsız qısayolları (F12 və s.) saxlaya bilərik və ya tam silə bilərik.
+    // İstifadəçinin istəyinə görə tam sərbəst buraxırıq.
+    return true;
 }
 
 function removeProtection() {
@@ -1340,36 +1326,15 @@ function createWatermark() {
     document.body.appendChild(watermark);
 }
 
-// Qlobal Təhlükəsizlik Sistemi - Saytın strukturunu pozmadan
+// Qlobal Təhlükəsizlik Sistemi
 function setupGlobalSecurity() {
-    // 1. Sağ düyməni bağla
+    // 1. Sağ düyməni bağla (İstifadəçinin istəyi ilə)
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    // 2. Kopyalamağı bağla
+    // 2. Kopyalamağı bağla (İstifadəçinin istəyi ilə)
     document.body.classList.add('no-select');
 
-    // 3. Klaviatura qısayollarını bağla
-    document.addEventListener('keydown', function(e) {
-        if (
-            (e.ctrlKey && (e.key === 'c' || e.key === 'u' || e.key === 'p' || e.key === 's' || e.key === 'i' || e.key === 'j')) ||
-            e.key === 'F12' ||
-            e.key === 'PrintScreen' ||
-            e.code === 'PrintScreen' ||
-            e.key === 'VolumeUp' || 
-            e.key === 'VolumeDown'
-        ) {
-            if (e.key === 'VolumeUp' || e.key === 'VolumeDown') {
-                applyPrivacyBlur();
-                setTimeout(removePrivacyBlur, 2000); // 2 saniyəlik müvəqqəti blok
-            } else {
-                e.preventDefault();
-                showNotification('Təhlükəsizlik səbəbiylə bu hərəkət qadağandır!', 'error');
-            }
-            return false;
-        }
-    });
-
-    // 4. Fokus itəndə ekranı dumanla (Screenshot qarşısını almaq üçün)
+    // 3. Fokus itəndə ekranı dumanla (Yalnız səhifələr arası keçid üçün)
     window.addEventListener('blur', applyPrivacyBlur);
     window.addEventListener('focus', removePrivacyBlur);
     document.addEventListener('visibilitychange', () => {
@@ -1377,7 +1342,7 @@ function setupGlobalSecurity() {
         else removePrivacyBlur();
     });
 
-    console.log("Qlobal təhlükəsizlik sistemi aktivləşdirildi.");
+    console.log("Kopyalama qadağası və səhifələr arası blur aktivdir.");
 }
 
 // Səhifə yüklənəndə təhlükəsizliyi işə sal (amma login səhifəsində mane olmasın)
@@ -2077,6 +2042,13 @@ window.startQuiz = function() {
         timer: null,
         timeLeft: cat.time
     };
+
+    // Səhifə fokusunu itirəndə blur tətbiq etmək üçün interval
+    window.securityInterval = setInterval(() => {
+        if (!document.hasFocus()) {
+            applyPrivacyBlur();
+        }
+    }, 500);
 
     hideAllSections();
     document.getElementById('quiz-section').classList.remove('hidden');
