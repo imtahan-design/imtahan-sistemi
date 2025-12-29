@@ -546,7 +546,7 @@ function hideAllSections() {
         'profile-section', 'teacher-dashboard-section', 
         'create-private-quiz-section', 'private-access-section',
         'admin-question-section', 'review-section', 'public-questions-section',
-        'top-users-section'
+        'top-users-section', 'reports-section'
     ];
     sections.forEach(id => {
         const elem = document.getElementById(id);
@@ -2101,6 +2101,9 @@ function renderPublicQuestions(questions) {
                 <button onclick="showDiscussion('${q.id}')" class="btn-outline">
                     <i class="fas fa-comments"></i> Müzakirə Et
                 </button>
+                <button onclick="openReportModal('${q.id}', 'public', '${q.text.substring(0, 50)}...')" class="btn-report">
+                    <i class="fas fa-flag"></i> Bildir
+                </button>
             </div>
         `;
         list.appendChild(div);
@@ -3026,6 +3029,21 @@ function loadQuestion() {
     document.getElementById('next-btn').disabled = true; // Disable until an answer is selected
     document.getElementById('feedback').classList.add('hidden');
     
+    // Clear existing report buttons if any
+    const existingReportBtns = document.querySelectorAll('.btn-report-quiz');
+    existingReportBtns.forEach(btn => btn.remove());
+
+    // Add report button for quiz question
+    const reportBtnHtml = `
+        <button onclick="openReportModal('${q.id || currentQuiz.currentQuestionIndex}', 'quiz', '${q.text.substring(0, 50).replace(/'/g, "\\'")}...')" class="btn-report btn-report-quiz" style="margin-top: 15px; width: fit-content;">
+            <i class="fas fa-flag"></i> Sualda xəta var? Bildir
+        </button>
+    `;
+    const feedbackArea = document.getElementById('feedback');
+    if (feedbackArea) {
+        feedbackArea.insertAdjacentHTML('afterend', reportBtnHtml);
+    }
+    
     // Timer Reset
     clearInterval(currentQuiz.timer);
     currentQuiz.timeLeft = timeLimit;
@@ -3231,6 +3249,154 @@ window.showQuizReview = function() {
 window.hideReview = function() {
     hideAllSections();
     document.getElementById('result-section').classList.remove('hidden');
+}
+
+// --- Reporting System ---
+window.openReportModal = function(qId, qType, qTitle) {
+    document.getElementById('report-q-id').value = qId;
+    document.getElementById('report-q-type').value = qType;
+    document.getElementById('report-q-title').textContent = `Sual: ${qTitle}`;
+    document.getElementById('report-message').value = '';
+    document.getElementById('report-modal').classList.remove('hidden');
+}
+
+window.submitReport = async function() {
+    const qId = document.getElementById('report-q-id').value;
+    const qType = document.getElementById('report-q-type').value;
+    const message = document.getElementById('report-message').value.trim();
+    
+    if (!message) {
+        return showNotification('Lütfən mesajınızı daxil edin', 'error');
+    }
+
+    const report = {
+        questionId: qId,
+        questionType: qType,
+        message: message,
+        userId: currentUser ? currentUser.id : 'anonim',
+        username: currentUser ? currentUser.username : 'Anonim',
+        timestamp: Date.now(),
+        status: 'pending'
+    };
+
+    try {
+        if (db) {
+            await db.collection('reports').add(report);
+        } else {
+            const reports = JSON.parse(localStorage.getItem('reports') || '[]');
+            reports.push({ ...report, id: Date.now().toString() });
+            localStorage.setItem('reports', JSON.stringify(reports));
+        }
+        
+        showNotification('Şikayətiniz uğurla göndərildi. Təşəkkür edirik!');
+        closeModal('report-modal');
+    } catch (e) {
+        console.error(e);
+        showNotification('Xəta baş verdi, yenidən cəhd edin', 'error');
+    }
+}
+
+window.showReports = function() {
+    hideAllSections();
+    document.getElementById('reports-section').classList.remove('hidden');
+    loadReports();
+}
+
+window.loadReports = async function() {
+    const list = document.getElementById('reports-list');
+    list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Yüklənir...</div>';
+    
+    try {
+        let reports = [];
+        if (db) {
+            const snapshot = await db.collection('reports').orderBy('timestamp', 'desc').get();
+            reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } else {
+            reports = JSON.parse(localStorage.getItem('reports') || '[]').sort((a, b) => b.timestamp - a.timestamp);
+        }
+
+        if (reports.length === 0) {
+            list.innerHTML = '<div style="text-align:center; padding: 40px; color: #64748b;">Hələ heç bir şikayət yoxdur.</div>';
+            return;
+        }
+
+        list.innerHTML = '';
+        reports.forEach(report => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.style.borderLeft = report.status === 'pending' ? '4px solid #ef4444' : '4px solid #10b981';
+            
+            const date = new Date(report.timestamp).toLocaleString('az-AZ');
+            
+            div.innerHTML = `
+                <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <span style="font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${report.questionType === 'public' ? 'Ümumi' : 'Kateqoriya'})
+                        </span>
+                        <span style="font-size: 0.8rem; color: #64748b;">${date}</span>
+                    </div>
+                    <div style="margin-bottom: 10px; background: #f8fafc; padding: 12px; border-radius: 8px; font-style: italic; color: #1e293b;">
+                        "${report.message}"
+                    </div>
+                    <div style="font-size: 0.85rem; color: #64748b; display: flex; align-items: center; gap: 10px;">
+                        <span><i class="fas fa-user"></i> Göndərən: <strong>${report.username}</strong></span>
+                        <span>|</span>
+                        <span>ID: ${report.userId}</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    ${report.status === 'pending' ? `
+                        <button onclick="markReportAsResolved('${report.id}')" class="btn-success" style="padding: 8px 12px; font-size: 0.8rem;" title="Həll edildi">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    ` : ''}
+                    <button onclick="deleteReport('${report.id}')" class="btn-outline" style="padding: 8px 12px; font-size: 0.8rem; border-color: #ef4444; color: #ef4444;" title="Sil">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = '<div style="text-align:center; padding: 20px; color: #ef4444;">Şikayətləri yükləmək mümkün olmadı.</div>';
+    }
+}
+
+window.markReportAsResolved = async function(reportId) {
+    try {
+        if (db) {
+            await db.collection('reports').doc(reportId).update({ status: 'resolved' });
+        } else {
+            let reports = JSON.parse(localStorage.getItem('reports') || '[]');
+            const idx = reports.findIndex(r => r.id == reportId);
+            if (idx !== -1) {
+                reports[idx].status = 'resolved';
+                localStorage.setItem('reports', JSON.stringify(reports));
+            }
+        }
+        loadReports();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+window.deleteReport = async function(reportId) {
+    if (!confirm('Bu şikayəti silmək istədiyinizə əminsiniz?')) return;
+    
+    try {
+        if (db) {
+            await db.collection('reports').doc(reportId).delete();
+        } else {
+            let reports = JSON.parse(localStorage.getItem('reports') || '[]');
+            reports = reports.filter(r => r.id != reportId);
+            localStorage.setItem('reports', JSON.stringify(reports));
+        }
+        loadReports();
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 window.onclick = function(event) {

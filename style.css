@@ -235,6 +235,57 @@ body {
     color: white;
 }
 
+.btn-report {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: var(--transition);
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.btn-report:hover {
+    color: #ef4444;
+    background-color: #fef2f2;
+}
+
+.report-content {
+    max-width: 500px;
+}
+
+.report-content textarea {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    resize: vertical;
+    background-color: #f8fafc;
+    color: var(--text-color);
+    outline: none;
+    font-family: inherit;
+}
+
+.report-content textarea:focus {
+    border-color: var(--primary-color);
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1);
+}
+
+.report-content label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.95rem;
+}
+
 /* Navbar */
 nav {
     display: flex;
@@ -284,12 +335,12 @@ nav {
     }
     
     .logo-main {
-        font-size: 24px;
+        font-size: 28px;
         letter-spacing: -0.5px;
     }
     
     .logo-sub {
-        font-size: 10px;
+        font-size: 12px;
         letter-spacing: 0.2px;
         margin-top: -3px;
     }
@@ -601,6 +652,28 @@ nav {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.close-btn {
+    background: #f1f5f9;
+    border: none;
+    font-size: 24px;
+    color: #64748b;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    line-height: 1;
+}
+
+.close-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    transform: rotate(90deg);
 }
 
 .modal-body {
@@ -1792,7 +1865,11 @@ nav {
 
 @media (max-width: 480px) {
     .logo-main {
-        font-size: 18px;
+        font-size: 24px;
+    }
+    
+    .logo-sub {
+        font-size: 11px;
     }
     
     .btn-primary, .btn-success, .btn-save {

@@ -386,11 +386,25 @@
                     <div class="admin-top-actions">
                         <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()" style="margin-right: 10px;"><i class="fas fa-arrow-left"></i> Geri</button>
                         <button class="btn-success" onclick="exportData()" style="margin-right: 10px;">💾 Bazanı Yüklə (Export)</button>
+                        <button class="btn-outline" onclick="showReports()" style="margin-right: 10px;"><i class="fas fa-flag"></i> Şikayətlər</button>
                         <button class="btn-primary" onclick="showAddCategoryModal()">+ Yeni Kateqoriya</button>
                     </div>
                 </div>
                 <div id="admin-categories-grid" class="grid-container">
                     <!-- Admin Categories will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Reports Section (Admin) -->
+        <section id="reports-section" class="hidden">
+            <div class="container">
+                <div class="header-actions">
+                    <button onclick="showAdminDashboard()" class="btn-secondary"><i class="fas fa-arrow-left"></i> Geri</button>
+                    <h2><i class="fas fa-flag"></i> Gələn Şikayətlər və Təkliflər</h2>
+                </div>
+                <div id="reports-list" class="list-container" style="margin-top: 20px;">
+                    <!-- Reports will be loaded here -->
                 </div>
             </div>
         </section>
@@ -824,6 +838,31 @@
         </div>
     </div>
 
-    <script src="app.js?v=3.5" defer></script>
+    <!-- Report Modal -->
+    <div id="report-modal" class="modal hidden">
+        <div class="modal-content report-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-flag"></i> Sualla bağlı bildir</h2>
+                <button onclick="closeModal('report-modal')" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="report-q-title" style="font-weight: 500; margin-bottom: 15px; color: var(--text-color);"></p>
+                <div class="input-group">
+                    <label>Şikayət və ya təklifiniz:</label>
+                    <textarea id="report-message" placeholder="Məsələn: Sualın cavabı səhvdir, yazı xətası var və s." rows="4"></textarea>
+                </div>
+                <input type="hidden" id="report-q-id">
+                <input type="hidden" id="report-q-type">
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('report-modal')" class="btn-outline">Ləğv et</button>
+                <button onclick="submitReport()" class="btn-primary">
+                    <i class="fas fa-paper-plane"></i> Göndər
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=3.9" defer></script>
 </body>
 </html>
