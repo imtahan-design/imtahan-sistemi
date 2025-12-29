@@ -98,6 +98,55 @@ body {
     -webkit-touch-callout: none !important;
 }
 
+/* Guide Tooltip */
+.guide-tooltip {
+    position: absolute;
+    bottom: calc(100% + 15px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    animation: tooltip-float 2s infinite ease-in-out;
+    pointer-events: none;
+}
+
+.tooltip-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+}
+
+.tooltip-content i {
+    color: #ffde59;
+    font-size: 1.1rem;
+}
+
+.tooltip-arrow {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
+@keyframes tooltip-float {
+    0%, 100% { transform: translate(-50%, 0); }
+    50% { transform: translate(-50%, -10px); }
+}
+
+.guide-tooltip.hidden {
+    display: none;
+}
+
 /* Aggressive Protection for mobile screenshot mitigation */
 .privacy-blur {
     filter: blur(15px) grayscale(90%) !important;

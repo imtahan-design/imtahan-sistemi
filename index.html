@@ -135,7 +135,18 @@
             <div class="container">
                 <div class="header-actions">
                     <h2>Müəllim Paneli</h2>
-                    <button onclick="showCreatePrivateQuiz()" class="btn-primary"><i class="fas fa-plus"></i> Yeni Özəl Test</button>
+                    <div style="position: relative; display: inline-block;">
+                        <button id="btn-new-private-quiz" onclick="showCreatePrivateQuiz()" class="btn-primary">
+                            <i class="fas fa-plus"></i> Yeni Özəl Test
+                        </button>
+                        <div id="quiz-guide-tooltip" class="guide-tooltip hidden">
+                            <div class="tooltip-content">
+                                <i class="fas fa-lightbulb"></i>
+                                <span>Bura klikləyərək sınaq hazırlamağa başlaya bilərsiniz</span>
+                            </div>
+                            <div class="tooltip-arrow"></div>
+                        </div>
+                    </div>
                     <button onclick="showDashboard()" class="btn-secondary">Geri</button>
                 </div>
                 <div id="private-quizzes-grid" class="grid-container">

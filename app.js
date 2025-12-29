@@ -621,10 +621,17 @@ window.confirmVerification = function() {
 
         if (redirectAfterAuth === 'teacher_panel' && currentUser.role === 'teacher') {
             redirectAfterAuth = null;
-            showCreatePrivateQuiz();
+            showTeacherDashboard(); // Redirect to Dashboard instead of create section
+            
+            // Show the floating guide tooltip
             setTimeout(() => {
-                showNotification('İndi ilk özəl testinizi yarada bilərsiniz!', 'success');
-            }, 800);
+                const tooltip = document.getElementById('quiz-guide-tooltip');
+                if (tooltip) {
+                    tooltip.classList.remove('hidden');
+                    // Hide tooltip after 8 seconds or when user clicks
+                    setTimeout(() => tooltip.classList.add('hidden'), 8000);
+                }
+            }, 1000);
         } else {
             showDashboard();
         }
@@ -771,6 +778,10 @@ window.showTeacherDashboard = function() {
 }
 
 window.showCreatePrivateQuiz = function() {
+    // Hide guide tooltip if it exists
+    const tooltip = document.getElementById('quiz-guide-tooltip');
+    if (tooltip) tooltip.classList.add('hidden');
+
     hideAllSections();
     document.getElementById('create-private-quiz-section').classList.remove('hidden');
     // Reset forms
