@@ -336,13 +336,20 @@ nav {
     
     .logo-main {
         font-size: 28px;
-        letter-spacing: -0.5px;
+        letter-spacing: -1px;
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 900;
     }
     
     .logo-sub {
-        font-size: 12px;
-        letter-spacing: 0.2px;
-        margin-top: -3px;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+        margin-top: 2px;
+        font-weight: 700;
+        color: var(--text-color);
+        opacity: 0.9;
     }
 }
 
@@ -1752,11 +1759,11 @@ nav {
     }
 
     nav {
-        padding: 6px 10px;
-        margin-bottom: 10px;
+        padding: 12px 15px;
+        margin-bottom: 15px;
         flex-direction: column;
         align-items: stretch;
-        gap: 4px;
+        gap: 12px;
         height: auto;
     }
     
@@ -1769,22 +1776,28 @@ nav {
     }
 
     .logo-main {
-        font-size: 16px;
+        font-size: 22px;
         font-weight: 800;
-        line-height: 1;
+        line-height: 1.1;
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.5px;
     }
 
     .logo-sub {
         display: block;
-        font-size: 8px;
-        opacity: 0.6;
-        line-height: 1;
+        font-size: 11px;
+        font-weight: 600;
+        opacity: 0.8;
+        line-height: 1.2;
         margin-top: 2px;
+        color: var(--text-color);
     }
 
     .nav-links {
         width: 100%;
-        margin-top: 4px;
+        margin-top: 0;
     }
 
     .nav-links div {
@@ -1793,55 +1806,56 @@ nav {
         justify-content: space-between;
         align-items: center;
         flex-wrap: nowrap;
-        gap: 4px;
+        gap: 8px;
     }
 
     #user-display {
-        position: absolute;
-        top: 8px;
-        right: 12px;
-        width: auto;
-        text-align: right;
-        margin-bottom: 0;
-        font-size: 11px;
-        font-weight: 600;
+        position: static;
+        width: 100%;
+        text-align: left;
+        margin-bottom: 5px;
+        font-size: 13px;
+        font-weight: 700;
         color: var(--primary-color);
-        background: transparent;
-        padding: 0;
+        background: rgba(108, 92, 231, 0.05);
+        padding: 8px 12px;
+        border-radius: 8px;
+        display: block;
     }
 
     .btn-secondary, .btn-primary, .btn-warning {
-        padding: 4px 6px;
-        font-size: 10px;
-        font-weight: 600;
-        border-radius: 6px;
+        padding: 10px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        border-radius: 10px;
         flex: 1;
-        min-width: 0; /* Sığması üçün */
-        height: 30px;
+        min-width: 0;
+        height: 42px;
         display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        gap: 3px;
+        gap: 6px;
         white-space: nowrap;
-        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
 
     .btn-secondary i, .btn-primary i, .btn-warning i {
-        font-size: 11px;
+        font-size: 14px;
     }
 
     .btn-secondary span, .btn-primary span, .btn-warning span {
-        font-size: 9px;
+        font-size: 11px;
     }
 
     /* Çox kiçik ekranlarda mətni gizlət, yalnız ikon qalsın */
-    @media (max-width: 400px) {
+    @media (max-width: 360px) {
         .btn-secondary span, .btn-primary span, .btn-warning span {
             display: none;
         }
         .btn-secondary, .btn-primary, .btn-warning {
-            padding: 4px;
+            padding: 10px;
+            height: 42px;
         }
     }
 
@@ -2066,15 +2080,32 @@ nav {
     .btn-primary, .btn-success, .btn-save {
         width: 100%;
         padding: 12px;
-    }
-
-    .nav-links div {
-        flex-direction: column;
-        width: 100%;
+        font-size: 14px;
+        font-weight: 700;
+        height: 48px;
+        border-radius: 12px;
     }
 
     .btn-secondary {
         width: 100%;
+        padding: 12px;
+        font-size: 14px;
+        font-weight: 700;
+        height: 48px;
+        border-radius: 12px;
+    }
+
+    .category-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        margin-top: 15px;
+    }
+
+    .category-actions button {
+        margin: 0 !important;
+        width: 100% !important;
     }
 
     /* Review Header fix for mobile */
