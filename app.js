@@ -29,6 +29,36 @@ emailjs.init("gwXl5HH3P9Bja5iBN");
 // Global State
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 
+// Side Menu Logic
+window.toggleSideMenu = function() {
+    const sideMenu = document.getElementById('side-menu');
+    const overlay = document.getElementById('side-menu-overlay');
+    sideMenu.classList.toggle('active');
+    overlay.classList.toggle('active');
+}
+
+window.menuNavigate = function(actionFunc) {
+    toggleSideMenu(); // Close menu
+    if (typeof actionFunc === 'function') {
+        actionFunc();
+    }
+}
+
+// Info Modal Logic
+window.toggleSideMenu = function() {
+    const sideMenu = document.getElementById('side-menu');
+    const overlay = document.getElementById('side-menu-overlay');
+    sideMenu.classList.toggle('active');
+    overlay.classList.toggle('active');
+}
+
+window.menuNavigate = function(actionFunc) {
+    toggleSideMenu(); // Close menu
+    if (typeof actionFunc === 'function') {
+        actionFunc();
+    }
+}
+
 // Info Modal Logic
 window.showInfoModal = function(type) {
     const modal = document.getElementById('info-modal');
@@ -276,24 +306,41 @@ function updateUI() {
         document.getElementById('user-nav').classList.remove('hidden');
         document.getElementById('user-display').textContent = `Salam, ${currentUser.username}`;
         
+        // Side menu updates
+        document.getElementById('side-guest-nav').classList.add('hidden');
+        document.getElementById('side-user-nav').classList.remove('hidden');
+        document.getElementById('side-user-info').classList.remove('hidden');
+        document.getElementById('side-user-display').textContent = `Salam, ${currentUser.username}`;
+        
         const teacherBtn = document.getElementById('teacher-panel-btn');
+        const sideTeacherBtn = document.getElementById('side-teacher-btn');
         if (currentUser.role === 'teacher' || currentUser.role === 'admin') {
             teacherBtn.classList.remove('hidden');
+            if (sideTeacherBtn) sideTeacherBtn.classList.remove('hidden');
         } else {
             teacherBtn.classList.add('hidden');
+            if (sideTeacherBtn) sideTeacherBtn.classList.add('hidden');
         }
         
         const adminBtn = document.getElementById('admin-panel-btn');
+        const sideAdminBtn = document.getElementById('side-admin-btn');
         if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
             adminBtn.classList.remove('hidden');
+            if (sideAdminBtn) sideAdminBtn.classList.remove('hidden');
+            
             // Change text if moderator
             if (currentUser.role === 'moderator') {
-                adminBtn.innerHTML = '<i class="fas fa-tasks"></i> Moderator Paneli';
+                const modHtml = '<i class="fas fa-tasks"></i> Moderator Paneli';
+                adminBtn.innerHTML = modHtml;
+                if (sideAdminBtn) sideAdminBtn.innerHTML = modHtml;
             } else {
-                adminBtn.innerHTML = '<i class="fas fa-user-shield"></i> Admin Paneli';
+                const adminHtml = '<i class="fas fa-user-shield"></i> Admin Paneli';
+                adminBtn.innerHTML = adminHtml;
+                if (sideAdminBtn) sideAdminBtn.innerHTML = adminHtml;
             }
         } else {
             adminBtn.classList.add('hidden');
+            if (sideAdminBtn) sideAdminBtn.classList.add('hidden');
         }
         
         // If not already in admin view or quiz, show public dashboard
@@ -306,6 +353,12 @@ function updateUI() {
     } else {
         document.getElementById('guest-nav').classList.remove('hidden');
         document.getElementById('user-nav').classList.add('hidden');
+        
+        // Side menu updates
+        document.getElementById('side-guest-nav').classList.remove('hidden');
+        document.getElementById('side-user-nav').classList.add('hidden');
+        document.getElementById('side-user-info').classList.add('hidden');
+
         const teacherBtn = document.getElementById('teacher-panel-btn');
         if (teacherBtn) teacherBtn.classList.add('hidden');
         

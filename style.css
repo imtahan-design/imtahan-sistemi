@@ -253,6 +253,14 @@ nav {
 }
 
 @media (max-width: 768px) {
+    .nav-links {
+        display: none;
+    }
+    
+    .menu-toggle {
+        display: block;
+    }
+
     nav {
         padding: 10px 15px;
         margin-bottom: 15px;
@@ -289,6 +297,138 @@ nav {
     color: #64748b;
     letter-spacing: 0.5px;
     margin-top: -2px;
+}
+
+/* Mobile Menu Styles */
+.menu-toggle {
+    display: none;
+    font-size: 24px;
+    color: var(--primary-color);
+    cursor: pointer;
+    padding: 5px;
+}
+
+.side-menu {
+    position: fixed;
+    top: 0;
+    left: -280px; /* Initially hidden */
+    width: 280px;
+    height: 100%;
+    background: var(--white);
+    z-index: 1000;
+    box-shadow: 5px 0 25px rgba(0,0,0,0.1);
+    transition: left 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.side-menu.active {
+    left: 0;
+}
+
+.side-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+    display: none;
+    backdrop-filter: blur(2px);
+}
+
+.side-menu-overlay.active {
+    display: block;
+}
+
+.side-menu-header {
+    padding: 20px;
+    border-bottom: 1px solid #f1f2f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-menu {
+    background: none;
+    border: none;
+    font-size: 32px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.side-menu-content {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.side-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.side-user-info i {
+    font-size: 24px;
+    color: var(--primary-color);
+}
+
+.side-user-info span {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.side-menu-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.side-menu-links button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 18px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-color);
+    text-align: left;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.side-menu-links button i {
+    width: 20px;
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.side-menu-links button:hover {
+    background: #f1f0ff;
+    color: var(--primary-color);
+}
+
+.side-menu-links .logout-btn {
+    margin-top: 10px;
+    color: var(--danger-color);
+}
+
+.side-menu-links .logout-btn i {
+    color: var(--danger-color);
+}
+
+.side-menu-links .logout-btn:hover {
+    background: #fff5f5;
+    color: var(--danger-color);
 }
 
 .nav-links div {

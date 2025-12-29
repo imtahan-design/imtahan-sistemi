@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İmtahan – Onlayn Qiymətləndirmə Platforması</title>
-    <link rel="stylesheet" href="style.css?v=3.2">
+    <link rel="stylesheet" href="style.css?v=3.3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Firebase SDKs -->
@@ -23,6 +23,12 @@
                 <div class="logo-main">İmtahan</div>
                 <div class="logo-sub">onlayn qiymətləndirmə platforması</div>
             </div>
+            
+            <!-- Hamburger Menu Icon -->
+            <div class="menu-toggle" onclick="toggleSideMenu()">
+                <i class="fas fa-bars"></i>
+            </div>
+
             <div class="nav-links">
                 <button onclick="showTopUsers()" class="btn-secondary" style="background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color);">
                     <i class="fas fa-trophy"></i> <span>Liderlər</span>
@@ -40,6 +46,39 @@
                 </div>
             </div>
         </nav>
+
+        <!-- Side Menu -->
+        <div id="side-menu-overlay" class="side-menu-overlay" onclick="toggleSideMenu()"></div>
+        <div id="side-menu" class="side-menu">
+            <div class="side-menu-header">
+                <div class="logo">
+                    <div class="logo-main">İmtahan</div>
+                </div>
+                <button class="close-menu" onclick="toggleSideMenu()">&times;</button>
+            </div>
+            <div class="side-menu-content">
+                <div id="side-user-info" class="side-user-info hidden">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="side-user-display"></span>
+                </div>
+                <div class="side-menu-links">
+                    <button onclick="menuNavigate(showDashboard)"><i class="fas fa-home"></i> Ana Səhifə</button>
+                    <button onclick="menuNavigate(showTopUsers)"><i class="fas fa-trophy"></i> Liderlər</button>
+                    
+                    <div id="side-guest-nav">
+                        <button onclick="menuNavigate(showLogin)"><i class="fas fa-sign-in-alt"></i> Giriş</button>
+                        <button onclick="menuNavigate(showRegister)"><i class="fas fa-user-plus"></i> Qeydiyyat</button>
+                    </div>
+                    
+                    <div id="side-user-nav" class="hidden">
+                        <button onclick="menuNavigate(showProfile)"><i class="fas fa-user"></i> Profilim</button>
+                        <button id="side-teacher-btn" onclick="menuNavigate(showTeacherDashboard)"><i class="fas fa-chalkboard-teacher"></i> Müəllim Paneli</button>
+                        <button id="side-admin-btn" onclick="menuNavigate(showAdminDashboard)" class="hidden"><i class="fas fa-user-shield"></i> Admin Paneli</button>
+                        <button onclick="menuNavigate(logout)" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Çıxış</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Auth Pages -->
         <section id="auth-section">
@@ -785,6 +824,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=3.2"></script>
+    <script src="app.js?v=3.3" defer></script>
 </body>
 </html>
