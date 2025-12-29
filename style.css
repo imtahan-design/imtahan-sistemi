@@ -1680,6 +1680,98 @@ nav {
 .review-status.wrong { color: #ef4444; }
 
 /* Footer Styles */
+/* Quiz Setup Modal Styles */
+.quiz-setup-content {
+    max-width: 500px !important;
+    border-radius: 24px !important;
+    padding: 30px !important;
+}
+
+.setup-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.setup-header i {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.setup-header h2 {
+    font-size: 24px;
+    color: var(--text-dark);
+    margin-bottom: 5px;
+}
+
+.setup-header p {
+    color: var(--text-muted);
+}
+
+.question-count-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.count-option {
+    cursor: pointer;
+}
+
+.count-option input {
+    display: none;
+}
+
+.count-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.count-number {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-dark);
+}
+
+.count-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.count-option input:checked + .count-card {
+    background: #eef2ff;
+    border-color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(79, 70, 229, 0.1);
+}
+
+.count-option input:checked + .count-card .count-number {
+    color: var(--primary-color);
+}
+
+.start-quiz-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 16px;
+}
+
+@media (max-width: 480px) {
+    .question-count-selector {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 .main-footer {
     background: #1f2937;
     color: #f3f4f6;

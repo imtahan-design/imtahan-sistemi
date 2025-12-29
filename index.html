@@ -536,6 +536,55 @@
         </div>
     </div>
 
+    <!-- Quiz Setup Modal -->
+    <div id="quiz-setup-modal" class="modal hidden">
+        <div class="modal-content quiz-setup-content">
+            <span class="close" onclick="closeModal('quiz-setup-modal')">&times;</span>
+            <div class="setup-header">
+                <i class="fas fa-tasks"></i>
+                <h2 id="setup-category-title">Konstitusiya</h2>
+                <p>İmtahan üçün sual sayını müəyyən edin</p>
+            </div>
+            <div class="setup-body">
+                <div class="question-count-selector">
+                    <label class="count-option">
+                        <input type="radio" name="question-count" value="10">
+                        <span class="count-card">
+                            <span class="count-number">10</span>
+                            <span class="count-label">Sual</span>
+                        </span>
+                    </label>
+                    <label class="count-option">
+                        <input type="radio" name="question-count" value="15" checked>
+                        <span class="count-card">
+                            <span class="count-number">15</span>
+                            <span class="count-label">Sual</span>
+                        </span>
+                    </label>
+                    <label class="count-option">
+                        <input type="radio" name="question-count" value="20">
+                        <span class="count-card">
+                            <span class="count-number">20</span>
+                            <span class="count-label">Sual</span>
+                        </span>
+                    </label>
+                    <label class="count-option">
+                        <input type="radio" name="question-count" value="25">
+                        <span class="count-card">
+                            <span class="count-number">25</span>
+                            <span class="count-label">Sual</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <div class="setup-footer">
+                <button onclick="confirmStartQuiz()" class="btn-primary start-quiz-btn">
+                    <i class="fas fa-play"></i> İmtahana Başla
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js?v=1.2"></script>
 </body>
 </html>

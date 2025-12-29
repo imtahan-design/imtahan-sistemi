@@ -1508,7 +1508,6 @@ function renderCategories() {
         div.innerHTML = `
             <i class="fas ${icon}"></i>
             <h3>${cat.name}</h3>
-            ${hasSub ? '' : `<p>${cat.questions ? cat.questions.length : 0} sual</p>`}
             ${hasSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
                 ${hasSub ? `<button class="btn-secondary" onclick="enterCategory('${cat.id}')">Bölmələrə Bax</button>` : ''}
@@ -2060,9 +2059,42 @@ window.startQuiz = function() {
     const cat = categories.find(c => c.id === activeCategoryId);
     if (!cat || cat.questions.length === 0) return;
 
+    // Show Quiz Setup Modal
+    const setupModal = document.getElementById('quiz-setup-modal');
+    const categoryTitle = document.getElementById('setup-category-title');
+    
+    if (categoryTitle) categoryTitle.textContent = cat.name;
+    
+    // Reset radio selection to 15 (default)
+    const radios = document.querySelectorAll('input[name="question-count"]');
+    radios.forEach(r => {
+        if (r.value === "15") r.checked = true;
+    });
+
+    if (setupModal) {
+        setupModal.classList.remove('hidden');
+    } else {
+        // Fallback if modal is missing for some reason
+        window.confirmStartQuiz();
+    }
+}
+
+window.confirmStartQuiz = function() {
+    const cat = categories.find(c => c.id === activeCategoryId);
+    if (!cat) return;
+
+    const selectedCountValue = document.querySelector('input[name="question-count"]:checked').value;
+    let finalQuestions = [];
+    
+    // Shuffle all questions
+    const shuffledAll = [...cat.questions].sort(() => 0.5 - Math.random());
+
+    const count = parseInt(selectedCountValue);
+    finalQuestions = shuffledAll.slice(0, Math.min(count, shuffledAll.length));
+
     currentQuiz = {
         categoryId: cat.id,
-        questions: [...cat.questions].sort(() => 0.5 - Math.random()), // Shuffle
+        questions: finalQuestions,
         currentQuestionIndex: 0,
         score: 0,
         timer: null,
@@ -2076,6 +2108,7 @@ window.startQuiz = function() {
         }
     }, 500);
 
+    closeModal('quiz-setup-modal');
     hideAllSections();
     document.getElementById('quiz-section').classList.remove('hidden');
     loadQuestion();
