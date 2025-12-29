@@ -188,33 +188,16 @@ async function loadData() {
         }
     }
 
+    // Check for English category leftovers and remove them
+    const initialCount = categories.length;
+    categories = categories.filter(c => c.name !== 'İngilis' && String(c.id) !== 'english_demo');
+    if (categories.length < initialCount) {
+        saveCategories();
+    }
+
     renderCategories();
     if (!document.getElementById('admin-dashboard-section').classList.contains('hidden')) {
         renderAdminCategories();
-    }
-
-    const hasEnglish = categories.some(c => c.name === 'İngilis' || String(c.id) === 'english_demo');
-    if (!hasEnglish) {
-        const baseId = Date.now();
-        const englishCat = {
-            id: 'english_demo',
-            name: 'İngilis',
-            time: 45,
-            questions: [
-                { id: baseId + 1, text: "Select the synonym of 'big'.", image: null, options: ["large", "small", "tiny", "narrow"], correctIndex: 0 },
-                { id: baseId + 2, text: "I ____ to the gym every day.", image: null, options: ["go", "goes", "going", "gone"], correctIndex: 0 },
-                { id: baseId + 3, text: "She has ____ her homework.", image: null, options: ["done", "did", "do", "doing"], correctIndex: 0 },
-                { id: baseId + 4, text: "Which is an adjective?", image: null, options: ["happy", "run", "quickly", "swim"], correctIndex: 0 },
-                { id: baseId + 5, text: "Which article fits: ___ apple?", image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/itYV+8AAAAASUVORK5CYII=", options: ["an", "a", "the", "no article"], correctIndex: 0 }
-            ],
-            createdBy: users[0] ? users[0].id : 'system'
-        };
-        categories.push(englishCat);
-        saveCategories();
-        renderCategories();
-        if (!document.getElementById('admin-dashboard-section').classList.contains('hidden')) {
-            renderAdminCategories();
-        }
     }
 }
 
@@ -899,6 +882,7 @@ window.savePrivateQuizFinal = async function() {
     
     if (!editingId) {
         quizData.createdAt = new Date().toISOString();
+        quizData.isActive = true; // Default to active for new quizzes
     }
     
     try {
@@ -945,14 +929,22 @@ function renderPrivateQuizzes() {
     myQuizzes.forEach(quiz => {
         const card = document.createElement('div');
         card.className = 'category-card';
+        if (quiz.isActive === false) card.style.opacity = '0.7';
         
         const baseUrl = window.location.origin + window.location.pathname;
         const quizLink = `${baseUrl}?quiz=${quiz.id}`;
         
+        const isActive = quiz.isActive !== false; // Default to true if undefined
+        
         card.innerHTML = `
             <div class="cat-card-header">
-                <span></span>
+                <span class="status-badge ${isActive ? 'active' : 'inactive'}">
+                    ${isActive ? '<i class="fas fa-check-circle"></i> Aktiv' : '<i class="fas fa-times-circle"></i> Deaktiv'}
+                </span>
                 <div class="cat-card-tools">
+                    <button onclick="togglePrivateQuizStatus('${quiz.id}')" class="status-btn" title="${isActive ? 'Deaktiv et' : 'Aktiv et'}">
+                        <i class="fas ${isActive ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+                    </button>
                     <button onclick="editPrivateQuiz('${quiz.id}')" class="edit-cat-btn" title="Düzəliş et"><i class="fas fa-edit"></i></button>
                     <button onclick="deletePrivateQuiz('${quiz.id}')" class="delete-cat-btn" title="Sil"><i class="fas fa-trash"></i></button>
                 </div>
@@ -961,13 +953,32 @@ function renderPrivateQuizzes() {
             <h3>${quiz.title}</h3>
             <p>${quiz.questions.length} sual</p>
             <div class="category-actions">
-                <button onclick="copyQuizLink('${quizLink}')" class="btn-primary" style="width:100%"><i class="fas fa-copy"></i> Linki Kopyala</button>
+                ${isActive ? `<button onclick="copyQuizLink('${quizLink}')" class="btn-primary" style="width:100%"><i class="fas fa-copy"></i> Linki Kopyala</button>` : '<button class="btn-primary" style="width:100%; opacity: 0.5; cursor: not-allowed;" disabled><i class="fas fa-lock"></i> Link Deaktivdir</button>'}
                 <button onclick="showStudentResults('${quiz.id}', '${quiz.title}')" class="btn-secondary" style="width:100%"><i class="fas fa-poll"></i> Nəticələr</button>
                 <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">Şifrə: <strong>${quiz.password}</strong></div>
             </div>
         `;
         grid.appendChild(card);
     });
+}
+
+window.togglePrivateQuizStatus = async function(id) {
+    const quiz = privateQuizzes.find(q => q.id === id);
+    if (!quiz) return;
+    
+    const newStatus = quiz.isActive === false ? true : false;
+    quiz.isActive = newStatus;
+    
+    try {
+        if (db) {
+            await db.collection('private_quizzes').doc(id).update({ isActive: newStatus });
+        }
+        localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes));
+        renderPrivateQuizzes();
+        showNotification(`Test ${newStatus ? 'aktiv edildi' : 'deaktiv edildi'}.`, 'success');
+    } catch (e) {
+        showNotification('Xəta: ' + e.message, 'error');
+    }
 }
 
 window.savePrivateQuiz = function() {
@@ -990,7 +1001,8 @@ window.savePrivateQuiz = function() {
                 title: title,
                 password: password,
                 questions: questions,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                isActive: true
             };
             
             if (db) {
@@ -1132,6 +1144,12 @@ function handleUrlParams() {
     if (quizId) {
         const quiz = privateQuizzes.find(q => q.id === quizId);
         if (quiz) {
+            if (quiz.isActive === false) {
+                showNotification('Bu test linki müəllim tərəfindən deaktiv edilib.', 'error');
+                window.history.replaceState({}, document.title, window.location.pathname);
+                showDashboard();
+                return;
+            }
             activePrivateQuiz = quiz;
             showPrivateAccess(quiz.title);
         } else {
@@ -1139,7 +1157,14 @@ function handleUrlParams() {
             if (db) {
                 db.collection('private_quizzes').doc(quizId).get().then(doc => {
                     if (doc.exists) {
-                        activePrivateQuiz = { id: doc.id, ...doc.data() };
+                        const data = doc.data();
+                        if (data.isActive === false) {
+                            showNotification('Bu test linki müəllim tərəfindən deaktiv edilib.', 'error');
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                            showDashboard();
+                            return;
+                        }
+                        activePrivateQuiz = { id: doc.id, ...data };
                         showPrivateAccess(activePrivateQuiz.title);
                     } else {
                         showNotification('Test tapılmadı.', 'error');
@@ -1188,9 +1213,72 @@ function startPrivateQuiz() {
         timeLeft: 45 // Will be set in loadQuestion
     };
     
+    // Apply protection for private quizzes
+    document.body.classList.add('no-select');
+    document.addEventListener('contextmenu', preventDefaultAction);
+    document.addEventListener('keydown', preventProtectionKeys);
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    window.addEventListener('blur', applyPrivacyBlur);
+    window.addEventListener('focus', removePrivacyBlur);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     hideAllSections();
     document.getElementById('quiz-section').classList.remove('hidden');
     loadQuestion();
+}
+
+function preventDefaultAction(e) {
+    e.preventDefault();
+}
+
+function preventProtectionKeys(e) {
+    // Prevent Ctrl+C, Ctrl+U, Ctrl+P, Ctrl+S, F12, PrintScreen
+    if (
+        (e.ctrlKey && (e.key === 'c' || e.key === 'u' || e.key === 'p' || e.key === 's' || e.key === 'C' || e.key === 'U' || e.key === 'P' || e.key === 'S')) ||
+        e.key === 'F12' ||
+        e.key === 'PrintScreen' ||
+        e.code === 'PrintScreen'
+    ) {
+        e.preventDefault();
+        showNotification('Təhlükəsizlik səbəbiylə bu hərəkət qadağandır!', 'error');
+        return false;
+    }
+}
+
+function removeProtection() {
+    document.body.classList.remove('no-select');
+    document.removeEventListener('contextmenu', preventDefaultAction);
+    document.removeEventListener('keydown', preventProtectionKeys);
+    document.removeEventListener('touchstart', handleTouchStart);
+    window.removeEventListener('blur', applyPrivacyBlur);
+    window.removeEventListener('focus', removePrivacyBlur);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    removePrivacyBlur();
+}
+
+function handleTouchStart(e) {
+    // Prevent long press and multi-touch gestures
+    if (e.touches.length > 1) {
+        e.preventDefault();
+    }
+}
+
+function applyPrivacyBlur() {
+    if (activePrivateQuiz) {
+        document.getElementById('app').classList.add('privacy-blur');
+    }
+}
+
+function removePrivacyBlur() {
+    document.getElementById('app').classList.remove('privacy-blur');
+}
+
+function handleVisibilityChange() {
+    if (document.hidden) {
+        applyPrivacyBlur();
+    } else {
+        removePrivacyBlur();
+    }
 }
 
 // --- Dashboard & Categories ---
@@ -1310,7 +1398,7 @@ function renderCategories() {
         div.innerHTML = `
             <i class="fas ${icon}"></i>
             <h3>${cat.name}</h3>
-            <p>${cat.questions ? cat.questions.length : 0} sual</p>
+            ${hasSub ? '' : `<p>${cat.questions ? cat.questions.length : 0} sual</p>`}
             ${hasSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
                 ${hasSub ? `<button class="btn-secondary" onclick="enterCategory('${cat.id}')">Bölmələrə Bax</button>` : ''}
@@ -1379,7 +1467,7 @@ function renderAdminCategories() {
                 </div>
             </div>
             <h3>${cat.name}</h3>
-            <p>${cat.questions ? cat.questions.length : 0} sual</p>
+            ${hasSub ? '' : `<p>${cat.questions ? cat.questions.length : 0} sual</p>`}
             ${hasSub ? '<p style="font-size: 0.8rem; color: var(--primary-color);"><i class="fas fa-folder"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
                 <button class="btn-secondary" onclick="enterAdminCategory('${cat.id}')">Bölməyə Bax</button>
@@ -2016,6 +2104,7 @@ function showResult() {
 }
 
 window.showDashboard = function() {
+    removeProtection();
     // If a quiz is in progress, stop the timer
     if (currentQuiz && currentQuiz.timer) {
         clearInterval(currentQuiz.timer);

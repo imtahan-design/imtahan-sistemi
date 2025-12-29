@@ -34,7 +34,44 @@ body {
     padding: 20px;
 }
 
-/* Scrollbar */
+/* Private Quiz Status Badges */
+.status-badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.status-badge.active {
+    background-color: #e6fffa;
+    color: #047857;
+}
+.status-badge.inactive {
+    background-color: #fff5f5;
+    color: #c53030;
+}
+.status-btn {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: var(--transition);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.status-btn .fa-toggle-on {
+    color: var(--success-color);
+}
+.status-btn .fa-toggle-off {
+    color: var(--text-muted);
+}
+.status-btn:hover {
+    transform: scale(1.1);
+}
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -49,7 +86,29 @@ body {
     background: var(--primary-color);
 }
 
-/* Utilities */
+/* Quiz Protection */
+.no-select {
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important; /* Prevents callout menu on mobile */
+}
+
+/* Blurring effect for mobile screenshot mitigation */
+.privacy-blur {
+    filter: blur(15px) !important;
+    pointer-events: none !important;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    body {
+        display: none !important; /* Prevent printing the whole page */
+    }
+}
 .hidden {
     display: none !important;
 }
