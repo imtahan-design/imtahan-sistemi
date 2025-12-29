@@ -345,6 +345,18 @@
                         <p style="text-align: center; color: #888; padding: 20px;">Yüklənir...</p>
                     </div>
                 </div>
+
+                <!-- User Inbox Section -->
+                <div id="user-inbox-container" class="card" style="margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0;"><i class="fas fa-inbox"></i> Inbox (Şikayətlərim və Cavablar)</h3>
+                        <span id="user-inbox-count" class="badge" style="background: #10b981; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem;">0 mesaj</span>
+                    </div>
+                    <div id="user-inbox-list" class="list-container">
+                        <!-- User inbox items will be loaded here -->
+                        <p style="text-align: center; color: #888; padding: 20px;">Yüklənir...</p>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -865,6 +877,33 @@
         </div>
     </div>
 
-    <script src="app.js?v=4.2" defer></script>
+    <!-- Admin Reply Modal -->
+    <div id="reply-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-reply"></i> Şikayətə Cavab Ver</h2>
+                <button onclick="closeModal('reply-modal')" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem;">
+                    <strong>İstifadəçinin mesajı:</strong>
+                    <p id="reply-user-msg" style="margin-top: 5px; color: #475569; font-style: italic;"></p>
+                </div>
+                <div class="input-group">
+                    <label>Cavabınız:</label>
+                    <textarea id="reply-message" placeholder="İstifadəçiyə veriləcək cavabı bura yazın..." rows="4" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;"></textarea>
+                </div>
+                <input type="hidden" id="reply-report-id">
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('reply-modal')" class="btn-outline">Ləğv et</button>
+                <button onclick="submitReply()" class="btn-primary">
+                    <i class="fas fa-paper-plane"></i> Cavabı Göndər
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=4.5" defer></script>
 </body>
 </html>

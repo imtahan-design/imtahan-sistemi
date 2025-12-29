@@ -556,6 +556,7 @@ function hideAllSections() {
 
 window.hideAdminQuestionPage = function() {
     hideAllSections();
+    resetEditingState();
     if (activeCategoryId) {
         openCategory(activeCategoryId);
     } else {
@@ -1459,6 +1460,7 @@ window.showProfile = function() {
     
     renderHistory();
     loadUserQuestions();
+    loadUserInbox();
 }
 
 async function loadUserQuestions() {
@@ -2614,13 +2616,15 @@ function renderQuestions() {
     cat.questions.forEach((q, index) => {
         const div = document.createElement('div');
         div.className = 'question-item';
+        div.dataset.id = q.id; // Add data-id for searching
         div.innerHTML = `
             <div>
                 <strong>${index + 1}.</strong> ${q.text.substring(0, 50)}${q.text.length > 50 ? '...' : ''}
                 ${q.image ? '<i class="fas fa-image" title="Şəkilli sual"></i>' : ''}
             </div>
             <div class="q-actions">
-                <button onclick="deleteQuestion(${q.id})"><i class="fas fa-trash"></i></button>
+                <button onclick="editCategoryQuestion(${q.id})" class="edit-cat-btn" title="Düzəliş et"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteQuestion(${q.id})" title="Sualı sil"><i class="fas fa-trash"></i></button>
             </div>
         `;
         list.appendChild(div);
@@ -2859,7 +2863,7 @@ window.addAdminQuestionForm = function() {
 
 window.saveAdminQuestions = function() {
     const questionItems = document.querySelectorAll('#admin-questions-list .manual-question-item');
-    const newQuestions = [];
+    const newQuestionsData = [];
     
     for (const item of questionItems) {
         const text = item.querySelector('.manual-q-text').value.trim();
@@ -2885,8 +2889,7 @@ window.saveAdminQuestions = function() {
             return;
         }
 
-        newQuestions.push({
-            id: Date.now() + Math.random(),
+        newQuestionsData.push({
             text,
             image,
             options,
@@ -2894,7 +2897,7 @@ window.saveAdminQuestions = function() {
         });
     }
 
-    if (newQuestions.length === 0) {
+    if (newQuestionsData.length === 0) {
         showNotification('Heç bir sual əlavə edilməyib!', 'error');
         return;
     }
@@ -2902,10 +2905,105 @@ window.saveAdminQuestions = function() {
     const cat = categories.find(c => c.id === activeCategoryId);
     if (!cat) return;
 
-    cat.questions.push(...newQuestions);
+    if (editingQuestionId) {
+        // Mövcud sualı yenilə
+        const qIdx = cat.questions.findIndex(q => q.id === editingQuestionId);
+        if (qIdx !== -1) {
+            cat.questions[qIdx] = {
+                ...cat.questions[qIdx],
+                ...newQuestionsData[0]
+            };
+            showNotification('Sual uğurla yeniləndi!', 'success');
+        }
+    } else {
+        // Yeni suallar əlavə et
+        newQuestionsData.forEach(qData => {
+            cat.questions.push({
+                id: Date.now() + Math.random(),
+                ...qData
+            });
+        });
+        showNotification(`${newQuestionsData.length} yeni sual əlavə edildi!`, 'success');
+    }
+
     saveCategories();
     hideAdminQuestionPage();
-    showNotification(`${newQuestions.length} yeni sual əlavə edildi!`, 'success');
+    
+    // Redaktə vəziyyətini sıfırla
+    resetEditingState();
+}
+
+window.resetEditingState = function() {
+    editingQuestionId = null;
+    const tabsWrapper = document.querySelector('.tabs-wrapper');
+    if (tabsWrapper) tabsWrapper.classList.remove('hidden');
+    
+    const addBtnContainer = document.querySelector('.add-q-btn-container');
+    if (addBtnContainer) addBtnContainer.classList.remove('hidden');
+    
+    const headerTitle = document.querySelector('#admin-question-section .modal-header h2');
+    if (headerTitle) headerTitle.innerHTML = '<i class="fas fa-plus-circle" style="color: var(--primary-color);"></i> Sual Əlavə Et';
+    
+    const saveBtn = document.querySelector('.btn-save');
+    if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-check-double"></i> Hamısını Yadda Saxla';
+}
+
+window.editCategoryQuestion = function(qId) {
+    const cat = categories.find(c => c.id === activeCategoryId);
+    if (!cat) return;
+    const q = cat.questions.find(item => item.id === qId);
+    if (!q) return;
+
+    editingQuestionId = qId;
+    
+    hideAllSections();
+    document.getElementById('admin-question-section').classList.remove('hidden');
+    switchAdminQuestionTab('manual');
+    
+    // Edit zamanı lazımsız hissələri gizlət
+    document.querySelector('.tabs-wrapper').classList.add('hidden');
+    document.querySelector('.add-q-btn-container').classList.add('hidden');
+    
+    // Başlığı dəyiş
+    const headerTitle = document.querySelector('#admin-question-section .modal-header h2');
+    headerTitle.innerHTML = '<i class="fas fa-edit" style="color: var(--primary-color);"></i> Suala Düzəliş Et';
+
+    const list = document.getElementById('admin-questions-list');
+    list.innerHTML = '';
+    
+    // addAdminQuestionForm() funksiyasının məntiqini istifadə et
+    addAdminQuestionForm();
+    const item = list.querySelector('.manual-question-item');
+    
+    // Redaktə zamanı silmə düyməsini götür
+    const delBtn = item.querySelector('.delete-q-btn');
+    if (delBtn) delBtn.remove();
+    
+    // Məlumatları doldur
+    item.querySelector('.manual-q-text').value = q.text;
+    if (q.image) {
+        const uniqueId = item.querySelector('.manual-q-img-data').id.replace('data_', '');
+        const preview = document.getElementById(`preview_${uniqueId}`);
+        const label = document.getElementById(`label_${uniqueId}`);
+        const dataInput = document.getElementById(`data_${uniqueId}`);
+        
+        preview.querySelector('img').src = q.image;
+        preview.classList.remove('hidden');
+        label.classList.add('hidden');
+        dataInput.value = q.image;
+    }
+    
+    const optionInputs = item.querySelectorAll('.manual-opt');
+    q.options.forEach((opt, i) => {
+        if (optionInputs[i]) optionInputs[i].value = opt;
+    });
+    
+    const radios = item.querySelectorAll('input[type="radio"]');
+    if (radios[q.correctIndex]) radios[q.correctIndex].checked = true;
+    
+    // Yadda saxla düyməsinin mətnini dəyiş
+    const saveBtn = document.querySelector('.btn-save');
+    saveBtn.innerHTML = '<i class="fas fa-save"></i> Dəyişikliyi Yadda Saxla';
 }
 
 window.deleteQuestion = function(qId) {
@@ -2979,6 +3077,7 @@ window.confirmStartQuiz = function() {
 
 let currentQuiz = null;
 let selectedAnswerIndex = -1; // Global variable to track selected answer for current question
+let editingQuestionId = null; // Kateqoriya sualını redaktə etmək üçün
 
 function loadQuestion() {
     const q = currentQuiz.questions[currentQuiz.currentQuestionIndex];
@@ -3365,6 +3464,9 @@ window.loadReports = async function() {
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px;">
+                    <button onclick="openReplyModal('${report.id}', '${report.message.replace(/'/g, "\\'")}')" class="btn-reply" title="Cavab ver">
+                        <i class="fas fa-reply"></i>
+                    </button>
                     ${report.status === 'pending' ? `
                         <button onclick="markReportAsResolved('${report.id}')" class="btn-success" style="padding: 8px 12px; font-size: 0.8rem;" title="Həll edildi">
                             <i class="fas fa-check"></i>
@@ -3422,6 +3524,7 @@ window.goToReportedQuestion = function(catId, qId, qType) {
     if (!catId) {
         return showNotification('Bu şikayətdə kateqoriya məlumatı yoxdur (köhnə şikayət).', 'error');
     }
+    
     if (qType === 'public') {
         activeCategoryId = catId;
         showPublicQuestions();
@@ -3432,7 +3535,11 @@ window.goToReportedQuestion = function(catId, qId, qType) {
                 if (el.innerHTML.includes(qId)) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     el.style.boxShadow = '0 0 15px var(--primary-color)';
-                    setTimeout(() => el.style.boxShadow = '', 3000);
+                    el.style.border = '2px solid var(--primary-color)';
+                    setTimeout(() => {
+                        el.style.boxShadow = '';
+                        el.style.border = '';
+                    }, 3000);
                     break;
                 }
             }
@@ -3440,6 +3547,129 @@ window.goToReportedQuestion = function(catId, qId, qType) {
     } else {
         // Kateqoriya sualı üçün (admin panelində)
         openCategory(catId);
+        // Sualı siyahıda tap və işarələ
+        setTimeout(() => {
+            const elements = document.getElementsByClassName('question-item');
+            for (let el of elements) {
+                if (el.dataset.id == qId) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.style.background = '#fef3c7'; // Sarılı rənglə işarələ
+                    el.style.borderLeft = '4px solid #f59e0b';
+                    setTimeout(() => {
+                        el.style.background = '';
+                        el.style.borderLeft = '';
+                    }, 5000);
+                    break;
+                }
+            }
+        }, 800);
+    }
+}
+
+// --- Inbox & Reply Functions ---
+
+window.openReplyModal = function(reportId, userMsg) {
+    document.getElementById('reply-report-id').value = reportId;
+    document.getElementById('reply-user-msg').textContent = userMsg;
+    document.getElementById('reply-message').value = '';
+    document.getElementById('reply-modal').classList.remove('hidden');
+}
+
+window.submitReply = async function() {
+    const reportId = document.getElementById('reply-report-id').value;
+    const replyText = document.getElementById('reply-message').value.trim();
+    
+    if (!replyText) {
+        return showNotification('Zəhmət olmasa cavabınızı daxil edin.', 'error');
+    }
+
+    try {
+        const replyData = {
+            reply: replyText,
+            replyTimestamp: Date.now(),
+            status: 'replied'
+        };
+
+        if (db) {
+            await db.collection('reports').doc(reportId).update(replyData);
+        } else {
+            let reports = JSON.parse(localStorage.getItem('reports') || '[]');
+            const idx = reports.findIndex(r => r.id == reportId);
+            if (idx !== -1) {
+                reports[idx] = { ...reports[idx], ...replyData };
+                localStorage.setItem('reports', JSON.stringify(reports));
+            }
+        }
+        
+        showNotification('Cavabınız göndərildi.');
+        closeModal('reply-modal');
+        loadReports();
+    } catch (e) {
+        console.error(e);
+        showNotification('Xəta baş verdi.', 'error');
+    }
+}
+
+window.loadUserInbox = async function() {
+    if (!currentUser) return;
+    
+    const list = document.getElementById('user-inbox-list');
+    const countBadge = document.getElementById('user-inbox-count');
+    list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">Yüklənir...</p>';
+    
+    try {
+        let reports = [];
+        if (db) {
+            const snapshot = await db.collection('reports')
+                .where('userId', '==', currentUser.id)
+                .orderBy('timestamp', 'desc')
+                .get();
+            reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } else {
+            reports = JSON.parse(localStorage.getItem('reports') || '[]')
+                .filter(r => r.userId === currentUser.id)
+                .sort((a, b) => b.timestamp - a.timestamp);
+        }
+
+        countBadge.textContent = `${reports.length} mesaj`;
+
+        if (reports.length === 0) {
+            list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">Hələ heç bir şikayətiniz yoxdur.</p>';
+            return;
+        }
+
+        list.innerHTML = '';
+        reports.forEach(report => {
+            const date = new Date(report.timestamp).toLocaleString('az-AZ');
+            const replyDate = report.replyTimestamp ? new Date(report.replyTimestamp).toLocaleString('az-AZ') : '';
+            
+            const div = document.createElement('div');
+            div.className = `inbox-item ${report.status === 'replied' && !report.read ? 'unread' : ''}`;
+            
+            div.innerHTML = `
+                <div class="inbox-q-info">
+                    <span><i class="fas fa-hashtag"></i> ID: ${report.questionId} | ${report.questionType === 'public' ? 'Ümumi Sual' : 'Kateqoriya Sualı'}</span>
+                    <span class="inbox-status status-${report.status}">${report.status === 'pending' ? 'Gözləmədə' : 'Cavablandırılıb'}</span>
+                </div>
+                <div class="inbox-message">
+                    <strong>Mənim şikayətim (${date}):</strong><br>
+                    ${report.message}
+                </div>
+                ${report.reply ? `
+                    <div class="inbox-reply">
+                        <div class="inbox-reply-header">
+                            <span><i class="fas fa-user-shield"></i> Adminin Cavabı</span>
+                            <span>${replyDate}</span>
+                        </div>
+                        <div class="inbox-reply-text">${report.reply}</div>
+                    </div>
+                ` : ''}
+            `;
+            list.appendChild(div);
+        });
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = '<p style="text-align: center; color: #ef4444; padding: 20px;">Inbox yüklənərkən xəta baş verdi.</p>';
     }
 }
 
