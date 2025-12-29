@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İmtahan – Onlayn Qiymətləndirmə Platforması</title>
-    <link rel="stylesheet" href="style.css?v=2.0">
+    <link rel="stylesheet" href="style.css?v=2.5">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Firebase SDKs -->
@@ -420,16 +420,26 @@
 
         <!-- Discussion Modal -->
         <div id="discussion-modal" class="modal hidden">
-            <div class="modal-content" style="max-width: 700px; height: 80vh; display: flex; flex-direction: column;">
-                <span class="close" onclick="closeModal('discussion-modal')">&times;</span>
-                <h2 id="discussion-title">Müzakirə</h2>
-                <div id="discussion-question-text" class="discussion-q-preview"></div>
-                <hr>
+            <div class="modal-content" style="max-width: 700px; height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 15px;">
+                <div style="padding: 15px 20px; background: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-users" style="font-size: 1.2rem;"></i>
+                        <div>
+                            <h3 id="discussion-title" style="margin: 0; font-size: 1rem;">Müzakirə Qrupu</h3>
+                            <span style="font-size: 0.7rem; opacity: 0.8;">onlayn</span>
+                        </div>
+                    </div>
+                    <span class="close" onclick="closeModal('discussion-modal')" style="color: white; margin: 0; font-size: 24px;">&times;</span>
+                </div>
+                
+                <div id="discussion-question-text" class="discussion-q-preview" style="margin: 0; border-radius: 0; background: #fffbe6; border-bottom: 1px solid #ffe58f; padding: 10px 20px; font-size: 0.9rem; color: #856404;"></div>
+                
                 <div id="comments-list" class="comments-container" style="flex: 1; overflow-y: auto;">
                     <!-- Comments will be loaded here -->
                 </div>
+                
                 <div class="comment-input-area">
-                    <textarea id="new-comment-text" placeholder="Fikrinizi bildirin..."></textarea>
+                    <textarea id="new-comment-text" placeholder="Mesaj yazın..."></textarea>
                     <button onclick="sendComment()" class="btn-primary"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
@@ -714,6 +724,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=2.0"></script>
+    <script src="app.js?v=2.3"></script>
 </body>
 </html>

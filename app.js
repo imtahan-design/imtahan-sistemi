@@ -1734,13 +1734,9 @@ window.showPublicQuestions = function() {
     document.getElementById('public-questions-section').classList.remove('hidden');
     document.getElementById('public-questions-title').textContent = `${cat.name} - Ümumi Suallar`;
     
-    // Check if user can add questions (logged in)
+    // Show add button for everyone, but logic handles login check
     const addBtn = document.getElementById('add-public-q-btn');
-    if (currentUser) {
-        addBtn.classList.remove('hidden');
-    } else {
-        addBtn.classList.add('hidden');
-    }
+    addBtn.classList.remove('hidden');
 
     loadPublicQuestions();
 }
@@ -1950,16 +1946,23 @@ function renderComments(comments) {
         return;
     }
 
+    // Get current user ID to distinguish own messages
+    const currentUserId = currentUser ? currentUser.id : 'anon_' + (localStorage.getItem('anon_id') || '');
+
     list.innerHTML = '';
     comments.forEach(c => {
+        const isOwn = c.userId == currentUserId;
         const div = document.createElement('div');
-        div.className = 'comment-item';
+        div.className = `comment-item ${isOwn ? 'own' : 'other'}`;
+        
+        const dateStr = c.createdAt ? (db && c.createdAt.toDate ? 
+            new Date(c.createdAt.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 
+            new Date(c.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : '';
+
         div.innerHTML = `
-            <div class="comment-author">
-                ${c.userName}
-                <span class="comment-date">${c.createdAt ? (db ? new Date(c.createdAt.toDate()).toLocaleString() : new Date(c.createdAt).toLocaleString()) : ''}</span>
-            </div>
+            ${!isOwn ? `<div class="comment-author">${c.userName}</div>` : ''}
             <div class="comment-text">${c.text}</div>
+            <div class="comment-date">${dateStr}</div>
         `;
         list.appendChild(div);
     });
