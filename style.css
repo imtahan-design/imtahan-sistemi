@@ -3307,8 +3307,8 @@ nav {
     max-width: 1200px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 2fr 1fr 1.5fr;
-    gap: 40px;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 30px;
 }
 
 .footer-section h4 {
@@ -3333,6 +3333,30 @@ nav {
     line-height: 1.6;
     color: #9ca3af;
     font-size: 0.95rem;
+}
+
+.footer-section.seo-tags .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.footer-section.seo-tags .tag-cloud span {
+    background: #374151;
+    color: #d1d5db;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+}
+
+.footer-section.seo-tags .tag-cloud span:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-light);
+    transform: translateY(-2px);
 }
 
 .footer-section.brand .logo {
