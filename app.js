@@ -606,18 +606,21 @@ window.register = async function() {
 window.confirmVerification = function() {
     const codeInput = document.getElementById('v-code').value;
     if (codeInput === verificationCode) {
-        users.push(pendingUser);
+        // Create user object before pushing
+        const newUser = { ...pendingUser };
+        users.push(newUser);
         saveUsers();
-        showNotification('Email təsdiqləndi! Qeydiyyat uğurla tamamlandı.', 'success');
-        closeVerification();
         
         // Auto login
-        currentUser = pendingUser;
+        currentUser = newUser;
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        
+        showNotification('Email təsdiqləndi! Qeydiyyat uğurla tamamlandı.', 'success');
+        closeVerification();
         updateUI();
 
         if (redirectAfterAuth === 'teacher_panel' && currentUser.role === 'teacher') {
-            redirectAfterAuth = null; // Clear it before calling the function
+            redirectAfterAuth = null;
             showCreatePrivateQuiz();
             setTimeout(() => {
                 showNotification('İndi ilk özəl testinizi yarada bilərsiniz!', 'success');
