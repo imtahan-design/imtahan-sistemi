@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İmtahan – Onlayn Qiymətləndirmə Platforması</title>
-    <link rel="stylesheet" href="style.css?v=4.6">
+    <link rel="stylesheet" href="style.css?v=5.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Firebase SDKs -->
@@ -282,21 +282,27 @@
                 <!-- Hero Section (Site Məlumatı) -->
                 <div class="hero-section">
                     <div class="hero-content">
-                        <h1>İmtahan.site – müəllimlər və tələbələr üçün onlayn sınaq imtahan platformasıdır.</h1>
-                        <p>Müəllimlər öz panelindən testlər yaradır, sualları əlavə edir və testə şifrə qoyaraq tələbələrlə paylaşa bilirlər. Tələbələr şifrəni daxil edib testləri işləyir və nəticələr dərhal müəllim tərəfindən görülür. Həmçinin saytda müxtəlif kateqoriyalar üzrə hazır testlər mövcuddur ki, hər kəs onları onlayn işləyə bilər. İstifadəçilər öz suallarını paylaşa, başqalarının suallarını cavablaya və real vaxt rejimində müzakirə edə bilərlər. Liderlər bölməsi isə ən aktiv istifadəçiləri göstərir və istifadəçilərin fəaliyyətini izləməyə imkan verir.</p>
+                        <h1>İmtahan.site – Onlayn Qiymətləndirmə Platforması</h1>
+                        <p>Müəllimlər və tələbələr üçün nəzərdə tutulmuş müasir sınaq imtahan platforması. Burada siz həm hazır testləri işləyə, həm də öz testlərinizi yaradıb paylaşa bilərsiniz.</p>
                         
+                        <div class="hero-actions-row">
+                            <button class="btn-hero-info" onclick="openAboutModal()">
+                                Daha çox öyrən <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+
                         <div class="hero-features">
                             <div class="hero-feature-item">
                                 <i class="fas fa-chalkboard-teacher"></i>
-                                <span>Müəllimlər üçün: Test yarat və nəticələri izlə</span>
+                                <span>Müəllimlər üçün: Test yarat, şifrə qoy və nəticələri izlə</span>
                             </div>
                             <div class="hero-feature-item">
                                 <i class="fas fa-user-graduate"></i>
-                                <span>Tələbələr üçün: Şifrəli testləri işlə</span>
+                                <span>Tələbələr üçün: Şifrəli testləri işlə və dərhal nəticəni gör</span>
                             </div>
                             <div class="hero-feature-item">
                                 <i class="fas fa-users"></i>
-                                <span>İcma: Sual paylaş və müzakirə et</span>
+                                <span>Hər kəs üçün: Sual paylaş, müzakirələrə qoşul və öyrən</span>
                             </div>
                         </div>
                     </div>
@@ -575,6 +581,39 @@
                 <div class="comment-input-area">
                     <textarea id="new-comment-text" placeholder="Mesaj yazın..."></textarea>
                     <button onclick="sendComment()" class="btn-primary"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Site Modal -->
+        <div id="about-modal" class="modal hidden">
+            <div class="modal-content about-modal-content">
+                <div class="about-modal-header">
+                    <div class="header-icon-box">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <h2>Platforma Haqqında</h2>
+                    <span class="close" onclick="closeModal('about-modal')">&times;</span>
+                </div>
+                
+                <div class="about-modal-body">
+                    <div class="about-raw-text">
+                        <p>🚀 <strong>İmtahan.site</strong> müəllimlər və tələbələr üçün hazırlanmış tam funksional onlayn sınaq imtahan platformasıdır. Məqsədimiz həm müəllimlərin, həm də tələbələrin test və imtahan prosesini mümkün qədər sadə, rahat və interaktiv etməyidir. ✨</p>
+                        
+                        <p>👨‍🏫 <strong>Müəllimlər</strong> saytımızda qeydiyyatdan keçərək özlərinə aid paneldən istifadə edə bilər. Burada müəllimlər öz testlərini yarada, sualları tək-tək və ya toplu şəkildə əlavə edə, daha sonra isə testə şifrə qoyaraq sayt tərəfindən yaradılan xüsusi link vasitəsilə tələbələrlə paylaşa bilər. 🔗 Tələbələr şifrəni daxil edib testləri işləyir və nəticələr dərhal müəllim tərəfindən görülür. Bu xüsusiyyət müəllimlərin onlayn dərslərdə və sınaq imtahanlarında tələbələrin fəaliyyətini asanlıqla izləməsinə imkan yaradır. 📊</p>
+                        
+                        <p>📚 Saytımız həmçinin müxtəlif kateqoriyalar üzrə <strong>hazır testlər</strong> təqdim edir. Burada müxtəlif sahələr üzrə testləri hər kəs onlayn işləyə bilər. Bu testlər tələbələrə və digər istifadəçilərə öz biliklərini sınamaq və öyrənmək imkanı verir. 💡</p>
+                        
+                        <p>💬 Platformamız <strong>interaktiv</strong> imkanlarla zəngindir. İstifadəçilər öz suallarını paylaşa, başqalarının suallarını cavablaya və real vaxt rejimində müzakirə edə bilərlər. Bu, həm öyrənməyi, həm də bilik mübadiləsini daha maraqlı və səmərəli edir. 🤝</p>
+                        
+                        <p>🏆 <strong>Liderlər bölməsi</strong> isə ən aktiv istifadəçiləri göstərir. Burada istifadəçilərin paylaşdığı suallar, onlara verilən bəyənilər və ümumi fəaliyyət statistikası izlənilir. Bu xüsusiyyət istifadəçiləri daha aktiv olmağa və biliklərini paylaşmağa təşviq edir. 🌟</p>
+                        
+                        <p>🎯 <strong>İmtahan.site</strong> həm müəllimlər, həm tələbələr, həm də hər kəs üçün rahat, effektiv və interaktiv sınaq imtahan platformasıdır. Məqsədimiz öyrənməyi əyləncəli, idarəetməni isə sadə etməkdir. 🔥</p>
+                    </div>
+                </div>
+
+                <div class="modal-footer about-modal-footer">
+                    <button onclick="closeModal('about-modal')" class="btn-about-close">Anladım</button>
                 </div>
             </div>
         </div>

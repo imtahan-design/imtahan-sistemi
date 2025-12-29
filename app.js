@@ -59,24 +59,23 @@ window.menuNavigate = function(actionFunc) {
     }
 }
 
+window.openAboutModal = function() {
+    const modal = document.getElementById('about-modal');
+    if (modal) modal.classList.remove('hidden');
+}
+
 // Info Modal Logic
 window.showInfoModal = function(type) {
+    if (type === 'about') {
+        openAboutModal();
+        return;
+    }
     const modal = document.getElementById('info-modal');
     const body = document.getElementById('info-modal-body');
     if (!modal || !body) return;
 
     let content = '';
     switch(type) {
-        case 'about':
-            content = `
-                <h2><i class="fas fa-info-circle"></i> Haqqımızda</h2>
-                <p><strong>İmtahan</strong> - Təhsil sahəsində innovativ həllər təqdim edən, müəllim və tələbələr üçün nəzərdə tutulmuş müasir imtahan platformasıdır.</p>
-                <p>Missiyamız biliklərin yoxlanılması prosesini daha asan, şəffaf və əlçatan etməkdir. Platformamız vasitəsilə müəllimlər saniyələr içində özəl testlər yarada, tələbələr isə biliklərini istənilən yerdən yoxlaya bilərlər.</p>
-                <div class="security-box">
-                    <i class="fas fa-check-circle"></i> Bizim üçün ən önəmli dəyər istifadəçi məmnuniyyəti və məlumatların təhlükəsizliyidir.
-                </div>
-            `;
-            break;
         case 'contact':
             content = `
                 <h2><i class="fas fa-envelope"></i> Əlaqə</h2>
