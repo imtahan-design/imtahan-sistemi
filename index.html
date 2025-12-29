@@ -24,15 +24,15 @@
             </div>
             <div class="nav-links">
                 <div id="guest-nav" class="hidden">
-                    <button onclick="showLogin()" class="btn-secondary">Giriş</button>
-                    <button onclick="showRegister()" class="btn-primary">Qeydiyyat</button>
+                    <button onclick="showLogin()" class="btn-secondary"><i class="fas fa-sign-in-alt"></i> <span>Giriş</span></button>
+                    <button onclick="showRegister()" class="btn-primary"><i class="fas fa-user-plus"></i> <span>Qeydiyyat</span></button>
                 </div>
                 <div id="user-nav" class="hidden">
                     <span id="user-display"></span>
-                    <button onclick="showProfile()" class="btn-secondary">Profil</button>
-                    <button id="teacher-panel-btn" onclick="showTeacherDashboard()" class="btn-primary">Müəllim Paneli</button>
-                    <button id="admin-panel-btn" onclick="showAdminDashboard()" class="hidden btn-warning">Admin Panel</button>
-                    <button onclick="logout()" class="btn-secondary">Çıxış</button>
+                    <button onclick="showProfile()" class="btn-secondary"><i class="fas fa-user-circle"></i> <span>Profil</span></button>
+                    <button id="teacher-panel-btn" onclick="showTeacherDashboard()" class="btn-primary"><i class="fas fa-chalkboard-teacher"></i> <span>Müəllim</span></button>
+                    <button id="admin-panel-btn" onclick="showAdminDashboard()" class="hidden btn-warning"><i class="fas fa-user-shield"></i> <span>Admin</span></button>
+                    <button onclick="logout()" class="btn-secondary"><i class="fas fa-sign-out-alt"></i> <span>Çıxış</span></button>
                 </div>
             </div>
         </nav>

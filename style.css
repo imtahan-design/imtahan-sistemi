@@ -1415,81 +1415,85 @@ nav {
     }
 
     nav {
-        padding: 10px 15px;
-        margin-bottom: 15px;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        flex-direction: column; /* 2 sətirə keçid */
+        align-items: stretch;
+        gap: 15px;
         height: auto;
-        flex-wrap: nowrap;
     }
     
     .logo {
-        text-align: left;
-        min-width: fit-content;
-        flex: 0 0 auto;
+        text-align: center;
+        width: 100%;
     }
 
     .logo-main {
-        font-size: 18px;
+        font-size: 22px;
         font-weight: 800;
+        margin-bottom: 2px;
     }
 
     .logo-sub {
-        display: none;
+        display: block; /* Geri qaytarıldı */
+        font-size: 10px;
+        opacity: 0.8;
+        line-height: 1.2;
     }
 
     .nav-links {
-        flex: 1;
+        width: 100%;
         display: flex;
-        justify-content: flex-end;
+        justify-content: center;
     }
 
     .nav-links div {
         width: 100%;
         display: flex;
-        justify-content: flex-end;
+        justify-content: center;
         align-items: center;
-        flex-wrap: nowrap;
-        gap: 5px;
+        flex-wrap: wrap; /* Düymələr sığmasa növbəti sətirə keçsin */
+        gap: 8px;
     }
 
     #user-display {
-        display: inline-block !important;
-        visibility: visible !important;
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-right: 4px;
-        max-width: 70px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        display: block !important;
+        width: 100%;
+        text-align: center;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--primary-color);
+        background: rgba(79, 70, 229, 0.05);
+        padding: 8px;
+        border-radius: 10px;
+        max-width: 100%;
     }
 
     .btn-secondary, .btn-primary, .btn-warning {
-        padding: 8px 12px;
-        font-size: 11px;
+        padding: 10px 14px;
+        font-size: 12px;
         font-weight: 600;
-        border-radius: 8px;
-        flex: none;
-        white-space: nowrap;
-        min-width: auto;
-        height: 34px;
+        border-radius: 10px;
+        flex: 1; /* Düymələr bərabər bölünsün */
+        min-width: calc(33% - 10px); /* Bir sətirdə 3 düymə */
+        height: 40px;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        flex-direction: column; /* İkon yuxarıda, mətn aşağıda */
+        gap: 2px;
     }
 
-    /* Mobildə bəzi düymələri ikonla əvəzləyirik və ya qısaldırıq */
+    .btn-secondary i, .btn-primary i, .btn-warning i {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .btn-secondary span, .btn-primary span, .btn-warning span {
+        font-size: 10px;
+    }
+
     #teacher-panel-btn, #admin-panel-btn {
-        padding: 8px;
-    }
-
-    /* Mobildə Salam sözünü gizlədib yalnız adı saxlaya bilərik ki yer qalsın */
-    #user-display i {
-        display: none;
+        min-width: calc(50% - 10px); /* Böyük düymələr yarı-yarıya */
     }
 
     /* Dashboard */
