@@ -3255,6 +3255,8 @@ window.hideReview = function() {
 window.openReportModal = function(qId, qType, qTitle) {
     document.getElementById('report-q-id').value = qId;
     document.getElementById('report-q-type').value = qType;
+    document.getElementById('report-q-title-val').value = qTitle;
+    document.getElementById('report-q-cat-id').value = activeCategoryId || '';
     document.getElementById('report-q-title').textContent = `Sual: ${qTitle}`;
     document.getElementById('report-message').value = '';
     document.getElementById('report-modal').classList.remove('hidden');
@@ -3263,6 +3265,8 @@ window.openReportModal = function(qId, qType, qTitle) {
 window.submitReport = async function() {
     const qId = document.getElementById('report-q-id').value;
     const qType = document.getElementById('report-q-type').value;
+    const qTitle = document.getElementById('report-q-title-val').value;
+    const qCatId = document.getElementById('report-q-cat-id').value;
     const message = document.getElementById('report-message').value.trim();
     
     if (!message) {
@@ -3272,6 +3276,8 @@ window.submitReport = async function() {
     const report = {
         questionId: qId,
         questionType: qType,
+        questionTitle: qTitle,
+        categoryId: qCatId,
         message: message,
         userId: currentUser ? currentUser.id : 'anonim',
         username: currentUser ? currentUser.username : 'Anonim',
@@ -3331,12 +3337,25 @@ window.loadReports = async function() {
             div.innerHTML = `
                 <div style="flex: 1;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                        <span style="font-weight: 600; color: var(--primary-color);">
-                            <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${report.questionType === 'public' ? 'Ümumi' : 'Kateqoriya'})
-                        </span>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-weight: 600; color: var(--primary-color);">
+                                    <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${report.questionType === 'public' ? 'Ümumi' : 'Kateqoriya'})
+                                </span>
+                                <button onclick="goToReportedQuestion('${report.categoryId || ''}', '${report.questionId}', '${report.questionType}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.7rem; border-radius: 4px;">
+                                    <i class="fas fa-external-link-alt"></i> Suala get
+                                </button>
+                            </div>
+                            ${report.questionTitle ? `
+                                <span style="font-size: 0.9rem; color: #1e293b; font-weight: 500;">
+                                    <strong>Sual:</strong> ${report.questionTitle}
+                                </span>
+                            ` : ''}
+                        </div>
                         <span style="font-size: 0.8rem; color: #64748b;">${date}</span>
                     </div>
-                    <div style="margin-bottom: 10px; background: #f8fafc; padding: 12px; border-radius: 8px; font-style: italic; color: #1e293b;">
+                    <div style="margin-bottom: 10px; background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 3px solid #cbd5e1; color: #1e293b;">
+                        <div style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin-bottom: 4px; font-weight: 600;">Şikayət:</div>
                         "${report.message}"
                     </div>
                     <div style="font-size: 0.85rem; color: #64748b; display: flex; align-items: center; gap: 10px;">
@@ -3396,6 +3415,31 @@ window.deleteReport = async function(reportId) {
         loadReports();
     } catch (e) {
         console.error(e);
+    }
+}
+
+window.goToReportedQuestion = function(catId, qId, qType) {
+    if (!catId) {
+        return showNotification('Bu şikayətdə kateqoriya məlumatı yoxdur (köhnə şikayət).', 'error');
+    }
+    if (qType === 'public') {
+        activeCategoryId = catId;
+        showPublicQuestions();
+        // Suala qədər sürüşdür (scrolling)
+        setTimeout(() => {
+            const elements = document.getElementsByClassName('public-q-card');
+            for (let el of elements) {
+                if (el.innerHTML.includes(qId)) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.style.boxShadow = '0 0 15px var(--primary-color)';
+                    setTimeout(() => el.style.boxShadow = '', 3000);
+                    break;
+                }
+            }
+        }, 1000);
+    } else {
+        // Kateqoriya sualı üçün (admin panelində)
+        openCategory(catId);
     }
 }
 
