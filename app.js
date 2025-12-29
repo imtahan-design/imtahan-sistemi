@@ -701,21 +701,56 @@ window.handleQuestionImage = function(input, index) {
     const file = input.files[0];
     if (!file) return;
 
-    // Check file size (limit to 1MB for base64 storage)
-    if (file.size > 1024 * 1024) {
-        showNotification('Şəkil ölçüsü 1MB-dan çox olmamalıdır.', 'error');
-        input.value = '';
-        return;
-    }
-
     const reader = new FileReader();
     reader.onload = function(e) {
-        const base64Data = e.target.result;
-        document.getElementById(`data_${index}`).value = base64Data;
-        const preview = document.getElementById(`preview_${index}`);
-        preview.querySelector('img').src = base64Data;
-        preview.classList.remove('hidden');
-        document.getElementById(`label_${index}`).classList.add('hidden');
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            // Maksimum ölçü 1024px (həm en, həm hündürlük)
+            const MAX_SIZE = 1024;
+            if (width > height) {
+                if (width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                }
+            } else {
+                if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            
+            // Arxa fonu ağ edirik (PNG-lərdə şəffaflıq JPG-də qara görünməsin deyə)
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Şəkli JPG formatına çeviririk və 0.7 keyfiyyətlə sıxırıq
+            // Bu həm PNG xətasını aradan qaldırır, həm də yaddaşa qənaət edir
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            
+            // Firestore limitini yoxlayırıq (təxminən 800KB limit qoyuruq ki, digər datalarla 1MB-ı keçməsin)
+            if (compressedBase64.length > 800 * 1024) {
+                showNotification('Şəkil sıxıldıqdan sonra hələ də çox böyükdür. Zəhmət olmasa daha kiçik şəkil seçin.', 'error');
+                input.value = '';
+                return;
+            }
+
+            document.getElementById(`data_${index}`).value = compressedBase64;
+            const preview = document.getElementById(`preview_${index}`);
+            preview.querySelector('img').src = compressedBase64;
+            preview.classList.remove('hidden');
+            document.getElementById(`label_${index}`).classList.add('hidden');
+        };
+        img.src = e.target.result;
     };
     reader.readAsDataURL(file);
 }
