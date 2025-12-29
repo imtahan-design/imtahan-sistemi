@@ -1759,7 +1759,10 @@ window.hidePublicQuestions = function() {
 }
 
 window.showAddPublicQuestionModal = function() {
-    if (!currentUser) return showLogin();
+    if (!currentUser) {
+        showNotification('Sual əlavə etmək üçün qeydiyyatdan keçməlisiniz', 'error');
+        return;
+    }
     document.getElementById('public-question-modal').classList.remove('hidden');
     // Clear form
     document.getElementById('pub-q-text').value = '';
@@ -1770,7 +1773,8 @@ window.showAddPublicQuestionModal = function() {
 window.submitPublicQuestion = async function() {
     const text = document.getElementById('pub-q-text').value.trim();
     const opts = Array.from(document.querySelectorAll('.pub-opt')).map(o => o.value.trim());
-    const correct = parseInt(document.getElementById('pub-q-correct').value);
+    const correctRadio = document.querySelector('input[name="pub-q-correct"]:checked');
+    const correct = correctRadio ? parseInt(correctRadio.value) : 0;
 
     if (!text || opts.some(o => !o)) {
         return showNotification('Zəhmət olmasa bütün sahələri doldurun.', 'error');
@@ -1854,9 +1858,9 @@ function renderPublicQuestions(questions) {
                 <span>${q.createdAt ? (db ? new Date(q.createdAt.toDate()).toLocaleDateString() : new Date(q.createdAt).toLocaleDateString()) : ''}</span>
             </div>
             <div class="public-q-text">${q.text}</div>
-            <div class="public-q-options">
+            <div class="public-q-options" id="pub-options-${q.id}">
                 ${q.options.map((opt, idx) => `
-                    <div class="pub-opt-item ${idx === q.correctIndex ? 'correct' : ''}">
+                    <div class="pub-opt-item" onclick="checkPublicAnswer('${q.id}', ${idx}, ${q.correctIndex})">
                         ${String.fromCharCode(65 + idx)}) ${opt}
                     </div>
                 `).join('')}
@@ -1869,6 +1873,21 @@ function renderPublicQuestions(questions) {
         `;
         list.appendChild(div);
     });
+}
+
+window.checkPublicAnswer = function(questionId, selectedIdx, correctIdx) {
+    const optionsContainer = document.getElementById(`pub-options-${questionId}`);
+    if (optionsContainer.classList.contains('answered')) return;
+
+    const items = optionsContainer.querySelectorAll('.pub-opt-item');
+    items.forEach((item, idx) => {
+        if (idx === correctIdx) {
+            item.classList.add('correct');
+        } else if (idx === selectedIdx) {
+            item.classList.add('wrong');
+        }
+    });
+    optionsContainer.classList.add('answered');
 }
 
 // --- Discussion Logic ---
@@ -1949,14 +1968,23 @@ function renderComments(comments) {
 }
 
 window.sendComment = async function() {
-    if (!currentUser) return showLogin();
     const text = document.getElementById('new-comment-text').value.trim();
     if (!text) return;
 
+    // Check if user is logged in or has a stored anonymous name
+    let displayName = currentUser ? currentUser.username : localStorage.getItem('anon_display_name');
+    let userId = currentUser ? currentUser.id : 'anon_' + (localStorage.getItem('anon_id') || Date.now());
+
+    if (!displayName) {
+        // Show anonymous name modal
+        document.getElementById('anonymous-name-modal').classList.remove('hidden');
+        return;
+    }
+
     const newComment = {
         questionId: currentDiscussionQuestionId,
-        userId: currentUser.id,
-        userName: currentUser.username,
+        userId: userId,
+        userName: displayName,
         text: text,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -1977,6 +2005,19 @@ window.sendComment = async function() {
         console.error(e);
         showNotification('Şərh göndərilərkən xəta baş verdi.', 'error');
     }
+}
+
+window.saveAnonymousName = function() {
+    const name = document.getElementById('anon-name-input').value.trim();
+    if (!name) return showNotification('Zəhmət olmasa adınızı daxil edin.', 'error');
+
+    localStorage.setItem('anon_display_name', name);
+    if (!localStorage.getItem('anon_id')) {
+        localStorage.setItem('anon_id', Date.now());
+    }
+    
+    closeModal('anonymous-name-modal');
+    sendComment(); // Try sending again
 }
 
 function openCategory(id) {

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İmtahan – Onlayn Qiymətləndirmə Platforması</title>
-    <link rel="stylesheet" href="style.css?v=1.7">
+    <link rel="stylesheet" href="style.css?v=2.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Firebase SDKs -->
@@ -361,32 +361,60 @@
 
         <!-- Add Public Question Modal -->
         <div id="public-question-modal" class="modal hidden">
-            <div class="modal-content" style="max-width: 600px;">
-                <span class="close" onclick="closeModal('public-question-modal')">&times;</span>
-                <h2>Ümumi Sual Əlavə Et</h2>
-                <div class="form-group">
-                    <label>Sualın mətni:</label>
-                    <textarea id="pub-q-text" placeholder="Sualı daxil edin..."></textarea>
+            <div class="modal-content" style="max-width: 650px; padding: 0; overflow: hidden; border-radius: 20px;">
+                <div class="modal-header-brand" style="background: var(--primary-color); color: white; padding: 25px; position: relative;">
+                    <h2 style="margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 12px;">
+                        <i class="fas fa-plus-circle"></i> Ümumi Sual Əlavə Et
+                    </h2>
+                    <span class="close" onclick="closeModal('public-question-modal')" style="color: white; opacity: 0.8; position: absolute; top: 20px; right: 25px;">&times;</span>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 0.9rem;">Təqdim etdiyiniz sual digər istifadəçilər tərəfindən görünəcək.</p>
                 </div>
-                <div class="form-group">
-                    <label>Variantlar (Hər variantdan sonra Enter basın):</label>
-                    <div id="pub-q-options" class="manual-options-grid">
-                        <input type="text" class="pub-opt" placeholder="A variantı">
-                        <input type="text" class="pub-opt" placeholder="B variantı">
-                        <input type="text" class="pub-opt" placeholder="C variantı">
-                        <input type="text" class="pub-opt" placeholder="D variantı">
+
+                <div class="modal-body" style="padding: 30px;">
+                    <div class="form-group" style="margin-bottom: 25px;">
+                        <label style="font-weight: 600; color: var(--text-color); margin-bottom: 10px; display: block;">
+                            <i class="fas fa-pen-fancy" style="color: var(--primary-color); margin-right: 8px;"></i> Sualın mətni
+                        </label>
+                        <textarea id="pub-q-text" placeholder="Sualı daxil edin..." style="width: 100%; min-height: 120px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; transition: all 0.3s; resize: vertical;"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="font-weight: 600; color: var(--text-color); margin-bottom: 15px; display: block;">
+                            <i class="fas fa-list-ul" style="color: var(--primary-color); margin-right: 8px;"></i> Variantlar və Düzgün Cavab
+                        </label>
+                        
+                        <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 12px; border-radius: 10px; margin-bottom: 15px; color: #92400e; font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Düzgün variantı radio düyməsi ilə işarələyin.</span>
+                        </div>
+
+                        <div id="pub-q-options" class="public-options-grid" style="display: grid; gap: 12px;">
+                            <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                <input type="radio" name="pub-q-correct" value="0" checked id="pub-opt-0" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
+                                <input type="text" class="pub-opt" placeholder="A variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+                            </div>
+                            <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                <input type="radio" name="pub-q-correct" value="1" id="pub-opt-1" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
+                                <input type="text" class="pub-opt" placeholder="B variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+                            </div>
+                            <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                <input type="radio" name="pub-q-correct" value="2" id="pub-opt-2" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
+                                <input type="text" class="pub-opt" placeholder="C variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+                            </div>
+                            <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                <input type="radio" name="pub-q-correct" value="3" id="pub-opt-3" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
+                                <input type="text" class="pub-opt" placeholder="D variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Düzgün variant:</label>
-                    <select id="pub-q-correct">
-                        <option value="0">A</option>
-                        <option value="1">B</option>
-                        <option value="2">C</option>
-                        <option value="3">D</option>
-                    </select>
+
+                <div class="modal-footer" style="padding: 20px 30px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 15px;">
+                    <button onclick="closeModal('public-question-modal')" class="btn-outline" style="flex: 1; margin: 0;">Ləğv et</button>
+                    <button onclick="submitPublicQuestion()" class="btn-primary" style="flex: 2; margin: 0;">
+                        <i class="fas fa-paper-plane"></i> Sualı Paylaş
+                    </button>
                 </div>
-                <button onclick="submitPublicQuestion()" class="btn-primary" style="width: 100%;">Göndər</button>
             </div>
         </div>
 
@@ -403,6 +431,21 @@
                 <div class="comment-input-area">
                     <textarea id="new-comment-text" placeholder="Fikrinizi bildirin..."></textarea>
                     <button onclick="sendComment()" class="btn-primary"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Anonymous Name Modal -->
+        <div id="anonymous-name-modal" class="modal hidden">
+            <div class="modal-content" style="max-width: 400px; text-align: center; padding: 30px; border-radius: 20px;">
+                <h3 style="margin-bottom: 15px;">Müzakirəyə qoşulun</h3>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Fikir bildirmək üçün adınızı daxil edin:</p>
+                <div class="form-group">
+                    <input type="text" id="anon-name-input" placeholder="Adınız..." style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; text-align: center; font-size: 1.1rem;">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button onclick="closeModal('anonymous-name-modal')" class="btn-outline" style="flex: 1; margin: 0;">Ləğv et</button>
+                    <button onclick="saveAnonymousName()" class="btn-primary" style="flex: 1; margin: 0;">Davam et</button>
                 </div>
             </div>
         </div>
@@ -671,6 +714,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=1.7"></script>
+    <script src="app.js?v=2.0"></script>
 </body>
 </html>
