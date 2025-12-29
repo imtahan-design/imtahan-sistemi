@@ -1312,7 +1312,20 @@ function setupGlobalSecurity() {
     // 2. Kopyalamağı bağla (İstifadəçinin istəyi ilə)
     document.body.classList.add('no-select');
 
-    // 3. Fokus itəndə ekranı dumanla (Yalnız səhifələr arası keçid üçün)
+    // 3. F12 və təhlükəli qısayolları bağla
+    document.addEventListener('keydown', function(e) {
+        if (
+            e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+            (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
+        ) {
+            e.preventDefault();
+            showNotification('Təhlükəsizlik səbəbiylə bu hərəkət qadağandır!', 'error');
+            return false;
+        }
+    });
+
+    // 4. Fokus itəndə ekranı dumanla (Yalnız səhifələr arası keçid üçün)
     window.addEventListener('blur', applyPrivacyBlur);
     window.addEventListener('focus', removePrivacyBlur);
     document.addEventListener('visibilitychange', () => {
@@ -1320,7 +1333,7 @@ function setupGlobalSecurity() {
         else removePrivacyBlur();
     });
 
-    console.log("Kopyalama qadağası və səhifələr arası blur aktivdir.");
+    console.log("F12 bloklanması, kopyalama qadağası və blur aktivdir.");
 }
 
 // Səhifə yüklənəndə təhlükəsizliyi işə sal (amma login səhifəsində mane olmasın)
