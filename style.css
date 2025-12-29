@@ -252,13 +252,23 @@ nav {
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
+/* Mobile Menu Styles */
+.menu-toggle {
+    display: none;
+    font-size: 24px;
+    color: var(--primary-color);
+    cursor: pointer;
+    padding: 5px;
+    z-index: 101;
+}
+
 @media (max-width: 768px) {
     .nav-links {
         display: none;
     }
     
     .menu-toggle {
-        display: block;
+        display: block !important;
     }
 
     nav {
@@ -297,15 +307,6 @@ nav {
     color: #64748b;
     letter-spacing: 0.5px;
     margin-top: -2px;
-}
-
-/* Mobile Menu Styles */
-.menu-toggle {
-    display: none;
-    font-size: 24px;
-    color: var(--primary-color);
-    cursor: pointer;
-    padding: 5px;
 }
 
 .side-menu {
