@@ -1947,9 +1947,50 @@ nav {
 
 .public-q-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
     border-top: 1px solid #f1f5f9;
     padding-top: 15px;
+}
+
+.like-dislike-group {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    background: none;
+    border: 1px solid #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.like-btn.active {
+    color: #3b82f6;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.dislike-btn.active {
+    color: #ef4444;
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.action-btn span {
+    font-weight: 600;
 }
 
 .discussion-q-preview {
