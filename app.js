@@ -28,6 +28,7 @@ emailjs.init("gwXl5HH3P9Bja5iBN");
 
 // Global State
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+let redirectAfterAuth = null;
 
 // Side Menu Logic
 window.toggleSideMenu = function() {
@@ -520,6 +521,14 @@ window.login = function() {
         localStorage.setItem('currentUser', JSON.stringify(user));
         updateUI();
         showNotification('Xoş gəldiniz, ' + user.username + '!', 'success');
+        
+        if (redirectAfterAuth === 'teacher_panel' && user.role === 'teacher') {
+            showTeacherDashboard();
+            setTimeout(() => {
+                showNotification('Sınaq hazırlamaq üçün "Yeni özəl test" düyməsinə klikləyin.', 'info');
+            }, 500);
+            redirectAfterAuth = null;
+        }
     } else {
         showNotification('İstifadəçi adı və ya şifrə yanlışdır!', 'error');
     }
@@ -584,8 +593,13 @@ window.register = async function() {
         const newUser = { id: String(Date.now()), username, password: pass, role: role };
         users.push(newUser);
         saveUsers();
-        showNotification('Qeydiyyat uğurludur! İndi daxil ola bilərsiniz.', 'success');
-        showLogin();
+        showNotification('Qeydiyyat uğurludur!', 'success');
+        
+        // Auto login
+        currentUser = newUser;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        updateUI();
+        showDashboard();
     }
 }
 
@@ -596,7 +610,21 @@ window.confirmVerification = function() {
         saveUsers();
         showNotification('Email təsdiqləndi! Qeydiyyat uğurla tamamlandı.', 'success');
         closeVerification();
-        showLogin();
+        
+        // Auto login
+        currentUser = pendingUser;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        updateUI();
+
+        if (redirectAfterAuth === 'teacher_panel' && currentUser.role === 'teacher') {
+            redirectAfterAuth = null; // Clear it before calling the function
+            showCreatePrivateQuiz();
+            setTimeout(() => {
+                showNotification('İndi ilk özəl testinizi yarada bilərsiniz!', 'success');
+            }, 800);
+        } else {
+            showDashboard();
+        }
     } else {
         showNotification('Yanlış təsdiq kodu!', 'error');
     }
@@ -666,6 +694,46 @@ window.importData = function(input) {
 }
 
 // --- Navigation Helpers ---
+window.prepareQuizAction = function() {
+    if (currentUser) {
+        if (currentUser.role === 'teacher') {
+            showTeacherDashboard();
+            setTimeout(() => {
+                showNotification('Sınaq hazırlamaq üçün "Yeni özəl test" düyməsinə klikləyin.', 'info');
+            }, 500);
+        } else {
+            showNotification('Sınaq hazırlamaq üçün müəllim hesabı lazımdır. Müəllim kimi qeydiyyatdan keçməyiniz üçün səhifəyə yönləndirilirsiniz.', 'info');
+            
+            setTimeout(() => {
+                logout();
+                redirectAfterAuth = 'teacher_panel';
+                showRegister();
+                setTimeout(() => {
+                    const roleSelect = document.getElementById('reg-role');
+                    if (roleSelect) {
+                        roleSelect.value = 'teacher';
+                        toggleEmailField();
+                    }
+                }, 100);
+            }, 1500);
+        }
+    } else {
+        showNotification('Sınaq hazırlamaq üçün müəllim hesabı lazımdır. Müəllim kimi qeydiyyatdan keçməyiniz üçün səhifəyə yönləndirilirsiniz.', 'info');
+        
+        setTimeout(() => {
+            redirectAfterAuth = 'teacher_panel';
+            showRegister();
+            setTimeout(() => {
+                const roleSelect = document.getElementById('reg-role');
+                if (roleSelect) {
+                    roleSelect.value = 'teacher';
+                    toggleEmailField();
+                }
+            }, 100);
+        }, 1500);
+    }
+}
+
 function hideAllSections() {
     const sections = [
         'auth-section', 'dashboard-section', 'admin-dashboard-section', 
