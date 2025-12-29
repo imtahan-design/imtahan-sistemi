@@ -1367,6 +1367,80 @@ nav {
 
 
 
+/* Hero Section Styles */
+.hero-section {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    border-radius: 24px;
+    padding: 40px;
+    margin-bottom: 30px;
+    color: white;
+    box-shadow: 0 15px 35px rgba(108, 92, 231, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.hero-content h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+}
+
+.hero-content p {
+    font-size: 1.1rem;
+    opacity: 0.95;
+    max-width: 800px;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.hero-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.hero-feature-item {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 20px;
+    border-radius: 16px;
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    transition: transform 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hero-feature-item:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.hero-feature-item i {
+    font-size: 1.8rem;
+    color: white;
+}
+
+.hero-feature-item span {
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
 /* Category Cards Enhancements */
 .category-card {
     background: var(--white);
@@ -1964,6 +2038,45 @@ nav {
 }
 
 @media (max-width: 768px) {
+    .hero-section {
+        padding: 20px;
+        border-radius: 18px;
+        margin-bottom: 20px;
+    }
+
+    .hero-content h1 {
+        font-size: 1.3rem;
+        margin-bottom: 10px;
+    }
+
+    .hero-content p {
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+        line-height: 1.5;
+    }
+
+    .hero-features {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .hero-feature-item {
+        padding: 12px;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .hero-feature-item i {
+        font-size: 1.2rem;
+        width: 25px;
+    }
+
+    .hero-feature-item span {
+        font-size: 0.8rem;
+    }
+
     /* Modal daxilindəki "İmtahana başla" düyməsi üçün xüsusi nizam */
     .start-quiz-btn {
         height: auto !important;
