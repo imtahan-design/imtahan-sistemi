@@ -186,12 +186,39 @@ async function loadData() {
              adminUser.role = 'admin';
              saveUsers();
         }
+
+        // Moderator seed logic
+        const moderatorUser = users.find(u => u.username === 'moderator');
+        if (!moderatorUser) {
+            users.push({ id: 'mod_' + Date.now(), username: 'moderator', password: 'mod', role: 'moderator' });
+            saveUsers();
+        }
     }
 
     // Check for English category leftovers and remove them
     const initialCount = categories.length;
     categories = categories.filter(c => c.name !== 'İngilis' && String(c.id) !== 'english_demo');
-    if (categories.length < initialCount) {
+    
+    // Ensure "Dərslik" category and its subcategories exist
+    let derslik = categories.find(c => c.name === 'Dərslik');
+    if (!derslik) {
+        derslik = { id: 'derslik_' + Date.now(), name: 'Dərslik', time: 45, questions: [], parentId: null };
+        categories.push(derslik);
+    }
+    
+    let biologiya = categories.find(c => c.name === 'Biologiya' && c.parentId === derslik.id);
+    if (!biologiya) {
+        biologiya = { id: 'bio_' + Date.now(), name: 'Biologiya', time: 45, questions: [], parentId: derslik.id };
+        categories.push(biologiya);
+    }
+    
+    let kimya = categories.find(c => c.name === 'Kimya' && c.parentId === derslik.id);
+    if (!kimya) {
+        kimya = { id: 'kimya_' + Date.now(), name: 'Kimya', time: 45, questions: [], parentId: derslik.id };
+        categories.push(kimya);
+    }
+
+    if (categories.length !== initialCount || !derslik || !biologiya || !kimya) {
         saveCategories();
     }
 
@@ -240,6 +267,8 @@ function updateUI() {
     const isPrivateQuiz = new URLSearchParams(window.location.search).has('quiz');
     
     if (currentUser) {
+        document.body.classList.remove('role-student', 'role-teacher', 'role-admin', 'role-moderator');
+        document.body.classList.add('role-' + currentUser.role);
         document.getElementById('guest-nav').classList.add('hidden');
         document.getElementById('user-nav').classList.remove('hidden');
         document.getElementById('user-display').textContent = `Salam, ${currentUser.username}`;
@@ -252,8 +281,14 @@ function updateUI() {
         }
         
         const adminBtn = document.getElementById('admin-panel-btn');
-        if (currentUser.role === 'admin') {
+        if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
             adminBtn.classList.remove('hidden');
+            // Change text if moderator
+            if (currentUser.role === 'moderator') {
+                adminBtn.innerHTML = '<i class="fas fa-tasks"></i> Moderator Paneli';
+            } else {
+                adminBtn.innerHTML = '<i class="fas fa-user-shield"></i> Admin Paneli';
+            }
         } else {
             adminBtn.classList.add('hidden');
         }
@@ -400,6 +435,7 @@ window.logout = function() {
 
 // --- Export / Import Logic ---
 window.exportData = function() {
+    if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu hərəkət üçün admin icazəsi lazımdır!', 'error');
     const data = {
         categories: categories,
         users: users
@@ -414,6 +450,7 @@ window.exportData = function() {
 }
 
 window.importData = function(input) {
+    if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu hərəkət üçün admin icazəsi lazımdır!', 'error');
     const file = input.files[0];
     if (!file) return;
 
@@ -1321,7 +1358,7 @@ function handleVisibilityChange() {
 
 // --- Dashboard & Categories ---
 window.showAdminDashboard = function() {
-    if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu səhifə yalnız adminlər üçündür!', 'error');
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) return showNotification('Bu səhifə yalnız səlahiyyətli şəxslər üçündür!', 'error');
     currentAdminParentId = null; // Reset to top level
     hideAllSections();
     document.getElementById('admin-dashboard-section').classList.remove('hidden');
@@ -1428,6 +1465,12 @@ function renderCategories() {
         if (cat.name.toLowerCase().includes('mülki')) icon = 'fa-balance-scale';
         if (cat.name.toLowerCase().includes('dövlət')) icon = 'fa-university';
         if (cat.name.toLowerCase().includes('konstitusiya')) icon = 'fa-scroll';
+        if (cat.name.toLowerCase().includes('biologiya')) icon = 'fa-dna';
+        if (cat.name.toLowerCase().includes('kimya')) icon = 'fa-flask';
+        if (cat.name.toLowerCase().includes('dərslik')) icon = 'fa-graduation-cap';
+        if (cat.name.toLowerCase().includes('biologiya')) icon = 'fa-dna';
+        if (cat.name.toLowerCase().includes('kimya')) icon = 'fa-flask';
+        if (cat.name.toLowerCase().includes('dərslik')) icon = 'fa-graduation-cap';
 
         // Check if it has subcategories
         const hasSub = categories.some(c => c.parentId === cat.id);
@@ -1479,8 +1522,19 @@ function renderAdminCategories() {
         title.textContent = `Bölmə: ${parent ? parent.name : '...'}`;
         backBtn.classList.remove('hidden');
     } else {
-        title.textContent = 'Admin Paneli - Kateqoriyalar';
+        title.textContent = currentUser.role === 'moderator' ? 'Moderator Paneli' : 'Admin Paneli - Kateqoriyalar';
         backBtn.classList.add('hidden');
+    }
+
+    // Hide admin-only buttons for moderator
+    const exportBtn = document.querySelector('.btn-success[onclick="exportData()"]');
+    const addCatBtn = document.querySelector('.btn-primary[onclick="showAddCategoryModal()"]');
+    if (currentUser.role === 'moderator') {
+        if (exportBtn) exportBtn.classList.add('hidden');
+        if (addCatBtn) addCatBtn.classList.add('hidden');
+    } else {
+        if (exportBtn) exportBtn.classList.remove('hidden');
+        if (addCatBtn) addCatBtn.classList.remove('hidden');
     }
 
     filteredCategories.forEach(cat => {
@@ -1493,16 +1547,21 @@ function renderAdminCategories() {
         if (cat.name.toLowerCase().includes('mülki')) icon = 'fa-balance-scale';
         if (cat.name.toLowerCase().includes('dövlət')) icon = 'fa-university';
         if (cat.name.toLowerCase().includes('konstitusiya')) icon = 'fa-scroll';
+        if (cat.name.toLowerCase().includes('biologiya')) icon = 'fa-dna';
+        if (cat.name.toLowerCase().includes('kimya')) icon = 'fa-flask';
+        if (cat.name.toLowerCase().includes('dərslik')) icon = 'fa-graduation-cap';
 
         const hasSub = categories.some(c => c.parentId === cat.id);
 
         div.innerHTML = `
             <div class="cat-card-header">
                 <i class="fas ${icon}"></i>
+                ${currentUser.role === 'admin' ? `
                 <div class="cat-card-tools">
                     <button class="edit-cat-btn" onclick="showEditCategoryModal('${cat.id}', event)"><i class="fas fa-edit"></i></button>
                     <button class="delete-cat-btn" onclick="deleteCategory('${cat.id}', event)"><i class="fas fa-trash"></i></button>
                 </div>
+                ` : ''}
             </div>
             <h3>${cat.name}</h3>
             ${hasSub ? '' : `<p>${cat.questions ? cat.questions.length : 0} sual</p>`}
@@ -1564,6 +1623,7 @@ window.showEditCategoryModal = function(id, event) {
 }
 
 window.saveCategory = function() {
+    if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu hərəkət üçün admin icazəsi lazımdır!', 'error');
     const id = document.getElementById('edit-cat-id').value;
     const name = document.getElementById('new-cat-name').value;
     const time = parseInt(document.getElementById('new-cat-time').value);
@@ -1614,6 +1674,7 @@ async function updateCategoryInDB(cat) {
 
 window.deleteCategory = function(id, event) {
     event.stopPropagation();
+    if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu hərəkət üçün admin icazəsi lazımdır!', 'error');
     if (confirm('Bu kateqoriyanı silmək istədiyinizə əminsiniz?')) {
         if (db) {
             db.collection('categories').doc(String(id)).delete().catch(console.error);
