@@ -101,24 +101,31 @@ body {
     pointer-events: none !important;
 }
 
-.privacy-blur::before {
-    content: "TƏHLÜKƏSİZLİK QORUMASI AKTİVDİR: Screenshot qadağandır!";
+#security-watermark {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.98);
-    color: white;
+    z-index: 999999;
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.wm-content {
+    color: white;
+    text-align: center;
     font-size: 1.5rem;
     font-weight: bold;
-    text-align: center;
-    z-index: 999999;
-    padding: 20px;
-    filter: none !important;
+    transform: rotate(-15deg);
+    opacity: 1;
+}
+
+.privacy-blur::before {
+    display: none; /* remove old method in favor of dynamic watermark */
 }
 
 @media print {

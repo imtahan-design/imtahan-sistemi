@@ -1220,8 +1220,16 @@ function startPrivateQuiz() {
     document.addEventListener('touchstart', handleTouchStart, { passive: false });
     window.addEventListener('blur', applyPrivacyBlur);
     window.addEventListener('focus', removePrivacyBlur);
+    window.addEventListener('resize', applyPrivacyBlur);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
+    // Aggressive focus checking interval
+    window.securityInterval = setInterval(() => {
+        if (activePrivateQuiz && !document.hasFocus()) {
+            applyPrivacyBlur();
+        }
+    }, 200);
+
     hideAllSections();
     document.getElementById('quiz-section').classList.remove('hidden');
     loadQuestion();
@@ -1237,8 +1245,14 @@ function preventProtectionKeys(e) {
         (e.ctrlKey && (e.key === 'c' || e.key === 'u' || e.key === 'p' || e.key === 's' || e.key === 'C' || e.key === 'U' || e.key === 'P' || e.key === 'S')) ||
         e.key === 'F12' ||
         e.key === 'PrintScreen' ||
-        e.code === 'PrintScreen'
+        e.code === 'PrintScreen' ||
+        e.key === 'VolumeUp' || 
+        e.key === 'VolumeDown'
     ) {
+        if (e.key === 'VolumeUp' || e.key === 'VolumeDown') {
+            applyPrivacyBlur();
+            setTimeout(removePrivacyBlur, 2000); // 2 saniyəlik blokla
+        }
         e.preventDefault();
         showNotification('Təhlükəsizlik səbəbiylə bu hərəkət qadağandır!', 'error');
         return false;
@@ -1252,7 +1266,9 @@ function removeProtection() {
     document.removeEventListener('touchstart', handleTouchStart);
     window.removeEventListener('blur', applyPrivacyBlur);
     window.removeEventListener('focus', removePrivacyBlur);
+    window.removeEventListener('resize', applyPrivacyBlur);
     document.removeEventListener('visibilitychange', handleVisibilityChange);
+    if (window.securityInterval) clearInterval(window.securityInterval);
     removePrivacyBlur();
 }
 
@@ -1266,11 +1282,33 @@ function handleTouchStart(e) {
 function applyPrivacyBlur() {
     if (activePrivateQuiz) {
         document.getElementById('app').classList.add('privacy-blur');
+        createWatermark();
     }
 }
 
 function removePrivacyBlur() {
     document.getElementById('app').classList.remove('privacy-blur');
+    const wm = document.getElementById('security-watermark');
+    if (wm) wm.remove();
+}
+
+function createWatermark() {
+    if (document.getElementById('security-watermark')) return;
+    
+    const watermark = document.createElement('div');
+    watermark.id = 'security-watermark';
+    const userName = currentUser ? (currentUser.displayName || currentUser.email) : 'Anonim Tələbə';
+    const date = new Date().toLocaleString();
+    const ipText = "Təhlükəsizlik İzləmə Sistemi";
+    
+    watermark.innerHTML = `
+        <div class="wm-content">
+            <p>${userName}</p>
+            <p>${date}</p>
+            <p>${ipText}</p>
+        </div>
+    `;
+    document.body.appendChild(watermark);
 }
 
 function handleVisibilityChange() {
