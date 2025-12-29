@@ -1293,37 +1293,15 @@ function applyPrivacyBlur() {
     if (authSection && !authSection.classList.contains('hidden')) return;
 
     document.getElementById('app').classList.add('privacy-blur');
-    createWatermark();
 }
 
 function removePrivacyBlur() {
     document.getElementById('app').classList.remove('privacy-blur');
-    const wm = document.getElementById('security-watermark');
-    if (wm) wm.remove();
 }
 
 function createWatermark() {
-    if (document.getElementById('security-watermark')) return;
-    
-    const watermark = document.createElement('div');
-    watermark.id = 'security-watermark';
-    
-    let displayInfo = 'İmtahan Sistemi';
-    if (currentUser) {
-        displayInfo = currentUser.username || currentUser.email;
-    }
-    
-    const date = new Date().toLocaleString();
-    
-    watermark.innerHTML = `
-        <div class="wm-content">
-            <p><i class="fas fa-shield-alt"></i> Məxfi Məlumat</p>
-            <p style="font-size: 1.2rem; margin: 10px 0;">${displayInfo}</p>
-            <p style="font-size: 0.9rem; opacity: 0.8;">${date}</p>
-            <p style="font-size: 0.8rem; margin-top: 15px; color: #ff4757;">Screenshot çəkmək qadağandır!</p>
-        </div>
-    `;
-    document.body.appendChild(watermark);
+    // Funksiya istifadəçinin istəyi ilə ləğv edildi
+    return;
 }
 
 // Qlobal Təhlükəsizlik Sistemi

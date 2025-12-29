@@ -102,30 +102,7 @@ body {
 }
 
 #security-watermark {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9999999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    background: rgba(0, 0, 0, 0.95); /* Çox tünd fon ki, ekran görünməsin */
-    backdrop-filter: blur(10px);
-}
-
-.wm-content {
-    color: rgba(255, 255, 255, 0.9);
-    text-align: center;
-    font-size: 1.8rem;
-    font-weight: bold;
-    transform: rotate(-20deg);
-    padding: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 15px;
-    background: rgba(0, 0, 0, 0.5);
+    display: none !important;
 }
 
 .privacy-blur::before {
