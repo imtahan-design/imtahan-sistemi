@@ -1476,11 +1476,14 @@ function renderStudentResultsTable(attempts) {
         const badgeClass = accuracy >= 80 ? 'accuracy-high' : (accuracy >= 50 ? 'accuracy-mid' : 'accuracy-low');
         
         const tr = document.createElement('tr');
+        const unanswered = attempt.unanswered !== undefined ? attempt.unanswered : 0;
+        const wrong = attempt.wrong !== undefined ? attempt.wrong : (attempt.total - attempt.score - unanswered);
+        
         tr.innerHTML = `
             <td>${attempt.studentName}</td>
             <td><span class="accuracy-badge ${badgeClass}">${accuracy}%</span></td>
             <td>${date}</td>
-            <td>${attempt.score} / ${attempt.total}</td>
+            <td>${attempt.score} / ${wrong} / ${unanswered}</td>
         `;
         tableBody.appendChild(tr);
     });
@@ -1892,11 +1895,14 @@ async function renderHistory() {
         const badgeClass = accuracy >= 80 ? 'accuracy-high' : (accuracy >= 50 ? 'accuracy-mid' : 'accuracy-low');
         
         const tr = document.createElement('tr');
+        const unanswered = attempt.unanswered !== undefined ? attempt.unanswered : 0;
+        const wrong = attempt.wrong !== undefined ? attempt.wrong : (attempt.total - attempt.score - unanswered);
+        
         tr.innerHTML = `
             <td>${attempt.categoryName}</td>
             <td>${date}</td>
             <td><span class="accuracy-badge ${badgeClass}">${accuracy}%</span></td>
-            <td>${attempt.score} / ${attempt.total}</td>
+            <td>${attempt.score} / ${wrong} / ${unanswered}</td>
         `;
         tableBody.appendChild(tr);
     });
@@ -3583,6 +3589,8 @@ function showResult() {
             quizTitle: activePrivateQuiz.title,
             studentName: studentName,
             score: correct,
+            wrong: wrong,
+            unanswered: unanswered,
             total: total,
             timestamp: Date.now()
         };
@@ -3594,6 +3602,8 @@ function showResult() {
             userId: currentUser.id,
             categoryName: cat ? cat.name : 'Naməlum',
             score: correct,
+            wrong: wrong,
+            unanswered: unanswered,
             total: total,
             timestamp: Date.now()
         };
