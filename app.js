@@ -1888,6 +1888,10 @@ function createWatermark() {
 
 // Qlobal Təhlükəsizlik Sistemi
 function setupGlobalSecurity() {
+    // Təhlükəsizlik məhdudiyyətləri istifadəçinin istəyi ilə ləğv edildi
+    console.log("Təhlükəsizlik məhdudiyyətləri ləğv edildi.");
+    return;
+
     // 1. Sağ düyməni bağla (İstifadəçinin istəyi ilə)
     document.addEventListener('contextmenu', e => e.preventDefault());
 
