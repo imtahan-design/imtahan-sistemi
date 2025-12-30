@@ -529,8 +529,33 @@ window.login = async function() {
             const userEmail = userData.email || `${username}@imtahan.site`; // Fallback email
 
             // 2. Firebase Auth ilə giriş edirik
-            const userCredential = await auth.signInWithEmailAndPassword(userEmail, pass);
-            const user = { id: userQuery.docs[0].id, ...userData };
+            let userCredential;
+            try {
+                userCredential = await auth.signInWithEmailAndPassword(userEmail, pass);
+            } catch (authError) {
+                // Əgər istifadəçi Auth-da tapılmadısa, amma Firestore-da varsa (Köhnə hesablar üçün miqrasiya)
+                if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-login-credentials') {
+                    if (userData.password && userData.password === pass) {
+                        // Köhnə şifrə düzdür! İndi onu Auth-da yaradaq
+                        const newAuthUser = await auth.createUserWithEmailAndPassword(userEmail, pass);
+                        
+                        // Firestore-dan açıq şifrəni silək (Təhlükəsizlik üçün)
+                        const { password, ...safeData } = userData;
+                        await db.collection('users').doc(userQuery.docs[0].id).set({
+                            ...safeData,
+                            id: newAuthUser.user.uid // Auth UID-si ilə eyniləşdiririk
+                        });
+                        
+                        userCredential = newAuthUser;
+                    } else {
+                        throw authError; // Şifrə səhvdirsə, normal xətanı göstər
+                    }
+                } else {
+                    throw authError;
+                }
+            }
+            const user = { id: userCredential.user.uid, ...userData };
+            delete user.password; // Obyektdən şifrəni silirik
 
             currentUser = user;
             localStorage.setItem('currentUser', JSON.stringify(user));
