@@ -325,21 +325,19 @@ async function loadData() {
         saveCategories(); // Save to DB/Local
     }
 
+    // İlk dəfə istifadəçi yoxdursa admin yarat (yalnız offline üçün)
     if (users.length === 0 && !db) {
         const adminId = 'admin_' + Date.now();
         users = [{ id: adminId, username: 'admin', password: '123', role: 'admin' }];
-        saveUsers(); // Save only to LocalStorage if offline
-    } else if (users.length === 0 && db) {
-        // Firebase-də istifadəçiləri seed etmirik, çünki Auth və Firestore əllə və ya qeydiyyatla idarə olunur.
-        users = [];
+        saveUsers(); 
+    } else if (db) {
+        // Firebase qoşuludursa, avtomatik istifadəçi yaratmırıq.
+        // Mövcud istifadəçilər bazadan loadData() funksiyasında artıq yüklənib.
     } else {
-        // Admin fix logic (Local storage üçün)
+        // Offline rejimdə admin yoxdursa yarat
         const adminUser = users.find(u => u.username === 'admin');
         if (!adminUser) {
              users.push({ id: 'admin_' + Date.now(), username: 'admin', password: '123', role: 'admin' });
-             saveUsers();
-        } else if (adminUser.role !== 'admin') {
-             adminUser.role = 'admin';
              saveUsers();
         }
     }
@@ -413,6 +411,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     handleUrlParams();
     updateUI();
 });
+
+async function migrateUserReferences(oldId, newId) {
+    if (!db) return;
+    console.log(`Migrating references from ${oldId} to ${newId}`);
+    
+    const collections = [
+        { name: 'public_questions', field: 'authorId' },
+        { name: 'private_quizzes', field: 'teacherId' },
+        { name: 'reports', field: 'userId' },
+        { name: 'attempts', field: 'userId' }
+    ];
+
+    for (const coll of collections) {
+        try {
+            const snapshot = await db.collection(coll.name).where(coll.field, '==', oldId).get();
+            if (!snapshot.empty) {
+                console.log(`Found ${snapshot.size} documents in ${coll.name} to migrate.`);
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => {
+                    batch.update(doc.ref, { [coll.field]: newId });
+                });
+                await batch.commit();
+                console.log(`Successfully migrated ${coll.name}`);
+            }
+        } catch (err) {
+            console.error(`Error migrating ${coll.name}:`, err);
+        }
+    }
+}
 
 function updateUI() {
     navbar.classList.remove('hidden');
@@ -532,21 +559,59 @@ window.login = async function() {
             let userCredential;
             try {
                 userCredential = await auth.signInWithEmailAndPassword(userEmail, pass);
+
+                // Sənəd ID-si Auth UID ilə eyni deyilse, miqrasiya edək (Köhnə hesablar üçün)
+                if (userQuery.docs[0].id !== userCredential.user.uid) {
+                    const { password, ...safeData } = userData;
+                    const oldDocId = userQuery.docs[0].id;
+                    const newUid = userCredential.user.uid;
+                    
+                    try {
+                        await db.collection('users').doc(oldDocId).delete();
+                        await db.collection('users').doc(newUid).set({
+                            ...safeData,
+                            id: newUid
+                        });
+                        console.log("User document migrated to Auth UID");
+                        
+                        // Digər kolleksiyalardakı ID-ləri də yeniləyək
+                        await migrateUserReferences(oldDocId, newUid);
+                    } catch (migErr) {
+                        console.error("Migration error:", migErr);
+                    }
+                }
             } catch (authError) {
                 // Əgər istifadəçi Auth-da tapılmadısa, amma Firestore-da varsa (Köhnə hesablar üçün miqrasiya)
                 if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-login-credentials') {
                     if (userData.password && userData.password === pass) {
                         // Köhnə şifrə düzdür! İndi onu Auth-da yaradaq
-                        const newAuthUser = await auth.createUserWithEmailAndPassword(userEmail, pass);
-                        
-                        // Firestore-dan açıq şifrəni silək (Təhlükəsizlik üçün)
-                        const { password, ...safeData } = userData;
-                        await db.collection('users').doc(userQuery.docs[0].id).set({
-                            ...safeData,
-                            id: newAuthUser.user.uid // Auth UID-si ilə eyniləşdiririk
-                        });
-                        
-                        userCredential = newAuthUser;
+                        try {
+                            const newAuthUser = await auth.createUserWithEmailAndPassword(userEmail, pass);
+                            
+                            // Firestore-dan açıq şifrəni silək və sənəd ID-sini Auth UID-si ilə dəyişək (Təhlükəsizlik və qaydalar üçün)
+                            const { password, ...safeData } = userData;
+                            const oldDocId = userQuery.docs[0].id;
+                            const newUid = newAuthUser.user.uid;
+
+                            if (oldDocId !== newUid) {
+                                await db.collection('users').doc(oldDocId).delete();
+                            }
+                            
+                            await db.collection('users').doc(newUid).set({
+                                ...safeData,
+                                id: newUid
+                            });
+                            
+                            // Digər kolleksiyalardakı ID-ləri də yeniləyək
+                            await migrateUserReferences(oldDocId, newUid);
+                            
+                            userCredential = newAuthUser;
+                        } catch (createError) {
+                            if (createError.code === 'auth/weak-password') {
+                                throw new Error('Firebase təhlükəsizlik qaydalarına görə şifrə ən azı 6 simvol olmalıdır. Zəhmət olmasa bazada şifrənizi yeniləyin (məs: 123456) və yenidən cəhd edin.');
+                            }
+                            throw createError;
+                        }
                     } else {
                         throw authError; // Şifrə səhvdirsə, normal xətanı göstər
                     }
@@ -1858,7 +1923,13 @@ window.showProfile = function() {
     
     // Update profile info
     document.getElementById('profile-username').textContent = currentUser.username;
-    document.getElementById('profile-role').textContent = currentUser.role === 'admin' ? 'Admin' : 'İstifadəçi';
+    
+    let roleText = 'İstifadəçi';
+    if (currentUser.role === 'admin') roleText = 'Admin';
+    else if (currentUser.role === 'teacher') roleText = 'Müəllim';
+    else if (currentUser.role === 'moderator') roleText = 'Moderator';
+    
+    document.getElementById('profile-role').textContent = roleText;
     
     renderHistory();
     loadUserQuestions();
@@ -3761,6 +3832,7 @@ function showResult() {
         const attempt = {
             quizId: activePrivateQuiz.id,
             quizTitle: activePrivateQuiz.title,
+            teacherId: activePrivateQuiz.teacherId, // Müəllim ID-sini əlavə edirik ki, müəllim nəticələri görə bilsin
             studentName: studentName,
             score: correct,
             wrong: wrong,
