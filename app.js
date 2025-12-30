@@ -1779,6 +1779,9 @@ function handleTouchStart(e) {
 }
 
 function applyPrivacyBlur() {
+    // Blur effekti istifadəçinin istəyi ilə ləğv edildi
+    return;
+    
     // Qeydiyyat/Giriş səhifəsində bluru aktiv etməyək ki, istifadəçi çaşmasın
     const authSection = document.getElementById('auth-section');
     if (authSection && !authSection.classList.contains('hidden')) return;
@@ -3522,12 +3525,14 @@ window.confirmStartQuiz = function() {
         questionTimes: new Array(finalQuestions.length).fill(cat.time)
     };
 
-    // Səhifə fokusunu itirəndə blur tətbiq etmək üçün interval
+    // Səhifə fokusunu itirəndə blur tətbiq etmək (İstifadəçinin istəyi ilə ləğv edildi)
+    /*
     window.securityInterval = setInterval(() => {
         if (!document.hasFocus()) {
             applyPrivacyBlur();
         }
     }, 500);
+    */
 
     closeModal('quiz-setup-modal');
     hideAllSections();
@@ -3697,8 +3702,20 @@ window.confirmFinishQuiz = function() {
     const text = document.getElementById('confirm-modal-text');
     const okBtn = document.getElementById('confirm-ok-btn');
 
+    // Cari sualın cavabını da nəzərə alaq
+    currentQuiz.userAnswers[currentQuiz.currentQuestionIndex] = selectedAnswerIndex;
+
+    // Cavablandırılmamış sualları yoxlayaq
+    const unansweredCount = currentQuiz.userAnswers.filter(ans => ans === -1 || ans === undefined || ans === null).length;
+
     title.textContent = 'İmtahanı bitirirsiniz?';
-    text.textContent = 'İmtahanı bitirmək istədiyinizdən əminsiniz? Cavablandırılmayan suallarınız ola bilər.';
+    
+    if (unansweredCount > 0) {
+        text.textContent = 'İmtahanı bitirmək istədiyinizdən əminsiniz? Cavablandırılmayan suallarınız ola bilər.';
+    } else {
+        text.textContent = 'İmtahanı bitirmək istədiyinizdən əminsiniz?';
+    }
+
     okBtn.textContent = 'Bitir';
     okBtn.style.background = 'var(--danger-color)';
     okBtn.style.borderColor = 'var(--danger-color)';
@@ -3728,7 +3745,9 @@ function processCurrentQuestion() {
     if (currentQuiz.currentQuestionIndex < currentQuiz.questions.length) {
         loadQuestion();
     } else {
-        showResult();
+        // Sonuncu sualdan sonra 1-ci suala qayıt
+        currentQuiz.currentQuestionIndex = 0;
+        loadQuestion();
     }
 }
 
