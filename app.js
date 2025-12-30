@@ -901,6 +901,29 @@ window.showTeacherDashboard = function() {
     renderPrivateQuizzes();
 }
 
+window.toggleTimeInputType = function() {
+    const timeType = document.getElementById('private-quiz-time-type').value;
+    const timeLabel = document.getElementById('time-label');
+    const timeInput = document.getElementById('private-quiz-default-time');
+    const manualTimeInputs = document.querySelectorAll('.time-input-group');
+
+    if (timeType === 'total') {
+        timeLabel.innerHTML = '<i class="fas fa-clock"></i> Ümumi Test Vaxtı (dəqiqə)';
+        timeInput.placeholder = 'Məs: 15';
+        if (timeInput.value == 45) timeInput.value = 15;
+        
+        // Hide individual question time inputs
+        manualTimeInputs.forEach(group => group.classList.add('hidden'));
+    } else {
+        timeLabel.innerHTML = '<i class="fas fa-clock"></i> Standart Vaxt (san)';
+        timeInput.placeholder = 'Məs: 45';
+        if (timeInput.value == 15) timeInput.value = 45;
+
+        // Show individual question time inputs
+        manualTimeInputs.forEach(group => group.classList.remove('hidden'));
+    }
+}
+
 window.showCreatePrivateQuiz = function() {
     // Hide guide tooltip if it exists
     const tooltip = document.getElementById('quiz-guide-tooltip');
@@ -944,7 +967,16 @@ window.editPrivateQuiz = async function(quizId) {
     document.getElementById('private-quiz-form-title').textContent = 'Özəl Testdə Düzəliş Et';
     document.getElementById('private-quiz-title').value = quiz.title;
     document.getElementById('private-quiz-password').value = quiz.password;
+    
+    const timeTypeSelect = document.getElementById('private-quiz-time-type');
+    if (timeTypeSelect) {
+        timeTypeSelect.value = quiz.timeType || 'per-question';
+    }
+    
     document.getElementById('private-quiz-default-time').value = quiz.defaultTime || 45;
+    
+    // UI-ı vaxt növünə görə yenilə
+    toggleTimeInputType();
     
     // Load questions
     const list = document.getElementById('manual-questions-list');
@@ -1019,6 +1051,9 @@ window.addManualQuestionForm = function() {
     const list = document.getElementById('manual-questions-list');
     const uniqueId = Date.now() + '_' + Math.floor(Math.random() * 1000);
     
+    const timeType = document.getElementById('private-quiz-time-type').value;
+    const timeInputDisplay = timeType === 'total' ? 'display:none;' : '';
+
     const div = document.createElement('div');
     div.className = 'manual-question-item';
     div.innerHTML = `
@@ -1028,7 +1063,7 @@ window.addManualQuestionForm = function() {
                 <span>Yeni Sual</span>
             </div>
             <div class="manual-q-actions">
-                <div class="time-input-group">
+                <div class="time-input-group" style="${timeInputDisplay}">
                     <i class="far fa-clock"></i>
                     <input type="number" class="manual-q-time" placeholder="Def">
                     <span>san</span>
@@ -1251,22 +1286,28 @@ window.parseBulkQuestions = function() {
         const list = document.getElementById('manual-questions-list');
         const currentCount = document.querySelectorAll('.manual-question-item').length;
         
-        questions.forEach((q, idx) => {
-            const uniqueId = Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000);
-            const div = document.createElement('div');
-            div.className = 'manual-question-item';
-            div.innerHTML = `
-                <div class="manual-q-header">
-                    <div class="manual-q-title">
-                        <i class="fas fa-plus-circle"></i>
-                        <span>Sual ${currentCount + idx + 1}</span>
+        const timeType = document.getElementById('private-quiz-time-type').value;
+    const isTotalTime = timeType === 'total';
+    
+    // Hide individual question time inputs if total time is selected
+    const timeInputDisplay = isTotalTime ? 'display:none;' : '';
+
+    questions.forEach((q, idx) => {
+        const uniqueId = Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000);
+        const div = document.createElement('div');
+        div.className = 'manual-question-item';
+        div.innerHTML = `
+            <div class="manual-q-header">
+                <div class="manual-q-title">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Sual ${currentCount + idx + 1}</span>
+                </div>
+                <div class="manual-q-actions">
+                    <div class="time-input-group" style="${timeInputDisplay}">
+                        <i class="far fa-clock"></i>
+                        <input type="number" class="manual-q-time" value="${q.time || ''}" placeholder="Def">
+                        <span>san</span>
                     </div>
-                    <div class="manual-q-actions">
-                        <div class="time-input-group">
-                            <i class="far fa-clock"></i>
-                            <input type="number" class="manual-q-time" value="${q.time || ''}" placeholder="Def">
-                            <span>san</span>
-                        </div>
                         <button onclick="this.closest('.manual-question-item').remove(); updateQuestionCount();" class="delete-q-btn" title="Sualı sil">
                             <i class="fas fa-trash-alt"></i>
                         </button>
@@ -1319,6 +1360,7 @@ window.savePrivateQuizFinal = async function() {
     const editingId = document.getElementById('editing-quiz-id').value;
     const title = document.getElementById('private-quiz-title').value;
     const password = document.getElementById('private-quiz-password').value;
+    const timeType = document.getElementById('private-quiz-time-type').value;
     const defaultTime = parseInt(document.getElementById('private-quiz-default-time').value) || 45;
     
     if (!title || !password) return showNotification('Zəhmət olmasa testin adını və şifrəsini daxil edin.', 'error');
@@ -1337,7 +1379,7 @@ window.savePrivateQuizFinal = async function() {
             questions.push({
                 text: text,
                 image: imageData || null,
-                time: customTime ? parseInt(customTime) : null,
+                time: (timeType === 'per-question' && customTime) ? parseInt(customTime) : null,
                 options: Array.from(optionInputs).map(i => i.value),
                 correctIndex: parseInt(correctInput.value)
             });
@@ -1350,6 +1392,7 @@ window.savePrivateQuizFinal = async function() {
         teacherId: currentUser.id,
         title: title,
         password: password,
+        timeType: timeType,
         defaultTime: defaultTime,
         questions: questions,
         updatedAt: new Date().toISOString()
@@ -1738,6 +1781,9 @@ function startPrivateQuiz() {
         currentQuestionIndex: 0,
         score: 0,
         timer: null,
+        timeType: activePrivateQuiz.timeType || 'per-question',
+        totalTime: activePrivateQuiz.defaultTime || 45,
+        totalTimerStarted: false,
         defaultTime: activePrivateQuiz.defaultTime || 45,
         timeLeft: 45, // Will be set in loadQuestion
         userAnswers: new Array(activePrivateQuiz.questions.length).fill(-1),
@@ -3628,6 +3674,26 @@ function loadQuestion() {
     // Timer Logic
     clearInterval(currentQuiz.timer);
     
+    // Ümumi vaxt məntiqi (dəqiqəni saniyəyə çeviririk)
+    if (currentQuiz.timeType === 'total') {
+        if (!currentQuiz.totalTimerStarted) {
+            currentQuiz.timeLeft = currentQuiz.totalTime * 60; 
+            currentQuiz.totalTimerStarted = true;
+            
+            currentQuiz.timer = setInterval(() => {
+                currentQuiz.timeLeft--;
+                updateTimerDisplay();
+                if (currentQuiz.timeLeft <= 0) {
+                    clearInterval(currentQuiz.timer);
+                    showNotification('Vaxt bitdi!', 'warning');
+                    finishQuiz();
+                }
+            }, 1000);
+        }
+        updateTimerDisplay();
+        return; // Ümumi vaxtda fərdi sual taymeri yoxdur
+    }
+    
     // If we have a stored time for this question, use it. Otherwise set new time limit.
     if (currentQuiz.questionTimes[currentQuiz.currentQuestionIndex] !== null && currentQuiz.questionTimes[currentQuiz.currentQuestionIndex] !== undefined) {
         currentQuiz.timeLeft = currentQuiz.questionTimes[currentQuiz.currentQuestionIndex];
@@ -3649,7 +3715,9 @@ function loadQuestion() {
 }
 
 function updateTimerDisplay() {
-    document.getElementById('timer').textContent = `00:${currentQuiz.timeLeft < 10 ? '0' : ''}${currentQuiz.timeLeft}`;
+    const minutes = Math.floor(currentQuiz.timeLeft / 60);
+    const seconds = currentQuiz.timeLeft % 60;
+    document.getElementById('timer').textContent = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 }
 
 function selectAnswer(selectedIndex) {

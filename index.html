@@ -100,7 +100,7 @@
                     <input type="password" id="reg-password" placeholder="Şifrə (min. 8 işarə)">
                     <div class="form-group" style="margin-top: 10px; text-align: left;">
                         <label style="font-size: 0.9rem; color: #666;">Hesab növü:</label>
-                        <select id="reg-role" onchange="toggleEmailField()" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; margin-top: 5px;">
+                        <select id="reg-role" onchange="toggleEmailField()">
                             <option value="student">Şəxsi</option>
                             <option value="teacher">Müəllim</option>
                         </select>
@@ -175,7 +175,14 @@
                             <input type="text" id="private-quiz-password" placeholder="Məs: 12345">
                         </div>
                         <div class="form-group">
-                            <label><i class="fas fa-hourglass-half"></i> Standart Vaxt (san)</label>
+                            <label><i class="fas fa-hourglass-half"></i> Vaxt Növü</label>
+                            <select id="private-quiz-time-type" onchange="toggleTimeInputType()">
+                                <option value="per-question">Hər sual üzrə</option>
+                                <option value="total">Ümumi test üzrə</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="default-time-container">
+                            <label id="time-label"><i class="fas fa-clock"></i> Standart Vaxt (san)</label>
                             <input type="number" id="private-quiz-default-time" value="45" min="5">
                         </div>
                     </div>

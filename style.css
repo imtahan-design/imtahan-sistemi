@@ -1585,16 +1585,29 @@ nav {
 }
 
 .form-group input[type="text"],
-.form-group input[type="number"] {
+.form-group input[type="number"],
+.form-group select {
     width: 100%;
     padding: 12px 16px;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     font-size: 15px;
     transition: var(--transition);
+    background-color: white;
 }
 
-.form-group input:focus {
+.form-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='C19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 1.25rem;
+    padding-right: 40px;
+    cursor: pointer;
+}
+
+.form-group input:focus,
+.form-group select:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
@@ -1895,12 +1908,32 @@ nav {
     color: #4b5563;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
     width: 100%;
     padding: 10px;
     border: 1px solid #d1d5db;
     border-radius: 8px;
     font-size: 1rem;
+    background-color: white;
+    transition: var(--transition);
+}
+
+.form-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='C19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 1rem;
+    padding-right: 35px;
+    cursor: pointer;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
 }
 
 /* Quiz Interface */
