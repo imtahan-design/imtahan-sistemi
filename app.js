@@ -1525,7 +1525,7 @@ window.renderPrivateQuizzes = async function() {
         card.innerHTML = `
             <div class="cat-card-header">
                 <span class="status-badge ${isActive ? 'active' : 'inactive'}">
-                    ${isActive ? '<i class="fas fa-check-circle"></i> Aktiv' : '<i class="fas fa-times-circle"></i> Deaktiv'}
+                    ${isActive ? '<i class="fas fa-check-circle"></i> <span>Aktiv</span>' : '<i class="fas fa-times-circle"></i> <span>Deaktiv</span>'}
                 </span>
                 <div class="cat-card-tools">
                     <button onclick="togglePrivateQuizStatus('${quiz.id}')" class="status-btn" title="${isActive ? 'Deaktiv et' : 'Aktiv et'}">
