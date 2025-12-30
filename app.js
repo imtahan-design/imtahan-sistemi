@@ -187,8 +187,31 @@ async function loadData() {
         parentId: cat.parentId || null
     }));
 
-    // Seed Data if Empty
-    if (categories.length === 0) {
+    // Dublikatları təmizləmək (Bir dəfə işləyəcək)
+    if (db) {
+        const seenNames = new Set();
+        const duplicates = [];
+        const unwantedNames = ['Cinayət Məcəlləsi', 'Mülki Məcəllə', 'Konstitusiya Hüququ', 'Dövlət qulluğu'];
+        
+        for (const cat of categories) {
+            if (seenNames.has(cat.name) || (unwantedNames.includes(cat.name) && cat.questions && cat.questions.length === 0)) {
+                duplicates.push(cat.id);
+            } else {
+                seenNames.add(cat.name);
+            }
+        }
+
+        if (duplicates.length > 0) {
+            console.log("Cleaning up duplicate/unwanted categories:", duplicates);
+            for (const id of duplicates) {
+                db.collection('categories').doc(String(id)).delete();
+            }
+            categories = categories.filter(cat => !duplicates.includes(cat.id));
+        }
+    }
+
+    // Seed Data if Empty (Bağlandı)
+    if (false && categories.length === 0) {
         categories = [
             { id: '1', name: 'Dövlət qulluğu', time: 45, questions: [], parentId: null },
             { id: '2', name: 'Cinayət Məcəlləsi', time: 45, questions: [], parentId: null },
@@ -346,6 +369,7 @@ async function loadData() {
     const initialCount = categories.length;
     categories = categories.filter(c => c.name !== 'İngilis' && String(c.id) !== 'english_demo');
     
+    /* Dərslik avtomatik yaranma bağlandı
     // Ensure "Dərslik" category and its subcategories exist
     let derslik = categories.find(c => c.name === 'Dərslik');
     if (!derslik) {
@@ -368,6 +392,7 @@ async function loadData() {
     if (categories.length !== initialCount || !derslik || !biologiya || !kimya) {
         saveCategories();
     }
+    */
 
     renderCategories();
     if (!document.getElementById('admin-dashboard-section').classList.contains('hidden')) {
