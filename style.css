@@ -2068,10 +2068,123 @@ nav {
     margin-top: 15px;
 }
 
-/* Form Styles */
-.form-group {
-    margin-bottom: 15px;
-    text-align: left;
+/* Advanced Analytics Styles */
+.modal-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.analytics-container {
+    padding: 20px 0;
+}
+
+.analytics-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.question-analysis-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.q-analysis-item {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 15px;
+    transition: var(--transition);
+}
+
+.q-analysis-item:hover {
+    border-color: var(--primary-light);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.q-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.q-number {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.q-stats {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9rem;
+}
+
+.stat-correct { color: #10b981; font-weight: 600; }
+.stat-wrong { color: #ef4444; font-weight: 600; }
+
+.progress-bar-container {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.q-text-preview {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-top: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 600px) {
+    .analytics-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-controls {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    .modal-controls button {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
 }
 
 .form-group label {

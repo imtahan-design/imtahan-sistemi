@@ -1657,10 +1657,19 @@ window.downloadSampleJSON = function() {
     downloadAnchorNode.remove();
 }
 
+let currentQuizAnalytics = null;
+
 window.showStudentResults = async function(quizId, quizTitle) {
     console.log("Fetching results for quizId:", quizId);
     const modal = document.getElementById('student-results-modal');
     if (!modal) return;
+    
+    // Reset view
+    document.getElementById('results-list-view').classList.remove('hidden');
+    document.getElementById('analytics-view').classList.add('hidden');
+    document.getElementById('btn-show-analytics').style.display = 'none';
+    document.getElementById('btn-show-results').style.display = 'none';
+    
     document.getElementById('results-modal-title').textContent = `${quizTitle} - Nəticələr`;
     modal.classList.remove('hidden');
     const tableBody = document.getElementById('student-results-body');
@@ -1670,19 +1679,24 @@ window.showStudentResults = async function(quizId, quizTitle) {
         try {
             if (!quizId) throw new Error("Quiz ID tapılmadı.");
 
-            // Firestore-da orderBy və where fərqli sahələrdə olduqda indeks tələb edir.
-            // İndeks xətasının qarşısını almaq üçün sadəcə where ilə gətirib, JS tərəfində sıralayırıq.
+            // Get quiz data for analytics
+            const quizDoc = await db.collection('private_quizzes').doc(quizId).get();
+            const quizData = quizDoc.exists ? quizDoc.data() : null;
+
             const snapshot = await db.collection('student_attempts')
                 .where('quizId', '==', quizId)
                 .get();
             
-            console.log("Results found:", snapshot.size);
             let attempts = snapshot.docs.map(doc => doc.data());
-            
-            // Tarixə görə azalan sıra ilə (ən yeni birinci) sıralama
             attempts.sort((a, b) => b.timestamp - a.timestamp);
             
             renderStudentResultsTable(attempts);
+
+            if (attempts.length > 0 && quizData) {
+                currentQuizAnalytics = { quiz: quizData, attempts: attempts };
+                document.getElementById('btn-show-analytics').style.display = 'block';
+                prepareAnalyticsData();
+            }
         } catch (e) {
             console.error("ShowStudentResults Error:", e);
             tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: red;">Xəta: ${e.message}</td></tr>`;
@@ -1690,6 +1704,102 @@ window.showStudentResults = async function(quizId, quizTitle) {
     } else {
         tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Firebase aktiv deyil.</td></tr>';
     }
+}
+
+window.toggleAnalyticsView = function() {
+    const listView = document.getElementById('results-list-view');
+    const analyticsView = document.getElementById('analytics-view');
+    const btnAnalytics = document.getElementById('btn-show-analytics');
+    const btnResults = document.getElementById('btn-show-results');
+    
+    if (listView.classList.contains('hidden')) {
+        listView.classList.remove('hidden');
+        analyticsView.classList.add('hidden');
+        btnAnalytics.style.display = 'block';
+        btnResults.style.display = 'none';
+    } else {
+        listView.classList.add('hidden');
+        analyticsView.classList.remove('hidden');
+        btnAnalytics.style.display = 'none';
+        btnResults.style.display = 'block';
+    }
+}
+
+function prepareAnalyticsData() {
+    if (!currentQuizAnalytics) return;
+    
+    const { quiz, attempts } = currentQuizAnalytics;
+    const qStats = quiz.questions.map((q, idx) => ({
+        index: idx,
+        text: q.text,
+        correct: 0,
+        wrong: 0,
+        unanswered: 0,
+        total: 0
+    }));
+
+    let totalScoreSum = 0;
+
+    attempts.forEach(attempt => {
+        totalScoreSum += attempt.score;
+        
+        // Hər bir sual üzrə cavabları analiz edirik
+        if (attempt.answers && Array.isArray(attempt.answers)) {
+            quiz.questions.forEach((q, idx) => {
+                const userAns = attempt.answers[idx];
+                const correctAns = q.correctIndex !== undefined ? q.correctIndex : (q.correct !== undefined ? q.correct : q.answer);
+                
+                qStats[idx].total++;
+                if (userAns === -1 || userAns === undefined || userAns === null) {
+                    qStats[idx].unanswered++;
+                } else if (userAns === correctAns) {
+                    qStats[idx].correct++;
+                } else {
+                    qStats[idx].wrong++;
+                }
+            });
+        }
+    });
+
+    const avgScore = Math.round((totalScoreSum / (attempts.length * quiz.questions.length)) * 100) || 0;
+    
+    document.getElementById('total-attempts-count').textContent = attempts.length;
+    document.getElementById('average-score-percent').textContent = `${avgScore}%`;
+    
+    // Ən çətin sualı tap (ən çox səhv edilən)
+    let hardestQ = { index: 0, wrongRate: -1 };
+    qStats.forEach((stat, idx) => {
+        const wrongRate = stat.total > 0 ? (stat.wrong / stat.total) : 0;
+        if (wrongRate > hardestQ.wrongRate) {
+            hardestQ = { index: idx, wrongRate: wrongRate };
+        }
+    });
+    document.getElementById('hardest-question-num').textContent = `#${hardestQ.index + 1}`;
+    
+    const analysisList = document.getElementById('question-analysis-list');
+    analysisList.innerHTML = '';
+    
+    qStats.forEach((stat, idx) => {
+        const correctPercent = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
+        const item = document.createElement('div');
+        item.className = 'q-analysis-item';
+        
+        item.innerHTML = `
+            <div class="q-header">
+                <span class="q-number">Sual #${idx + 1}</span>
+                <div class="q-stats">
+                    <span class="stat-correct"><i class="fas fa-check"></i> ${stat.correct}</span>
+                    <span class="stat-wrong"><i class="fas fa-times"></i> ${stat.wrong}</span>
+                    <span style="color: #64748b;"><i class="fas fa-minus"></i> ${stat.unanswered}</span>
+                </div>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" style="width: ${correctPercent}%; background: ${correctPercent < 40 ? '#ef4444' : (correctPercent < 70 ? '#f59e0b' : '#10b981')}"></div>
+            </div>
+            <div class="q-text-preview" title="${stat.text}">${stat.text}</div>
+        `;
+        analysisList.appendChild(item);
+    });
 }
 
 function renderStudentResultsTable(attempts) {
@@ -3917,13 +4027,14 @@ function showResult() {
         const attempt = {
             quizId: activePrivateQuiz.id,
             quizTitle: activePrivateQuiz.title,
-            teacherId: activePrivateQuiz.teacherId, // Müəllim ID-sini əlavə edirik ki, müəllim nəticələri görə bilsin
+            teacherId: activePrivateQuiz.teacherId,
             studentName: studentName,
             score: correct,
             wrong: wrong,
             unanswered: unanswered,
             total: total,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            answers: currentQuiz.userAnswers // Hər sualın cavabını yadda saxlayırıq
         };
         console.log("Saving student attempt:", attempt);
         saveStudentAttempt(attempt);
