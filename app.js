@@ -11,10 +11,12 @@ const firebaseConfig = {
 
 // Initialize Firebase if config is valid
 let db;
+let auth;
 try {
     if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
+        auth = firebase.auth();
         console.log("Firebase initialized");
     } else {
         console.log("Firebase config not set. Using LocalStorage fallback.");
@@ -153,37 +155,30 @@ function showNotification(message, type = 'info') {
 async function loadData() {
     if (db) {
         try {
-            // Load Categories
+            // Load Categories (Public)
             const catSnapshot = await db.collection('categories').get();
             categories = catSnapshot.docs.map(doc => {
                 const data = doc.data();
                 return { 
                     id: doc.id, 
-                    parentId: data.parentId || null, // Ensure parentId exists
+                    parentId: data.parentId || null,
                     ...data 
                 };
             });
             
-            // Load Users
-            const userSnapshot = await db.collection('users').get();
-            users = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // NOTE: Users and Private Quizzes are NOT loaded kütləvi for security reasons.
+            // They are fetched only when needed.
+            users = []; 
+            privateQuizzes = [];
 
-            // Load Private Quizzes
-            const privateSnapshot = await db.collection('private_quizzes').get();
-            privateQuizzes = privateSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            console.log("Data loaded from Firebase");
+            console.log("Categories loaded from Firebase");
         } catch (error) {
             console.error("Error loading from Firebase:", error);
             // Fallback to local if error (e.g. offline)
             categories = JSON.parse(localStorage.getItem('categories')) || [];
-            users = JSON.parse(localStorage.getItem('users')) || [];
-            privateQuizzes = JSON.parse(localStorage.getItem('privateQuizzes')) || [];
         }
     } else {
         categories = JSON.parse(localStorage.getItem('categories')) || [];
-        users = JSON.parse(localStorage.getItem('users')) || [];
-        privateQuizzes = JSON.parse(localStorage.getItem('privateQuizzes')) || [];
     }
 
     // Ensure all categories have a parentId property
@@ -511,33 +506,62 @@ window.showRegister = function() {
     document.getElementById('register-box').classList.remove('hidden');
 }
 
-window.login = function() {
+window.login = async function() {
     const username = document.getElementById('login-username').value;
     const pass = document.getElementById('login-password').value;
     
-    const user = users.find(u => u.username === username && u.password === pass);
-    if (user) {
-        currentUser = user;
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        updateUI();
-        showNotification('Xoş gəldiniz, ' + user.username + '!', 'success');
-        
-        if (redirectAfterAuth === 'teacher_panel' && user.role === 'teacher') {
-            redirectAfterAuth = null;
-            showTeacherDashboard();
+    if (!username || !pass) return showNotification('İstifadəçi adı və şifrəni daxil edin!', 'error');
+
+    // Loader göstər
+    const loginBtn = document.querySelector('#login-box .btn-primary');
+    const originalText = loginBtn.textContent;
+    loginBtn.textContent = 'Giriş edilir...';
+    loginBtn.disabled = true;
+
+    try {
+        if (db && auth) {
+            // 1. Firestore-dan istifadəçi adını axtarırıq ki, emaili tapaq
+            const userQuery = await db.collection('users').where('username', '==', username).get();
             
-            // Show the floating guide tooltip
-            setTimeout(() => {
-                const tooltip = document.getElementById('quiz-guide-tooltip');
-                if (tooltip) {
-                    tooltip.classList.remove('hidden');
-                    // Hide tooltip after 8 seconds
-                    setTimeout(() => tooltip.classList.add('hidden'), 8000);
-                }
-            }, 1000);
+            if (userQuery.empty) {
+                throw new Error('İstifadəçi adı və ya şifrə yanlışdır!');
+            }
+
+            const userData = userQuery.docs[0].data();
+            const userEmail = userData.email || `${username}@imtahan.site`; // Fallback email
+
+            // 2. Firebase Auth ilə giriş edirik
+            const userCredential = await auth.signInWithEmailAndPassword(userEmail, pass);
+            const user = { id: userQuery.docs[0].id, ...userData };
+
+            currentUser = user;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            updateUI();
+            showNotification('Xoş gəldiniz, ' + user.username + '!', 'success');
+            
+            if (redirectAfterAuth === 'teacher_panel' && user.role === 'teacher') {
+                redirectAfterAuth = null;
+                showTeacherDashboard();
+            }
+        } else {
+            // Fallback to local storage (not recommended but for offline compatibility)
+            const localUsers = JSON.parse(localStorage.getItem('users')) || [];
+            const user = localUsers.find(u => u.username === username && u.password === pass);
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                updateUI();
+                showNotification('Xoş gəldiniz (Offline), ' + user.username + '!', 'success');
+            } else {
+                throw new Error('İstifadəçi adı və ya şifrə yanlışdır!');
+            }
         }
-    } else {
-        showNotification('İstifadəçi adı və ya şifrə yanlışdır!', 'error');
+    } catch (error) {
+        console.error("Login error:", error);
+        showNotification(error.message || 'Giriş zamanı xəta baş verdi!', 'error');
+    } finally {
+        loginBtn.textContent = originalText;
+        loginBtn.disabled = false;
     }
 }
 
@@ -580,67 +604,128 @@ window.register = async function() {
     if (!username || !pass) return showNotification('Bütün sahələri doldurun!', 'error');
     if (pass.length < 8) return showNotification('Şifrə minimum 8 işarədən ibarət olmalıdır!', 'error');
     if (role === 'teacher' && (!email || !email.includes('@'))) return showNotification('Zəhmət olmasa düzgün email ünvanı daxil edin!', 'error');
-    if (users.find(u => u.username === username)) return showNotification('Bu istifadəçi adı artıq mövcuddur!', 'error');
 
-    if (role === 'teacher') {
-        // Teacher verification flow
-        pendingUser = { id: String(Date.now()), username, password: pass, role: role, email: email };
-        verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        const success = await sendVerificationEmail(email, verificationCode);
-        
-        if (success) {
-            showNotification(`${email} ünvanına təsdiq kodu göndərildi. Zəhmət olmasa emailinizi yoxlayın.`, 'success');
-            document.getElementById('verification-modal').classList.remove('hidden');
-        } else {
-            showNotification('Email göndərilərkən xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.', 'error');
+    // Loader göstər
+    const regBtn = document.querySelector('#register-box .btn-primary');
+    const originalText = regBtn.textContent;
+    regBtn.textContent = 'Yoxlanılır...';
+    regBtn.disabled = true;
+
+    try {
+        if (db) {
+            // 1. İstifadəçi adının mövcudluğunu yoxla
+            const userQuery = await db.collection('users').where('username', '==', username).get();
+            if (!userQuery.empty) {
+                throw new Error('Bu istifadəçi adı artıq mövcuddur!');
+            }
         }
-    } else {
-        // Normal student registration
-        const newUser = { id: String(Date.now()), username, password: pass, role: role };
-        users.push(newUser);
-        saveUsers();
-        showNotification('Qeydiyyat uğurludur!', 'success');
-        
-        // Auto login
-        currentUser = newUser;
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        updateUI();
-        showDashboard();
+
+        if (role === 'teacher') {
+            // Teacher verification flow
+            pendingUser = { username, password: pass, role: role, email: email };
+            verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            const success = await sendVerificationEmail(email, verificationCode);
+            
+            if (success) {
+                showNotification(`${email} ünvanına təsdiq kodu göndərildi. Zəhmət olmasa emailinizi yoxlayın.`, 'success');
+                document.getElementById('verification-modal').classList.remove('hidden');
+            } else {
+                throw new Error('Email göndərilərkən xəta baş verdi.');
+            }
+        } else {
+            // Normal student registration - Direct Firebase Auth
+            const studentEmail = `${username}@imtahan.site`;
+            
+            if (auth) {
+                const userCredential = await auth.createUserWithEmailAndPassword(studentEmail, pass);
+                const uid = userCredential.user.uid;
+                
+                const newUser = { 
+                    id: uid, 
+                    username, 
+                    role: role, 
+                    email: studentEmail,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                if (db) {
+                    await db.collection('users').doc(uid).set(newUser);
+                }
+
+                showNotification('Qeydiyyat uğurludur!', 'success');
+                
+                // Auto login
+                currentUser = newUser;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                updateUI();
+                showDashboard();
+            } else {
+                // Offline fallback
+                const newUser = { id: String(Date.now()), username, password: pass, role: role };
+                const localUsers = JSON.parse(localStorage.getItem('users')) || [];
+                localUsers.push(newUser);
+                localStorage.setItem('users', JSON.stringify(localUsers));
+                
+                currentUser = newUser;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                updateUI();
+                showDashboard();
+            }
+        }
+    } catch (error) {
+        console.error("Registration error:", error);
+        showNotification(error.message || 'Qeydiyyat zamanı xəta baş verdi!', 'error');
+    } finally {
+        regBtn.textContent = originalText;
+        regBtn.disabled = false;
     }
 }
 
-window.confirmVerification = function() {
+window.confirmVerification = async function() {
     const codeInput = document.getElementById('v-code').value;
     if (codeInput === verificationCode) {
-        // Create user object before pushing
-        const newUser = { ...pendingUser };
-        users.push(newUser);
-        saveUsers();
-        
-        // Auto login
-        currentUser = newUser;
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        
-        showNotification('Email təsdiqləndi! Qeydiyyat uğurla tamamlandı.', 'success');
-        closeVerification();
-        updateUI();
+        try {
+            if (auth && db) {
+                // Firebase Auth istifadəçisi yarat
+                const userCredential = await auth.createUserWithEmailAndPassword(pendingUser.email, pendingUser.password);
+                const uid = userCredential.user.uid;
+                
+                const newUser = { 
+                    id: uid,
+                    username: pendingUser.username,
+                    role: pendingUser.role,
+                    email: pendingUser.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                // Firestore-da istifadəçi məlumatlarını saxla
+                await db.collection('users').doc(uid).set(newUser);
+                
+                currentUser = newUser;
+            } else {
+                // Offline fallback
+                const newUser = { id: String(Date.now()), ...pendingUser };
+                const localUsers = JSON.parse(localStorage.getItem('users')) || [];
+                localUsers.push(newUser);
+                localStorage.setItem('users', JSON.stringify(localUsers));
+                currentUser = newUser;
+            }
 
-        if (redirectAfterAuth === 'teacher_panel' && currentUser.role === 'teacher') {
-            redirectAfterAuth = null;
-            showTeacherDashboard(); // Redirect to Dashboard instead of create section
-            
-            // Show the floating guide tooltip
-            setTimeout(() => {
-                const tooltip = document.getElementById('quiz-guide-tooltip');
-                if (tooltip) {
-                    tooltip.classList.remove('hidden');
-                    // Hide tooltip after 8 seconds or when user clicks
-                    setTimeout(() => tooltip.classList.add('hidden'), 8000);
-                }
-            }, 1000);
-        } else {
-            showDashboard();
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            showNotification('Email təsdiqləndi! Qeydiyyat uğurla tamamlandı.', 'success');
+            closeVerification();
+            updateUI();
+
+            if (redirectAfterAuth === 'teacher_panel' && currentUser.role === 'teacher') {
+                redirectAfterAuth = null;
+                showTeacherDashboard();
+            } else {
+                showDashboard();
+            }
+        } catch (error) {
+            console.error("Verification confirmation error:", error);
+            showNotification(error.message || 'Təsdiqləmə zamanı xəta baş verdi!', 'error');
         }
     } else {
         showNotification('Yanlış təsdiq kodu!', 'error');
@@ -655,6 +740,9 @@ window.closeVerification = function() {
 }
 
 window.logout = function() {
+    if (auth) {
+        auth.signOut().catch(console.error);
+    }
     currentUser = null;
     localStorage.removeItem('currentUser');
     updateUI();
@@ -810,8 +898,20 @@ window.showCreatePrivateQuiz = function() {
     addManualQuestionForm(); // Add first empty question
 }
 
-window.editPrivateQuiz = function(quizId) {
-    const quiz = privateQuizzes.find(q => q.id === quizId);
+window.editPrivateQuiz = async function(quizId) {
+    let quiz = privateQuizzes.find(q => q.id === quizId);
+    
+    if (!quiz && db) {
+        try {
+            const doc = await db.collection('private_quizzes').doc(quizId).get();
+            if (doc.exists) {
+                quiz = { id: doc.id, ...doc.data() };
+            }
+        } catch (error) {
+            console.error("Error fetching quiz for edit:", error);
+        }
+    }
+
     if (!quiz) return showNotification('Test tapılmadı!', 'error');
     
     hideAllSections();
@@ -1268,11 +1368,26 @@ window.savePrivateQuizFinal = async function() {
     }
 }
 
-function renderPrivateQuizzes() {
+window.renderPrivateQuizzes = async function() {
     const grid = document.getElementById('private-quizzes-grid');
-    grid.innerHTML = '';
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Yüklənir...</p></div>';
     
-    const myQuizzes = privateQuizzes.filter(q => q.teacherId === currentUser.id);
+    let myQuizzes = [];
+    if (db) {
+        try {
+            const snapshot = await db.collection('private_quizzes').where('teacherId', '==', currentUser.id).get();
+            myQuizzes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Cache locally for faster access during session if needed
+            privateQuizzes = myQuizzes;
+        } catch (error) {
+            console.error("Error fetching my quizzes:", error);
+            showNotification('Testlərinizi yükləyərkən xəta baş verdi.', 'error');
+        }
+    } else {
+        myQuizzes = privateQuizzes.filter(q => q.teacherId === currentUser.id);
+    }
+    
+    grid.innerHTML = '';
     
     if (myQuizzes.length === 0) {
         grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 20px;">Hələ heç bir özəl test yaratmamısınız.</p>';
@@ -1493,42 +1608,49 @@ function renderStudentResultsTable(attempts) {
 let activePrivateQuiz = null;
 let studentName = '';
 
+let pendingQuizId = null;
+
 function handleUrlParams() {
     const urlParams = new URLSearchParams(window.location.search);
     const quizId = urlParams.get('quiz');
     
     if (quizId) {
-        const quiz = privateQuizzes.find(q => q.id === quizId);
-        if (quiz) {
-            if (quiz.isActive === false) {
-                showNotification('Bu test linki müəllim tərəfindən deaktiv edilib.', 'error');
-                window.history.replaceState({}, document.title, window.location.pathname);
-                showDashboard();
-                return;
-            }
-            activePrivateQuiz = quiz;
-            showPrivateAccess(quiz.title);
-        } else {
-            // If quiz not in memory, try to fetch from Firebase
-            if (db) {
-                db.collection('private_quizzes').doc(quizId).get().then(doc => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        if (data.isActive === false) {
-                            showNotification('Bu test linki müəllim tərəfindən deaktiv edilib.', 'error');
-                            window.history.replaceState({}, document.title, window.location.pathname);
-                            showDashboard();
-                            return;
-                        }
-                        activePrivateQuiz = { id: doc.id, ...data };
-                        showPrivateAccess(activePrivateQuiz.title);
-                    } else {
-                        showNotification('Test tapılmadı.', 'error');
+        pendingQuizId = quizId;
+        
+        // Test məlumatlarını (başlıq və status) gətiririk
+        if (db) {
+            db.collection('private_quizzes').doc(quizId).get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data.isActive === false) {
+                        showNotification('Bu test linki müəllim tərəfindən deaktiv edilib.', 'error');
                         window.history.replaceState({}, document.title, window.location.pathname);
+                        showDashboard();
+                        return;
                     }
-                });
+                    // Yalnız başlığı göstəririk, sualları və şifrəni hələ yaddaşa vermirik
+                    showPrivateAccess(data.title);
+                } else {
+                    showNotification('Test tapılmadı.', 'error');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }).catch(error => {
+                console.error("Error fetching quiz info:", error);
+                showNotification('Test məlumatlarını yükləyərkən xəta baş verdi.', 'error');
+            });
+        } else {
+            // Offline fallback - yerli yaddaşda axtarırıq
+            const quiz = privateQuizzes.find(q => q.id === quizId);
+            if (quiz) {
+                if (quiz.isActive === false) {
+                    showNotification('Bu test linki müəllim tərəfindən deaktiv edilib.', 'error');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    showDashboard();
+                    return;
+                }
+                showPrivateAccess(quiz.title);
             } else {
-                showNotification('Test tapılmadı.', 'error');
+                showNotification('Test tapılmadı (Offline).', 'error');
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
@@ -1541,7 +1663,7 @@ function showPrivateAccess(title) {
     document.getElementById('join-quiz-title').textContent = title;
 }
 
-window.accessPrivateQuiz = function() {
+window.accessPrivateQuiz = async function() {
     const firstName = document.getElementById('student-first-name').value.trim();
     const lastName = document.getElementById('student-last-name').value.trim();
     const pass = document.getElementById('student-quiz-password').value;
@@ -1549,13 +1671,42 @@ window.accessPrivateQuiz = function() {
     if (!firstName || !lastName || !pass) {
         return showNotification('Zəhmət olmasa bütün xanaları (Ad, Soyad və Şifrə) doldurun.', 'error');
     }
-    
-    if (pass !== activePrivateQuiz.password) {
-        return showNotification('Yanlış şifrə!', 'error');
+
+    const accessBtn = document.querySelector('#private-access-section .btn-primary');
+    const originalText = accessBtn.textContent;
+    accessBtn.textContent = 'Doğrulanır...';
+    accessBtn.disabled = true;
+
+    try {
+        let quiz = null;
+        if (db && pendingQuizId) {
+            const doc = await db.collection('private_quizzes').doc(pendingQuizId).get();
+            if (doc.exists) {
+                quiz = { id: doc.id, ...doc.data() };
+            }
+        } else {
+            // Offline fallback
+            quiz = privateQuizzes.find(q => q.id === pendingQuizId);
+        }
+
+        if (!quiz) {
+            throw new Error('Test tapılmadı!');
+        }
+
+        if (pass !== quiz.password) {
+            throw new Error('Yanlış şifrə!');
+        }
+
+        activePrivateQuiz = quiz;
+        studentName = `${firstName} ${lastName}`;
+        startPrivateQuiz();
+        showNotification('Şifrə doğrulandı. Uğurlar!', 'success');
+    } catch (error) {
+        showNotification(error.message, 'error');
+    } finally {
+        accessBtn.textContent = originalText;
+        accessBtn.disabled = false;
     }
-    
-    studentName = `${firstName} ${lastName}`;
-    startPrivateQuiz();
 }
 
 function startPrivateQuiz() {
