@@ -3812,7 +3812,9 @@ window.nextQuestion = function() {
 
 window.prevQuestion = function() {
     if (currentQuiz.currentQuestionIndex > 0) {
-        clearInterval(currentQuiz.timer);
+        if (currentQuiz.timeType !== 'total') {
+            clearInterval(currentQuiz.timer);
+        }
         // Save current answer before going back
         currentQuiz.userAnswers[currentQuiz.currentQuestionIndex] = selectedAnswerIndex;
         currentQuiz.currentQuestionIndex--;
