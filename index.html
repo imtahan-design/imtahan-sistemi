@@ -100,10 +100,24 @@
                     <input type="password" id="reg-password" placeholder="Şifrə (min. 8 işarə)">
                     <div class="form-group" style="margin-top: 10px; text-align: left;">
                         <label style="font-size: 0.9rem; color: #666;">Hesab növü:</label>
-                        <select id="reg-role" onchange="toggleEmailField()">
-                            <option value="student">Şəxsi</option>
-                            <option value="teacher">Müəllim</option>
-                        </select>
+                        <div class="custom-select-wrapper" id="reg-role-wrapper">
+                            <div class="custom-select-trigger" onclick="toggleCustomSelect('reg-role-wrapper')">
+                                <span id="selected-reg-role">Şəxsi</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="custom-options">
+                                <div class="custom-option selected" data-value="student" onclick="selectCustomOption('reg-role-wrapper', this, 'reg-role', toggleEmailField)">
+                                    <i class="fas fa-user"></i> Şəxsi
+                                </div>
+                                <div class="custom-option" data-value="teacher" onclick="selectCustomOption('reg-role-wrapper', this, 'reg-role', toggleEmailField)">
+                                    <i class="fas fa-chalkboard-teacher"></i> Müəllim
+                                </div>
+                            </div>
+                            <select id="reg-role" class="hidden-select" onchange="toggleEmailField()">
+                                <option value="student">Şəxsi</option>
+                                <option value="teacher">Müəllim</option>
+                            </select>
+                        </div>
                     </div>
                     <div id="teacher-email-group" class="hidden">
                         <input type="email" id="reg-email" placeholder="Email ünvanınız" style="margin-top: 10px;">
@@ -176,10 +190,24 @@
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-hourglass-half"></i> Vaxt Növü</label>
-                            <select id="private-quiz-time-type" onchange="toggleTimeInputType()">
-                                <option value="per-question">Hər sual üzrə</option>
-                                <option value="total">Ümumi test üzrə</option>
-                            </select>
+                            <div class="custom-select-wrapper" id="time-type-wrapper">
+                                <div class="custom-select-trigger" onclick="toggleCustomSelect('time-type-wrapper')">
+                                    <span id="selected-time-type">Hər sual üzrə</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                                <div class="custom-options">
+                                    <div class="custom-option selected" data-value="per-question" onclick="selectCustomOption('time-type-wrapper', this, 'private-quiz-time-type', toggleTimeInputType)">
+                                        <i class="fas fa-stopwatch"></i> Hər sual üzrə
+                                    </div>
+                                    <div class="custom-option" data-value="total" onclick="selectCustomOption('time-type-wrapper', this, 'private-quiz-time-type', toggleTimeInputType)">
+                                        <i class="fas fa-clock"></i> Ümumi test üzrə
+                                    </div>
+                                </div>
+                                <select id="private-quiz-time-type" class="hidden-select" onchange="toggleTimeInputType()">
+                                    <option value="per-question">Hər sual üzrə</option>
+                                    <option value="total">Ümumi test üzrə</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group" id="default-time-container">
                             <label id="time-label"><i class="fas fa-clock"></i> Standart Vaxt (san)</label>

@@ -32,6 +32,59 @@ emailjs.init("gwXl5HH3P9Bja5iBN");
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 let redirectAfterAuth = null;
 
+// Custom Select Logic
+window.toggleCustomSelect = function(wrapperId) {
+    const wrapper = document.getElementById(wrapperId);
+    if (!wrapper) return;
+    
+    // Close other selects
+    document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+        if (w.id !== wrapperId) w.classList.remove('open');
+    });
+    
+    wrapper.classList.toggle('open');
+};
+
+window.selectCustomOption = function(wrapperId, optionElem, selectId, callback) {
+    const wrapper = document.getElementById(wrapperId);
+    const select = document.getElementById(selectId);
+    const triggerText = wrapper.querySelector('.custom-select-trigger span');
+    
+    if (!wrapper || !select || !triggerText) return;
+    
+    const value = optionElem.getAttribute('data-value');
+    const text = optionElem.textContent.trim();
+    
+    // Update trigger text
+    triggerText.textContent = text;
+    
+    // Update hidden select
+    select.value = value;
+    
+    // Update selection classes
+    wrapper.querySelectorAll('.custom-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    optionElem.classList.add('selected');
+    
+    // Close dropdown
+    wrapper.classList.remove('open');
+    
+    // Trigger original onchange
+    if (typeof callback === 'function') {
+        callback();
+    }
+};
+
+// Close selects when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.custom-select-wrapper')) {
+        document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+            w.classList.remove('open');
+        });
+    }
+});
+
 // Side Menu Logic
 window.toggleSideMenu = function() {
     const sideMenu = document.getElementById('side-menu');
@@ -3807,7 +3860,9 @@ function finishQuiz() {
 }
 
 function processCurrentQuestion() {
-    clearInterval(currentQuiz.timer);
+    if (currentQuiz.timeType !== 'total') {
+        clearInterval(currentQuiz.timer);
+    }
     
     // Track answer for current index
     currentQuiz.userAnswers[currentQuiz.currentQuestionIndex] = selectedAnswerIndex;
