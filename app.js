@@ -3672,7 +3672,9 @@ function loadQuestion() {
     }
     
     // Timer Logic
-    clearInterval(currentQuiz.timer);
+    if (currentQuiz.timeType !== 'total') {
+        clearInterval(currentQuiz.timer);
+    }
     
     // Ümumi vaxt məntiqi (dəqiqəni saniyəyə çeviririk)
     if (currentQuiz.timeType === 'total') {
@@ -3680,6 +3682,7 @@ function loadQuestion() {
             currentQuiz.timeLeft = currentQuiz.totalTime * 60; 
             currentQuiz.totalTimerStarted = true;
             
+            if (currentQuiz.timer) clearInterval(currentQuiz.timer);
             currentQuiz.timer = setInterval(() => {
                 currentQuiz.timeLeft--;
                 updateTimerDisplay();
