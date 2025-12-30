@@ -325,12 +325,15 @@ async function loadData() {
         saveCategories(); // Save to DB/Local
     }
 
-    if (users.length === 0) {
+    if (users.length === 0 && !db) {
         const adminId = 'admin_' + Date.now();
         users = [{ id: adminId, username: 'admin', password: '123', role: 'admin' }];
-        saveUsers(); // Save to DB/Local
+        saveUsers(); // Save only to LocalStorage if offline
+    } else if (users.length === 0 && db) {
+        // Firebase-də istifadəçiləri seed etmirik, çünki Auth və Firestore əllə və ya qeydiyyatla idarə olunur.
+        users = [];
     } else {
-        // Admin fix logic
+        // Admin fix logic (Local storage üçün)
         const adminUser = users.find(u => u.username === 'admin');
         if (!adminUser) {
              users.push({ id: 'admin_' + Date.now(), username: 'admin', password: '123', role: 'admin' });
@@ -338,13 +341,6 @@ async function loadData() {
         } else if (adminUser.role !== 'admin') {
              adminUser.role = 'admin';
              saveUsers();
-        }
-
-        // Moderator seed logic
-        const moderatorUser = users.find(u => u.username === 'moderator');
-        if (!moderatorUser) {
-            users.push({ id: 'mod_' + Date.now(), username: 'moderator', password: 'mod', role: 'moderator' });
-            saveUsers();
         }
     }
 
@@ -402,7 +398,9 @@ async function saveCategories() {
 async function saveUsers() {
     if (db) {
         for (const user of users) {
-            await db.collection('users').doc(String(user.id)).set(user);
+            // Təhlükəsizlik üçün Firestore-a ŞİFRƏ göndərmirik!
+            const { password, ...safeUser } = user;
+            await db.collection('users').doc(String(user.id)).set(safeUser);
         }
     }
     localStorage.setItem('users', JSON.stringify(users));
