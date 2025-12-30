@@ -1563,7 +1563,9 @@ function startPrivateQuiz() {
         score: 0,
         timer: null,
         defaultTime: activePrivateQuiz.defaultTime || 45,
-        timeLeft: 45 // Will be set in loadQuestion
+        timeLeft: 45, // Will be set in loadQuestion
+        userAnswers: new Array(activePrivateQuiz.questions.length).fill(-1),
+        questionTimes: new Array(activePrivateQuiz.questions.length).fill(null) // null means not set yet
     };
     
     // Apply aggressive protection for quizzes
@@ -3326,7 +3328,9 @@ window.confirmStartQuiz = function() {
         currentQuestionIndex: 0,
         score: 0,
         timer: null,
-        timeLeft: cat.time
+        timeLeft: cat.time,
+        userAnswers: new Array(finalQuestions.length).fill(-1),
+        questionTimes: new Array(finalQuestions.length).fill(cat.time)
     };
 
     // Səhifə fokusunu itirəndə blur tətbiq etmək üçün interval
@@ -3359,7 +3363,7 @@ function loadQuestion() {
         if (cat) timeLimit = cat.time;
     }
     
-    selectedAnswerIndex = -1; // Reset for new question
+    selectedAnswerIndex = currentQuiz.userAnswers[currentQuiz.currentQuestionIndex];
 
     // Update Progress Bar
     const progressPercentage = ((currentQuiz.currentQuestionIndex + 1) / currentQuiz.questions.length) * 100;
@@ -3386,13 +3390,30 @@ function loadQuestion() {
     q.options.forEach((opt, idx) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
+        if (idx === selectedAnswerIndex) btn.classList.add('selected');
         btn.textContent = opt;
         btn.onclick = () => selectAnswer(idx);
         optionsArea.appendChild(btn);
     });
 
-    document.getElementById('next-btn').classList.remove('hidden'); // Show Next button by default
-    document.getElementById('next-btn').disabled = true; // Disable until an answer is selected
+    // Navigation buttons
+    document.getElementById('next-btn').classList.remove('hidden');
+    document.getElementById('next-btn').disabled = false; // Always enabled to allow skipping
+    
+    const prevBtn = document.getElementById('prev-btn');
+    if (prevBtn) {
+        if (currentQuiz.currentQuestionIndex > 0) {
+            prevBtn.classList.remove('hidden');
+        } else {
+            prevBtn.classList.add('hidden');
+        }
+    }
+
+    const finishBtn = document.getElementById('finish-btn');
+    if (finishBtn) {
+        finishBtn.classList.remove('hidden');
+    }
+
     document.getElementById('feedback').classList.add('hidden');
     
     // Clear existing report buttons if any
@@ -3410,12 +3431,21 @@ function loadQuestion() {
         feedbackArea.insertAdjacentHTML('afterend', reportBtnHtml);
     }
     
-    // Timer Reset
+    // Timer Logic
     clearInterval(currentQuiz.timer);
-    currentQuiz.timeLeft = timeLimit;
+    
+    // If we have a stored time for this question, use it. Otherwise set new time limit.
+    if (currentQuiz.questionTimes[currentQuiz.currentQuestionIndex] !== null && currentQuiz.questionTimes[currentQuiz.currentQuestionIndex] !== undefined) {
+        currentQuiz.timeLeft = currentQuiz.questionTimes[currentQuiz.currentQuestionIndex];
+    } else {
+        currentQuiz.timeLeft = timeLimit;
+        currentQuiz.questionTimes[currentQuiz.currentQuestionIndex] = timeLimit;
+    }
+
     updateTimerDisplay();
     currentQuiz.timer = setInterval(() => {
         currentQuiz.timeLeft--;
+        currentQuiz.questionTimes[currentQuiz.currentQuestionIndex] = currentQuiz.timeLeft;
         updateTimerDisplay();
         if (currentQuiz.timeLeft <= 0) {
             clearInterval(currentQuiz.timer);
@@ -3429,18 +3459,27 @@ function updateTimerDisplay() {
 }
 
 function selectAnswer(selectedIndex) {
-    selectedAnswerIndex = selectedIndex;
     const options = document.querySelectorAll('.option-btn');
     
-    // Remove selected class from all and add to the current one
-    options.forEach((btn, idx) => {
-        btn.classList.remove('selected');
-        if (idx === selectedIndex) {
-            btn.classList.add('selected');
-        }
-    });
+    // If clicking already selected answer, deselect it
+    if (selectedAnswerIndex === selectedIndex) {
+        selectedAnswerIndex = -1;
+        options[selectedIndex].classList.remove('selected');
+    } else {
+        selectedAnswerIndex = selectedIndex;
+        // Remove selected class from all and add to the current one
+        options.forEach((btn, idx) => {
+            btn.classList.remove('selected');
+            if (idx === selectedIndex) {
+                btn.classList.add('selected');
+            }
+        });
+    }
 
-    // Enable next button
+    // Update current quiz answers array
+    currentQuiz.userAnswers[currentQuiz.currentQuestionIndex] = selectedAnswerIndex;
+
+    // Enable next button (now it's always enabled, but we keep this logic if needed)
     document.getElementById('next-btn').disabled = false;
 }
 
@@ -3453,21 +3492,48 @@ window.nextQuestion = function() {
     processCurrentQuestion();
 }
 
+window.prevQuestion = function() {
+    if (currentQuiz.currentQuestionIndex > 0) {
+        clearInterval(currentQuiz.timer);
+        // Save current answer before going back
+        currentQuiz.userAnswers[currentQuiz.currentQuestionIndex] = selectedAnswerIndex;
+        currentQuiz.currentQuestionIndex--;
+        loadQuestion();
+    }
+}
+
+window.confirmFinishQuiz = function() {
+    const modal = document.getElementById('confirm-modal');
+    const title = document.getElementById('confirm-modal-title');
+    const text = document.getElementById('confirm-modal-text');
+    const okBtn = document.getElementById('confirm-ok-btn');
+
+    title.textContent = 'İmtahanı bitirirsiniz?';
+    text.textContent = 'İmtahanı bitirmək istədiyinizdən əminsiniz? Cavablandırılmayan suallarınız ola bilər.';
+    okBtn.textContent = 'Bitir';
+    okBtn.style.background = 'var(--danger-color)';
+    okBtn.style.borderColor = 'var(--danger-color)';
+
+    okBtn.onclick = function() {
+        closeModal('confirm-modal');
+        finishQuiz();
+    };
+
+    modal.classList.remove('hidden');
+}
+
+function finishQuiz() {
+    clearInterval(currentQuiz.timer);
+    // Save current answer before finishing
+    currentQuiz.userAnswers[currentQuiz.currentQuestionIndex] = selectedAnswerIndex;
+    showResult();
+}
+
 function processCurrentQuestion() {
     clearInterval(currentQuiz.timer);
-    const q = currentQuiz.questions[currentQuiz.currentQuestionIndex];
     
-    // Track answer for review
-    if (!currentQuiz.userAnswers) currentQuiz.userAnswers = [];
-    currentQuiz.userAnswers.push(selectedAnswerIndex);
-
-    // Check for correct answer using different possible field names
-    const correctAnswer = q.correctIndex !== undefined ? q.correctIndex : 
-                        (q.correct !== undefined ? q.correct : q.answer);
-
-    if (selectedAnswerIndex === correctAnswer) {
-        currentQuiz.score++;
-    }
+    // Track answer for current index
+    currentQuiz.userAnswers[currentQuiz.currentQuestionIndex] = selectedAnswerIndex;
 
     currentQuiz.currentQuestionIndex++;
     if (currentQuiz.currentQuestionIndex < currentQuiz.questions.length) {
@@ -3482,13 +3548,33 @@ function showResult() {
     document.getElementById('result-section').classList.remove('hidden');
     
     const total = currentQuiz.questions.length;
-    const correct = currentQuiz.score;
-    const wrong = total - correct;
+    let correct = 0;
+    let wrong = 0;
+    let unanswered = 0;
+
+    currentQuiz.questions.forEach((q, idx) => {
+        const userAns = currentQuiz.userAnswers[idx];
+        const correctAnswer = q.correctIndex !== undefined ? q.correctIndex : 
+                            (q.correct !== undefined ? q.correct : q.answer);
+        
+        if (userAns === -1 || userAns === undefined || userAns === null) {
+            unanswered++;
+        } else if (userAns === correctAnswer) {
+            correct++;
+        } else {
+            wrong++;
+        }
+    });
+
+    currentQuiz.score = correct; // Update final score
     const accuracy = Math.round((correct / total) * 100) || 0;
     
     document.getElementById('score-text').textContent = `${accuracy}%`;
     document.getElementById('correct-count').textContent = correct;
     document.getElementById('wrong-count').textContent = wrong;
+    
+    const unansweredElem = document.getElementById('unanswered-count');
+    if (unansweredElem) unansweredElem.textContent = unanswered;
     
     // Save attempt logic
     if (activePrivateQuiz) {
@@ -3587,19 +3673,26 @@ window.showQuizReview = function() {
 
     currentQuiz.questions.forEach((q, idx) => {
         const userAnswer = currentQuiz.userAnswers[idx];
-        const isCorrect = userAnswer === q.correctIndex;
+        const correctAnswer = q.correctIndex !== undefined ? q.correctIndex : 
+                            (q.correct !== undefined ? q.correct : q.answer);
+        
+        const isUnanswered = userAnswer === -1 || userAnswer === undefined || userAnswer === null;
+        const isCorrect = !isUnanswered && userAnswer === correctAnswer;
         
         const reviewItem = document.createElement('div');
-        reviewItem.className = `review-item ${isCorrect ? 'correct' : 'wrong'}`;
+        reviewItem.className = `review-item ${isCorrect ? 'correct' : (isUnanswered ? 'unanswered' : 'wrong')}`;
         
         let optionsHtml = '';
         q.options.forEach((opt, optIdx) => {
             let optClass = 'review-option';
-            if (optIdx === q.correctIndex) optClass += ' correct-ans';
+            if (optIdx === correctAnswer) optClass += ' correct-ans';
             else if (optIdx === userAnswer) optClass += ' wrong-ans';
             
             optionsHtml += `<div class="${optClass}">${opt}</div>`;
         });
+
+        let statusText = isCorrect ? 'Düzgün' : (isUnanswered ? 'Cavablandırılmayıb' : 'Yanlış');
+        let statusIcon = isCorrect ? 'check' : (isUnanswered ? 'minus' : 'times');
 
         reviewItem.innerHTML = `
             <div class="review-question">${idx + 1}. ${q.text}</div>
@@ -3607,9 +3700,9 @@ window.showQuizReview = function() {
             <div class="review-options">
                 ${optionsHtml}
             </div>
-            <div class="review-status ${isCorrect ? 'correct' : 'wrong'}">
-                <i class="fas fa-${isCorrect ? 'check' : 'times'}-circle"></i>
-                ${isCorrect ? 'Düzgün' : 'Yanlış'}
+            <div class="review-status ${isCorrect ? 'correct' : (isUnanswered ? 'unanswered' : 'wrong')}">
+                <i class="fas fa-${statusIcon}-circle"></i>
+                ${statusText}
             </div>
         `;
         reviewList.appendChild(reviewItem);

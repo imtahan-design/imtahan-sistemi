@@ -688,7 +688,17 @@
                     </div>
                     <div id="feedback" class="hidden"></div>
                 </div>
-                <button id="next-btn" class="btn-primary hidden" onclick="nextQuestion()">Növbəti Sual</button>
+                <div class="quiz-controls">
+                    <button id="prev-btn" class="btn-secondary hidden" onclick="prevQuestion()">
+                        <i class="fas fa-arrow-left"></i> Əvvəlki
+                    </button>
+                    <button id="finish-btn" class="btn-danger hidden" onclick="confirmFinishQuiz()">
+                        <i class="fas fa-stop-circle"></i> Testi Bitir
+                    </button>
+                    <button id="next-btn" class="btn-primary hidden" onclick="nextQuestion()">
+                        Növbəti Sual <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -708,6 +718,10 @@
                     <div class="stat-item">
                         <span id="wrong-count" class="stat-value wrong">0</span>
                         <span class="stat-label">Yanlış</span>
+                    </div>
+                    <div class="stat-item">
+                        <span id="unanswered-count" class="stat-value" style="color: #64748b;">0</span>
+                        <span class="stat-label">Cavablandırılmayan</span>
                     </div>
                 </div>
                 <button id="review-btn" onclick="showQuizReview()" class="btn-secondary" style="width: 100%; margin-bottom: 10px;">Suallara Bax</button>
