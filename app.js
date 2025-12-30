@@ -671,7 +671,19 @@ window.login = async function() {
         }
     } catch (error) {
         console.error("Login error:", error);
-        showNotification(error.message || 'Giriş zamanı xəta baş verdi!', 'error');
+        let errorMsg = 'Giriş zamanı xəta baş verdi!';
+        
+        if (error.code === 'auth/invalid-login-credentials' || 
+            error.code === 'auth/user-not-found' || 
+            error.code === 'auth/wrong-password') {
+            errorMsg = 'İstifadəçi adı və ya şifrə yanlışdır!';
+        } else if (error.code === 'auth/too-many-requests') {
+            errorMsg = 'Həddindən artıq uğursuz cəhd edildi. Zəhmət olmasa bir az gözləyin.';
+        } else if (error.message) {
+            errorMsg = error.message;
+        }
+
+        showNotification(errorMsg, 'error');
     } finally {
         loginBtn.textContent = originalText;
         loginBtn.disabled = false;
