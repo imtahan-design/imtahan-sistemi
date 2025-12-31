@@ -31,6 +31,57 @@
     transform: scale(1.1);
 }
 
+/* Image Upload Area Styles */
+.image-upload-area {
+    position: relative;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    background: #f8fafc;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.image-upload-area:hover {
+    border-color: var(--primary-color);
+    background: #f1f5f9;
+}
+
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: #64748b;
+}
+
+.upload-placeholder i {
+    font-size: 2rem;
+    color: var(--primary-color);
+}
+
+.upload-placeholder p {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+#selected-image-name {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--success-color);
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+#btn-remove-ai-image {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: var(--danger-color);
+    font-size: 1.2rem;
+}
+
 /* AI Generation Styles */
 .ai-info {
     background: #f0f7ff;

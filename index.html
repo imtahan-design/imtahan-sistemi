@@ -279,8 +279,21 @@
                                     <i class="fas fa-exclamation-triangle"></i> <strong>DİQQƏT:</strong> Suallar yaradıldıqdan sonra sual mətnlərini, variantları və düzgün cavabın düzgün seçildiyini mütləq yenidən yoxlayın!
                                 </p>
                                 <div class="ai-input-group">
-                                    <label>Mövzu mətni və ya material:</label>
-                                    <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni buraya daxil edin (məsələn: bir dərslik mətni, məqalə və s.)..."></textarea>
+                                    <label>Mövzu mətni, material və ya sualların şəkli:</label>
+                                    <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni daxil edin və ya aşağıdan sualların şəklini yükləyin..."></textarea>
+                                </div>
+                                <div class="ai-input-group">
+                                    <div class="image-upload-area" id="ai-image-drop-area">
+                                        <input type="file" id="ai-question-image" accept="image/*" class="hidden" onchange="handleAIImageSelect(this)">
+                                        <div class="upload-placeholder" onclick="document.getElementById('ai-question-image').click()">
+                                            <i class="fas fa-file-image"></i>
+                                            <p>Sualların şəklini yükləyin (PDF-dən skrinşot və ya foto)</p>
+                                            <span id="selected-image-name" class="hidden"></span>
+                                        </div>
+                                        <button id="btn-remove-ai-image" class="btn-icon hidden" onclick="removeSelectedAIImage()" title="Şəkli sil">
+                                            <i class="fas fa-times-circle"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="ai-controls">
                                     <div class="q-count-selector">

@@ -3505,7 +3505,7 @@ window.generateAdminAIQuestions = async function() {
     
     Mətn: ${context}`;
 
-    const models = ["gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"];
+    const models = ["gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash-exp"];
     const apiVersions = ["v1beta", "v1"];
     let lastError = "";
     let success = false;
@@ -4834,6 +4834,40 @@ window.onclick = function(event) {
 }
 
 // AI Question Generation
+let selectedAIImageBase64 = null;
+
+window.handleAIImageSelect = function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        showNotification('Şəkil ölçüsü 5MB-dan çox ola bilməz!', 'error');
+        input.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        selectedAIImageBase64 = e.target.result.split(',')[1]; // Get only base64 data
+        document.getElementById('selected-image-name').textContent = `Seçildi: ${file.name}`;
+        document.getElementById('selected-image-name').classList.remove('hidden');
+        document.getElementById('btn-remove-ai-image').classList.remove('hidden');
+        document.querySelector('.upload-placeholder p').classList.add('hidden');
+        document.querySelector('.upload-placeholder i').style.color = 'var(--success-color)';
+    };
+    reader.readAsDataURL(file);
+}
+
+window.removeSelectedAIImage = function() {
+    selectedAIImageBase64 = null;
+    document.getElementById('ai-question-image').value = '';
+    document.getElementById('selected-image-name').textContent = '';
+    document.getElementById('selected-image-name').classList.add('hidden');
+    document.getElementById('btn-remove-ai-image').classList.add('hidden');
+    document.querySelector('.upload-placeholder p').classList.remove('hidden');
+    document.querySelector('.upload-placeholder i').style.color = 'var(--primary-color)';
+}
+
 window.generateAIQuestions = async function() {
     const context = document.getElementById('ai-context-text').value.trim();
     const count = document.getElementById('ai-question-count').value;
@@ -4843,11 +4877,11 @@ window.generateAIQuestions = async function() {
     // DB-dən açarı yenidən yoxla (əgər hələ yüklənməyibsə)
     if (!GEMINI_API_KEY) await loadAiApiKey();
     
-    if (!context) {
-        return showNotification('Zəhmət olmasa mövzu mətni daxil edin.', 'error');
+    if (!context && !selectedAIImageBase64) {
+        return showNotification('Zəhmət olmasa mövzu mətni daxil edin və ya şəkil yükləyin.', 'error');
     }
     
-    if (context.length < 50) {
+    if (context && context.length < 50 && !selectedAIImageBase64) {
         return showNotification('Mətn çox qısadır. Daha keyfiyyətli suallar üçün daha çox məlumat daxil edin.', 'warning');
     }
 
@@ -4860,7 +4894,14 @@ window.generateAIQuestions = async function() {
         return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib. Zəhmət olmasa adminlə əlaqə saxlayın.', 'error');
     }
 
-    const prompt = `Sən bir peşəkar müəllimsən. Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. 
+    let prompt = `Sən bir peşəkar müəllimsən. `;
+    if (selectedAIImageBase64) {
+        prompt += `Sənə təqdim olunan şəkildəki sualları oxu və onları rəqəmsal formata sal. Əgər şəkildə suallar azdırsa, mətndən istifadə edərək ümumi sayı ${count} çatdır. `;
+    } else {
+        prompt += `Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. `;
+    }
+
+    prompt += `
     Cavablar yalnız Azərbaycan dilində olsun. 
     Hər sualın 4 variantı olsun. 
     Variantların daxilində "A)", "1)" kimi prefikslər yazma, yalnız variantın mətnini yaz.
@@ -4872,23 +4913,39 @@ window.generateAIQuestions = async function() {
         "correct": 0 
       }
     ]
-    "correct" sahəsi düzgün variantın indeksidir (0-dan başlayaraq).
-    
-    Mətn: ${context}`;
+    "correct" sahəsi düzgün variantın indeksidir (0-dan başlayaraq).`;
 
-    // Modellərin siyahısı - Sizin ekranınızda görünən Gemini 3 versiyalarını ilk sıraya qoyuruq
+    if (context) prompt += `\n\nMətn: ${context}`;
+
+    // Prepare contents for API
+    const contents = [{
+        parts: [{ text: prompt }]
+    }];
+
+    if (selectedAIImageBase64) {
+        contents[0].parts.push({
+            inline_data: {
+                mime_type: "image/jpeg",
+                data: selectedAIImageBase64
+            }
+        });
+    }
+
+    // Modellərin siyahısı - Vision dəstəyi olan və v1beta ilə işləyən modellər
     const models = [
         "gemini-3-flash-preview",
         "gemini-3-pro-preview",
-        "gemini-2.0-flash-exp", 
-        "gemini-1.5-flash", 
-        "gemini-1.5-pro"
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
+        "gemini-2.0-flash-exp"
     ];
+    // Gemini 2.0 və bəzi yeni modellər v1beta versiyasında daha stabil işləyir
     const apiVersions = ["v1beta", "v1"];
     let lastError = "";
     let success = false;
 
-    console.log("AI Sual yaradılması başladıldı...");
+    console.log("AI Sual yaradılması başladıldı (Vision: " + (selectedAIImageBase64 ? "Bəli" : "Xeyr") + ")...");
 
     for (const apiVer of apiVersions) {
         if (success) break;
@@ -4901,7 +4958,7 @@ window.generateAIQuestions = async function() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
+                        contents: contents
                     })
                 });
 
@@ -4989,6 +5046,7 @@ window.generateAIQuestions = async function() {
                 showNotification(`${questions.length} sual uğurla yaradıldı! Zəhmət olmasa sualları və düzgün cavabları yenidən yoxlayın.`, 'success');
                 updateQuestionCount();
                 success = true;
+                removeSelectedAIImage(); // Clear image after success
                 break; 
 
             } catch (error) {
