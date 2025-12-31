@@ -76,6 +76,40 @@ window.setAiKey = async function(key) {
     }
 };
 
+// Global Error Handling
+window.onerror = function(message, source, lineno, colno, error) {
+    console.error("Global JS Error:", message, "at", source, ":", lineno);
+    
+    // "596 - Reklam" xətası üçün xüsusi yoxlama
+    if (message && (message.includes('596') || message.toLowerCase().includes('reklam'))) {
+        console.warn("Xüsusi reklam və ya şəbəkə xətası aşkarlandı:", message);
+    }
+
+    // If we are in a loading state, maybe we should show an error to the user
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+        loadingScreen.innerHTML = `
+            <div style="color: white; text-align: center; padding: 20px; background: rgba(0,0,0,0.8); border-radius: 10px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #ff4757; margin-bottom: 20px;"></i>
+                <h2 style="margin-top: 15px;">Sistem yüklənə bilmədi</h2>
+                <p style="margin-top: 10px; opacity: 0.8;">Məlumat bazası ilə əlaqə kəsildi və ya şəbəkə xətası baş verdi.</p>
+                <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin: 15px 0; font-family: monospace; font-size: 12px; word-break: break-all; color: #ff9f43;">
+                    ${message}
+                </div>
+                <button onclick="location.reload()" class="btn-primary" style="margin-top: 10px; background: white; color: var(--primary-color); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                    Səhifəni yenilə
+                </button>
+            </div>
+        `;
+    }
+    return false;
+};
+
+// Catch unhandled promise rejections
+window.onunhandledrejection = function(event) {
+    console.error("Unhandled Promise Rejection:", event.reason);
+};
+
 // Initialize Firebase if config is valid
 let db;
 let auth;
@@ -349,8 +383,14 @@ function showNotification(message, type = 'info') {
 async function loadData() {
     if (db) {
         try {
-            // Load Categories (Public)
-            const catSnapshot = await db.collection('categories').get();
+            // Load Categories (Public) with Timeout
+            const catPromise = db.collection('categories').get();
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("Firestore bağlantısı çox gecikir (Timeout)")), 8000)
+            );
+            
+            const catSnapshot = await Promise.race([catPromise, timeoutPromise]);
+            
             categories = catSnapshot.docs.map(doc => {
                 const data = doc.data();
                 return { 
@@ -393,51 +433,114 @@ async function loadData() {
     // Seed Data if Empty (Bərpa edildi)
     let hasChanged = false;
     
-    // "Dövlət qulluğu" bərpası - SUPER SMART BƏRPA
-    let dq = categories.find(c => c.name.trim() === 'Dövlət qulluğu');
+    // --- "Dərslik" Kateqoriyasının Standartlaşdırılması ---
+    let derslikler = categories.filter(c => c.name.trim() === 'Dərslik');
+    let derslikRoot;
     
-    // BÜTÜN yetim kateqoriyaları analiz edirik (parentId-si olan amma özü olmayan)
-    const existingIds = new Set(categories.map(c => String(c.id)));
-    const orphans = categories.filter(c => c.parentId && !existingIds.has(String(c.parentId)));
-    
-    if (dq) {
-        // Əgər Dövlət qulluğu varsa amma alt bölmələr görünmürsə, ID-sini dəyişirik
-        if (orphans.length > 0) {
-            const realId = String(orphans[0].parentId);
-            if (dq.id !== realId) {
-                console.log("Dövlət qulluğu ID-si alt bölmələrə uyğunlaşdırılır:", dq.id, "->", realId);
-                // Köhnə ID-li sənədi silib yenisini yaradırıq
-                if (db) db.collection('categories').doc(String(dq.id)).delete();
-                dq.id = realId;
-                if (db) db.collection('categories').doc(realId).set(dq);
-                hasChanged = true;
+    if (derslikler.length > 1) {
+        derslikRoot = derslikler.find(c => c.id === 'derslik_new') || derslikler[0];
+        const keepId = derslikRoot.id;
+        const duplicateIds = derslikler.filter(c => c.id !== keepId).map(c => c.id);
+        categories = categories.filter(c => !duplicateIds.includes(c.id));
+        
+        categories.forEach(c => {
+            if (duplicateIds.includes(c.parentId)) {
+                c.parentId = keepId;
+                if (db) db.collection('categories').doc(String(c.id)).update({ parentId: keepId });
             }
+        });
+
+        if (db) {
+            duplicateIds.forEach(id => {
+                db.collection('categories').doc(String(id)).delete();
+            });
         }
     } else {
-        // Əgər ümumiyyətlə yoxdursa
-        if (orphans.length > 0) {
-            const realId = String(orphans[0].parentId);
-            dq = { id: realId, name: 'Dövlət qulluğu', time: 45, questions: [], parentId: null };
-            categories.push(dq);
-            if (db) db.collection('categories').doc(realId).set(dq);
-            hasChanged = true;
-            console.log("Yetim bölmələr əsasında 'Dövlət qulluğu' yaradıldı. ID:", realId);
-        } else {
-            dq = { id: '1', name: 'Dövlət qulluğu', time: 45, questions: [], parentId: null };
-            categories.push(dq);
-            if (db) db.collection('categories').doc('1').set(dq);
-            hasChanged = true;
+        derslikRoot = derslikler[0];
+    }
+
+    if (!derslikRoot) {
+        derslikRoot = { id: 'derslik_new', name: 'Dərslik', time: 45, questions: [], parentId: null };
+        categories.push(derslikRoot);
+        if (db) db.collection('categories').doc('derslik_new').set(derslikRoot);
+    } else if (derslikRoot.id !== 'derslik_new') {
+        const oldId = derslikRoot.id;
+        derslikRoot.id = 'derslik_new';
+        categories.forEach(c => {
+            if (c.parentId === oldId) {
+                c.parentId = 'derslik_new';
+                if (db) db.collection('categories').doc(String(c.id)).update({ parentId: 'derslik_new' });
+            }
+        });
+        if (db) {
+            db.collection('categories').doc('derslik_new').set(derslikRoot);
+            db.collection('categories').doc(String(oldId)).delete();
         }
     }
 
-    // "Dərslik" bərpası - MƏCBURİ BƏRPA
-    let derslik = categories.find(c => c.name.trim() === 'Dərslik');
-    if (!derslik) {
-        derslik = { id: 'derslik_default', name: 'Dərslik', time: 45, questions: [], parentId: null };
-        categories.push(derslik);
-        if (db) db.collection('categories').doc('derslik_default').set(derslik);
+    // --- Dublikat Kateqoriyaların (Ad və Parent eyni olanlar) Təmizlənməsi ---
+    // Bu hissə eyni adlı alt kateqoriyaları (məs: 2 ədəd "Azərbaycan tarixi") təmizləyir
+    const seenCategories = new Map();
+    const toDelete = [];
+
+    categories.forEach(cat => {
+        const key = `${cat.name.trim()}_${cat.parentId}`;
+        if (seenCategories.has(key)) {
+            const firstCat = seenCategories.get(key);
+            // Əgər birində suallar varsa, onları digərinə köçürək (opsional)
+            if (cat.questions && cat.questions.length > 0) {
+                firstCat.questions = [...(firstCat.questions || []), ...cat.questions];
+            }
+            toDelete.push(cat.id);
+        } else {
+            seenCategories.set(key, cat);
+        }
+    });
+
+    if (toDelete.length > 0) {
+        categories = categories.filter(c => !toDelete.includes(c.id));
+        if (db) {
+            toDelete.forEach(id => {
+                db.collection('categories').doc(String(id)).delete();
+            });
+        }
         hasChanged = true;
     }
+    
+    // --- "XI sinif Azərbaycan tarixi" suallarının təkmilləşdirilməsi ---
+    let history11 = categories.find(c => c.name.trim() === 'XI sinif' || c.id === 'history_11_new');
+    if (history11) {
+        // Əgər suallarda təkrar (№ işarəsi) varsa və ya boşdursa, yalnız 10 unikal sual qoyuruq.
+        // Süni artırma (500 sual və s.) tamamilə ləğv edildi.
+        if (history11.questions.length === 0 || history11.questions.some(q => q.text.includes('(№'))) {
+            const uniqueQuestions = [
+                { text: 'Azərbaycanın dövlət müstəqilliyini tanıyan ilk dövlət hansıdır?', options: ['Türkiyə', 'Pakistan', 'Rumıniya', 'İran'], correct: 0, exp: '9 noyabr 1991-ci ildə Türkiyə Azərbaycanın müstəqilliyini tanıyan ilk ölkə oldu.' },
+                { text: '1993-cü il 15 iyun Azərbaycan tarixinə hansı adla daxil olmuşdur?', options: ['Zəfər Günü', 'Milli Qurtuluş Günü', 'Dövlət Müstəqilliyi Günü', 'Respublika Günü'], correct: 1, exp: '15 iyun Heydər Əliyevin hakimiyyətə qayıdışı ilə Milli Qurtuluş Günü kimi qeyd edilir.' },
+                { text: 'Naxçıvan Muxtar Respublikasının statusu hansı beynəlxalq müqavilə ilə təsbit olunub?', options: ['Türkmənçay müqaviləsi', 'Gülüstan müqaviləsi', 'Qars müqaviləsi', 'Mudros müqaviləsi'], correct: 2, exp: '1921-ci il Qars müqaviləsi ilə Naxçıvanın statusu müəyyən edilmişdir.' },
+                { text: 'Bakı-Tbilisi-Ceyhan ana ixrac neft kəməri kimin adını daşıyır?', options: ['Zərifə Əliyeva', 'Heydər Əliyev', 'Əbülfəz Elçibəy', 'Nəriman Nərimanov'], correct: 1, exp: 'Kəmər Azərbaycanın ümummilli lideri Heydər Əliyevin adını daşıyır.' },
+                { text: 'Azərbaycan hansı beynəlxalq təşkilatın təsisçilərindən biridir?', options: ['BMT', 'GUAM', 'NATO', 'Avropa Birliyi'], correct: 1, exp: 'Azərbaycan 1997-ci ildə yaradılmış GUAM təşkilatının təsisçilərindən biridir.' },
+                { text: '1991-ci il 18 oktyabrda qəbul edilmiş sənəd necə adlanır?', options: ['İstiqlal Bəyannaməsi', 'Müstəqillik haqqında Konstitusiya Aktı', 'Respublika Günü haqqında fərman', 'Yeni Konstitusiya'], correct: 1, exp: 'Bu tarixdə "Azərbaycan Respublikasının Dövlət Müstəqilliyi haqqında Konstitusiya Aktı" qəbul edilib.' },
+                { text: 'Vətən müharibəsində Şuşanın azad edildiyi gün necə adlanır?', options: ['Qələbə Günü', 'Zəfər Günü', 'Dirçəliş Günü', 'Həmrəylik Günü'], correct: 1, exp: '8 noyabr Şuşanın azad edilməsi şərəfinə Zəfər Günü kimi qeyd olunur.' },
+                { text: 'Azərbaycanın ilk Milli Qəhrəmanlarından biri, tankçı qəhrəmanımız kimdir?', options: ['Albert Aqunov', 'Mübariz İbrahimov', 'Polad Həşimov', 'İlqar Mirzəyev'], correct: 0, exp: 'Albert Aqunov Qarabağ müharibəsində göstərdiyi şücaətə görə Milli Qəhrəman adına layiq görülmüşdür.' },
+                { text: '"Əsrin müqaviləsi" hansı şəhərdə imzalanmışdır?', options: ['Ankara', 'Bakı', 'London', 'Moskva'], correct: 1, exp: '20 sentyabr 1994-cü ildə Bakıda "Gülüstan" sarayında imzalanmışdır.' },
+                { text: 'Azərbaycan Respublikasının ilk Konstitusiyası nə vaxt qəbul olunub?', options: ['1991', '1992', '1995', '1993'], correct: 2, exp: 'Müstəqil Azərbaycanın ilk Konstitusiyası 12 noyabr 1995-ci ildə ümumxalq səsverməsi yolu ilə qəbul edilib.' }
+            ];
+
+            history11.questions = uniqueQuestions.map((q, i) => ({
+                id: `q_h11_final_${i+1}`,
+                text: q.text,
+                options: q.options,
+                correctIndex: q.correct,
+                explanation: q.exp
+            }));
+
+            if (db) db.collection('categories').doc(String(history11.id)).update({ questions: history11.questions });
+            hasChanged = true;
+        }
+    }
+    
+    // Avtomatik sub-kateqoriya yaradılması ləğv edildi.
+    hasChanged = true;
 
     if (hasChanged) {
         saveCategories();
@@ -499,18 +602,24 @@ async function loadData() {
 }
 
 // Save Helpers
-async function saveCategories() {
-    if (db) {
-        // For simplicity in this structure, we might overwrite specific docs or sync all
-        // To keep it simple for now, we will update the specific changed category in the calling function usually
-        // But here is a bulk sync for initial setup or fallback
-        // Better: Update individual docs in the logic functions.
-        // Let's implement a 'sync all' for now to match old logic style
+async function saveCategories(syncToDb = false) {
+    if (db && syncToDb) {
+        // Full sync is dangerous for performance, use sparingly
+        console.warn("Full categories sync started...");
         for (const cat of categories) {
              await db.collection('categories').doc(String(cat.id)).set(cat);
         }
     }
     localStorage.setItem('categories', JSON.stringify(categories));
+}
+
+// Yeni: Tək kateqoriyanı sinxron etmək üçün
+async function syncCategory(catId) {
+    if (!db) return;
+    const cat = categories.find(c => String(c.id) === String(catId));
+    if (cat) {
+        await db.collection('categories').doc(String(cat.id)).set(cat);
+    }
 }
 
 async function saveUsers() {
@@ -574,10 +683,25 @@ async function runDovletQulluguMigration() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadData();
-    await loadAiApiKey(); // AI açarını DB-dən çək
-    handleUrlParams();
+    console.log("Sistem başladılır...");
+    
+    // UI-nı dərhal göstər (Loading vəziyyətində)
     updateUI();
+    
+    try {
+        // Məlumatları paralel yükləməyə çalışaq
+        await Promise.all([
+            loadData(),
+            loadAiApiKey()
+        ]);
+        console.log("Məlumatlar yükləndi.");
+    } catch (e) {
+        console.error("Yükləmə xətası:", e);
+    }
+    
+    handleUrlParams();
+    updateUI(); // Məlumatlar gəldikdən sonra yenidən yenilə
+    console.log("Sistem hazırdır.");
 });
 
 async function migrateUserReferences(oldId, newId) {
@@ -2625,6 +2749,8 @@ function renderCategories() {
         if (cat.name.toLowerCase().includes('biologiya')) icon = 'fa-dna';
         if (cat.name.toLowerCase().includes('kimya')) icon = 'fa-flask';
         if (cat.name.toLowerCase().includes('dərslik')) icon = 'fa-graduation-cap';
+        if (cat.name.toLowerCase().includes('tarix')) icon = 'fa-monument';
+        if (cat.name.toLowerCase().includes('sinif')) icon = 'fa-school';
         if (cat.name.toLowerCase().includes('biologiya')) icon = 'fa-dna';
         if (cat.name.toLowerCase().includes('kimya')) icon = 'fa-flask';
         if (cat.name.toLowerCase().includes('dərslik')) icon = 'fa-graduation-cap';
