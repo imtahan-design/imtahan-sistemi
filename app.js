@@ -3520,15 +3520,18 @@ window.generateAdminAIQuestions = async function() {
     
     Mətn: ${context}`;
 
-    // 2025-ci il üçün təsdiqlənmiş dəqiq model adları
+    // 2025-ci il üçün təsdiqlənmiş ən son stabil və preview model adları
     const models = [
         "gemini-3-flash-preview",
         "gemini-3-pro-preview",
-        "gemini-2.5-flash",
         "gemini-2.5-pro",
-        "gemini-2.0-flash"
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite"
     ];
-    const apiVersions = ["v1beta"];
+    // Gemini modelləri üçün həm v1, həm də v1beta versiyalarını yoxlayırıq
+    const apiVersions = ["v1beta", "v1"];
     let lastError = "";
     let success = false;
 
@@ -3537,14 +3540,17 @@ window.generateAdminAIQuestions = async function() {
         for (const modelName of models) {
             try {
                 const url = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+                const generationConfig = {};
+                if (apiVer === "v1beta") {
+                    generationConfig.response_mime_type = "application/json";
+                }
+
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            response_mime_type: "application/json"
-                        }
+                        generationConfig: generationConfig
                     })
                 });
 
@@ -5021,16 +5027,18 @@ window.generateAIQuestions = async function() {
         });
     }
 
-    // 2025-ci il üçün təsdiqlənmiş dəqiq model adları
+    // 2025-ci il üçün təsdiqlənmiş ən son stabil və preview model adları
     const models = [
         "gemini-3-flash-preview",
         "gemini-3-pro-preview",
-        "gemini-2.5-flash",
         "gemini-2.5-pro",
-        "gemini-2.0-flash"
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite"
     ];
-    // Gemini 3 üçün v1beta versiyası tələb olunur
-    const apiVersions = ["v1beta"];
+    // Gemini modelləri üçün həm v1, həm də v1beta versiyalarını yoxlayırıq
+    const apiVersions = ["v1beta", "v1"];
     let lastError = "";
     let success = false;
 
@@ -5043,14 +5051,17 @@ window.generateAIQuestions = async function() {
                 const url = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
                 console.log(`Cəhd edilir: ${apiVer} / ${modelName}`);
                 
+                const generationConfig = {};
+                if (apiVer === "v1beta") {
+                    generationConfig.response_mime_type = "application/json";
+                }
+
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: contents,
-                        generationConfig: {
-                            response_mime_type: "application/json"
-                        }
+                        generationConfig: generationConfig
                     })
                 });
 
