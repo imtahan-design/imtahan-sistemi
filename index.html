@@ -459,12 +459,17 @@
                     <div class="profile-info-card card">
                         <i class="fas fa-user-circle" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
                         <h3 id="profile-full-name">Ad Soyad</h3>
-                        <p id="profile-username" style="color: var(--text-light); font-weight: 500;">@username</p>
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <p id="profile-username" style="color: var(--text-light); font-weight: 500; margin: 0;">@username</p>
+                            <button onclick="toggleUsernameBox()" class="btn-icon" title="Dəyişdir">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
                         <p id="profile-role" style="color: var(--text-light); margin-bottom: 1rem; font-size: 0.8rem;">Rolu</p>
                         
                         <div id="missing-username-box" class="hidden" style="margin-top: 15px; padding: 15px; background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px;">
                             <p style="font-size: 0.8rem; color: #92400e; margin-bottom: 10px;">
-                                <i class="fas fa-exclamation-triangle"></i> Giriş etmək üçün istifadəçi adı təyin etməlisiniz.
+                                <i class="fas fa-user-edit"></i> Hesabınız üçün istifadəçi adı təyin edin və ya dəyişin.
                             </p>
                             <input type="text" id="new-profile-username" placeholder="Yeni istifadəçi adı" style="margin-bottom: 10px;">
                             <button onclick="updateUserUsername()" class="btn-primary" style="width: 100%;">Təsdiqlə</button>

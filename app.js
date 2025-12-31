@@ -2180,9 +2180,9 @@ window.showProfile = function() {
     document.getElementById('profile-full-name').textContent = fullName;
     document.getElementById('profile-username').textContent = currentUser.username ? `@${currentUser.username}` : 'İstifadəçi adı yoxdur';
     
-    // Missing username check
+    // Missing username check - Auto show if missing
     const missingBox = document.getElementById('missing-username-box');
-    if (!currentUser.username) {
+    if (!currentUser.username || currentUser.username === '') {
         missingBox.classList.remove('hidden');
     } else {
         missingBox.classList.add('hidden');
@@ -2198,6 +2198,11 @@ window.showProfile = function() {
     renderHistory();
     loadUserQuestions();
     loadUserInbox();
+}
+
+window.toggleUsernameBox = function() {
+    const missingBox = document.getElementById('missing-username-box');
+    missingBox.classList.toggle('hidden');
 }
 
 window.updateUserUsername = async function() {
