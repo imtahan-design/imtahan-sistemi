@@ -10,16 +10,56 @@ const firebaseConfig = {
 };
 
 // Gemini API Key for AI question generation
-// Təhlükəsizlik üçün: API açarını birbaşa koda yazmayın!
-// Açarı daxil etmək üçün brauzer konsolunda: localStorage.setItem('GEMINI_API_KEY', 'SİZİN_AÇARINIZ') yazın.
-let GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
+// Təhlükəsizlik üçün: API açarını birbaşa koda yazmırıq, DB-dən çəkirik.
+let GEMINI_API_KEY = "";
 
-// API açarını proqramatik təyin etmək üçün funksiya (Ehtiyac olarsa)
-window.setAiKey = function(key) {
-    if (key) {
+// Firebase-dən API açarını yükləyən funksiya
+async function loadAiApiKey() {
+    try {
+        if (db) {
+            const doc = await db.collection('settings').doc('ai_config').get();
+            if (doc.exists) {
+                const data = doc.data();
+                if (data && data.apiKey) {
+                    GEMINI_API_KEY = data.apiKey;
+                    console.log("AI API açarı Firestore-dan yükləndi.");
+                } else {
+                    console.warn("Firestore-da açar tapılmadı, localStorage yoxlanılır.");
+                    GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
+                }
+            } else {
+                console.warn("Firestore-da ai_config sənədi yoxdur, localStorage yoxlanılır.");
+                GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
+            }
+        } else {
+            GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
+        }
+    } catch (e) {
+        console.error("API açarı yüklənərkən xəta:", e);
+        GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
+    }
+}
+
+// API açarını proqramatik təyin etmək və DB-yə yazmaq üçün funksiya (Yalnız Adminlər üçün)
+window.setAiKey = async function(key) {
+    if (!key) return;
+    
+    try {
+        if (db && currentUser && currentUser.role === 'admin') {
+            await db.collection('settings').doc('ai_config').set({ apiKey: key });
+            GEMINI_API_KEY = key;
+            alert("AI API açarı bazaya uğurla yazıldı! Artıq bütün müəllimlər istifadə edə bilər.");
+        } else {
+            // Admin deyilsə və ya DB yoxdursa, yalnız lokalda saxla
+            localStorage.setItem('GEMINI_API_KEY', key);
+            GEMINI_API_KEY = key;
+            alert("AI API açarı lokal olaraq yadda saxlanıldı.");
+        }
+    } catch (e) {
+        console.error("Xəta:", e);
         localStorage.setItem('GEMINI_API_KEY', key);
         GEMINI_API_KEY = key;
-        alert("AI API açarı uğurla yadda saxlanıldı!");
+        alert("Açar lokal yaddaşa yazıldı.");
     }
 };
 
@@ -397,6 +437,7 @@ async function saveUsers() {
 // Initialization
 document.addEventListener('DOMContentLoaded', async () => {
     await loadData();
+    await loadAiApiKey(); // AI açarını DB-dən çək
     handleUrlParams();
     updateUI();
 });
@@ -3323,6 +3364,9 @@ window.generateAdminAIQuestions = async function() {
     const btn = document.getElementById('btn-admin-generate-ai');
     const loading = document.getElementById('admin-ai-loading');
     
+    // DB-dən açarı yenidən yoxla (əgər hələ yüklənməyibsə)
+    if (!GEMINI_API_KEY) await loadAiApiKey();
+    
     if (!context) {
         return showNotification('Zəhmət olmasa mövzu mətni daxil edin.', 'error');
     }
@@ -3337,7 +3381,7 @@ window.generateAdminAIQuestions = async function() {
     if (!GEMINI_API_KEY) {
         loading.classList.add('hidden');
         btn.disabled = false;
-        return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib.', 'error');
+        return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib. Zəhmət olmasa adminlə əlaqə saxlayın.', 'error');
     }
 
     const prompt = `Sən bir peşəkar müəllimsən. Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. 
@@ -4659,6 +4703,9 @@ window.generateAIQuestions = async function() {
     const btn = document.getElementById('btn-generate-ai');
     const loading = document.getElementById('ai-loading');
     
+    // DB-dən açarı yenidən yoxla (əgər hələ yüklənməyibsə)
+    if (!GEMINI_API_KEY) await loadAiApiKey();
+    
     if (!context) {
         return showNotification('Zəhmət olmasa mövzu mətni daxil edin.', 'error');
     }
@@ -4673,7 +4720,7 @@ window.generateAIQuestions = async function() {
     if (!GEMINI_API_KEY) {
         loading.classList.add('hidden');
         btn.disabled = false;
-        return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib.', 'error');
+        return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib. Zəhmət olmasa adminlə əlaqə saxlayın.', 'error');
     }
 
     const prompt = `Sən bir peşəkar müəllimsən. Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. 
