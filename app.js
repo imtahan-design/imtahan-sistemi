@@ -495,13 +495,18 @@ function updateUI() {
         document.body.classList.add('role-' + currentUser.role);
         document.getElementById('guest-nav').classList.add('hidden');
         document.getElementById('user-nav').classList.remove('hidden');
-        document.getElementById('user-display').textContent = `Salam, ${currentUser.username}`;
+        
+        const displayName = (currentUser.name && currentUser.surname) 
+            ? `${currentUser.name} ${currentUser.surname}` 
+            : (currentUser.username || 'İstifadəçi');
+            
+        document.getElementById('user-display').textContent = `Salam, ${displayName}`;
         
         // Side menu updates
         document.getElementById('side-guest-nav').classList.add('hidden');
         document.getElementById('side-user-nav').classList.remove('hidden');
         document.getElementById('side-user-info').classList.remove('hidden');
-        document.getElementById('side-user-display').textContent = `Salam, ${currentUser.username}`;
+        document.getElementById('side-user-display').textContent = `Salam, ${displayName}`;
         
         const teacherBtn = document.getElementById('teacher-panel-btn');
         const sideTeacherBtn = document.getElementById('side-teacher-btn');
@@ -588,9 +593,23 @@ window.login = async function() {
 
     try {
         if (db && auth) {
-            // 1. Firestore-dan istifadəçi adını axtarırıq ki, emaili tapaq
-            const userQuery = await db.collection('users').where('username', '==', username).get();
+            // 1. Firestore-dan istifadəçi adını və ya emaili axtarırıq
+            let userQuery;
+            if (username.includes('@')) {
+                userQuery = await db.collection('users').where('email', '==', username).get();
+            } else {
+                userQuery = await db.collection('users').where('username', '==', username).get();
+            }
             
+            if (userQuery.empty) {
+                // Əgər tapılmadısa, bəlkə köhnə tələbədir (email-siz qeydiyyat)
+                // Onlar üçün email formatı: username@imtahan.site
+                if (!username.includes('@')) {
+                    const fallbackEmail = `${username}@imtahan.site`;
+                    userQuery = await db.collection('users').where('email', '==', fallbackEmail).get();
+                }
+            }
+
             if (userQuery.empty) {
                 throw new Error('İstifadəçi adı və ya şifrə yanlışdır!');
             }
@@ -739,12 +758,20 @@ async function sendVerificationEmail(email, code) {
 }
 
 window.register = async function() {
-    const username = document.getElementById('reg-username').value;
+    const name = document.getElementById('reg-name').value.trim();
+    const surname = document.getElementById('reg-surname').value.trim();
+    const username = document.getElementById('reg-username').value.trim().toLowerCase();
     const pass = document.getElementById('reg-password').value;
     const role = document.getElementById('reg-role').value;
     const email = document.getElementById('reg-email').value;
 
-    if (!username || !pass) return showNotification('Bütün sahələri doldurun!', 'error');
+    if (!name || !surname || !username || !pass) return showNotification('Bütün sahələri doldurun!', 'error');
+    
+    // Username validation: min 5 chars, no spaces
+    if (username.length < 5) return showNotification('İstifadəçi adı minimum 5 simvoldan ibarət olmalıdır!', 'error');
+    if (/\s/.test(username)) return showNotification('İstifadəçi adında boşluq ola bilməz!', 'error');
+    if (!/^[a-z0-9_.]+$/.test(username)) return showNotification('İstifadəçi adında yalnız hərf, rəqəm, nöqtə və alt xətt ola bilər!', 'error');
+
     if (pass.length < 8) return showNotification('Şifrə minimum 8 işarədən ibarət olmalıdır!', 'error');
     if (role === 'teacher' && (!email || !email.includes('@'))) return showNotification('Zəhmət olmasa düzgün email ünvanı daxil edin!', 'error');
 
@@ -765,7 +792,7 @@ window.register = async function() {
 
         if (role === 'teacher') {
             // Teacher verification flow
-            pendingUser = { username, password: pass, role: role, email: email };
+            pendingUser = { name, surname, username, password: pass, role: role, email: email };
             verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
             
             const success = await sendVerificationEmail(email, verificationCode);
@@ -786,6 +813,8 @@ window.register = async function() {
                 
                 const newUser = { 
                     id: uid, 
+                    name,
+                    surname,
                     username, 
                     role: role, 
                     email: studentEmail,
@@ -805,7 +834,7 @@ window.register = async function() {
                 showDashboard();
             } else {
                 // Offline fallback
-                const newUser = { id: String(Date.now()), username, password: pass, role: role };
+                const newUser = { id: String(Date.now()), name, surname, username, password: pass, role: role };
                 const localUsers = JSON.parse(localStorage.getItem('users')) || [];
                 localUsers.push(newUser);
                 localStorage.setItem('users', JSON.stringify(localUsers));
@@ -836,6 +865,8 @@ window.confirmVerification = async function() {
                 
                 const newUser = { 
                     id: uid,
+                    name: pendingUser.name,
+                    surname: pendingUser.surname,
                     username: pendingUser.username,
                     role: pendingUser.role,
                     email: pendingUser.email,
@@ -2142,8 +2173,21 @@ window.showProfile = function() {
     document.getElementById('profile-section').classList.remove('hidden');
     
     // Update profile info
-    document.getElementById('profile-username').textContent = currentUser.username;
+    const fullName = (currentUser.name && currentUser.surname) 
+        ? `${currentUser.name} ${currentUser.surname}` 
+        : (currentUser.username || 'İstifadəçi');
     
+    document.getElementById('profile-full-name').textContent = fullName;
+    document.getElementById('profile-username').textContent = currentUser.username ? `@${currentUser.username}` : 'İstifadəçi adı yoxdur';
+    
+    // Missing username check
+    const missingBox = document.getElementById('missing-username-box');
+    if (!currentUser.username) {
+        missingBox.classList.remove('hidden');
+    } else {
+        missingBox.classList.add('hidden');
+    }
+
     let roleText = 'İstifadəçi';
     if (currentUser.role === 'admin') roleText = 'Admin';
     else if (currentUser.role === 'teacher') roleText = 'Müəllim';
@@ -2154,6 +2198,40 @@ window.showProfile = function() {
     renderHistory();
     loadUserQuestions();
     loadUserInbox();
+}
+
+window.updateUserUsername = async function() {
+    const newUsername = document.getElementById('new-profile-username').value.trim().toLowerCase();
+    
+    if (!newUsername) return showNotification('İstifadəçi adını daxil edin!', 'error');
+    if (newUsername.length < 5) return showNotification('İstifadəçi adı minimum 5 simvoldan ibarət olmalıdır!', 'error');
+    if (/\s/.test(newUsername)) return showNotification('İstifadəçi adında boşluq ola bilməz!', 'error');
+    if (!/^[a-z0-9_.]+$/.test(newUsername)) return showNotification('İstifadəçi adında yalnız hərf, rəqəm, nöqtə və alt xətt ola bilər!', 'error');
+
+    try {
+        if (db) {
+            // Check if username taken
+            const userQuery = await db.collection('users').where('username', '==', newUsername).get();
+            if (!userQuery.empty) {
+                throw new Error('Bu istifadəçi adı artıq mövcuddur!');
+            }
+
+            // Update user
+            await db.collection('users').doc(currentUser.id).update({
+                username: newUsername
+            });
+
+            currentUser.username = newUsername;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            showNotification('İstifadəçi adı uğurla təyin edildi!', 'success');
+            showProfile(); // Refresh
+        } else {
+            throw new Error('Verilənlər bazası ilə əlaqə yoxdur.');
+        }
+    } catch (error) {
+        showNotification(error.message, 'error');
+    }
 }
 
 async function loadUserQuestions() {
@@ -2733,13 +2811,17 @@ window.submitPublicQuestion = async function() {
         return showNotification('Zəhmət olmasa bütün sahələri doldurun.', 'error');
     }
 
+    const authorName = (currentUser.name && currentUser.surname) 
+        ? `${currentUser.name} ${currentUser.surname}` 
+        : (currentUser.username || 'Anonim');
+
     const newQ = {
         categoryId: activeCategoryId,
         text: text,
         options: opts,
         correctIndex: correct,
         authorId: currentUser.id,
-        authorName: currentUser.username,
+        authorName: authorName,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -4571,26 +4653,55 @@ window.loadUserInbox = async function() {
     const list = document.getElementById('user-inbox-list');
     const countBadge = document.getElementById('user-inbox-count');
     
-    if (!currentUser) return;
+    if (!list) return;
+    if (!currentUser) {
+        list.innerHTML = '<div style="text-align:center; padding: 20px;">Giriş edilməyib.</div>';
+        return;
+    }
     
     list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Yüklənir...</div>';
     
     try {
         let reports = [];
         if (db) {
-            // orderBy composite index tələb edə bilər, ona görə in-memory sort edirik
             const snapshot = await db.collection('reports')
                 .where('userId', '==', currentUser.id)
                 .get();
-            reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-                .sort((a, b) => b.timestamp - a.timestamp);
+            
+            reports = snapshot.docs.map(doc => {
+                const data = doc.data();
+                // Firestore timestamp-i Date obyektinə çeviririk
+                let ts = data.timestamp;
+                if (ts && typeof ts.toDate === 'function') ts = ts.toDate().getTime();
+                else if (ts) ts = new Date(ts).getTime();
+                else ts = 0;
+
+                let rts = data.replyTimestamp;
+                if (rts && typeof rts.toDate === 'function') rts = rts.toDate().getTime();
+                else if (rts) rts = new Date(rts).getTime();
+                else rts = null;
+
+                return { 
+                    id: doc.id, 
+                    ...data, 
+                    timestamp: ts,
+                    replyTimestamp: rts
+                };
+            }).sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
         } else {
             reports = JSON.parse(localStorage.getItem('reports') || '[]')
                 .filter(r => r.userId == currentUser.id)
-                .sort((a, b) => b.timestamp - a.timestamp);
+                .map(r => ({
+                    ...r,
+                    timestamp: new Date(r.timestamp).getTime(),
+                    replyTimestamp: r.replyTimestamp ? new Date(r.replyTimestamp).getTime() : null
+                }))
+                .sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
         }
 
-        countBadge.textContent = `${reports.length} mesaj`;
+        if (countBadge) {
+            countBadge.textContent = `${reports.length} mesaj`;
+        }
 
         if (reports.length === 0) {
             list.innerHTML = '<div class="no-messages">Hələ heç bir şikayətiniz yoxdur.</div>';
@@ -4602,7 +4713,7 @@ window.loadUserInbox = async function() {
             const div = document.createElement('div');
             div.className = 'inbox-item';
             
-            const date = new Date(report.timestamp).toLocaleString('az-AZ');
+            const date = report.timestamp ? new Date(report.timestamp).toLocaleString('az-AZ') : 'Naməlum tarix';
             const replyDate = report.replyTimestamp ? new Date(report.replyTimestamp).toLocaleString('az-AZ') : '';
             
             div.innerHTML = `
@@ -4634,10 +4745,13 @@ window.loadUserInbox = async function() {
             list.appendChild(div);
         });
     } catch (e) {
-        console.error(e);
-        list.innerHTML = '<div style="text-align:center; padding: 20px; color: #ef4444;">Inboxu yükləmək mümkün olmadı.</div>';
+        console.error("Inbox loading error:", e);
+        list.innerHTML = `<div style="text-align:center; padding: 20px; color: #ef4444;">
+            Inboxu yükləmək mümkün olmadı.<br>
+            <small style="font-size: 0.7rem;">Xəta: ${e.message}</small>
+        </div>`;
     }
-}
+};
 
 
 window.deleteReport = async function(reportId) {

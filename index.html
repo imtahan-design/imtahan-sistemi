@@ -96,7 +96,14 @@
                 </div>
                 <div class="auth-box hidden" id="register-box">
                     <h2>Qeydiyyat</h2>
-                    <input type="text" id="reg-username" placeholder="İstifadəçi adı">
+                    <div class="reg-name-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" id="reg-name" placeholder="Adınız" style="margin-bottom: 0;">
+                        <input type="text" id="reg-surname" placeholder="Soyadınız" style="margin-bottom: 0;">
+                    </div>
+                    <input type="text" id="reg-username" placeholder="İstifadəçi adı (min. 5 simvol, bitişik)">
+                    <p id="username-hint" style="font-size: 0.7rem; color: #64748b; margin-top: -8px; margin-bottom: 10px; text-align: left; padding-left: 5px;">
+                        * Boşluq olmadan, yalnız hərf və rəqəm.
+                    </p>
                     <input type="password" id="reg-password" placeholder="Şifrə (min. 8 işarə)">
                     <div class="form-group" style="margin-top: 10px; text-align: left;">
                         <label style="font-size: 0.9rem; color: #666;">Hesab növü:</label>
@@ -451,8 +458,18 @@
                 <div class="profile-grid">
                     <div class="profile-info-card card">
                         <i class="fas fa-user-circle" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
-                        <h3 id="profile-username">İstifadəçi Adı</h3>
-                        <p id="profile-role" style="color: var(--text-light); margin-bottom: 1rem;">Rolu</p>
+                        <h3 id="profile-full-name">Ad Soyad</h3>
+                        <p id="profile-username" style="color: var(--text-light); font-weight: 500;">@username</p>
+                        <p id="profile-role" style="color: var(--text-light); margin-bottom: 1rem; font-size: 0.8rem;">Rolu</p>
+                        
+                        <div id="missing-username-box" class="hidden" style="margin-top: 15px; padding: 15px; background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px;">
+                            <p style="font-size: 0.8rem; color: #92400e; margin-bottom: 10px;">
+                                <i class="fas fa-exclamation-triangle"></i> Giriş etmək üçün istifadəçi adı təyin etməlisiniz.
+                            </p>
+                            <input type="text" id="new-profile-username" placeholder="Yeni istifadəçi adı" style="margin-bottom: 10px;">
+                            <button onclick="updateUserUsername()" class="btn-primary" style="width: 100%;">Təsdiqlə</button>
+                        </div>
+
                         <div class="profile-stats-mini">
                             <div class="stat-item">
                                 <span class="stat-label">Cəmi Test</span>
