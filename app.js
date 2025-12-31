@@ -2209,6 +2209,11 @@ window.updateUserUsername = async function() {
     const newUsername = document.getElementById('new-profile-username').value.trim().toLowerCase();
     
     if (!newUsername) return showNotification('İstifadəçi adını daxil edin!', 'error');
+    if (newUsername === currentUser.username) {
+        showNotification('Yeni istifadəçi adı köhnə ilə eynidir.', 'info');
+        document.getElementById('missing-username-box').classList.add('hidden');
+        return;
+    }
     if (newUsername.length < 5) return showNotification('İstifadəçi adı minimum 5 simvoldan ibarət olmalıdır!', 'error');
     if (/\s/.test(newUsername)) return showNotification('İstifadəçi adında boşluq ola bilməz!', 'error');
     if (!/^[a-z0-9_.]+$/.test(newUsername)) return showNotification('İstifadəçi adında yalnız hərf, rəqəm, nöqtə və alt xətt ola bilər!', 'error');
