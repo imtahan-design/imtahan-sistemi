@@ -3477,6 +3477,10 @@ window.generateAdminAIQuestions = async function() {
     if (!context) {
         return showNotification('Zəhmət olmasa mövzu mətni daxil edin.', 'error');
     }
+
+    if (count == 0) {
+        return showNotification('Sual sayı ən azı 5 seçilməlidir (Admin bölməsində yalnız mətndən sual yaradılır).', 'warning');
+    }
     
     if (context.length < 50) {
         return showNotification('Mətn çox qısadır. Daha keyfiyyətli suallar üçün daha çox məlumat daxil edin.', 'warning');
@@ -4938,8 +4942,12 @@ window.generateAIQuestions = async function() {
     if (!context && !selectedAIFileBase64) {
         return showNotification('Zəhmət olmasa mövzu mətni daxil edin və ya fayl yükləyin.', 'error');
     }
+
+    if (count == 0 && !selectedAIFileBase64) {
+        return showNotification('Sual sayı 0 seçildikdə mütləq PDF və ya şəkil yükləməlisiniz.', 'warning');
+    }
     
-    if (context && context.length < 50 && !selectedAIFileBase64) {
+    if (context && context.length < 50 && !selectedAIFileBase64 && count != 0) {
         return showNotification('Mətn çox qısadır. Daha keyfiyyətli suallar üçün daha çox məlumat daxil edin.', 'warning');
     }
 
@@ -4965,9 +4973,19 @@ window.generateAIQuestions = async function() {
 
     if (selectedAIFileBase64) {
         if (selectedFileType === 'application/pdf') {
-            prompt += `SƏNƏ TƏQDİM OLUNAN PDF FAYLINDAKI BÜTÜN SUALLARI VƏ MATERİALI OXU. İLK ÖNCƏ PDF-dəki BÜTÜN sualları (sayından asılı olmayaraq) eynilə rəqəmsal formata sal. SONRA İSƏ PDF-dəki mövzudan istifadə edərək ƏLAVƏ ${count} dənə yeni sual yaradaraq ümumi siyahıya əlavə et. ${difficultyText} `;
+            prompt += `SƏNƏ TƏQDİM OLUNAN PDF FAYLINDAKI BÜTÜN SUALLARI VƏ MATERİALI OXU. İLK ÖNCƏ PDF-dəki BÜTÜN sualları (sayından asılı olmayaraq) eynilə rəqəmsal formata sal. `;
+            if (count > 0) {
+                prompt += `SONRA İSƏ PDF-dəki mövzudan istifadə edərək ƏLAVƏ ${count} dənə yeni sual yaradaraq ümumi siyahıya əlavə et. ${difficultyText} `;
+            } else {
+                prompt += `Əlavə sual yaratma, yalnız mövcud olanları rəqəmsal formata sal. `;
+            }
         } else {
-            prompt += `SƏNƏ TƏQDİM OLUNAN ŞƏKİLDƏKİ BÜTÜN SUALLARI OXU. İLK ÖNCƏ şəkildəki BÜTÜN sualları (sayından asılı olmayaraq) eynilə rəqəmsal formata sal. SONRA İSƏ şəkildəki mətndən istifadə edərək ƏLAVƏ ${count} dənə yeni sual yaradaraq ümumi siyahıya əlavə et. ${difficultyText} `;
+            prompt += `SƏNƏ TƏQDİM OLUNAN ŞƏKİLDƏKİ BÜTÜN SUALLARI OXU. İLK ÖNCƏ şəkildəki BÜTÜN sualları (sayından asılı olmayaraq) eynilə rəqəmsal formata sal. `;
+            if (count > 0) {
+                prompt += `SONRA İSƏ şəkildəki mətndən istifadə edərək ƏLAVƏ ${count} dənə yeni sual yaradaraq ümumi siyahıya əlavə et. ${difficultyText} `;
+            } else {
+                prompt += `Əlavə sual yaratma, yalnız mövcud olanları rəqəmsal formata sal. `;
+            }
         }
     } else {
         prompt += `Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. ${difficultyText} `;
