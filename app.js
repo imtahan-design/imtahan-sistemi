@@ -45,21 +45,34 @@ window.setAiKey = async function(key) {
     if (!key) return;
     
     try {
-        if (db && currentUser && currentUser.role === 'admin') {
-            await db.collection('settings').doc('ai_config').set({ apiKey: key });
+        // Admin yoxlaması
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        
+        if (db && isAdmin) {
+            await db.collection('settings').doc('ai_config').set({ 
+                apiKey: key,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedBy: currentUser.email
+            });
             GEMINI_API_KEY = key;
-            alert("AI API açarı bazaya uğurla yazıldı! Artıq bütün müəllimlər istifadə edə bilər.");
+            localStorage.setItem('GEMINI_API_KEY', key);
+            alert("MÜKƏMMƏL! API açarı Firebase bazasına yazıldı. Artıq bütün müəllimlər və bütün cihazlar (mobil daxil olmaqla) bu açardan istifadə edə biləcək.");
         } else {
-            // Admin deyilsə və ya DB yoxdursa, yalnız lokalda saxla
+            // Admin deyilsə və ya DB yoxdursa
             localStorage.setItem('GEMINI_API_KEY', key);
             GEMINI_API_KEY = key;
-            alert("AI API açarı lokal olaraq yadda saxlanıldı.");
+            
+            if (!isAdmin) {
+                alert("DİQQƏT: Siz Admin olaraq giriş etmədiyiniz üçün açar BAZAYA YAZILMADI, yalnız bu brauzerdə yadda qaldı. Digər cihazlarda işləməsi üçün zəhmət olmasa Admin hesabı ilə giriş edib əmri yenidən yazın.");
+            } else {
+                alert("AI API açarı yalnız lokalda yadda saxlanıldı (Verilənlər bazası bağlantısı yoxdur).");
+            }
         }
     } catch (e) {
         console.error("Xəta:", e);
         localStorage.setItem('GEMINI_API_KEY', key);
         GEMINI_API_KEY = key;
-        alert("Açar lokal yaddaşa yazıldı.");
+        alert("Xəta baş verdi, lakin açar lokal yaddaşa yazıldı. Xəta: " + e.message);
     }
 };
 
