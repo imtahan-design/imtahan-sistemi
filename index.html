@@ -16,6 +16,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
 
     <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -611,6 +612,11 @@
         <!-- Admin Dashboard -->
         <section id="admin-dashboard-section" class="hidden">
             <div class="container">
+                <!-- Ziyarətçi Statistikası -->
+                <div id="visitor-stats-display" style="margin-bottom: 25px;">
+                    <!-- Stat card will be injected here -->
+                </div>
+
                 <div class="header-actions">
                     <h2 id="admin-dashboard-title">Admin Paneli - Kateqoriyalar</h2>
                     <div class="admin-top-actions">

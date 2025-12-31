@@ -79,18 +79,92 @@ window.setAiKey = async function(key) {
 // Initialize Firebase if config is valid
 let db;
 let auth;
+let analytics;
 try {
     if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         auth = firebase.auth();
+        // Initialize Analytics if possible
+        try {
+            if (typeof firebase.analytics === 'function') {
+                analytics = firebase.analytics();
+            }
+        } catch (e) {
+            console.log("Analytics not supported in this environment");
+        }
         console.log("Firebase initialized");
+        
+        // Track Visitor
+        trackVisitor();
     } else {
         console.log("Firebase config not set. Using LocalStorage fallback.");
     }
 } catch (e) {
     console.error("Firebase initialization error:", e);
 }
+
+// Ziyarətçi izləmə funksiyası
+async function trackVisitor() {
+    try {
+        if (!db) return;
+        
+        // Bir sessiya ərzində yalnız bir dəfə say
+        if (sessionStorage.getItem('visited_this_session')) return;
+        
+        const statsRef = db.collection('settings').doc('visitor_stats');
+        
+        await db.runTransaction(async (transaction) => {
+            const doc = await transaction.get(statsRef);
+            if (!doc.exists) {
+                transaction.set(statsRef, { 
+                    totalVisits: 1,
+                    uniqueVisitors: 1,
+                    lastVisit: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } else {
+                transaction.update(statsRef, {
+                    totalVisits: firebase.firestore.FieldValue.increment(1),
+                    lastVisit: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        });
+        
+        sessionStorage.setItem('visited_this_session', 'true');
+     } catch (e) {
+         console.error("Ziyarətçi izləmə xətası:", e);
+     }
+ }
+ 
+ // Ziyarətçi statistikasını yükləyən funksiya
+ async function loadVisitorStats() {
+     try {
+         if (!db) return;
+         
+         const doc = await db.collection('settings').doc('visitor_stats').get();
+         if (doc.exists) {
+             const data = doc.data();
+             const totalVisits = data.totalVisits || 0;
+             const lastVisit = data.lastVisit ? data.lastVisit.toDate().toLocaleString('az-AZ') : 'Məlumat yoxdur';
+             
+             const statsContainer = document.getElementById('visitor-stats-display');
+             if (statsContainer) {
+                 statsContainer.innerHTML = `
+                     <div class="stat-card visitor-stat">
+                         <div class="stat-icon"><i class="fas fa-eye"></i></div>
+                         <div class="stat-info">
+                             <span class="stat-label">Ümumi Ziyarət Sayı</span>
+                             <span class="stat-value">${totalVisits}</span>
+                             <span class="stat-sub">Son giriş: ${lastVisit}</span>
+                         </div>
+                     </div>
+                 `;
+             }
+         }
+     } catch (e) {
+         console.error("Statistika yükləmə xətası:", e);
+     }
+ }
 
 // Initialize EmailJS
 emailjs.init("gwXl5HH3P9Bja5iBN");
@@ -2217,6 +2291,7 @@ window.showAdminDashboard = function() {
     hideAllSections();
     document.getElementById('admin-dashboard-section').classList.remove('hidden');
     renderAdminCategories();
+    loadVisitorStats(); // Statistikanı yüklə
 }
 
 window.showProfile = function() {
