@@ -119,13 +119,13 @@
     margin-top: 15px;
 }
 
-.q-count-selector {
+.q-count-selector, .q-difficulty-selector {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.q-count-selector select {
+.q-count-selector select, .q-difficulty-selector select {
     padding: 8px 12px;
     border-radius: 6px;
     border: 1px solid #cbd5e1;
@@ -186,8 +186,14 @@
         align-items: stretch;
     }
     
+    .q-difficulty-selector {
+        margin-left: 0 !important;
+        margin-top: 10px;
+    }
+    
     .btn-ai-generate {
         justify-content: center;
+        margin-top: 10px;
     }
 }
 

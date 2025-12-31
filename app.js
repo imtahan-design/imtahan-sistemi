@@ -3466,6 +3466,7 @@ function renderQuestions() {
 window.generateAdminAIQuestions = async function() {
     const context = document.getElementById('admin-ai-context-text').value.trim();
     const count = document.getElementById('admin-ai-question-count').value;
+    const difficulty = document.getElementById('admin-ai-difficulty').value;
     const btn = document.getElementById('btn-admin-generate-ai');
     const loading = document.getElementById('admin-ai-loading');
     
@@ -3489,7 +3490,16 @@ window.generateAdminAIQuestions = async function() {
         return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib. Zəhmət olmasa adminlə əlaqə saxlayın.', 'error');
     }
 
-    const prompt = `Sən bir peşəkar müəllimsən. Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. 
+    let difficultyText = "";
+    if (difficulty === "easy") {
+        difficultyText = "Suallar asan səviyyədə, təməl bilikləri yoxlayan olsun. ";
+    } else if (difficulty === "hard") {
+        difficultyText = "Suallar çətin səviyyədə, dərin məntiq və analitik düşüncə tələb edən, detallara toxunan olsun. ";
+    } else {
+        difficultyText = "Suallar orta çətinlikdə olsun. ";
+    }
+
+    const prompt = `Sən bir peşəkar müəllimsən. Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. ${difficultyText}
     Cavablar yalnız Azərbaycan dilində olsun. 
     Hər sualın 4 variantı olsun. 
     Variantların daxilində "A)", "1)" kimi prefikslər yazma, yalnız variantın mətnini yaz.
@@ -4871,6 +4881,7 @@ window.removeSelectedAIImage = function() {
 window.generateAIQuestions = async function() {
     const context = document.getElementById('ai-context-text').value.trim();
     const count = document.getElementById('ai-question-count').value;
+    const difficulty = document.getElementById('ai-difficulty').value;
     const btn = document.getElementById('btn-generate-ai');
     const loading = document.getElementById('ai-loading');
     
@@ -4895,10 +4906,20 @@ window.generateAIQuestions = async function() {
     }
 
     let prompt = `Sən bir peşəkar müəllimsən. `;
-    if (selectedAIImageBase64) {
-        prompt += `Sənə təqdim olunan şəkildəki sualları oxu və onları rəqəmsal formata sal. Əgər şəkildə suallar azdırsa, mətndən istifadə edərək ümumi sayı ${count} çatdır. `;
+    
+    let difficultyText = "";
+    if (difficulty === "easy") {
+        difficultyText = "Suallar asan səviyyədə, təməl bilikləri yoxlayan olsun. ";
+    } else if (difficulty === "hard") {
+        difficultyText = "Suallar çətin səviyyədə, dərin məntiq və analitik düşüncə tələb edən, detallara toxunan olsun. ";
     } else {
-        prompt += `Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. `;
+        difficultyText = "Suallar orta çətinlikdə olsun. ";
+    }
+
+    if (selectedAIImageBase64) {
+        prompt += `Sənə təqdim olunan şəkildəki sualları oxu və onları rəqəmsal formata sal. ${difficultyText} Əgər şəkildə suallar azdırsa, mətndən istifadə edərək ümumi sayı ${count} çatdır. `;
+    } else {
+        prompt += `Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. ${difficultyText} `;
     }
 
     prompt += `
