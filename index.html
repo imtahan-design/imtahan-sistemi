@@ -224,6 +224,9 @@
                                 <button onclick="switchQuestionTab('bulk')" id="tab-bulk" class="tab-btn">
                                     <i class="fas fa-copy"></i> Toplu Əlavə Et
                                 </button>
+                                <button onclick="switchQuestionTab('ai')" id="tab-ai" class="tab-btn">
+                                    <i class="fas fa-robot"></i> AI ilə Hazırla
+                                </button>
                             </div>
                         </div>
 
@@ -259,6 +262,38 @@
                             <button onclick="parseBulkQuestions()" class="btn-success" style="width: 100%;">
                                 <i class="fas fa-magic"></i> Mətni Suallara Çevir
                             </button>
+                        </div>
+
+                        <!-- AI Generation -->
+                        <div id="method-ai" class="method-content hidden">
+                            <div class="ai-info">
+                                <p><i class="fas fa-robot"></i> <strong>Süni İntellekt</strong> vasitəsilə mətndən suallar hazırlayın.</p>
+                                <p class="ai-warning-yellow">
+                                    <i class="fas fa-exclamation-triangle"></i> <strong>DİQQƏT:</strong> Suallar yaradıldıqdan sonra sual mətnlərini, variantları və düzgün cavabın düzgün seçildiyini mütləq yenidən yoxlayın!
+                                </p>
+                                <div class="ai-input-group">
+                                    <label>Mövzu mətni və ya material:</label>
+                                    <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni buraya daxil edin (məsələn: bir dərslik mətni, məqalə və s.)..."></textarea>
+                                </div>
+                                <div class="ai-controls">
+                                    <div class="q-count-selector">
+                                        <label>Sual sayı:</label>
+                                        <select id="ai-question-count">
+                                            <option value="5">5 sual</option>
+                                            <option value="10" selected>10 sual</option>
+                                            <option value="15">15 sual</option>
+                                            <option value="20">20 sual</option>
+                                        </select>
+                                    </div>
+                                    <button onclick="generateAIQuestions()" id="btn-generate-ai" class="btn-ai-generate">
+                                        <i class="fas fa-magic"></i> Sualları Hazırla
+                                    </button>
+                                </div>
+                                <div id="ai-loading" class="ai-loading hidden">
+                                    <div class="spinner"></div>
+                                    <p>Süni İntellekt sualları hazırlayır, zəhmət olmasa gözləyin...</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

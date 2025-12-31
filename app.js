@@ -9,6 +9,9 @@ const firebaseConfig = {
     appId: "1:715396853166:web:9829b853e5e572de4d2c3f"
 };
 
+// Gemini API Key for AI question generation
+const GEMINI_API_KEY = "AIzaSyBHV9MN1ueMdANGo0lmHRFFuq1tQdLil-Q";
+
 // Initialize Firebase if config is valid
 let db;
 let auth;
@@ -992,6 +995,8 @@ window.showCreatePrivateQuiz = function() {
     document.getElementById('private-quiz-default-time').value = '45';
     document.getElementById('manual-questions-list').innerHTML = '';
     document.getElementById('bulk-questions-text').value = '';
+    const aiContextText = document.getElementById('ai-context-text');
+    if (aiContextText) aiContextText.value = '';
     document.getElementById('ready-question-count').textContent = '0';
     addManualQuestionForm(); // Add first empty question
 }
@@ -4502,3 +4507,176 @@ window.onclick = function(event) {
         event.target.classList.add('hidden');
     }
 }
+
+// AI Question Generation
+window.generateAIQuestions = async function() {
+    const context = document.getElementById('ai-context-text').value.trim();
+    const count = document.getElementById('ai-question-count').value;
+    const btn = document.getElementById('btn-generate-ai');
+    const loading = document.getElementById('ai-loading');
+    
+    if (!context) {
+        return showNotification('Zəhmət olmasa mövzu mətni daxil edin.', 'error');
+    }
+    
+    if (context.length < 50) {
+        return showNotification('Mətn çox qısadır. Daha keyfiyyətli suallar üçün daha çox məlumat daxil edin.', 'warning');
+    }
+
+    btn.disabled = true;
+    loading.classList.remove('hidden');
+    
+    if (!GEMINI_API_KEY) {
+        loading.classList.add('hidden');
+        btn.disabled = false;
+        return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib.', 'error');
+    }
+
+    const prompt = `Sən bir peşəkar müəllimsən. Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. 
+    Cavablar yalnız Azərbaycan dilində olsun. 
+    Hər sualın 4 variantı olsun. 
+    Variantların daxilində "A)", "1)" kimi prefikslər yazma, yalnız variantın mətnini yaz.
+    Nəticəni yalnız aşağıdakı JSON formatında qaytar (heç bir əlavə mətn yazma, yalnız JSON):
+    [
+      {
+        "text": "Sual mətni",
+        "options": ["Variant 1", "Variant 2", "Variant 3", "Variant 4"],
+        "correct": 0 
+      }
+    ]
+    "correct" sahəsi düzgün variantın indeksidir (0-dan başlayaraq).
+    
+    Mətn: ${context}`;
+
+    // Modellərin siyahısı - Sizin ekranınızda görünən Gemini 3 versiyalarını ilk sıraya qoyuruq
+    const models = [
+        "gemini-3-flash-preview",
+        "gemini-3-pro-preview",
+        "gemini-2.0-flash-exp", 
+        "gemini-1.5-flash", 
+        "gemini-1.5-pro"
+    ];
+    const apiVersions = ["v1beta", "v1"];
+    let lastError = "";
+    let success = false;
+
+    console.log("AI Sual yaradılması başladıldı...");
+
+    for (const apiVer of apiVersions) {
+        if (success) break;
+        for (const modelName of models) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+                console.log(`Cəhd edilir: ${apiVer} / ${modelName}`);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    lastError = data.error.message;
+                    console.warn(`Xəta (${apiVer}/${modelName}):`, lastError);
+                    
+                    // Əgər xəta API key ilə bağlıdırsa, digər modelləri yoxlamağa ehtiyac yoxdur
+                    if (data.error.status === "PERMISSION_DENIED" || data.error.status === "UNAUTHENTICATED") {
+                        showNotification('API açarı yanlışdır və ya icazəsi yoxdur.', 'error');
+                        loading.classList.add('hidden');
+                        btn.disabled = false;
+                        return;
+                    }
+                    continue;
+                }
+
+                if (!data.candidates || !data.candidates[0].content || !data.candidates[0].content.parts) {
+                    lastError = "AI cavabı boşdur";
+                    continue;
+                }
+
+                let aiResponse = data.candidates[0].content.parts[0].text;
+                console.log("AI cavabı alındı, emal edilir...");
+
+                const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
+                if (!jsonMatch) {
+                    lastError = "Format xətası (JSON tapılmadı)";
+                    continue;
+                }
+                
+                const questions = JSON.parse(jsonMatch[0]);
+                if (!Array.isArray(questions) || questions.length === 0) {
+                    lastError = "Suallar boşdur";
+                    continue;
+                }
+
+                const list = document.getElementById('manual-questions-list');
+                
+                // İlk boş sualı təmizlə
+                const firstQuestion = list.querySelector('.manual-question-item');
+                if (list.children.length === 1 && firstQuestion) {
+                    const textarea = firstQuestion.querySelector('textarea');
+                    if (textarea && !textarea.value.trim()) {
+                        list.innerHTML = '';
+                    }
+                }
+                
+                questions.forEach((q) => {
+                    addManualQuestionForm();
+                    const items = list.querySelectorAll('.manual-question-item');
+                    const lastItem = items[items.length - 1];
+                    
+                    if (lastItem) {
+                        const textarea = lastItem.querySelector('textarea');
+                        if (textarea) textarea.value = q.text || "";
+                        
+                        let inputs = lastItem.querySelectorAll('.manual-opt');
+                        if (q.options && Array.isArray(q.options)) {
+                            // Variantlar sayını AI-dan gələn saya uyğunlaşdır
+                            const firstRadio = lastItem.querySelector('input[type="radio"]');
+                            if (firstRadio) {
+                                const uniqueId = firstRadio.name.split('_')[1];
+                                while (inputs.length < q.options.length && inputs.length < 10) {
+                                    addManualOption(uniqueId);
+                                    inputs = lastItem.querySelectorAll('.manual-opt');
+                                }
+                            }
+                            
+                            q.options.forEach((opt, i) => {
+                                if (inputs[i]) inputs[i].value = opt;
+                            });
+                        }
+                        
+                        const radios = lastItem.querySelectorAll('input[type="radio"]');
+                        if (radios && radios[q.correct] !== undefined) {
+                            radios[q.correct].checked = true;
+                        }
+                    }
+                });
+                
+                switchQuestionTab('manual');
+                showNotification(`${questions.length} sual uğurla yaradıldı! Zəhmət olmasa sualları və düzgün cavabları yenidən yoxlayın.`, 'success');
+                updateQuestionCount();
+                success = true;
+                break; 
+
+            } catch (error) {
+                lastError = error.message;
+                console.error(`Model istisna xətası (${modelName}):`, error);
+            }
+        }
+    }
+
+    if (!success) {
+        console.error("Bütün modellər uğursuz oldu. Son xəta:", lastError);
+        showNotification('Suallar yaradılarkən xəta baş verdi. Zəhmət olmasa API açarınızı və internet bağlantınızı yoxlayın.', 'error');
+        // Detallı xətanı konsolda göstəririk, istifadəçiyə daha sadə mesaj veririk
+        alert("Xəta təfərrüatı: " + lastError);
+    }
+
+    loading.classList.add('hidden');
+    btn.disabled = false;
+};
