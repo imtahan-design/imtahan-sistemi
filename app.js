@@ -1205,8 +1205,9 @@ window.addManualQuestionForm = function() {
     const list = document.getElementById('manual-questions-list');
     const uniqueId = Date.now() + '_' + Math.floor(Math.random() * 1000);
     
-    const timeType = document.getElementById('private-quiz-time-type').value;
-    const timeInputDisplay = timeType === 'total' ? 'display:none;' : '';
+    const timeTypeEl = document.getElementById('private-quiz-time-type');
+    const timeType = timeTypeEl ? timeTypeEl.value : 'none';
+    const timeInputDisplay = (timeType === 'total' || timeType === 'none') ? 'display:none;' : '';
 
     const div = document.createElement('div');
     div.className = 'manual-question-item';
@@ -3515,8 +3516,15 @@ window.generateAdminAIQuestions = async function() {
     
     Mətn: ${context}`;
 
-    const models = ["gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash-exp"];
-    const apiVersions = ["v1beta", "v1"];
+    // 2025-ci il üçün təsdiqlənmiş dəqiq model adları
+    const models = [
+        "gemini-3-flash-preview",
+        "gemini-3-pro-preview",
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-2.0-flash"
+    ];
+    const apiVersions = ["v1beta"];
     let lastError = "";
     let success = false;
 
@@ -3528,17 +3536,24 @@ window.generateAdminAIQuestions = async function() {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            response_mime_type: "application/json"
+                        }
+                    })
                 });
 
                 const data = await response.json();
                 if (data.error) {
                     lastError = data.error.message;
+                    console.warn(`API Xətası (${modelName}, ${apiVer}):`, lastError);
                     continue;
                 }
 
                 if (!data.candidates || !data.candidates[0].content || !data.candidates[0].content.parts) {
                     lastError = "AI cavabı boşdur";
+                    console.warn(`Boş cavab (${modelName}, ${apiVer})`);
                     continue;
                 }
 
@@ -3546,6 +3561,7 @@ window.generateAdminAIQuestions = async function() {
                 const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
                 if (!jsonMatch) {
                     lastError = "Format xətası (JSON tapılmadı)";
+                    console.warn(`JSON Tapılmadı (${modelName}, ${apiVer})`);
                     continue;
                 }
                 
@@ -3603,8 +3619,17 @@ window.generateAdminAIQuestions = async function() {
     }
 
     if (!success) {
-        alert("Xəta: " + lastError);
+        console.error("AI Generation failed:", lastError);
+        let msg = 'Suallar yaradılarkən xəta baş verdi.';
+        if (lastError.includes('quota') || lastError.includes('429') || lastError.includes('limit')) {
+            msg = 'API limiti (kvota) bitib və ya bu model üçün icazəniz yoxdur. Zəhmət olmasa bir az gözləyin və ya AI Studio-dan limitləri yoxlayın.';
+        } else if (lastError.includes('Safety')) {
+            msg = 'Məzmun təhlükəsizlik filtri tərəfindən bloklandı.';
+        }
+        showNotification(msg, 'error');
+        alert("Xəta təfərrüatı: " + lastError);
     }
+    
     loading.classList.add('hidden');
     btn.disabled = false;
 };
@@ -4844,38 +4869,60 @@ window.onclick = function(event) {
 }
 
 // AI Question Generation
-let selectedAIImageBase64 = null;
+let selectedAIFileBase64 = null;
+let selectedFileType = null;
 
 window.handleAIImageSelect = function(input) {
     const file = input.files[0];
     if (!file) return;
     
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        showNotification('Şəkil ölçüsü 5MB-dan çox ola bilməz!', 'error');
+    const isPDF = file.type === 'application/pdf';
+    const isImage = file.type.startsWith('image/');
+
+    if (!isPDF && !isImage) {
+        showNotification('Yalnız şəkil və ya PDF faylı yükləyə bilərsiniz!', 'error');
+        input.value = '';
+        return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) { // 15MB limit for PDF
+        showNotification('Fayl ölçüsü 15MB-dan çox ola bilməz!', 'error');
         input.value = '';
         return;
     }
 
     const reader = new FileReader();
     reader.onload = function(e) {
-        selectedAIImageBase64 = e.target.result.split(',')[1]; // Get only base64 data
+        selectedAIFileBase64 = e.target.result.split(',')[1]; // Get only base64 data
+        selectedFileType = file.type;
         document.getElementById('selected-image-name').textContent = `Seçildi: ${file.name}`;
         document.getElementById('selected-image-name').classList.remove('hidden');
         document.getElementById('btn-remove-ai-image').classList.remove('hidden');
         document.querySelector('.upload-placeholder p').classList.add('hidden');
-        document.querySelector('.upload-placeholder i').style.color = 'var(--success-color)';
+        
+        const icons = document.querySelectorAll('.upload-placeholder i');
+        icons.forEach(icon => icon.style.color = 'var(--success-color)');
     };
     reader.readAsDataURL(file);
 }
 
 window.removeSelectedAIImage = function() {
-    selectedAIImageBase64 = null;
+    selectedAIFileBase64 = null;
+    selectedFileType = null;
     document.getElementById('ai-question-image').value = '';
     document.getElementById('selected-image-name').textContent = '';
     document.getElementById('selected-image-name').classList.add('hidden');
     document.getElementById('btn-remove-ai-image').classList.add('hidden');
     document.querySelector('.upload-placeholder p').classList.remove('hidden');
-    document.querySelector('.upload-placeholder i').style.color = 'var(--primary-color)';
+    
+    const icons = document.querySelectorAll('.upload-placeholder i');
+    icons.forEach(icon => {
+        if (icon.classList.contains('fa-file-pdf')) {
+            icon.style.color = '#ff4757';
+        } else {
+            icon.style.color = 'var(--primary-color)';
+        }
+    });
 }
 
 window.generateAIQuestions = async function() {
@@ -4888,11 +4935,11 @@ window.generateAIQuestions = async function() {
     // DB-dən açarı yenidən yoxla (əgər hələ yüklənməyibsə)
     if (!GEMINI_API_KEY) await loadAiApiKey();
     
-    if (!context && !selectedAIImageBase64) {
-        return showNotification('Zəhmət olmasa mövzu mətni daxil edin və ya şəkil yükləyin.', 'error');
+    if (!context && !selectedAIFileBase64) {
+        return showNotification('Zəhmət olmasa mövzu mətni daxil edin və ya fayl yükləyin.', 'error');
     }
     
-    if (context && context.length < 50 && !selectedAIImageBase64) {
+    if (context && context.length < 50 && !selectedAIFileBase64) {
         return showNotification('Mətn çox qısadır. Daha keyfiyyətli suallar üçün daha çox məlumat daxil edin.', 'warning');
     }
 
@@ -4916,8 +4963,12 @@ window.generateAIQuestions = async function() {
         difficultyText = "Suallar orta çətinlikdə olsun. ";
     }
 
-    if (selectedAIImageBase64) {
-        prompt += `Sənə təqdim olunan şəkildəki sualları oxu və onları rəqəmsal formata sal. ${difficultyText} Əgər şəkildə suallar azdırsa, mətndən istifadə edərək ümumi sayı ${count} çatdır. `;
+    if (selectedAIFileBase64) {
+        if (selectedFileType === 'application/pdf') {
+            prompt += `SƏNƏ TƏQDİM OLUNAN PDF FAYLINDAKI BÜTÜN SUALLARI VƏ MATERİALI OXU. İLK ÖNCƏ PDF-dəki BÜTÜN sualları (sayından asılı olmayaraq) eynilə rəqəmsal formata sal. SONRA İSƏ PDF-dəki mövzudan istifadə edərək ƏLAVƏ ${count} dənə yeni sual yaradaraq ümumi siyahıya əlavə et. ${difficultyText} `;
+        } else {
+            prompt += `SƏNƏ TƏQDİM OLUNAN ŞƏKİLDƏKİ BÜTÜN SUALLARI OXU. İLK ÖNCƏ şəkildəki BÜTÜN sualları (sayından asılı olmayaraq) eynilə rəqəmsal formata sal. SONRA İSƏ şəkildəki mətndən istifadə edərək ƏLAVƏ ${count} dənə yeni sual yaradaraq ümumi siyahıya əlavə et. ${difficultyText} `;
+        }
     } else {
         prompt += `Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. ${difficultyText} `;
     }
@@ -4943,30 +4994,29 @@ window.generateAIQuestions = async function() {
         parts: [{ text: prompt }]
     }];
 
-    if (selectedAIImageBase64) {
+    if (selectedAIFileBase64) {
         contents[0].parts.push({
             inline_data: {
-                mime_type: "image/jpeg",
-                data: selectedAIImageBase64
+                mime_type: selectedFileType,
+                data: selectedAIFileBase64
             }
         });
     }
 
-    // Modellərin siyahısı - Vision dəstəyi olan və v1beta ilə işləyən modellər
+    // 2025-ci il üçün təsdiqlənmiş dəqiq model adları
     const models = [
         "gemini-3-flash-preview",
         "gemini-3-pro-preview",
-        "gemini-2.0-flash",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro",
-        "gemini-2.0-flash-exp"
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-2.0-flash"
     ];
-    // Gemini 2.0 və bəzi yeni modellər v1beta versiyasında daha stabil işləyir
-    const apiVersions = ["v1beta", "v1"];
+    // Gemini 3 üçün v1beta versiyası tələb olunur
+    const apiVersions = ["v1beta"];
     let lastError = "";
     let success = false;
 
-    console.log("AI Sual yaradılması başladıldı (Vision: " + (selectedAIImageBase64 ? "Bəli" : "Xeyr") + ")...");
+    console.log("AI Sual yaradılması başladıldı (Fayl: " + (selectedAIFileBase64 ? selectedFileType : "Xeyr") + ")...");
 
     for (const apiVer of apiVersions) {
         if (success) break;
@@ -4979,7 +5029,10 @@ window.generateAIQuestions = async function() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: contents
+                        contents: contents,
+                        generationConfig: {
+                            response_mime_type: "application/json"
+                        }
                     })
                 });
 
@@ -4989,7 +5042,6 @@ window.generateAIQuestions = async function() {
                     lastError = data.error.message;
                     console.warn(`Xəta (${apiVer}/${modelName}):`, lastError);
                     
-                    // Əgər xəta API key ilə bağlıdırsa, digər modelləri yoxlamağa ehtiyac yoxdur
                     if (data.error.status === "PERMISSION_DENIED" || data.error.status === "UNAUTHENTICATED") {
                         showNotification('API açarı yanlışdır və ya icazəsi yoxdur.', 'error');
                         loading.classList.add('hidden');
@@ -5001,15 +5053,17 @@ window.generateAIQuestions = async function() {
 
                 if (!data.candidates || !data.candidates[0].content || !data.candidates[0].content.parts) {
                     lastError = "AI cavabı boşdur";
+                    console.warn(`Boş cavab (${apiVer}/${modelName})`);
                     continue;
                 }
 
                 let aiResponse = data.candidates[0].content.parts[0].text;
-                console.log("AI cavabı alındı, emal edilir...");
+                console.log(`AI cavabı alındı (${apiVer}/${modelName}), emal edilir...`);
 
                 const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
                 if (!jsonMatch) {
                     lastError = "Format xətası (JSON tapılmadı)";
+                    console.warn(`JSON Tapılmadı (${apiVer}/${modelName})`);
                     continue;
                 }
                 
@@ -5041,7 +5095,6 @@ window.generateAIQuestions = async function() {
                         
                         let inputs = lastItem.querySelectorAll('.manual-opt');
                         if (q.options && Array.isArray(q.options)) {
-                            // Variantlar sayını AI-dan gələn saya uyğunlaşdır
                             const firstRadio = lastItem.querySelector('input[type="radio"]');
                             if (firstRadio) {
                                 const uniqueId = firstRadio.name.split('_')[1];
@@ -5063,11 +5116,10 @@ window.generateAIQuestions = async function() {
                     }
                 });
                 
-                switchQuestionTab('manual');
-                showNotification(`${questions.length} sual uğurla yaradıldı! Zəhmət olmasa sualları və düzgün cavabları yenidən yoxlayın.`, 'success');
-                updateQuestionCount();
                 success = true;
-                removeSelectedAIImage(); // Clear image after success
+                showNotification(`${questions.length} sual uğurla yaradıldı!`, 'success');
+                updateReadyCount();
+                removeSelectedAIImage(); // Clear after success
                 break; 
 
             } catch (error) {
@@ -5077,13 +5129,18 @@ window.generateAIQuestions = async function() {
         }
     }
 
-    if (!success) {
-        console.error("Bütün modellər uğursuz oldu. Son xəta:", lastError);
-        showNotification('Suallar yaradılarkən xəta baş verdi. Zəhmət olmasa API açarınızı və internet bağlantınızı yoxlayın.', 'error');
-        // Detallı xətanı konsolda göstəririk, istifadəçiyə daha sadə mesaj veririk
-        alert("Xəta təfərrüatı: " + lastError);
-    }
-
     loading.classList.add('hidden');
     btn.disabled = false;
+
+    if (!success) {
+        console.error("AI Generation failed:", lastError);
+        let msg = 'Suallar yaradılarkən xəta baş verdi.';
+        if (lastError.includes('quota') || lastError.includes('429') || lastError.includes('limit')) {
+            msg = 'API limiti (kvota) bitib və ya bu model üçün icazəniz yoxdur. Zəhmət olmasa bir az gözləyin və ya AI Studio-dan limitləri yoxlayın.';
+        } else if (lastError.includes('Safety')) {
+            msg = 'Məzmun təhlükəsizlik filtri tərəfindən bloklandı.';
+        }
+        showNotification(msg, 'error');
+        alert("Xəta təfərrüatı: " + lastError);
+    }
 };

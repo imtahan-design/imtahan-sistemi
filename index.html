@@ -279,15 +279,16 @@
                                     <i class="fas fa-exclamation-triangle"></i> <strong>DİQQƏT:</strong> Suallar yaradıldıqdan sonra sual mətnlərini, variantları və düzgün cavabın düzgün seçildiyini mütləq yenidən yoxlayın!
                                 </p>
                                 <div class="ai-input-group">
-                                    <label>Mövzu mətni, material və ya sualların şəkli:</label>
-                                    <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni daxil edin və ya aşağıdan sualların şəklini yükləyin..."></textarea>
+                                    <label>Mövzu mətni, material, sualların şəkli və ya PDF faylı:</label>
+                                    <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni daxil edin və ya aşağıdan sualların şəklini/PDF faylını yükləyin..."></textarea>
                                 </div>
                                 <div class="ai-input-group">
                                     <div class="image-upload-area" id="ai-image-drop-area">
-                                        <input type="file" id="ai-question-image" accept="image/*" class="hidden" onchange="handleAIImageSelect(this)">
+                                        <input type="file" id="ai-question-image" accept="image/*,.pdf" class="hidden" onchange="handleAIImageSelect(this)">
                                         <div class="upload-placeholder" onclick="document.getElementById('ai-question-image').click()">
+                                            <i class="fas fa-file-pdf" style="color: #ff4757; margin-right: 10px;"></i>
                                             <i class="fas fa-file-image"></i>
-                                            <p>Sualların şəklini yükləyin (PDF-dən skrinşot və ya foto)</p>
+                                            <p>Sualların şəklini və ya PDF faylını yükləyin</p>
                                             <span id="selected-image-name" class="hidden"></span>
                                         </div>
                                         <button id="btn-remove-ai-image" class="btn-icon hidden" onclick="removeSelectedAIImage()" title="Şəkli sil">
@@ -1201,6 +1202,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=4.7" defer></script>
+    <script src="app.js?v=4.8" defer></script>
 </body>
 </html>
