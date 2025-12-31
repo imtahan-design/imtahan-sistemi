@@ -292,6 +292,10 @@ async function loadData() {
             privateQuizzes = [];
 
             console.log("Categories loaded from Firebase");
+            
+            // Dövlət qulluğu miqrasiyası (3 təsadüfi sual əlavə et)
+             setTimeout(() => runDovletQulluguMigration(), 2000); 
+
         } catch (error) {
             console.error("Error loading from Firebase:", error);
             // Fallback to local if error (e.g. offline)
@@ -448,6 +452,53 @@ async function saveUsers() {
 
 
 // Initialization
+async function runDovletQulluguMigration() {
+    if (localStorage.getItem('dovlet_qullugu_migration_v3')) return;
+
+    const parentCat = categories.find(c => c.name.trim() === 'Dövlət qulluğu');
+    if (!parentCat) return;
+
+    const subCats = categories.filter(c => c.parentId === parentCat.id);
+    const targetCat = subCats.find(c => c.name.trim() === 'Qarışıq testlər (qanunvericilik)');
+    
+    if (!targetCat) return;
+
+    const sourceCats = subCats.filter(c => c.name.trim() !== 'Qarışıq testlər (qanunvericilik)');
+    
+    let allSourceQuestions = [];
+    sourceCats.forEach(cat => {
+        if (cat.questions && Array.isArray(cat.questions)) {
+            allSourceQuestions = allSourceQuestions.concat(cat.questions);
+        }
+    });
+
+    if (allSourceQuestions.length === 0) return;
+
+    // Shuffle
+    const shuffled = allSourceQuestions.sort(() => 0.5 - Math.random());
+    
+    // Pick 3 unique
+    const existingQuestionTexts = new Set(targetCat.questions.map(q => q.text));
+    const newQuestions = [];
+    
+    for (const q of shuffled) {
+        if (!existingQuestionTexts.has(q.text)) {
+            newQuestions.push(q);
+            if (newQuestions.length === 3) break;
+        }
+    }
+
+    if (newQuestions.length > 0) {
+        targetCat.questions = targetCat.questions.concat(newQuestions);
+        if (db) {
+            await db.collection('categories').doc(String(targetCat.id)).set(targetCat);
+        }
+        saveCategories();
+        localStorage.setItem('dovlet_qullugu_migration_v3', 'true');
+        console.log(`Dövlət qulluğu miqrasiyası v3: ${newQuestions.length} yeni sual əlavə edildi.`);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     await loadData();
     await loadAiApiKey(); // AI açarını DB-dən çək
