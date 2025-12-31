@@ -275,6 +275,22 @@
                         <div id="method-ai" class="method-content hidden">
                             <div class="ai-info">
                                 <p><i class="fas fa-robot"></i> <strong>Süni İntellekt</strong> vasitəsilə mətndən suallar hazırlayın.</p>
+                                
+                                <div class="ai-limits-info">
+                                    <div class="limit-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Hər əməliyyat arası <strong>60 saniyə</strong> gözləmə</span>
+                                    </div>
+                                    <div class="limit-item">
+                                        <i class="fas fa-calendar-day"></i>
+                                        <span>Gündəlik <strong>15 dəfə</strong> sual yaratma limiti</span>
+                                    </div>
+                                    <div class="limit-item">
+                                        <i class="fas fa-file-alt"></i>
+                                        <span>Gündəlik <strong>6 fayl</strong> emalı (Maks. 10MB, 20 səhifə)</span>
+                                    </div>
+                                </div>
+
                                 <p class="ai-warning-yellow">
                                     <i class="fas fa-exclamation-triangle"></i> <strong>DİQQƏT:</strong> Suallar yaradıldıqdan sonra sual mətnlərini, variantları və düzgün cavabın düzgün seçildiyini mütləq yenidən yoxlayın!
                                 </p>
@@ -318,6 +334,11 @@
                                     <button onclick="generateAIQuestions()" id="btn-generate-ai" class="btn-ai-generate">
                                         <i class="fas fa-magic"></i> Sualları Hazırla
                                     </button>
+                                </div>
+                                <div class="ai-usage-info" id="ai-usage-info">
+                                    <span class="limit-badge"><i class="fas fa-clock"></i> Gözləmə: <strong id="ai-cooldown-timer">0</strong>s</span>
+                                    <span class="limit-badge"><i class="fas fa-list-ol"></i> Sual: <strong id="ai-remaining-limit">15</strong>/15</span>
+                                    <span class="limit-badge"><i class="fas fa-file-upload"></i> Fayl: <strong id="ai-file-remaining-limit">6</strong>/6</span>
                                 </div>
                                 <div id="ai-loading" class="ai-loading hidden">
                                     <div class="spinner"></div>
@@ -1030,6 +1051,11 @@
                                         <button onclick="generateAdminAIQuestions()" id="btn-admin-generate-ai" class="btn-ai-generate">
                                             <i class="fas fa-magic"></i> Sualları Hazırla
                                         </button>
+                                    </div>
+                                    <div class="ai-usage-info" id="admin-ai-usage-info">
+                                        <span class="limit-badge"><i class="fas fa-clock"></i> Gözləmə: <strong id="admin-ai-cooldown-timer">0</strong>s</span>
+                                        <span class="limit-badge"><i class="fas fa-list-ol"></i> Sual: <strong id="admin-ai-remaining-limit">15</strong>/15</span>
+                                        <span class="limit-badge"><i class="fas fa-file-upload"></i> Fayl: <strong id="admin-ai-file-remaining-limit">6</strong>/6</span>
                                     </div>
                                     <div id="admin-ai-loading" class="ai-loading hidden">
                                         <div class="spinner"></div>

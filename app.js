@@ -3470,28 +3470,51 @@ window.generateAdminAIQuestions = async function() {
     const difficulty = document.getElementById('admin-ai-difficulty').value;
     const btn = document.getElementById('btn-admin-generate-ai');
     const loading = document.getElementById('admin-ai-loading');
+
+    // Düyməni dərhal deaktiv et və yükləmə ekranını göstər (Double-click qarşısını almaq üçün)
+    if (btn) btn.disabled = true;
+    if (loading) loading.classList.remove('hidden');
     
     // DB-dən açarı yenidən yoxla (əgər hələ yüklənməyibsə)
     if (!GEMINI_API_KEY) await loadAiApiKey();
     
     if (!context) {
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
         return showNotification('Zəhmət olmasa mövzu mətni daxil edin.', 'error');
     }
 
+    // 1. Gündəlik Sual Limiti (15 dəfə)
+    const questionStats = AIUsageLimits.checkDailyLimit('question');
+    if (questionStats.count >= 15) {
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
+        return showNotification(`Gündəlik sual yaratma cəhd limitiniz (15 dəfə) dolub. Sabah yenidən cəhd edin.`, 'warning');
+    }
+
+    // 2. Sual Yaratma Cooldown (60 saniyə)
+    const questionCooldown = AIUsageLimits.checkCooldown('question');
+    if (questionCooldown > 0) {
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
+        return showNotification(`Çox tez-tez sual yaradırsınız. Zəhmət olmasa ${questionCooldown} saniyə gözləyin.`, 'warning');
+    }
+
     if (count == 0) {
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
         return showNotification('Sual sayı ən azı 5 seçilməlidir (Admin bölməsində yalnız mətndən sual yaradılır).', 'warning');
     }
     
     if (context.length < 50) {
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
         return showNotification('Mətn çox qısadır. Daha keyfiyyətli suallar üçün daha çox məlumat daxil edin.', 'warning');
     }
 
-    btn.disabled = true;
-    loading.classList.remove('hidden');
-    
     if (!GEMINI_API_KEY) {
-        loading.classList.add('hidden');
-        btn.disabled = false;
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
         return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib. Zəhmət olmasa adminlə əlaqə saxlayın.', 'error');
     }
 
@@ -3520,6 +3543,10 @@ window.generateAdminAIQuestions = async function() {
     
     Mətn: ${context}`;
 
+    // Limitləri yenilə
+    AIUsageLimits.updateDailyLimit('question');
+    AIUsageLimits.updateCooldown('question');
+
     // 2025-ci il üçün təsdiqlənmiş ən son stabil və preview model adları
     const models = [
         "gemini-3-flash-preview",
@@ -3538,6 +3565,7 @@ window.generateAdminAIQuestions = async function() {
     for (const apiVer of apiVersions) {
         if (success) break;
         for (const modelName of models) {
+            if (success) break;
             try {
                 const url = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
                 const generationConfig = {};
@@ -4882,7 +4910,115 @@ window.onclick = function(event) {
 let selectedAIFileBase64 = null;
 let selectedFileType = null;
 
-window.handleAIImageSelect = function(input) {
+// AI İstifadə Limitləri Meneceri
+const AIUsageLimits = {
+    checkDailyLimit: function(type) { // type: 'question' və ya 'file'
+        const today = new Date().toLocaleDateString();
+        const data = JSON.parse(localStorage.getItem('ai_usage_stats') || '{}');
+        
+        if (data.date !== today) {
+            return { count: 0, date: today };
+        }
+        
+        return {
+            count: type === 'question' ? (data.questionCount || 0) : (data.fileCount || 0),
+            date: today
+        };
+    },
+    
+    updateDailyLimit: function(type) {
+        const today = new Date().toLocaleDateString();
+        let data = JSON.parse(localStorage.getItem('ai_usage_stats') || '{}');
+        
+        if (data.date !== today) {
+            data = { date: today, questionCount: 0, fileCount: 0 };
+        }
+        
+        if (type === 'question') data.questionCount = (data.questionCount || 0) + 1;
+        if (type === 'file') data.fileCount = (data.fileCount || 0) + 1;
+        
+        localStorage.setItem('ai_usage_stats', JSON.stringify(data));
+        this.updateDisplay();
+    },
+    
+    checkCooldown: function(type) { // type: 'question' və ya 'file'
+        const lastTime = localStorage.getItem(`ai_last_${type}_time`);
+        if (!lastTime) return 0;
+        
+        const diff = Math.floor((Date.now() - parseInt(lastTime)) / 1000);
+        return diff < 60 ? (60 - diff) : 0;
+    },
+    
+    updateCooldown: function(type) {
+        localStorage.setItem(`ai_last_${type}_time`, Date.now().toString());
+        this.updateDisplay();
+    },
+
+    updateDisplay: function() {
+        const stats = this.checkDailyLimit('question');
+        const fileStats = this.checkDailyLimit('file');
+        const remaining = Math.max(0, 15 - stats.count);
+        const fileRemaining = Math.max(0, 6 - fileStats.count);
+        
+        // User side
+        const userLimit = document.getElementById('ai-remaining-limit');
+        if (userLimit) userLimit.textContent = remaining;
+        
+        const userFileLimit = document.getElementById('ai-file-remaining-limit');
+        if (userFileLimit) userFileLimit.textContent = fileRemaining;
+        
+        // Admin side
+        const adminLimit = document.getElementById('admin-ai-remaining-limit');
+        if (adminLimit) adminLimit.textContent = remaining;
+
+        const adminFileLimit = document.getElementById('admin-ai-file-remaining-limit');
+        if (adminFileLimit) adminFileLimit.textContent = fileRemaining;
+        
+        // Cooldown update
+        const cooldown = this.checkCooldown('question');
+        const fileCooldown = this.checkCooldown('file');
+        const maxCooldown = Math.max(cooldown, fileCooldown);
+        
+        if (maxCooldown > 0) {
+            this.startTimer(maxCooldown);
+        } else {
+            const userTimer = document.getElementById('ai-cooldown-timer');
+            if (userTimer) userTimer.textContent = "0";
+            const adminTimer = document.getElementById('admin-ai-cooldown-timer');
+            if (adminTimer) adminTimer.textContent = "0";
+        }
+    },
+    
+    startTimer: function(seconds) {
+        if (window.aiTimerInterval) clearInterval(window.aiTimerInterval);
+        
+        let timeLeft = seconds;
+        const updateTimerUI = () => {
+            const userTimer = document.getElementById('ai-cooldown-timer');
+            if (userTimer) userTimer.textContent = timeLeft;
+            
+            const adminTimer = document.getElementById('admin-ai-cooldown-timer');
+            if (adminTimer) adminTimer.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(window.aiTimerInterval);
+            }
+            timeLeft--;
+        };
+        
+        updateTimerUI();
+        window.aiTimerInterval = setInterval(updateTimerUI, 1000);
+    }
+};
+
+// Səhifə yüklənəndə limitləri göstər
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof AIUsageLimits !== 'undefined') {
+        AIUsageLimits.updateDisplay();
+    }
+});
+
+window.handleAIImageSelect = async function(input) {
     const file = input.files[0];
     if (!file) return;
     
@@ -4895,10 +5031,25 @@ window.handleAIImageSelect = function(input) {
         return;
     }
 
-    if (file.size > 15 * 1024 * 1024) { // 15MB limit for PDF
-        showNotification('Fayl ölçüsü 15MB-dan çox ola bilməz!', 'error');
+    // 3. Faylın Həcmi Limiti (10MB)
+    if (file.size > 10 * 1024 * 1024) { 
+        showNotification('Fayl ölçüsü 10MB-dan çox ola bilməz!', 'error');
         input.value = '';
         return;
+    }
+
+    // 4. PDF Səhifə Sayı Limiti (20 səhifə)
+    if (isPDF) {
+        try {
+            const pageCount = await getPdfPageCount(file);
+            if (pageCount > 20) {
+                showNotification('Zəhmət olmasa faylı hissələrə bölüb yükləyin (Maksimum 20 səhifə).', 'warning');
+                input.value = '';
+                return;
+            }
+        } catch (e) {
+            console.error("PDF səhifə sayı yoxlanarkən xəta:", e);
+        }
     }
 
     const reader = new FileReader();
@@ -4914,6 +5065,21 @@ window.handleAIImageSelect = function(input) {
         icons.forEach(icon => icon.style.color = 'var(--success-color)');
     };
     reader.readAsDataURL(file);
+}
+
+// PDF səhifə sayını təxmini müəyyən etmək üçün köməkçi funksiya
+async function getPdfPageCount(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const content = reader.result;
+            // PDF daxilində /Type /Page axtarışı (ən sadə üsul)
+            const pages = content.match(/\/Type\s*\/Page\b/g);
+            resolve(pages ? pages.length : 1);
+        };
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
 }
 
 window.removeSelectedAIImage = function() {
@@ -4941,28 +5107,69 @@ window.generateAIQuestions = async function() {
     const difficulty = document.getElementById('ai-difficulty').value;
     const btn = document.getElementById('btn-generate-ai');
     const loading = document.getElementById('ai-loading');
+
+    // Düyməni dərhal deaktiv et və yükləmə ekranını göstər (Double-click qarşısını almaq üçün)
+    if (btn) btn.disabled = true;
+    if (loading) loading.classList.remove('hidden');
     
     // DB-dən açarı yenidən yoxla (əgər hələ yüklənməyibsə)
     if (!GEMINI_API_KEY) await loadAiApiKey();
     
     if (!context && !selectedAIFileBase64) {
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
         return showNotification('Zəhmət olmasa mövzu mətni daxil edin və ya fayl yükləyin.', 'error');
     }
 
+    // 1. Gündəlik Sual Limiti (15 dəfə)
+    const questionStats = AIUsageLimits.checkDailyLimit('question');
+    if (questionStats.count >= 15) {
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
+        return showNotification(`Gündəlik sual yaratma cəhd limitiniz (15 dəfə) dolub. Sabah yenidən cəhd edin.`, 'warning');
+    }
+
+    // 2. Sual Yaratma Cooldown (60 saniyə)
+    const questionCooldown = AIUsageLimits.checkCooldown('question');
+    if (questionCooldown > 0) {
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
+        return showNotification(`Çox tez-tez sual yaradırsınız. Zəhmət olmasa ${questionCooldown} saniyə gözləyin.`, 'warning');
+    }
+
+    // 6. Gündəlik Fayl Limiti (6 fayl)
+    if (selectedAIFileBase64) {
+        const fileStats = AIUsageLimits.checkDailyLimit('file');
+        if (fileStats.count >= 6) {
+            if (loading) loading.classList.add('hidden');
+            if (btn) btn.disabled = false;
+            return showNotification(`Gündəlik fayl emalı limitiniz (6) dolub. Sabah yenidən cəhd edin.`, 'warning');
+        }
+
+        // 7. Fayl Emalı Cooldown (60 saniyə)
+        const fileCooldown = AIUsageLimits.checkCooldown('file');
+        if (fileCooldown > 0) {
+            if (loading) loading.classList.add('hidden');
+            if (btn) btn.disabled = false;
+            return showNotification(`Yeni fayl emal etmək üçün ${fileCooldown} saniyə gözləyin.`, 'warning');
+        }
+    }
+
     if (count == 0 && !selectedAIFileBase64) {
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
         return showNotification('Sual sayı 0 seçildikdə mütləq PDF və ya şəkil yükləməlisiniz.', 'warning');
     }
     
     if (context && context.length < 50 && !selectedAIFileBase64 && count != 0) {
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
         return showNotification('Mətn çox qısadır. Daha keyfiyyətli suallar üçün daha çox məlumat daxil edin.', 'warning');
     }
 
-    btn.disabled = true;
-    loading.classList.remove('hidden');
-    
     if (!GEMINI_API_KEY) {
-        loading.classList.add('hidden');
-        btn.disabled = false;
+        if (loading) loading.classList.add('hidden');
+        if (btn) btn.disabled = false;
         return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib. Zəhmət olmasa adminlə əlaqə saxlayın.', 'error');
     }
 
@@ -4979,18 +5186,20 @@ window.generateAIQuestions = async function() {
 
     if (selectedAIFileBase64) {
         if (selectedFileType === 'application/pdf') {
-            prompt += `SƏNƏ TƏQDİM OLUNAN PDF FAYLINDAKI BÜTÜN SUALLARI VƏ MATERİALI OXU. İLK ÖNCƏ PDF-dəki BÜTÜN sualları (sayından asılı olmayaraq) eynilə rəqəmsal formata sal. `;
+            // 5. Faylın içindən çıxarılan sualların sayı (maksimum 20 sual)
+            prompt += `SƏNƏ TƏQDİM OLUNAN PDF FAYLINDAKI MATERİALI OXU. PDF-dəki sualları rəqəmsal formata sal (maksimum 20 sual). `;
             if (count > 0) {
                 prompt += `SONRA İSƏ PDF-dəki mövzudan istifadə edərək ƏLAVƏ ${count} dənə yeni sual yaradaraq ümumi siyahıya əlavə et. ${difficultyText} `;
             } else {
-                prompt += `Əlavə sual yaratma, yalnız mövcud olanları rəqəmsal formata sal. `;
+                prompt += `Əlavə sual yaratma, yalnız mövcud olanları (maksimum 20 ədəd) rəqəmsal formata sal. `;
             }
         } else {
-            prompt += `SƏNƏ TƏQDİM OLUNAN ŞƏKİLDƏKİ BÜTÜN SUALLARI OXU. İLK ÖNCƏ şəkildəki BÜTÜN sualları (sayından asılı olmayaraq) eynilə rəqəmsal formata sal. `;
+            // 5. Faylın içindən çıxarılan sualların sayı (maksimum 20 sual)
+            prompt += `SƏNƏ TƏQDİM OLUNAN ŞƏKİLDƏKİ MATERİALI OXU. Şəkildəki sualları rəqəmsal formata sal (maksimum 20 sual). `;
             if (count > 0) {
                 prompt += `SONRA İSƏ şəkildəki mətndən istifadə edərək ƏLAVƏ ${count} dənə yeni sual yaradaraq ümumi siyahıya əlavə et. ${difficultyText} `;
             } else {
-                prompt += `Əlavə sual yaratma, yalnız mövcud olanları rəqəmsal formata sal. `;
+                prompt += `Əlavə sual yaratma, yalnız mövcud olanları (maksimum 20 ədəd) rəqəmsal formata sal. `;
             }
         }
     } else {
@@ -5027,6 +5236,14 @@ window.generateAIQuestions = async function() {
         });
     }
 
+    // Limitləri yenilə
+    AIUsageLimits.updateDailyLimit('question');
+    AIUsageLimits.updateCooldown('question');
+    if (selectedAIFileBase64) {
+        AIUsageLimits.updateDailyLimit('file');
+        AIUsageLimits.updateCooldown('file');
+    }
+
     // 2025-ci il üçün təsdiqlənmiş ən son stabil və preview model adları
     const models = [
         "gemini-3-flash-preview",
@@ -5047,6 +5264,7 @@ window.generateAIQuestions = async function() {
     for (const apiVer of apiVersions) {
         if (success) break;
         for (const modelName of models) {
+            if (success) break;
             try {
                 const url = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
                 console.log(`Cəhd edilir: ${apiVer} / ${modelName}`);
@@ -5073,8 +5291,8 @@ window.generateAIQuestions = async function() {
                     
                     if (data.error.status === "PERMISSION_DENIED" || data.error.status === "UNAUTHENTICATED") {
                         showNotification('API açarı yanlışdır və ya icazəsi yoxdur.', 'error');
-                        loading.classList.add('hidden');
-                        btn.disabled = false;
+                        if (loading) loading.classList.add('hidden');
+                        if (btn) btn.disabled = false;
                         return;
                     }
                     continue;
@@ -5147,7 +5365,6 @@ window.generateAIQuestions = async function() {
                 
                 success = true;
                 showNotification(`${questions.length} sual uğurla yaradıldı!`, 'success');
-                updateReadyCount();
                 removeSelectedAIImage(); // Clear after success
                 break; 
 
