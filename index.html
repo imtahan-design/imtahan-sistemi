@@ -893,6 +893,9 @@
                                     <button onclick="switchAdminQuestionTab('file')" id="admin-tab-file" class="tab-btn">
                                         <i class="fas fa-file-code"></i> JSON Faylı
                                     </button>
+                                    <button onclick="switchAdminQuestionTab('ai')" id="admin-tab-ai" class="tab-btn">
+                                        <i class="fas fa-robot"></i> AI ilə Hazırla
+                                    </button>
                                 </div>
                             </div>
 
@@ -945,6 +948,38 @@
                                         <a href="#" onclick="downloadSampleJSON()" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
                                             <i class="fas fa-download"></i> Nümunə JSON yüklə
                                         </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- AI Generation (Admin) -->
+                            <div id="admin-method-ai" class="admin-method-content hidden">
+                                <div class="ai-info">
+                                    <p><i class="fas fa-robot"></i> <strong>Süni İntellekt</strong> vasitəsilə mətndən suallar hazırlayın.</p>
+                                    <p class="ai-warning-yellow">
+                                        <i class="fas fa-exclamation-triangle"></i> <strong>DİQQƏT:</strong> Suallar yaradıldıqdan sonra sual mətnlərini, variantları və düzgün cavabın düzgün seçildiyini mütləq yenidən yoxlayın!
+                                    </p>
+                                    <div class="ai-input-group">
+                                        <label>Mövzu mətni və ya material:</label>
+                                        <textarea id="admin-ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni buraya daxil edin..."></textarea>
+                                    </div>
+                                    <div class="ai-controls">
+                                        <div class="q-count-selector">
+                                            <label>Sual sayı:</label>
+                                            <select id="admin-ai-question-count">
+                                                <option value="5">5 sual</option>
+                                                <option value="10" selected>10 sual</option>
+                                                <option value="15">15 sual</option>
+                                                <option value="20">20 sual</option>
+                                            </select>
+                                        </div>
+                                        <button onclick="generateAdminAIQuestions()" id="btn-admin-generate-ai" class="btn-ai-generate">
+                                            <i class="fas fa-magic"></i> Sualları Hazırla
+                                        </button>
+                                    </div>
+                                    <div id="admin-ai-loading" class="ai-loading hidden">
+                                        <div class="spinner"></div>
+                                        <p>Süni İntellekt sualları hazırlayır, zəhmət olmasa gözləyin...</p>
                                     </div>
                                 </div>
                             </div>

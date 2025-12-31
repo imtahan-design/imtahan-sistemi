@@ -3306,6 +3306,139 @@ function renderQuestions() {
     });
 }
 
+window.generateAdminAIQuestions = async function() {
+    const context = document.getElementById('admin-ai-context-text').value.trim();
+    const count = document.getElementById('admin-ai-question-count').value;
+    const btn = document.getElementById('btn-admin-generate-ai');
+    const loading = document.getElementById('admin-ai-loading');
+    
+    if (!context) {
+        return showNotification('Zəhmət olmasa mövzu mətni daxil edin.', 'error');
+    }
+    
+    if (context.length < 50) {
+        return showNotification('Mətn çox qısadır. Daha keyfiyyətli suallar üçün daha çox məlumat daxil edin.', 'warning');
+    }
+
+    btn.disabled = true;
+    loading.classList.remove('hidden');
+    
+    if (!GEMINI_API_KEY) {
+        loading.classList.add('hidden');
+        btn.disabled = false;
+        return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib.', 'error');
+    }
+
+    const prompt = `Sən bir peşəkar müəllimsən. Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. 
+    Cavablar yalnız Azərbaycan dilində olsun. 
+    Hər sualın 4 variantı olsun. 
+    Variantların daxilində "A)", "1)" kimi prefikslər yazma, yalnız variantın mətnini yaz.
+    Nəticəni yalnız aşağıdakı JSON formatında qaytar (heç bir əlavə mətn yazma, yalnız JSON):
+    [
+      {
+        "text": "Sual mətni",
+        "options": ["Variant 1", "Variant 2", "Variant 3", "Variant 4"],
+        "correct": 0 
+      }
+    ]
+    "correct" sahəsi düzgün variantın indeksidir (0-dan başlayaraq).
+    
+    Mətn: ${context}`;
+
+    const models = ["gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"];
+    const apiVersions = ["v1beta", "v1"];
+    let lastError = "";
+    let success = false;
+
+    for (const apiVer of apiVersions) {
+        if (success) break;
+        for (const modelName of models) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const data = await response.json();
+                if (data.error) {
+                    lastError = data.error.message;
+                    continue;
+                }
+
+                if (!data.candidates || !data.candidates[0].content || !data.candidates[0].content.parts) {
+                    lastError = "AI cavabı boşdur";
+                    continue;
+                }
+
+                let aiResponse = data.candidates[0].content.parts[0].text;
+                const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
+                if (!jsonMatch) {
+                    lastError = "Format xətası (JSON tapılmadı)";
+                    continue;
+                }
+                
+                const questions = JSON.parse(jsonMatch[0]);
+                const list = document.getElementById('admin-questions-list');
+                
+                // İlk boş sualı təmizlə
+                const firstQuestion = list.querySelector('.manual-question-item');
+                if (list.children.length === 1 && firstQuestion) {
+                    const textarea = firstQuestion.querySelector('textarea');
+                    if (textarea && !textarea.value.trim()) {
+                        list.innerHTML = '';
+                    }
+                }
+                
+                questions.forEach((q) => {
+                    addAdminQuestionForm();
+                    const items = list.querySelectorAll('.manual-question-item');
+                    const lastItem = items[items.length - 1];
+                    
+                    if (lastItem) {
+                        const textarea = lastItem.querySelector('textarea');
+                        if (textarea) textarea.value = q.text || "";
+                        
+                        let inputs = lastItem.querySelectorAll('.manual-opt');
+                        if (q.options && Array.isArray(q.options)) {
+                            const firstRadio = lastItem.querySelector('input[type="radio"]');
+                            if (firstRadio) {
+                                const uniqueId = firstRadio.name.split('_')[1];
+                                while (inputs.length < q.options.length && inputs.length < 10) {
+                                    addAdminOption(uniqueId);
+                                    inputs = lastItem.querySelectorAll('.manual-opt');
+                                }
+                            }
+                            q.options.forEach((opt, i) => {
+                                if (inputs[i]) inputs[i].value = opt;
+                            });
+                        }
+                        
+                        const radios = lastItem.querySelectorAll('input[type="radio"]');
+                        if (radios && radios[q.correct] !== undefined) {
+                            radios[q.correct].checked = true;
+                        }
+                    }
+                });
+                
+                switchAdminQuestionTab('manual');
+                showNotification(`${questions.length} sual uğurla yaradıldı! Zəhmət olmasa sualları və düzgün cavabları yenidən yoxlayın.`, 'success');
+                success = true;
+                break; 
+            } catch (error) {
+                lastError = error.message;
+            }
+        }
+    }
+
+    if (!success) {
+        alert("Xəta: " + lastError);
+    }
+    loading.classList.add('hidden');
+    btn.disabled = false;
+};
+
 window.switchAdminQuestionTab = function(method) {
     // Hide all contents
     document.querySelectorAll('.admin-method-content').forEach(c => c.classList.add('hidden'));
