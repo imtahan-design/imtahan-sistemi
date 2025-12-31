@@ -10,7 +10,18 @@ const firebaseConfig = {
 };
 
 // Gemini API Key for AI question generation
-const GEMINI_API_KEY = "AIzaSyBHV9MN1ueMdANGo0lmHRFFuq1tQdLil-Q";
+// Təhlükəsizlik üçün: API açarını birbaşa koda yazmayın!
+// Açarı daxil etmək üçün brauzer konsolunda: localStorage.setItem('GEMINI_API_KEY', 'SİZİN_AÇARINIZ') yazın.
+let GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
+
+// API açarını proqramatik təyin etmək üçün funksiya (Ehtiyac olarsa)
+window.setAiKey = function(key) {
+    if (key) {
+        localStorage.setItem('GEMINI_API_KEY', key);
+        GEMINI_API_KEY = key;
+        alert("AI API açarı uğurla yadda saxlanıldı!");
+    }
+};
 
 // Initialize Firebase if config is valid
 let db;
