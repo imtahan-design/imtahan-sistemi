@@ -3093,7 +3093,7 @@ function renderCategories() {
     filteredCategories.forEach((cat, index) => {
         const div = document.createElement('div');
         div.className = 'category-card animate-up';
-        div.style.animationDelay = `${index * 0.05}s`;
+        div.style.animationDelay = `${index * 0.15}s`;
         
         // Simple icon mapping
         let icon = 'fa-book';
@@ -3205,7 +3205,7 @@ function renderAdminCategories() {
     filteredCategories.forEach((cat, index) => {
         const div = document.createElement('div');
         div.className = 'category-card animate-up';
-        div.style.animationDelay = `${index * 0.05}s`;
+        div.style.animationDelay = `${index * 0.08}s`;
         
         let icon = 'fa-book';
         if (cat.name.toLowerCase().includes('ingilis')) icon = 'fa-language';
@@ -3790,7 +3790,7 @@ window.showTopUsers = async function() {
             const score = Math.round((user.questions * 5) + user.likes - (user.dislikes * 0.5));
             const div = document.createElement('div');
             div.className = 'leader-item animate-up';
-            div.style.animationDelay = `${idx * 0.05}s`;
+            div.style.animationDelay = `${idx * 0.08}s`;
             div.innerHTML = `
                 <div class="leader-rank ${rank <= 3 ? 'top-' + rank : ''}">${rank}</div>
                 <div class="leader-avatar">

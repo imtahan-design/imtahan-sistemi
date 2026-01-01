@@ -24,29 +24,29 @@
 <body>
     <div id="app">
         <!-- Navigation -->
-        <nav id="navbar" class="animate-fade">
-            <div class="logo animate-slide-right" onclick="showDashboard()">
+        <nav id="navbar">
+            <div class="logo" onclick="showDashboard()">
                 <div class="logo-main">İmtahan</div>
                 <div class="logo-sub">onlayn qiymətləndirmə platforması</div>
             </div>
             
             <!-- Hamburger Menu Icon -->
-            <div class="menu-toggle animate-fade" onclick="toggleSideMenu()">
+            <div class="menu-toggle" onclick="toggleSideMenu()">
                 <i class="fas fa-bars"></i>
             </div>
 
-            <div class="nav-links animate-fade delay-1">
+            <div class="nav-links">
                 <button onclick="showTopUsers()" class="btn-outline">
                     <i class="fas fa-trophy"></i> <span>Liderlər</span>
                 </button>
                 <button onclick="showContactModal()" class="btn-outline">
                     <i class="fas fa-envelope"></i> <span>Bizə Yazın</span>
                 </button>
-                <div id="guest-nav" class="hidden animate-fade delay-2">
+                <div id="guest-nav" class="hidden">
                     <button onclick="showLogin()" class="btn-secondary"><i class="fas fa-sign-in-alt"></i> <span>Giriş</span></button>
                     <button onclick="showRegister()" class="btn-primary"><i class="fas fa-user-plus"></i> <span>Qeydiyyat</span></button>
                 </div>
-                <div id="user-nav" class="hidden animate-fade delay-2">
+                <div id="user-nav" class="hidden">
                     <span id="user-display"></span>
                     <button onclick="showProfile()" class="btn-secondary"><i class="fas fa-user-circle"></i> <span>Profil</span></button>
                     <button id="teacher-panel-btn" onclick="showTeacherDashboard()" class="btn-primary"><i class="fas fa-chalkboard-teacher"></i> <span>Müəllim</span></button>
@@ -93,7 +93,7 @@
         <!-- Auth Pages -->
         <section id="auth-section">
             <div class="auth-container">
-                <div class="auth-box animate-scale" id="login-box">
+                <div class="auth-box animate-up" id="login-box">
                     <h2>Giriş</h2>
                     <input type="text" id="login-username" placeholder="İstifadəçi adı">
                     <input type="password" id="login-password" placeholder="Şifrə">
@@ -103,7 +103,7 @@
                     <button onclick="login()" class="btn-primary w-full">Daxil ol</button>
                     <p class="mt-3 text-center">Hesabınız yoxdur? <a href="javascript:void(0)" onclick="showRegister()" class="text-primary no-underline">Qeydiyyat</a></p>
                 </div>
-                <div class="auth-box hidden animate-scale" id="register-box">
+                <div class="auth-box hidden animate-up" id="register-box">
                     <h2>Qeydiyyat</h2>
                     <div class="reg-name-row flex gap-2 mb-2">
                         <input type="text" id="reg-name" placeholder="Adınız" class="m-0">
@@ -135,7 +135,7 @@
                             </select>
                         </div>
                     </div>
-                    <div id="teacher-email-group" class="hidden animate-fade">
+                    <div id="teacher-email-group" class="hidden">
                         <input type="email" id="reg-email" placeholder="Email ünvanınız" class="mt-2">
                         <p class="text-danger mt-1 text-xs">* Müəllim qeydiyyatı üçün email təsdiqi vacibdir.</p>
                     </div>
@@ -170,7 +170,7 @@
                             <i class="fas fa-plus"></i> Yeni Özəl Test
                         </button>
                         <div id="quiz-guide-tooltip" class="guide-tooltip hidden">
-                            <div class="tooltip-content animate-scale">
+                            <div class="tooltip-content">
                                 <i class="fas fa-lightbulb"></i>
                                 <span>Bura klikləyərək sınaq hazırlamağa başlaya bilərsiniz</span>
                             </div>
@@ -179,23 +179,23 @@
                     </div>
                     <button onclick="showDashboard()" class="btn-secondary">Geri</button>
                 </div>
-                <div id="private-quizzes-grid" class="grid-container animate-up delay-1">
+                <div id="private-quizzes-grid" class="grid-container animate-up delay-2">
                     <!-- Teacher's private quizzes will be loaded here -->
                 </div>
             </div>
         </section>
 
         <!-- Create Private Quiz Modal/Section -->
-        <section id="create-private-quiz-section" class="hidden">
+        <section id="create-private-quiz-section" class="hidden animate-up">
             <div class="container">
-                <div class="card max-w-900 mx-auto animate-up">
+                <div class="card max-w-900 mx-auto animate-up delay-1">
                     <input type="hidden" id="editing-quiz-id" value="">
                     <div class="header-actions">
                         <h2 id="private-quiz-form-title">Yeni Özəl Test Yaradın</h2>
                         <button onclick="showTeacherDashboard()" class="btn-secondary">Geri</button>
                     </div>
                     
-                    <div class="quiz-setup-grid animate-up delay-1">
+                    <div class="quiz-setup-grid">
                         <div class="form-group">
                             <label><i class="fas fa-file-signature"></i> Testin Adı</label>
                             <input type="text" id="private-quiz-title" placeholder="Məs: Riyaziyyat - Sinif 5" class="text-main">
@@ -231,7 +231,7 @@
                         </div>
                     </div>
 
-                    <div class="question-input-methods animate-up delay-2">
+                    <div class="question-input-methods">
                         <div class="tabs-wrapper">
                             <div class="tabs">
                                 <button onclick="switchQuestionTab('manual')" id="tab-manual" class="tab-btn active">
@@ -248,18 +248,18 @@
 
                         <!-- Manual Entry -->
                         <!-- Manual Entry -->
-                        <div id="method-manual" class="method-content animate-fade">
-                            <div id="manual-questions-list" class="animate-up delay-1">
+                        <div id="method-manual" class="method-content animate-up">
+                            <div id="manual-questions-list">
                                 <!-- Question forms will be added here -->
                             </div>
-                            <button onclick="addManualQuestionForm()" class="add-q-btn animate-up delay-2">
+                            <button onclick="addManualQuestionForm()" class="add-q-btn">
                                 <i class="fas fa-plus-circle"></i> Yeni Sual Sahəsi
                             </button>
                         </div>
 
                         <!-- Bulk Entry -->
-                        <div id="method-bulk" class="method-content hidden animate-fade">
-                            <div class="bulk-info animate-up delay-1">
+                        <div id="method-bulk" class="method-content hidden">
+                            <div class="bulk-info">
                                 <p><i class="fas fa-info-circle"></i> Sualları aşağıdakı formatda yapışdırın:</p>
                                 <div class="format-example">
                                     1. Birinci sual mətni?<br>
@@ -275,40 +275,62 @@
                                 </p>
                                 <p class="bulk-warning-red"><i class="fas fa-check-double"></i> Mətni suallara çevirə basdıqdan sonra sualların mətnini və variantlarını yenidən gözdən keçirin!</p>
                             </div>
-                            <textarea id="bulk-questions-text" placeholder="Sualları buraya yapışdırın..." class="animate-up delay-2 text-main"></textarea>
-                            <button onclick="parseBulkQuestions()" class="btn-success w-full animate-up delay-3">
+                            <textarea id="bulk-questions-text" placeholder="Sualları buraya yapışdırın..." class="text-main"></textarea>
+                            <button onclick="parseBulkQuestions()" class="btn-success w-full">
                                 <i class="fas fa-magic"></i> Mətni Suallara Çevir
                             </button>
                         </div>
 
                         <!-- AI Generation -->
-                        <div id="method-ai" class="method-content hidden animate-fade">
-                            <div class="ai-info animate-up delay-1">
+                        <div id="method-ai" class="method-content hidden">
+                            <div class="ai-info">
                                 <p><i class="fas fa-robot"></i> <strong>Süni İntellekt</strong> vasitəsilə mətndən suallar hazırlayın.</p>
                                 
                                 <div class="ai-limits-info">
-                                    <div class="limit-item animate-scale delay-2">
+                                    <div class="limit-item">
                                         <i class="fas fa-clock"></i>
                                         <span>Hər əməliyyat arası <strong>60 saniyə</strong> gözləmə</span>
                                     </div>
-                                    <div class="limit-item animate-scale delay-3">
+                                    <div class="limit-item">
                                         <i class="fas fa-calendar-day"></i>
                                         <span>Gündəlik <strong>15 dəfə</strong> sual yaratma limiti</span>
                                     </div>
-                                    <div class="limit-item animate-scale delay-4">
+                                    <div class="limit-item">
                                         <i class="fas fa-file-alt"></i>
                                         <span>Gündəlik <strong>6 fayl</strong> emalı (Maks. 10MB, 20 səhifə)</span>
                                     </div>
                                 </div>
 
-                                <p class="ai-warning-yellow animate-fade delay-5">
+                                <div class="ai-how-it-works animate-up">
+                                    <div class="work-step">
+                                        <div class="step-icon">
+                                            <i class="fas fa-keyboard"></i>
+                                        </div>
+                                        <div class="step-content">
+                                            <h4>Mətn Analizi</h4>
+                                            <p>Daxil etdiyiniz mətni süni intellekt analiz edir və mövzuya uyğun tamamilə yeni suallar hazırlayır.</p>
+                                        </div>
+                                    </div>
+                                    <div class="work-step">
+                                        <div class="step-icon">
+                                            <i class="fas fa-file-import"></i>
+                                        </div>
+                                        <div class="step-content">
+                                            <h4>Fayl Emalı</h4>
+                                            <p>PDF və ya şəkildəki testləri rəqəmsal formata çevirir və ya həmin suallar əsasında yeni testlər yaradır.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p class="ai-warning-yellow">
                                     <i class="fas fa-exclamation-triangle"></i> <strong>DİQQƏT:</strong> Suallar yaradıldıqdan sonra sual mətnlərini, variantları və düzgün cavabın düzgün seçildiyini mütləq yenidən yoxlayın!
                                 </p>
-                                <div class="ai-input-group animate-up delay-3">
-                                    <label>Mövzu mətni, material, sualların şəkli və ya PDF faylı:</label>
+                                <div class="ai-input-group">
+                                    <label><i class="fas fa-keyboard"></i> Mətn Analizi:</label>
                                     <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni daxil edin və ya aşağıdan sualların şəklini/PDF faylını yükləyin..." class="text-main"></textarea>
                                 </div>
                                 <div class="ai-input-group">
+                                    <label><i class="fas fa-file-import"></i> Fayl Emalı:</label>
                                     <div class="image-upload-area" id="ai-image-drop-area">
                                         <input type="file" id="ai-question-image" accept="image/*,.pdf" class="hidden" onchange="handleAIImageSelect(this)">
                                         <div class="upload-placeholder" onclick="document.getElementById('ai-question-image').click()">
@@ -462,13 +484,13 @@
                 <!-- Hero Section (Site Məlumatı) -->
                 <div class="hero-section animate-up">
                     <div class="hero-content">
-                        <div class="ai-badge animate-fade delay-1">
+                        <div class="ai-badge animate-up delay-1">
                             <i class="fas fa-robot"></i> AI Texnologiyası Artıq Aktivdir!
                         </div>
-                        <h1 class="animate-up delay-1">İmtahan.site – Onlayn Qiymətləndirmə Platforması</h1>
-                        <p class="animate-up delay-2">Müəllimlər və tələbələr üçün nəzərdə tutulmuş müasir sınaq imtahan platforması. Burada siz həm hazır testləri işləyə, həm də öz testlərinizi yaradıb paylaşa bilərsiniz.</p>
+                        <h1 class="animate-up delay-2">İmtahan.site – Onlayn Qiymətləndirmə Platforması</h1>
+                        <p class="animate-up delay-3">Müəllimlər və tələbələr üçün nəzərdə tutulmuş müasir sınaq imtahan platforması. Burada siz həm hazır testləri işləyə, həm də öz testlərinizi yaradıb paylaşa bilərsiniz.</p>
                         
-                        <div class="hero-actions-row animate-up delay-3">
+                        <div class="hero-actions-row animate-up delay-4">
                             <button class="btn-hero-info" onclick="openAboutModal()">
                                 Daha çox öyrən <i class="fas fa-chevron-right"></i>
                             </button>
@@ -478,32 +500,32 @@
                         </div>
 
                         <div class="hero-features">
-                            <div class="hero-feature-item animate-scale delay-4">
-                                <i class="fas fa-chalkboard-teacher animate-float"></i>
+                            <div class="hero-feature-item animate-up delay-5">
+                                <i class="fas fa-chalkboard-teacher"></i>
                                 <span>Müəllimlər üçün: Test yarat, şifrə qoy və nəticələri izlə</span>
                             </div>
-                            <div class="hero-feature-item animate-scale delay-5">
-                                <i class="fas fa-user-graduate animate-float delay-1"></i>
+                            <div class="hero-feature-item animate-up" style="animation-delay: 0.48s;">
+                                <i class="fas fa-user-graduate"></i>
                                 <span>Tələbələr üçün: Şifrəli testləri işlə və dərhal nəticəni gör</span>
                             </div>
-                            <div class="hero-feature-item animate-scale delay-5">
-                                <i class="fas fa-users animate-float delay-2"></i>
+                            <div class="hero-feature-item animate-up" style="animation-delay: 0.56s;">
+                                <i class="fas fa-users"></i>
                                 <span>Hər kəs üçün: Sual paylaş, müzakirələrə qoşul və öyrən</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="header-actions animate-up delay-4">
+                <div class="header-actions animate-up" style="animation-delay: 0.64s;">
                     <h2 id="dashboard-title">Mövcud İmtahanlar</h2>
                     <button id="dashboard-back-btn" class="btn-secondary hidden" onclick="navigateUp()"><i class="fas fa-arrow-left"></i> Geri</button>
                 </div>
-                <div id="categories-grid" class="grid-container">
+                <div id="categories-grid" class="grid-container animate-up" style="animation-delay: 0.72s;">
                     <!-- Categories will be loaded here -->
                 </div>
 
                 <!-- AI Introduction Section -->
-                <div class="ai-intro-section animate-up delay-5">
+                <div class="ai-intro-section animate-up" style="animation-delay: 0.8s;">
                     <div class="ai-card">
                         <div class="ai-card-content">
                             <h2>Süni İntellekt ilə Saniyələr İçində Test Yaradın</h2>
@@ -537,7 +559,7 @@
                                 <i class="fas fa-magic"></i> İndi Sına – Tamamilə Pulsuz!
                             </button>
                         </div>
-                        <div class="ai-card-visual animate-float">
+                        <div class="ai-card-visual">
                             <i class="fas fa-robot"></i>
                         </div>
                     </div>
@@ -546,7 +568,7 @@
         </section>
 
         <!-- User Profile Section -->
-        <section id="profile-section" class="hidden">
+        <section id="profile-section" class="hidden animate-up">
             <div class="container">
                 <div class="header-actions">
                     <h2>İstifadəçi Profili</h2>
@@ -554,8 +576,8 @@
                 </div>
                 
                 <div class="profile-grid">
-                    <div class="profile-info-card card animate-up">
-                        <i class="fas fa-user-circle text-primary text-6xl mb-4 animate-float"></i>
+                    <div class="profile-info-card card">
+                        <i class="fas fa-user-circle text-primary text-6xl mb-4"></i>
                         <h3 id="profile-full-name">Ad Soyad</h3>
                         <div class="flex items-center justify-center gap-2">
                             <p id="profile-username" class="text-muted font-semibold m-0">@username</p>
@@ -565,7 +587,7 @@
                         </div>
                         <p id="profile-role" class="text-muted mb-3 text-sm">Rolu</p>
                         
-                        <div id="missing-username-box" class="hidden mt-3 p-4 bg-warning-light border-warning rounded-md animate-scale">
+                        <div id="missing-username-box" class="hidden mt-3 p-4 bg-warning-light border-warning rounded-md">
                             <p class="text-xs text-warning-dark mb-2">
                                 <i class="fas fa-user-edit"></i> Hesabınız üçün istifadəçi adı təyin edin və ya dəyişin.
                             </p>
@@ -573,7 +595,7 @@
                             <button onclick="updateUserUsername()" class="btn-primary w-full">Təsdiqlə</button>
                         </div>
 
-                        <div class="profile-stats-mini animate-up delay-1">
+                        <div class="profile-stats-mini">
                             <div class="stat-item">
                                 <span class="stat-label">Cəmi Test</span>
                                 <span id="total-tests-count" class="stat-value">0</span>
@@ -585,7 +607,7 @@
                         </div>
                     </div>
 
-                    <div class="history-card card animate-up delay-2">
+                    <div class="history-card card">
                         <h3>Test Tarixçəsi</h3>
                         <div class="history-container">
                             <table class="history-table">
@@ -665,9 +687,9 @@
         <section id="admin-dashboard-section" class="hidden">
             <div class="container">
                 <!-- Ziyarətçi Statistikası -->
-                <div id="visitor-stats-display" class="mb-6 stats-grid">
-                    <div class="stat-card animate-up delay-1">
-                        <div class="stat-icon animate-float">
+                <div id="visitor-stats-display" class="mb-6 stats-grid animate-up">
+                    <div class="stat-card">
+                        <div class="stat-icon">
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="stat-info">
@@ -675,8 +697,8 @@
                             <h3 class="stat-value" id="total-visitors">0</h3>
                         </div>
                     </div>
-                    <div class="stat-card animate-up delay-2">
-                        <div class="stat-icon animate-float delay-1" style="color: var(--success-color); background: var(--success-light);">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: var(--success-color); background: var(--success-light);">
                             <i class="fas fa-check-circle"></i>
                         </div>
                         <div class="stat-info">
@@ -684,8 +706,8 @@
                             <h3 class="stat-value" id="total-finished-quizzes">0</h3>
                         </div>
                     </div>
-                    <div class="stat-card animate-up delay-3">
-                        <div class="stat-icon animate-float delay-2" style="color: var(--warning-color); background: var(--warning-light);">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color: var(--warning-color); background: var(--warning-light);">
                             <i class="fas fa-question-circle"></i>
                         </div>
                         <div class="stat-info">
@@ -695,7 +717,7 @@
                     </div>
                 </div>
 
-                <div class="header-actions animate-up delay-4">
+                <div class="header-actions animate-up delay-1">
                     <h2 id="admin-dashboard-title">Admin Paneli - Kateqoriyalar</h2>
                     <div class="admin-top-actions flex flex-wrap gap-2 justify-end">
                         <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()"><i class="fas fa-arrow-left"></i> Geri</button>
@@ -705,7 +727,7 @@
                         <button class="btn-primary" onclick="showAddCategoryModal()">+ Yeni Kateqoriya</button>
                     </div>
                 </div>
-                <div id="admin-categories-grid" class="grid-container animate-up delay-5">
+                <div id="admin-categories-grid" class="grid-container animate-up delay-2">
                     <!-- Admin Categories will be loaded here -->
                 </div>
             </div>
@@ -714,11 +736,11 @@
         <!-- Reports Section (Admin) -->
         <section id="reports-section" class="hidden">
             <div class="container">
-                <div class="header-actions">
+                <div class="header-actions animate-up">
                     <button onclick="showAdminDashboard()" class="btn-secondary"><i class="fas fa-arrow-left"></i> Geri</button>
                     <h2><i class="fas fa-flag"></i> Gələn Şikayətlər və Təkliflər</h2>
                 </div>
-                <div id="reports-list" class="list-container mt-4">
+                <div id="reports-list" class="list-container mt-4 animate-up delay-1">
                     <!-- Reports will be loaded here -->
                 </div>
             </div>
@@ -727,8 +749,8 @@
         <!-- Category Details / Admin Panel for Category -->
         <section id="category-admin-section" class="hidden">
             <div class="container">
-                <button onclick="showDashboard()" class="btn-back"><i class="fas fa-arrow-left"></i> Geri</button>
-                <div class="category-header">
+                <button onclick="showDashboard()" class="btn-back animate-up"><i class="fas fa-arrow-left"></i> Geri</button>
+                <div class="category-header animate-up delay-1">
                     <h2 id="current-category-title">Kateqoriya Adı</h2>
                     <div class="category-header-btns">
                         <button id="start-quiz-btn" class="btn-success" onclick="startQuiz()">
@@ -740,7 +762,7 @@
                     </div>
                 </div>
                 
-                <div class="admin-panel-area">
+                <div class="admin-panel-area animate-up delay-2">
                     <div class="header-actions">
                         <h3>Suallar İdarəetmə Paneli</h3>
                         <button class="btn-primary" onclick="showAddQuestionModal()">+ Sual Əlavə Et</button>
@@ -755,7 +777,7 @@
         <!-- Public Questions Section -->
         <section id="public-questions-section" class="hidden">
             <div class="container">
-                <div class="header-actions">
+                <div class="header-actions animate-up">
                     <button onclick="hidePublicQuestions()" class="btn-secondary"><i class="fas fa-arrow-left"></i> Geri</button>
                     <h2 id="public-questions-title">Ümumi Suallar</h2>
                     <button id="add-public-q-btn" class="btn-primary hidden" onclick="showAddPublicQuestionModal()">
@@ -763,11 +785,11 @@
                     </button>
                 </div>
                 
-                <div class="public-questions-filter">
+                <div class="public-questions-filter animate-up delay-1">
                     <p class="text-muted">Bu bölmədə istifadəçilər tərəfindən əlavə edilmiş açıq suallar yer alır.</p>
                 </div>
 
-                <div id="public-questions-list" class="public-questions-grid">
+                <div id="public-questions-list" class="public-questions-grid animate-up delay-2">
                     <!-- Public questions will be loaded here -->
                 </div>
             </div>
@@ -1116,7 +1138,7 @@
                                         <i class="fas fa-exclamation-triangle"></i> <strong>DİQQƏT:</strong> Suallar yaradıldıqdan sonra sual mətnlərini, variantları və düzgün cavabın düzgün seçildiyini mütləq yenidən yoxlayın!
                                     </p>
                                     <div class="ai-input-group">
-                                        <label>Mövzu mətni və ya material:</label>
+                                        <label><i class="fas fa-keyboard"></i> Mətn Analizi:</label>
                                         <textarea id="admin-ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni buraya daxil edin..."></textarea>
                                     </div>
                                     <div class="ai-controls">
