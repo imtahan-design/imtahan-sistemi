@@ -4152,10 +4152,10 @@ window.generateAdminAIQuestions = async function() {
         return showNotification('Sual sayı ən azı 5 seçilməlidir (Admin bölməsində yalnız mətndən sual yaradılır).', 'warning');
     }
     
-    if (context.length < 50) {
+    if (context.length < 10) {
         if (loading) loading.classList.add('hidden');
         if (btn) btn.disabled = false;
-        return showNotification('Mətn çox qısadır. Daha keyfiyyətli suallar üçün daha çox məlumat daxil edin.', 'warning');
+        return showNotification('Daxil edilən məlumat çox qısadır. Zəhmət olmasa daha ətraflı yazın.', 'warning');
     }
 
     if (!GEMINI_API_KEY) {
@@ -4173,7 +4173,7 @@ window.generateAdminAIQuestions = async function() {
         difficultyText = "Suallar orta çətinlikdə olsun. ";
     }
 
-    const prompt = `Sən bir peşəkar müəllimsən. Aşağıdakı mətndən istifadə edərək ${count} dənə çoxseçimli (test) sual hazırla. ${difficultyText}
+    const prompt = `Sən bir peşəkar müəllimsən. Aşağıdakı məlumat və ya tapşırıq əsasında ${count} dənə çoxseçimli (test) sual hazırla. ${difficultyText}
     Cavablar yalnız Azərbaycan dilində olsun. 
     Hər sualın 4 variantı olsun. 
     Variantların daxilində "A)", "1)" kimi prefikslər yazma, yalnız variantın mətnini yaz.
@@ -4188,7 +4188,7 @@ window.generateAdminAIQuestions = async function() {
     ]
     "correct" sahəsi düzgün variantın indeksidir (0-dan başlayaraq).
     
-    Mətn: ${context}`;
+    Məlumat/Tapşırıq: ${context}`;
 
     // Limitləri yenilə
     AIUsageLimits.updateDailyLimit('question');

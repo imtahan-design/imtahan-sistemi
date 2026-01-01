@@ -430,6 +430,17 @@ h1, h2, h3, .logo-main {
     border: 1px solid var(--border-color);
 }
 
+.ai-task-examples {
+    background: rgba(var(--primary-rgb), 0.1);
+    border: 1px solid var(--primary-color);
+    border-left: 4px solid var(--primary-color);
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
 .ai-limits-info {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -503,6 +514,42 @@ h1, h2, h3, .logo-main {
 @media (max-width: 768px) {
     .ai-how-it-works {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .ai-info {
+        padding: 15px;
+    }
+    
+    .ai-limits-info {
+        grid-template-columns: 1fr;
+        padding: 12px;
+    }
+    
+    .work-step {
+        padding: 15px;
+        gap: 12px;
+    }
+    
+    .step-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 1.1rem;
+    }
+    
+    .ai-input-group label {
+        font-size: 0.9rem;
+    }
+    
+    .ai-input-group textarea {
+        height: 120px;
+        font-size: 0.9rem;
+    }
+    
+    .btn-ai-generate {
+        padding: 10px 20px;
+        font-size: 0.95rem;
     }
 }
 

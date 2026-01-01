@@ -284,7 +284,7 @@
                         <!-- AI Generation -->
                         <div id="method-ai" class="method-content hidden">
                             <div class="ai-info">
-                                <p><i class="fas fa-robot"></i> <strong>Süni İntellekt</strong> vasitəsilə mətndən suallar hazırlayın.</p>
+                                <p><i class="fas fa-robot"></i> <strong>Süni İntellekt</strong> vasitəsilə mətndən və ya xüsusi tapşırıq əsasında suallar hazırlayın.</p>
                                 
                                 <div class="ai-limits-info">
                                     <div class="limit-item">
@@ -307,8 +307,8 @@
                                             <i class="fas fa-keyboard"></i>
                                         </div>
                                         <div class="step-content">
-                                            <h4>Mətn Analizi</h4>
-                                            <p>Daxil etdiyiniz mətni süni intellekt analiz edir və mövzuya uyğun tamamilə yeni suallar hazırlayır.</p>
+                                            <h4>Mətn və ya Tapşırıq</h4>
+                                            <p>Daxil etdiyiniz mətni və ya tapşırığı (məs: "Azərbaycanın 8-ci sinif Biologiya dərsliyi üzrə KSQ sualları hazırla") süni intellekt analiz edərək yeni suallar hazırlayır.</p>
                                         </div>
                                     </div>
                                     <div class="work-step">
@@ -326,8 +326,8 @@
                                     <i class="fas fa-exclamation-triangle"></i> <strong>DİQQƏT:</strong> Suallar yaradıldıqdan sonra sual mətnlərini, variantları və düzgün cavabın düzgün seçildiyini mütləq yenidən yoxlayın!
                                 </p>
                                 <div class="ai-input-group">
-                                    <label><i class="fas fa-keyboard"></i> Mətn Analizi:</label>
-                                    <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni daxil edin və ya aşağıdan sualların şəklini/PDF faylını yükləyin..." class="text-main"></textarea>
+                                    <label><i class="fas fa-keyboard"></i> Mətn və ya Tapşırıq:</label>
+                                    <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni və ya tapşırığı buraya daxil edin və ya aşağıdan sualların şəklini/PDF faylını yükləyin..." class="text-main"></textarea>
                                 </div>
                                 <div class="ai-input-group">
                                     <label><i class="fas fa-file-import"></i> Fayl Emalı:</label>
@@ -1133,13 +1133,26 @@
                             <!-- AI Generation (Admin) -->
                             <div id="admin-method-ai" class="admin-method-content hidden">
                                 <div class="ai-info">
-                                    <p><i class="fas fa-robot"></i> <strong>Süni İntellekt</strong> vasitəsilə mətndən suallar hazırlayın.</p>
-                                    <p class="ai-warning-yellow">
+                                    <p><i class="fas fa-robot"></i> <strong>Süni İntellekt</strong> vasitəsilə mətndən və ya xüsusi tapşırıq əsasında suallar hazırlayın.</p>
+                                    
+                                    <div class="ai-how-it-works animate-up mt-3">
+                                        <div class="work-step">
+                                            <div class="step-icon">
+                                                <i class="fas fa-keyboard"></i>
+                                            </div>
+                                            <div class="step-content">
+                                                <h4>Mətn və ya Tapşırıq</h4>
+                                                <p>Daxil etdiyiniz mətni və ya tapşırığı (məs: "Azərbaycanın 8-ci sinif Biologiya dərsliyi üzrə KSQ sualları hazırla") süni intellekt analiz edərək yeni suallar hazırlayır.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <p class="ai-warning-yellow mt-3">
                                         <i class="fas fa-exclamation-triangle"></i> <strong>DİQQƏT:</strong> Suallar yaradıldıqdan sonra sual mətnlərini, variantları və düzgün cavabın düzgün seçildiyini mütləq yenidən yoxlayın!
                                     </p>
                                     <div class="ai-input-group">
-                                        <label><i class="fas fa-keyboard"></i> Mətn Analizi:</label>
-                                        <textarea id="admin-ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni buraya daxil edin..."></textarea>
+                                        <label><i class="fas fa-keyboard"></i> Mətn və ya Tapşırıq:</label>
+                                        <textarea id="admin-ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni və ya tapşırığı buraya daxil edin..."></textarea>
                                     </div>
                                     <div class="ai-controls">
                                         <div class="q-count-selector">
