@@ -198,11 +198,11 @@
                     <div class="quiz-setup-grid animate-up delay-1">
                         <div class="form-group">
                             <label><i class="fas fa-file-signature"></i> Testin Adı</label>
-                            <input type="text" id="private-quiz-title" placeholder="Məs: Riyaziyyat - Sinif 5">
+                            <input type="text" id="private-quiz-title" placeholder="Məs: Riyaziyyat - Sinif 5" class="text-main">
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-lock"></i> Giriş Şifrəsi</label>
-                            <input type="text" id="private-quiz-password" placeholder="Məs: 12345">
+                            <input type="text" id="private-quiz-password" placeholder="Məs: 12345" class="text-main">
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-hourglass-half"></i> Vaxt Növü</label>
@@ -227,7 +227,7 @@
                         </div>
                         <div class="form-group" id="default-time-container">
                             <label id="time-label"><i class="fas fa-clock"></i> Standart Vaxt (san)</label>
-                            <input type="number" id="private-quiz-default-time" value="45" min="5">
+                            <input type="number" id="private-quiz-default-time" value="45" min="5" class="text-main">
                         </div>
                     </div>
 
@@ -275,7 +275,7 @@
                                 </p>
                                 <p class="bulk-warning-red"><i class="fas fa-check-double"></i> Mətni suallara çevirə basdıqdan sonra sualların mətnini və variantlarını yenidən gözdən keçirin!</p>
                             </div>
-                            <textarea id="bulk-questions-text" placeholder="Sualları buraya yapışdırın..." class="animate-up delay-2"></textarea>
+                            <textarea id="bulk-questions-text" placeholder="Sualları buraya yapışdırın..." class="animate-up delay-2 text-main"></textarea>
                             <button onclick="parseBulkQuestions()" class="btn-success w-full animate-up delay-3">
                                 <i class="fas fa-magic"></i> Mətni Suallara Çevir
                             </button>
@@ -306,7 +306,7 @@
                                 </p>
                                 <div class="ai-input-group animate-up delay-3">
                                     <label>Mövzu mətni, material, sualların şəkli və ya PDF faylı:</label>
-                                    <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni daxil edin və ya aşağıdan sualların şəklini/PDF faylını yükləyin..."></textarea>
+                                    <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni daxil edin və ya aşağıdan sualların şəklini/PDF faylını yükləyin..." class="text-main"></textarea>
                                 </div>
                                 <div class="ai-input-group">
                                     <div class="image-upload-area" id="ai-image-drop-area">
@@ -325,7 +325,7 @@
                                 <div class="ai-controls">
                                     <div class="q-count-selector">
                                         <label>Sual sayı:</label>
-                                        <select id="ai-question-count">
+                                        <select id="ai-question-count" class="text-main">
                                             <option value="0">0 (Yalnız fayldan oxu)</option>
                                             <option value="5">5 sual</option>
                                             <option value="10" selected>10 sual</option>
@@ -335,7 +335,7 @@
                                     </div>
                                     <div class="q-difficulty-selector ml-3">
                                         <label>Çətinlik:</label>
-                                        <select id="ai-difficulty">
+                                        <select id="ai-difficulty" class="text-main">
                                             <option value="easy">Asan</option>
                                             <option value="medium" selected>Orta</option>
                                             <option value="hard">Çətin</option>
@@ -518,10 +518,7 @@
                                     <i class="fas fa-university"></i>
                                     <span>Dövlət Qulluğu</span>
                                 </div>
-                                <div class="cap-item">
-                                    <i class="fas fa-graduation-cap"></i>
-                                    <span>OTK və MİQ</span>
-                                </div>
+
                                 <div class="cap-item">
                                     <i class="fas fa-trophy"></i>
                                     <span>Olimpiada</span>
@@ -1353,14 +1350,14 @@
 
     <!-- Forgot Password Modal -->
     <div id="forgot-password-modal" class="modal hidden">
-        <div class="modal-content max-w-450 rounded-20 overflow-hidden border-none shadow-lg">
+        <div class="modal-content max-w-450 rounded-20 overflow-hidden border-none shadow-lg glass-effect">
             <div class="modal-header bg-primary p-6 border-none">
                 <h2 class="text-white m-0 text-2xl"><i class="fas fa-key mr-2"></i> Şifrəni Bərpa Et</h2>
                 <button onclick="closeModal('forgot-password-modal')" class="close-btn text-white opacity-80 text-3xl">&times;</button>
             </div>
-            <div class="modal-body p-10 bg-white">
+            <div class="modal-body p-10">
                 <div class="text-center mb-6">
-                    <div class="w-15 h-15 bg-primary-light text-primary rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <div class="w-15 h-15 bg-primary-light text-primary rounded-full flex items-center justify-center mx-auto mb-4 text-2xl border border-primary">
                         <i class="fas fa-user-shield"></i>
                     </div>
                     <p class="text-sm text-muted m-0">
@@ -1371,11 +1368,11 @@
                     <div class="relative">
                         <i class="fas fa-at absolute left-4 top-50 translate-y--50 text-muted"></i>
                         <input type="text" id="reset-identifier" placeholder="İstifadəçi adı və ya Email" 
-                            class="w-full pl-12 py-3 border-2 rounded-12 text-base transition outline-none bg-bg focus-border-primary">
+                            class="w-full pl-12 py-3 border-2 rounded-12 text-base transition outline-none bg-bg focus-border-primary text-main">
                     </div>
                 </div>
             </div>
-            <div class="modal-footer p-6 px-10 bg-white border-none flex gap-3">
+            <div class="modal-footer p-6 px-10 bg-transparent border-none flex gap-3">
                 <button onclick="closeModal('forgot-password-modal')" class="btn-outline flex-1 p-3 rounded-12 font-semibold text-muted border-2">Ləğv et</button>
                 <button onclick="sendResetEmail()" class="btn-primary flex-2 p-3 rounded-12 font-semibold bg-primary border-none shadow-md" id="btn-reset-pwd">
                     <i class="fas fa-paper-plane mr-2"></i> Təlimatları Göndər
@@ -1386,35 +1383,35 @@
 
     <!-- New Password Modal -->
     <div id="reset-password-modal" class="modal hidden">
-        <div class="modal-content max-w-450 rounded-20 overflow-hidden border-none shadow-lg">
+        <div class="modal-content max-w-450 rounded-20 overflow-hidden border-none shadow-lg glass-effect">
             <div class="modal-header bg-success p-6 border-none">
                 <h2 class="text-white m-0 text-2xl"><i class="fas fa-lock mr-2"></i> Yeni Şifrə</h2>
                 <button onclick="closeModal('reset-password-modal')" class="close-btn text-white opacity-80 text-3xl">&times;</button>
             </div>
-            <div class="modal-body p-10 bg-white">
-                <div id="reset-email-display" class="text-center text-sm text-success-dark mb-6 bg-success-light p-3 rounded-md font-semibold flex items-center justify-center gap-2">
+            <div class="modal-body" style="padding: 30px; background: var(--bg-color);">
+                <div id="reset-email-display" style="text-align: center; font-size: 0.9rem; color: #10b981; margin-bottom: 25px; background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <i class="fas fa-user-check"></i> <span></span>
                 </div>
                 
                 <div class="form-group mb-4">
-                    <label class="block mb-2 font-semibold text-main text-sm">Yeni Şifrə:</label>
+                    <label class="block mb-2 font-semibold text-sm" style="color: var(--text-main);">Yeni Şifrə:</label>
                     <div class="relative">
                         <i class="fas fa-shield-alt absolute left-4 top-50 translate-y--50 text-muted"></i>
                         <input type="password" id="new-password-input" placeholder="Minimum 8 simvol" 
-                            class="w-full pl-12 py-3 border-2 rounded-12 text-base transition outline-none bg-bg focus-border-success">
+                            class="w-full pl-12 py-3 border-2 rounded-12 text-base transition outline-none focus-border-success" style="background: var(--bg-color); border-color: var(--border-color); color: var(--text-main);">
                     </div>
                 </div>
 
                 <div class="form-group m-0">
-                    <label class="block mb-2 font-semibold text-main text-sm">Şifrəni Təkrarla:</label>
+                    <label class="block mb-2 font-semibold text-sm" style="color: var(--text-main);">Şifrəni Təkrarla:</label>
                     <div class="relative">
                         <i class="fas fa-check-double absolute left-4 top-50 translate-y--50 text-muted"></i>
                         <input type="password" id="confirm-password-input" placeholder="Yenidən daxil edin" 
-                            class="w-full pl-12 py-3 border-2 rounded-12 text-base transition outline-none bg-bg focus-border-success">
+                            class="w-full pl-12 py-3 border-2 rounded-12 text-base transition outline-none focus-border-success" style="background: var(--bg-color); border-color: var(--border-color); color: var(--text-main);">
                     </div>
                 </div>
             </div>
-            <div class="modal-footer p-6 px-10 bg-white border-none">
+            <div class="modal-footer" style="padding: 24px 40px; background: var(--bg-color); border-top: 1px solid var(--border-color);">
                 <button onclick="submitNewPassword()" class="btn-primary w-full p-4 rounded-12 font-semibold bg-success border-none shadow-md text-base" id="btn-submit-new-pwd">
                     <i class="fas fa-check-circle mr-2"></i> Şifrəni Yenilə
                 </button>
