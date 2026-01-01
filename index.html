@@ -97,6 +97,9 @@
                     <h2>Giriş</h2>
                     <input type="text" id="login-username" placeholder="İstifadəçi adı">
                     <input type="password" id="login-password" placeholder="Şifrə">
+                    <div style="text-align: right; margin-top: -10px; margin-bottom: 15px;">
+                        <a href="#" onclick="showForgotPassword()" style="font-size: 0.8rem; color: #6366f1; text-decoration: none;">Şifrəni unutmusunuz?</a>
+                    </div>
                     <button onclick="login()" class="btn-primary">Daxil ol</button>
                     <p>Hesabınız yoxdur? <a href="#" onclick="showRegister()">Qeydiyyat</a></p>
                 </div>
@@ -1265,6 +1268,57 @@
                 <button onclick="closeModal('reply-modal')" class="btn-outline">Ləğv et</button>
                 <button onclick="submitReply()" class="btn-primary">
                     <i class="fas fa-paper-plane"></i> Cavabı Göndər
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgot-password-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-key"></i> Şifrəni Bərpa Et</h2>
+                <button onclick="closeModal('forgot-password-modal')" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 20px;">
+                    Qeydiyyatdan keçdiyiniz istifadəçi adını və ya email ünvanını daxil edin. Şifrəni yeniləmək üçün sizə təlimat göndəriləcək.
+                </p>
+                <div class="input-group">
+                    <label>İstifadəçi adı və ya Email:</label>
+                    <input type="text" id="reset-identifier" placeholder="Məsələn: username və ya email@example.com" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('forgot-password-modal')" class="btn-outline">Ləğv et</button>
+                <button onclick="sendResetEmail()" class="btn-primary" id="btn-reset-pwd">
+                    <i class="fas fa-paper-plane"></i> Göndər
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Password Modal -->
+    <div id="reset-password-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-lock"></i> Yeni Şifrə Təyin Et</h2>
+                <button onclick="closeModal('reset-password-modal')" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="reset-email-display" style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px; background: #f1f5f9; padding: 8px; border-radius: 6px;"></p>
+                <div class="input-group">
+                    <label>Yeni Şifrə:</label>
+                    <input type="password" id="new-password-input" placeholder="Minimum 8 simvol" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                </div>
+                <div class="input-group" style="margin-top: 15px;">
+                    <label>Şifrəni Təkrarla:</label>
+                    <input type="password" id="confirm-password-input" placeholder="Yenidən daxil edin" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="submitNewPassword()" class="btn-primary" id="btn-submit-new-pwd" style="width: 100%;">
+                    <i class="fas fa-check-circle"></i> Şifrəni Yenilə
                 </button>
             </div>
         </div>

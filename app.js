@@ -821,6 +821,108 @@ window.showRegister = function(defaultRole = 'user') {
     }
 }
 
+window.showForgotPassword = function() {
+    document.getElementById('forgot-password-modal').classList.remove('hidden');
+}
+
+window.sendResetEmail = async function() {
+    const identifier = document.getElementById('reset-identifier').value.trim();
+    if (!identifier) return showNotification('İstifadəçi adı və ya email daxil edin!', 'error');
+
+    const btn = document.getElementById('btn-reset-pwd');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Göndərilir...';
+    btn.disabled = true;
+
+    try {
+        let email = identifier;
+        
+        if (!identifier.includes('@')) {
+            const userQuery = await db.collection('users').where('username', '==', identifier).get();
+            if (userQuery.empty) {
+                email = `${identifier}@imtahan.site`;
+            } else {
+                email = userQuery.docs[0].data().email || `${identifier}@imtahan.site`;
+            }
+        }
+
+        // ActionCodeSettings - Linki öz saytımıza yönləndirmək üçün
+        const actionCodeSettings = {
+            url: window.location.origin + window.location.pathname + '?mode=resetPassword',
+            handleCodeInApp: true
+        };
+
+        await auth.sendPasswordResetEmail(email, actionCodeSettings);
+        showNotification('Şifrəni sıfırlamaq üçün təlimatlar email ünvanınıza göndərildi.', 'success');
+        closeModal('forgot-password-modal');
+        document.getElementById('reset-identifier').value = '';
+    } catch (error) {
+        console.error("Password reset error:", error);
+        let msg = 'Xəta baş verdi.';
+        if (error.code === 'auth/user-not-found') msg = 'Bu istifadəçi və ya email tapılmadı.';
+        else if (error.code === 'auth/invalid-email') msg = 'Email ünvanı düzgün deyil.';
+        showNotification(msg, 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Şifrə yeniləmə linki ilə gələnləri tutmaq
+let resetPasswordCode = null;
+
+window.checkAuthAction = async function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    const oobCode = urlParams.get('oobCode');
+
+    if (mode === 'resetPassword' && oobCode) {
+        resetPasswordCode = oobCode;
+        try {
+            const email = await auth.verifyPasswordResetCode(oobCode);
+            document.getElementById('reset-email-display').textContent = `Email: ${email}`;
+            document.getElementById('reset-password-modal').classList.remove('hidden');
+            
+            // URL-i təmizləyək (oobCode görünməsin)
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (error) {
+            console.error("Verify code error:", error);
+            showNotification('Şifrə sıfırlama linki etibarsızdır və ya vaxtı keçib.', 'error');
+        }
+    }
+}
+
+window.submitNewPassword = async function() {
+    const newPass = document.getElementById('new-password-input').value;
+    const confirmPass = document.getElementById('confirm-password-input').value;
+
+    if (!newPass || newPass.length < 8) return showNotification('Şifrə minimum 8 simvol olmalıdır!', 'error');
+    if (newPass !== confirmPass) return showNotification('Şifrələr uyğun gəlmir!', 'error');
+
+    const btn = document.getElementById('btn-submit-new-pwd');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yenilənir...';
+    btn.disabled = true;
+
+    try {
+        await auth.confirmPasswordReset(resetPasswordCode, newPass);
+        showNotification('Şifrəniz uğurla yeniləndi! İndi yeni şifrə ilə daxil ola bilərsiniz.', 'success');
+        closeModal('reset-password-modal');
+        showLogin();
+    } catch (error) {
+        console.error("Confirm reset error:", error);
+        showNotification('Xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.', 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Səhifə yüklənəndə auth action-ları yoxla
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(checkAuthAction, 1000);
+});
+
 window.login = async function() {
     const username = document.getElementById('login-username').value;
     const pass = document.getElementById('login-password').value;
@@ -1029,6 +1131,14 @@ window.register = async function() {
             const userQuery = await db.collection('users').where('username', '==', username).get();
             if (!userQuery.empty) {
                 throw new Error('Bu istifadəçi adı artıq mövcuddur!');
+            }
+
+            // 2. Email-in mövcudluğunu yoxla (Müəllimlər üçün)
+            if (role === 'teacher' && email) {
+                const emailQuery = await db.collection('users').where('email', '==', email).get();
+                if (!emailQuery.empty) {
+                    throw new Error('Bu email ünvanı artıq qeydiyyatdan keçib!');
+                }
             }
         }
 
