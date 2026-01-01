@@ -5286,12 +5286,19 @@ window.loadUserInbox = async function() {
             const date = report.timestamp ? new Date(report.timestamp).toLocaleString('az-AZ') : 'Naməlum tarix';
             const replyDate = report.replyTimestamp ? new Date(report.replyTimestamp).toLocaleString('az-AZ') : '';
             
+            const statusBadge = report.status === 'pending' ? 
+                '<span class="inbox-status status-pending"><i class="fas fa-clock"></i> Gözləyir</span>' : 
+                '<span class="inbox-status status-replied"><i class="fas fa-check-double"></i> Cavablandı</span>';
+
             div.innerHTML = `
                 <div class="inbox-header">
-                    <span class="report-type">
-                        <i class="fas ${report.type === 'contact_form' ? 'fa-envelope' : 'fa-flag'}"></i> 
-                        ${report.type === 'contact_form' ? 'Əlaqə Mesajı' : (report.questionType === 'public' ? 'Ümumi Sual' : 'Kateqoriya Sualı')}
-                    </span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="report-type">
+                            <i class="fas ${report.type === 'contact_form' ? 'fa-envelope' : 'fa-flag'}"></i> 
+                            ${report.type === 'contact_form' ? 'Əlaqə Mesajı' : (report.questionType === 'public' ? 'Ümumi Sual' : 'Kateqoriya Sualı')}
+                        </span>
+                        ${statusBadge}
+                    </div>
                     <span class="report-date">${date}</span>
                 </div>
                 <div class="report-content">
