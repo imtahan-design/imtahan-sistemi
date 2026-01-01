@@ -1271,8 +1271,16 @@ window.hideAdminQuestionPage = function() {
 }
 
 // --- Teacher Dashboard Functions ---
-window.showTeacherDashboard = function() {
+window.showTeacherDashboard = function(doPush = true) {
     if (!currentUser) return showLogin();
+
+    if (doPush) {
+        const url = new URL(window.location);
+        url.searchParams.set('page', 'teacher');
+        url.searchParams.delete('cat');
+        window.history.pushState({ page: 'teacher' }, '', url);
+    }
+
     hideAllSections();
     document.getElementById('teacher-dashboard-section').classList.remove('hidden');
     renderPrivateQuizzes();
@@ -2169,13 +2177,38 @@ function handleUrlParams() {
     const urlParams = new URLSearchParams(window.location.search);
     const quizId = urlParams.get('quiz');
     const catId = urlParams.get('cat');
+    const page = urlParams.get('page');
     
+    // Səhifə yönləndirməsi
+    if (page === 'profile') {
+        window.showProfile(false); // false: pushState etmə
+        return;
+    } else if (page === 'admin') {
+        window.showAdminDashboard(false);
+        return;
+    } else if (page === 'teacher') {
+        window.showTeacherDashboard(false);
+        return;
+    } else if (page === 'reports') {
+        window.showReports(false);
+        return;
+    }
+
+    // Admin kateqoriya ID-si varsa, həmin admin bölməsini aç
+    const adminCatId = urlParams.get('adminCat');
+    if (adminCatId) {
+        currentAdminParentId = adminCatId;
+    } else {
+        currentAdminParentId = null;
+    }
+
     // Əgər kateqoriya ID-si varsa, həmin bölməni aç
     if (catId) {
         // Təhlükəsizlik: Kateqoriyanın mövcudluğunu yoxla
         const exists = categories.some(c => c.id === catId);
         if (exists) {
             currentParentId = catId;
+            window.showDashboard(false); // Dashboard-u göstər ki, kateqoriyalar görünsün
         } else {
             console.warn("URL-dəki kateqoriya tapılmadı, ana səhifəyə yönləndirilir.");
             currentParentId = null;
@@ -2185,6 +2218,10 @@ function handleUrlParams() {
         }
     } else {
         currentParentId = null;
+        // Əgər heç bir xüsusi səhifə və ya quiz yoxdursa, dashboard-u göstər
+        if (!page && !quizId) {
+            window.showDashboard(false);
+        }
     }
 
     if (quizId) {
@@ -2403,8 +2440,16 @@ function handleVisibilityChange() {
 }
 
 // --- Dashboard & Categories ---
-window.showAdminDashboard = function() {
+window.showAdminDashboard = function(doPush = true) {
     if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) return showNotification('Bu səhifə yalnız səlahiyyətli şəxslər üçündür!', 'error');
+    
+    if (doPush) {
+        const url = new URL(window.location);
+        url.searchParams.set('page', 'admin');
+        url.searchParams.delete('cat');
+        window.history.pushState({ page: 'admin' }, '', url);
+    }
+
     currentAdminParentId = null; // Reset to top level
     hideAllSections();
     document.getElementById('admin-dashboard-section').classList.remove('hidden');
@@ -2412,8 +2457,16 @@ window.showAdminDashboard = function() {
     loadVisitorStats(); // Statistikanı yüklə
 }
 
-window.showProfile = function() {
+window.showProfile = function(doPush = true) {
     if (!currentUser) return showLogin();
+
+    if (doPush) {
+        const url = new URL(window.location);
+        url.searchParams.set('page', 'profile');
+        url.searchParams.delete('cat');
+        window.history.pushState({ page: 'profile' }, '', url);
+    }
+
     hideAllSections();
     document.getElementById('profile-section').classList.remove('hidden');
     
@@ -2803,13 +2856,7 @@ window.navigateUp = function() {
 
 // Brauzerin Geri/İrəli düymələri üçün dinləyici
 window.addEventListener('popstate', (event) => {
-    if (event.state && event.state.currentParentId !== undefined) {
-        currentParentId = event.state.currentParentId;
-        renderCategories();
-    } else {
-        // Əgər state yoxdursa, URL-dən oxu
-        handleUrlParams();
-    }
+    handleUrlParams();
 });
 
 function renderAdminCategories() {
@@ -2887,14 +2934,25 @@ function renderAdminCategories() {
 
 window.enterAdminCategory = function(id) {
     currentAdminParentId = id;
+    
+    // URL-i yenilə
+    const url = new URL(window.location);
+    if (id) {
+        url.searchParams.set('adminCat', id);
+        url.searchParams.set('page', 'admin');
+    } else {
+        url.searchParams.delete('adminCat');
+    }
+    window.history.pushState({ currentAdminParentId: id }, '', url);
+
     renderAdminCategories();
 }
 
 window.navigateAdminUp = function() {
     if (!currentAdminParentId) return;
     const current = categories.find(c => c.id === currentAdminParentId);
-    currentAdminParentId = current ? current.parentId : null;
-    renderAdminCategories();
+    const newId = current ? current.parentId : null;
+    window.enterAdminCategory(newId);
 }
 
 window.openCategoryQuestions = function(id) {
@@ -4734,7 +4792,7 @@ function showResult() {
     if (totalQuestionsElem) totalQuestionsElem.textContent = total;
 }
 
-window.showDashboard = function() {
+window.showDashboard = function(doPush = true) {
     removeProtection();
     // If a quiz is in progress, stop the timer
     if (currentQuiz && currentQuiz.timer) {
@@ -4748,6 +4806,11 @@ window.showDashboard = function() {
         return;
     }
     
+    if (doPush) {
+        // URL-dəki bütün parametrləri sil və ana səhifəyə (root) qaytar
+        window.history.pushState({ page: 'home' }, '', window.location.pathname);
+    }
+
     activePrivateQuiz = null;
     studentName = '';
     
@@ -4894,7 +4957,15 @@ window.submitReport = async function() {
     }
 }
 
-window.showReports = function() {
+window.showReports = function(doPush = true) {
+    if (doPush) {
+        const url = new URL(window.location);
+        url.searchParams.set('page', 'reports');
+        url.searchParams.delete('cat');
+        url.searchParams.delete('adminCat');
+        window.history.pushState({ page: 'reports' }, '', url);
+    }
+
     hideAllSections();
     document.getElementById('reports-section').classList.remove('hidden');
     loadReports();
