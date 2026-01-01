@@ -765,7 +765,8 @@ function updateUI() {
         }
         
         // If not already in admin view or quiz, show public dashboard
-        if (!isPrivateQuiz &&
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!isPrivateQuiz && !urlParams.has('mode') &&
             document.getElementById('admin-dashboard-section').classList.contains('hidden') && 
             document.getElementById('category-admin-section').classList.contains('hidden') &&
             document.getElementById('quiz-section').classList.contains('hidden')) {
@@ -783,7 +784,11 @@ function updateUI() {
         const teacherBtn = document.getElementById('teacher-panel-btn');
         if (teacherBtn) teacherBtn.classList.add('hidden');
         
-        if (!isPrivateQuiz) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isPrivateQuiz = urlParams.has('quiz');
+        const hasAuthMode = urlParams.has('mode');
+        
+        if (!isPrivateQuiz && !hasAuthMode) {
             showDashboard();
         }
     }
@@ -940,6 +945,7 @@ window.checkAuthAction = async function() {
             }
             
             document.getElementById('reset-password-modal').classList.remove('hidden');
+            if (!currentUser) window.showLogin(); // Arxa fonda login səhifəsini göstər
             console.log("Şifrə sıfırlama modalı açıldı:", email);
             
             // URL-i təmizləyək (oobCode görünməsin)
@@ -981,7 +987,8 @@ window.submitNewPassword = async function() {
 window.addEventListener('DOMContentLoaded', () => {
     // Əgər URL-də şifrə bərpa parametrləri varsa, gözləmədən yoxla
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('mode') === 'resetPassword' && urlParams.get('oobCode')) {
+    const mode = urlParams.get('mode');
+    if ((mode === 'resetPassword' || mode === 'action') && urlParams.get('oobCode')) {
         checkAuthAction();
     } else {
         setTimeout(checkAuthAction, 1000);
@@ -2426,6 +2433,13 @@ function handleUrlParams() {
     const quizId = urlParams.get('quiz');
     const catId = urlParams.get('cat');
     const page = urlParams.get('page');
+    const mode = urlParams.get('mode');
+
+    // Şifrə bərpa və ya digər auth rejimləri varsa
+    if (mode && urlParams.get('oobCode')) {
+        window.showLogin(); // Arxa fonda login bölməsini göstər
+        return;
+    }
     
     // Səhifə yönləndirməsi
     if (page === 'profile') {
