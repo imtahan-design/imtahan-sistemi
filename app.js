@@ -851,17 +851,20 @@ window.sendResetEmail = async function() {
             const usernameLower = identifier.toLowerCase();
             if (db) {
                 try {
+                    // Firestore-da həm 'username', həm də 'id' (əgər username kimidirsə) üzrə axtaraq
                     const userQuery = await db.collection('users').where('username', '==', usernameLower).get();
+                    
                     if (!userQuery.empty) {
                         const userData = userQuery.docs[0].data();
+                        console.log("User found by username:", userData);
                         email = userData.email || `${usernameLower}@imtahan.site`;
                     } else {
-                        // İstifadəçi tapılmadısa, student formatında fallback
+                        // Əgər Firestore-da tapılmadısa, bəlkə Auth-da bu adda email var
                         email = `${usernameLower}@imtahan.site`;
+                        console.log("User not in Firestore, falling back to:", email);
                     }
                 } catch (dbErr) {
                     console.error("Firestore error in reset:", dbErr);
-                    // Firestore xətası olsa belə, student formatında davam edək
                     email = `${usernameLower}@imtahan.site`;
                 }
             } else {
@@ -962,7 +965,13 @@ window.submitNewPassword = async function() {
 
 // Səhifə yüklənəndə auth action-ları yoxla
 window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(checkAuthAction, 1000);
+    // Əgər URL-də şifrə bərpa parametrləri varsa, gözləmədən yoxla
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'resetPassword' && urlParams.get('oobCode')) {
+        checkAuthAction();
+    } else {
+        setTimeout(checkAuthAction, 1000);
+    }
 });
 
 window.login = async function() {
