@@ -407,8 +407,8 @@ async function loadData() {
 
             console.log("Categories loaded from Firebase");
             
-            // Dövlət qulluğu miqrasiyası (3 təsadüfi sual əlavə et)
-             setTimeout(() => runDovletQulluguMigration(), 2000); 
+            // Dövlət qulluğu miqrasiyası (Tamamilə deaktiv edildi)
+            // setTimeout(() => runDovletQulluguMigration(), 2000); 
 
         } catch (error) {
             console.error("Error loading from Firebase:", error);
@@ -433,114 +433,15 @@ async function loadData() {
     // Seed Data if Empty (Bərpa edildi)
     let hasChanged = false;
     
-    // --- "Dərslik" Kateqoriyasının Standartlaşdırılması ---
-    let derslikler = categories.filter(c => c.name.trim() === 'Dərslik');
-    let derslikRoot;
-    
-    if (derslikler.length > 1) {
-        derslikRoot = derslikler.find(c => c.id === 'derslik_new') || derslikler[0];
-        const keepId = derslikRoot.id;
-        const duplicateIds = derslikler.filter(c => c.id !== keepId).map(c => c.id);
-        categories = categories.filter(c => !duplicateIds.includes(c.id));
-        
-        categories.forEach(c => {
-            if (duplicateIds.includes(c.parentId)) {
-                c.parentId = keepId;
-                if (db) db.collection('categories').doc(String(c.id)).update({ parentId: keepId });
-            }
-        });
-
-        if (db) {
-            duplicateIds.forEach(id => {
-                db.collection('categories').doc(String(id)).delete();
-            });
-        }
-    } else {
-        derslikRoot = derslikler[0];
+    // --- Bütün avtomatik təmizləmə və birləşdirmə məntiqləri ləğv edildi ---
+    // Hər bir kateqoriya artıq müstəqildir.
+    /* 
+    Dərslik, Azərbaycan tarixi və XI sinif bölmələri üçün heç bir avtomatik kod işləmir.
+    İstifadəçi nə yükləsə, o da qalacaq.
+    */
+    if (false) {
+        // ... (bütün köhnə kodlar)
     }
-
-    if (!derslikRoot) {
-        derslikRoot = { id: 'derslik_new', name: 'Dərslik', time: 45, questions: [], parentId: null };
-        categories.push(derslikRoot);
-        if (db) db.collection('categories').doc('derslik_new').set(derslikRoot);
-    } else if (derslikRoot.id !== 'derslik_new') {
-        const oldId = derslikRoot.id;
-        derslikRoot.id = 'derslik_new';
-        categories.forEach(c => {
-            if (c.parentId === oldId) {
-                c.parentId = 'derslik_new';
-                if (db) db.collection('categories').doc(String(c.id)).update({ parentId: 'derslik_new' });
-            }
-        });
-        if (db) {
-            db.collection('categories').doc('derslik_new').set(derslikRoot);
-            db.collection('categories').doc(String(oldId)).delete();
-        }
-    }
-
-    // --- Dublikat Kateqoriyaların (Ad və Parent eyni olanlar) Təmizlənməsi ---
-    // Bu hissə eyni adlı alt kateqoriyaları (məs: 2 ədəd "Azərbaycan tarixi") təmizləyir
-    const seenCategories = new Map();
-    const toDelete = [];
-
-    categories.forEach(cat => {
-        const key = `${cat.name.trim()}_${cat.parentId}`;
-        if (seenCategories.has(key)) {
-            const firstCat = seenCategories.get(key);
-            // Əgər birində suallar varsa, onları digərinə köçürək (opsional)
-            if (cat.questions && cat.questions.length > 0) {
-                firstCat.questions = [...(firstCat.questions || []), ...cat.questions];
-            }
-            toDelete.push(cat.id);
-        } else {
-            seenCategories.set(key, cat);
-        }
-    });
-
-    if (toDelete.length > 0) {
-        categories = categories.filter(c => !toDelete.includes(c.id));
-        if (db) {
-            toDelete.forEach(id => {
-                db.collection('categories').doc(String(id)).delete();
-            });
-        }
-        hasChanged = true;
-    }
-    
-    // --- "XI sinif Azərbaycan tarixi" suallarının təkmilləşdirilməsi ---
-    let history11 = categories.find(c => c.name.trim() === 'XI sinif' || c.id === 'history_11_new');
-    if (history11) {
-        // Əgər suallarda təkrar (№ işarəsi) varsa və ya boşdursa, yalnız 10 unikal sual qoyuruq.
-        // Süni artırma (500 sual və s.) tamamilə ləğv edildi.
-        if (history11.questions.length === 0 || history11.questions.some(q => q.text.includes('(№'))) {
-            const uniqueQuestions = [
-                { text: 'Azərbaycanın dövlət müstəqilliyini tanıyan ilk dövlət hansıdır?', options: ['Türkiyə', 'Pakistan', 'Rumıniya', 'İran'], correct: 0, exp: '9 noyabr 1991-ci ildə Türkiyə Azərbaycanın müstəqilliyini tanıyan ilk ölkə oldu.' },
-                { text: '1993-cü il 15 iyun Azərbaycan tarixinə hansı adla daxil olmuşdur?', options: ['Zəfər Günü', 'Milli Qurtuluş Günü', 'Dövlət Müstəqilliyi Günü', 'Respublika Günü'], correct: 1, exp: '15 iyun Heydər Əliyevin hakimiyyətə qayıdışı ilə Milli Qurtuluş Günü kimi qeyd edilir.' },
-                { text: 'Naxçıvan Muxtar Respublikasının statusu hansı beynəlxalq müqavilə ilə təsbit olunub?', options: ['Türkmənçay müqaviləsi', 'Gülüstan müqaviləsi', 'Qars müqaviləsi', 'Mudros müqaviləsi'], correct: 2, exp: '1921-ci il Qars müqaviləsi ilə Naxçıvanın statusu müəyyən edilmişdir.' },
-                { text: 'Bakı-Tbilisi-Ceyhan ana ixrac neft kəməri kimin adını daşıyır?', options: ['Zərifə Əliyeva', 'Heydər Əliyev', 'Əbülfəz Elçibəy', 'Nəriman Nərimanov'], correct: 1, exp: 'Kəmər Azərbaycanın ümummilli lideri Heydər Əliyevin adını daşıyır.' },
-                { text: 'Azərbaycan hansı beynəlxalq təşkilatın təsisçilərindən biridir?', options: ['BMT', 'GUAM', 'NATO', 'Avropa Birliyi'], correct: 1, exp: 'Azərbaycan 1997-ci ildə yaradılmış GUAM təşkilatının təsisçilərindən biridir.' },
-                { text: '1991-ci il 18 oktyabrda qəbul edilmiş sənəd necə adlanır?', options: ['İstiqlal Bəyannaməsi', 'Müstəqillik haqqında Konstitusiya Aktı', 'Respublika Günü haqqında fərman', 'Yeni Konstitusiya'], correct: 1, exp: 'Bu tarixdə "Azərbaycan Respublikasının Dövlət Müstəqilliyi haqqında Konstitusiya Aktı" qəbul edilib.' },
-                { text: 'Vətən müharibəsində Şuşanın azad edildiyi gün necə adlanır?', options: ['Qələbə Günü', 'Zəfər Günü', 'Dirçəliş Günü', 'Həmrəylik Günü'], correct: 1, exp: '8 noyabr Şuşanın azad edilməsi şərəfinə Zəfər Günü kimi qeyd olunur.' },
-                { text: 'Azərbaycanın ilk Milli Qəhrəmanlarından biri, tankçı qəhrəmanımız kimdir?', options: ['Albert Aqunov', 'Mübariz İbrahimov', 'Polad Həşimov', 'İlqar Mirzəyev'], correct: 0, exp: 'Albert Aqunov Qarabağ müharibəsində göstərdiyi şücaətə görə Milli Qəhrəman adına layiq görülmüşdür.' },
-                { text: '"Əsrin müqaviləsi" hansı şəhərdə imzalanmışdır?', options: ['Ankara', 'Bakı', 'London', 'Moskva'], correct: 1, exp: '20 sentyabr 1994-cü ildə Bakıda "Gülüstan" sarayında imzalanmışdır.' },
-                { text: 'Azərbaycan Respublikasının ilk Konstitusiyası nə vaxt qəbul olunub?', options: ['1991', '1992', '1995', '1993'], correct: 2, exp: 'Müstəqil Azərbaycanın ilk Konstitusiyası 12 noyabr 1995-ci ildə ümumxalq səsverməsi yolu ilə qəbul edilib.' }
-            ];
-
-            history11.questions = uniqueQuestions.map((q, i) => ({
-                id: `q_h11_final_${i+1}`,
-                text: q.text,
-                options: q.options,
-                correctIndex: q.correct,
-                explanation: q.exp
-            }));
-
-            if (db) db.collection('categories').doc(String(history11.id)).update({ questions: history11.questions });
-            hasChanged = true;
-        }
-    }
-    
-    // Avtomatik sub-kateqoriya yaradılması ləğv edildi.
-    hasChanged = true;
 
     if (hasChanged) {
         saveCategories();
@@ -564,6 +465,81 @@ async function loadData() {
     }
 
     // Check for English category leftovers and remove them
+    // ...
+
+    // --- Bərpa Aləti (Admin üçün) ---
+    window.restoreMissingQuestions = async function() {
+        if (!currentUser || currentUser.role !== 'admin') {
+            alert("Bu funksiya yalnız adminlər üçündür!");
+            return;
+        }
+
+        if (!confirm("Diqqət! Bərpa Aləti yalnız ADI və ÜST BÖLMƏSİ tam eyni olan kateqoriyaları bərpa edəcək. Bu, Kimya suallarının Riyaziyyata düşmə riskini tamamilə aradan qaldırır. Davam edilsin?")) return;
+
+        if (typeof showLoading === 'function') showLoading("Verilənlər bazası yoxlanılır...");
+        
+        try {
+            const snapshot = await db.collection('categories').get();
+            const dbCategories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            let restoredInfo = [];
+            let updatedCategories = [];
+
+            // Yalnız ciddi uyğunluq (Strict Match)
+            categories.forEach(localCat => {
+                // Bazada tam eyni adlı və eyni parentId-li kateqoriyanı tapırıq
+                const match = dbCategories.find(dbCat => 
+                    dbCat.name.trim() === localCat.name.trim() && 
+                    dbCat.parentId === localCat.parentId &&
+                    dbCat.questions && dbCat.questions.length > (localCat.questions ? localCat.questions.length : 0)
+                );
+
+                if (match) {
+                    const oldCount = localCat.questions ? localCat.questions.length : 0;
+                    const newCount = match.questions.length;
+                    
+                    // Sual sayında artım varsa bərpa et
+                    localCat.questions = JSON.parse(JSON.stringify(match.questions));
+                    updatedCategories.push(localCat);
+                    restoredInfo.push(`${localCat.name}: ${oldCount} -> ${newCount} sual`);
+                }
+            });
+
+            if (updatedCategories.length > 0) {
+                if (typeof hideLoading === 'function') hideLoading();
+                
+                const summary = restoredInfo.join('\n');
+                if (!confirm(`Aşağıdakı bölmələr bərpa ediləcək:\n\n${summary}\n\nTəsdiq edirsiniz?`)) {
+                    location.reload(); 
+                    return;
+                }
+
+                if (typeof showLoading === 'function') showLoading("Yadda saxlanılır...");
+                
+                saveCategories();
+                renderCategories();
+                if (!document.getElementById('admin-dashboard-section').classList.contains('hidden')) {
+                    renderAdminCategories();
+                }
+                
+                // Bazaya da geri yaz (sinxronizasiya)
+                for (const cat of updatedCategories) {
+                    await syncCategory(cat.id);
+                }
+
+                if (typeof hideLoading === 'function') hideLoading();
+                alert("Bərpa uğurla tamamlandı!");
+            } else {
+                if (typeof hideLoading === 'function') hideLoading();
+                alert("Bərpa ediləcək yeni məlumat tapılmadı.");
+            }
+        } catch (error) {
+            console.error("Bərpa xətası:", error);
+            if (typeof hideLoading === 'function') hideLoading();
+            alert("Xəta: " + error.message);
+        }
+    };
+
     const initialCount = categories.length;
     categories = categories.filter(c => c.name !== 'İngilis' && String(c.id) !== 'english_demo');
     
@@ -636,7 +612,7 @@ async function saveUsers() {
 
 // Initialization
 async function runDovletQulluguMigration() {
-    if (localStorage.getItem('dovlet_qullugu_migration_v3')) return;
+    return; // Miqrasiya tamamilə söndürüldü
 
     const parentCat = categories.find(c => c.name.trim() === 'Dövlət qulluğu');
     if (!parentCat) return;
@@ -2192,7 +2168,25 @@ let pendingQuizId = null;
 function handleUrlParams() {
     const urlParams = new URLSearchParams(window.location.search);
     const quizId = urlParams.get('quiz');
+    const catId = urlParams.get('cat');
     
+    // Əgər kateqoriya ID-si varsa, həmin bölməni aç
+    if (catId) {
+        // Təhlükəsizlik: Kateqoriyanın mövcudluğunu yoxla
+        const exists = categories.some(c => c.id === catId);
+        if (exists) {
+            currentParentId = catId;
+        } else {
+            console.warn("URL-dəki kateqoriya tapılmadı, ana səhifəyə yönləndirilir.");
+            currentParentId = null;
+            const url = new URL(window.location);
+            url.searchParams.delete('cat');
+            window.history.replaceState({}, document.title, url);
+        }
+    } else {
+        currentParentId = null;
+    }
+
     if (quizId) {
         pendingQuizId = quizId;
         
@@ -2759,15 +2753,21 @@ function renderCategories() {
         const hasSub = categories.some(c => c.parentId === cat.id);
         const hasQuestions = cat.questions && cat.questions.length > 0;
 
+        // DEBUG: XI Sinif suallarını hər zaman göstər
+        const isXI = cat.name.toLowerCase().includes('xi sinif') || cat.name.toLowerCase().includes('11-ci sinif');
+        if (isXI) {
+            console.log(`XI Sinif tapıldı: ${cat.name}, ID: ${cat.id}, Sual: ${cat.questions ? cat.questions.length : 0}`);
+        }
+
         div.innerHTML = `
             <i class="fas ${icon}"></i>
             <h3>${cat.name}</h3>
             ${hasSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
                 ${hasSub ? `<button class="btn-secondary" onclick="enterCategory('${cat.id}')">Bölmələrə Bax</button>` : ''}
-                ${hasQuestions ? `<button class="btn-primary" onclick="startQuizCheck('${cat.id}')">Testə Başla</button>` : ''}
+                ${(hasQuestions || isXI) ? `<button class="btn-primary" onclick="startQuizCheck('${cat.id}')">Testə Başla (${cat.questions ? cat.questions.length : 0})</button>` : ''}
                 ${!hasSub ? `<button class="btn-outline" onclick="openPublicQuestionsFromDash('${cat.id}')"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
-                ${!hasSub && !hasQuestions ? '<p style="color: #888; font-size: 0.8rem;">Tezliklə...</p>' : ''}
+                ${!hasSub && !hasQuestions && !isXI ? '<p style="color: #888; font-size: 0.8rem;">Tezliklə...</p>' : ''}
             </div>
         `;
         grid.appendChild(div);
@@ -2776,6 +2776,16 @@ function renderCategories() {
 
 window.enterCategory = function(id) {
     currentParentId = id;
+    
+    // URL-i yenilə (History API ilə)
+    const url = new URL(window.location);
+    if (id) {
+        url.searchParams.set('cat', id);
+    } else {
+        url.searchParams.delete('cat');
+    }
+    window.history.pushState({ currentParentId: id }, '', url);
+    
     renderCategories();
 }
 
@@ -2786,9 +2796,21 @@ window.navigateUp = function() {
     }
     if (!currentParentId) return;
     const current = categories.find(c => c.id === currentParentId);
-    currentParentId = current ? current.parentId : null;
-    renderCategories();
+    const newParentId = current ? current.parentId : null;
+    
+    window.enterCategory(newParentId);
 }
+
+// Brauzerin Geri/İrəli düymələri üçün dinləyici
+window.addEventListener('popstate', (event) => {
+    if (event.state && event.state.currentParentId !== undefined) {
+        currentParentId = event.state.currentParentId;
+        renderCategories();
+    } else {
+        // Əgər state yoxdursa, URL-dən oxu
+        handleUrlParams();
+    }
+});
 
 function renderAdminCategories() {
     const grid = document.getElementById('admin-categories-grid');
@@ -2811,13 +2833,17 @@ function renderAdminCategories() {
 
     // Hide admin-only buttons for moderator
     const exportBtn = document.querySelector('.btn-success[onclick="exportData()"]');
+    const restoreBtn = document.getElementById('restore-btn-global');
     const addCatBtn = document.querySelector('.btn-primary[onclick="showAddCategoryModal()"]');
-    if (currentUser.role === 'moderator') {
-        if (exportBtn) exportBtn.classList.add('hidden');
-        if (addCatBtn) addCatBtn.classList.add('hidden');
-    } else {
-        if (exportBtn) exportBtn.classList.remove('hidden');
-        if (addCatBtn) addCatBtn.classList.remove('hidden');
+    
+    if (currentUser && currentUser.role === 'moderator') {
+        if (exportBtn) exportBtn.style.display = 'none';
+        if (restoreBtn) restoreBtn.style.display = 'none';
+        if (addCatBtn) addCatBtn.style.display = 'none';
+    } else if (currentUser && currentUser.role === 'admin') {
+        if (exportBtn) exportBtn.style.setProperty('display', 'inline-block', 'important');
+        if (restoreBtn) restoreBtn.style.setProperty('display', 'inline-block', 'important');
+        if (addCatBtn) addCatBtn.style.setProperty('display', 'inline-block', 'important');
     }
 
     filteredCategories.forEach(cat => {
@@ -4154,7 +4180,7 @@ window.addAdminQuestionForm = function() {
     list.scrollTop = list.scrollHeight;
 }
 
-window.saveAdminQuestions = function() {
+window.saveAdminQuestions = async function() {
     const questionItems = document.querySelectorAll('#admin-questions-list .manual-question-item');
     const newQuestionsData = [];
     
@@ -4220,6 +4246,7 @@ window.saveAdminQuestions = function() {
     }
 
     saveCategories();
+    await syncCategory(activeCategoryId); // Kateqoriyanı dərhal bazaya sinxron et
     hideAdminQuestionPage();
     
     // Redaktə vəziyyətini sıfırla
@@ -4299,11 +4326,38 @@ window.editCategoryQuestion = function(qId) {
     saveBtn.innerHTML = '<i class="fas fa-save"></i> Dəyişikliyi Yadda Saxla';
 }
 
-window.deleteQuestion = function(qId) {
+window.deleteQuestion = async function(qId) {
     if (confirm('Sualı silmək istədiyinizə əminsiniz?')) {
         const cat = categories.find(c => c.id === activeCategoryId);
+        if (!cat) return;
+
+        // Sualın mətnini götürək (Dublikatlardan da silmək üçün)
+        const questionToDelete = cat.questions.find(q => q.id === qId);
+        const questionText = questionToDelete ? questionToDelete.text : null;
+
+        // 1. Aktiv kateqoriyadan sil
         cat.questions = cat.questions.filter(q => q.id !== qId);
-        saveCategories(); // Save to DB
+        
+        // 2. Ağıllı Silmə: Əgər bu sual eyni adda başqa dublikat kateqoriyalarda da varsa, ordan da sil
+        // Bu, gələcəkdə "Bərpa Aləti"nin sildiyiniz sualı geri gətirməsinin qarşısını alır.
+        if (questionText) {
+            for (const otherCat of categories) {
+                if (otherCat.name === cat.name && otherCat.parentId === cat.parentId) {
+                    const originalCount = otherCat.questions ? otherCat.questions.length : 0;
+                    if (otherCat.questions) {
+                        otherCat.questions = otherCat.questions.filter(q => q.text !== questionText);
+                    }
+                    
+                    // Əgər digər kateqoriyada da dəyişiklik oldusa, onu da bazada yenilə
+                    if (otherCat.id !== cat.id && (otherCat.questions ? otherCat.questions.length : 0) !== originalCount) {
+                        await syncCategory(otherCat.id);
+                    }
+                }
+            }
+        }
+
+        saveCategories(); 
+        syncCategory(activeCategoryId); // DB ilə sinxron et
         openCategory(activeCategoryId);
     }
 }

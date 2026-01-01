@@ -619,11 +619,12 @@
 
                 <div class="header-actions">
                     <h2 id="admin-dashboard-title">Admin Paneli - Kateqoriyalar</h2>
-                    <div class="admin-top-actions">
-                        <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()" style="margin-right: 10px;"><i class="fas fa-arrow-left"></i> Geri</button>
-                        <button class="btn-success" onclick="exportData()" style="margin-right: 10px;">💾 Bazanı Yüklə (Export)</button>
-                        <button class="btn-outline" onclick="showReports()" style="margin-right: 10px;"><i class="fas fa-flag"></i> Şikayətlər</button>
-                        <button class="btn-primary" onclick="showAddCategoryModal()">+ Yeni Kateqoriya</button>
+                    <div class="admin-top-actions" style="display: flex !important; flex-wrap: wrap !important; gap: 10px !important; justify-content: flex-end !important; visibility: visible !important; opacity: 1 !important;">
+                        <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()"><i class="fas fa-arrow-left"></i> Geri</button>
+                        <button id="restore-btn-global" class="btn-danger" onclick="restoreMissingQuestions()" style="display: inline-block !important; background-color: #dc3545 !important; color: white !important; font-weight: bold !important; padding: 10px 20px !important; border-radius: 8px !important; border: none !important; cursor: pointer !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;"><i class="fas fa-undo"></i> Sualları Bərpa Et</button>
+                        <button class="btn-success" onclick="exportData()" style="display: inline-block !important;">💾 Export</button>
+                        <button class="btn-outline" onclick="showReports()" style="display: inline-block !important;"><i class="fas fa-flag"></i> Şikayətlər</button>
+                        <button class="btn-primary" onclick="showAddCategoryModal()" style="display: inline-block !important;">+ Yeni Kateqoriya</button>
                     </div>
                 </div>
                 <div id="admin-categories-grid" class="grid-container">
