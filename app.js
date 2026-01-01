@@ -922,11 +922,25 @@ window.checkAuthAction = async function() {
     const oobCode = urlParams.get('oobCode');
 
     if (mode === 'resetPassword' && oobCode) {
+        // Auth obyektinin hazır olmasını gözləyək
+        if (!auth) {
+            console.log("Auth hələ hazır deyil, gözlənilir...");
+            setTimeout(window.checkAuthAction, 500);
+            return;
+        }
+
         resetPasswordCode = oobCode;
         try {
             const email = await auth.verifyPasswordResetCode(oobCode);
-            document.getElementById('reset-email-display').textContent = `Email: ${email}`;
+            const emailDisplay = document.getElementById('reset-email-display');
+            if (emailDisplay) {
+                const span = emailDisplay.querySelector('span');
+                if (span) span.textContent = email;
+                else emailDisplay.textContent = email;
+            }
+            
             document.getElementById('reset-password-modal').classList.remove('hidden');
+            console.log("Şifrə sıfırlama modalı açıldı:", email);
             
             // URL-i təmizləyək (oobCode görünməsin)
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -2452,8 +2466,8 @@ function handleUrlParams() {
         }
     } else {
         currentParentId = null;
-        // Əgər heç bir xüsusi səhifə və ya quiz yoxdursa, dashboard-u göstər
-        if (!page && !quizId) {
+        // Əgər heç bir xüsusi səhifə, quiz və ya auth mode yoxdursa, dashboard-u göstər
+        if (!page && !quizId && !urlParams.has('mode')) {
             window.showDashboard(false);
         }
     }
