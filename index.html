@@ -39,6 +39,9 @@
                 <button onclick="showTopUsers()" class="btn-secondary" style="background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color);">
                     <i class="fas fa-trophy"></i> <span>Liderlər</span>
                 </button>
+                <button onclick="showContactModal()" class="btn-secondary" style="background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color);">
+                    <i class="fas fa-envelope"></i> <span>Bizə Yazın</span>
+                </button>
                 <div id="guest-nav" class="hidden">
                     <button onclick="showLogin()" class="btn-secondary"><i class="fas fa-sign-in-alt"></i> <span>Giriş</span></button>
                     <button onclick="showRegister()" class="btn-primary"><i class="fas fa-user-plus"></i> <span>Qeydiyyat</span></button>
@@ -70,6 +73,7 @@
                 <div class="side-menu-links">
                     <button onclick="menuNavigate(showDashboard)"><i class="fas fa-home"></i> Ana Səhifə</button>
                     <button onclick="menuNavigate(showTopUsers)"><i class="fas fa-trophy"></i> Liderlər</button>
+                    <button onclick="menuNavigate(showContactModal)"><i class="fas fa-envelope"></i> Bizə Yazın</button>
                     
                     <div id="side-guest-nav">
                         <button onclick="menuNavigate(showLogin)"><i class="fas fa-sign-in-alt"></i> Giriş</button>
@@ -1121,6 +1125,34 @@
             <p>&copy; 2025 İmtahan.site - Bütün hüquqlar qorunur.</p>
         </div>
     </footer>
+
+    <!-- Contact Modal -->
+    <div id="contact-modal" class="modal hidden">
+        <div class="modal-content contact-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-envelope"></i> Bizə Yazın</h2>
+                <button onclick="closeModal('contact-modal')" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px; color: var(--text-color);">Suallarınız, təklifləriniz və ya aşkar etdiyiniz xətalar barədə bizə məlumat verin.</p>
+                <div class="input-group">
+                    <label>Adınız:</label>
+                    <input type="text" id="contact-name" placeholder="Adınızı qeyd edin">
+                </div>
+                <div class="input-group">
+                    <label>E-poçt və ya Əlaqə nömrəsi:</label>
+                    <input type="text" id="contact-info" placeholder="Sizinlə necə əlaqə saxlayaq?">
+                </div>
+                <div class="input-group">
+                    <label>Mesajınız:</label>
+                    <textarea id="contact-message" placeholder="Təklif və ya şikayətinizi yazın..." rows="4"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="sendContactMessage()" class="btn-primary" style="width: 100%;">Göndər</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Info Modals -->
     <div id="info-modal" class="modal hidden">

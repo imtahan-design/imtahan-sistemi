@@ -1245,6 +1245,76 @@ window.prepareQuizAction = function() {
     }
 }
 
+window.showContactModal = function() {
+    if (currentUser) {
+        const nameInput = document.getElementById('contact-name');
+        const infoInput = document.getElementById('contact-info');
+        if (nameInput) nameInput.value = currentUser.username || '';
+        if (infoInput) infoInput.value = currentUser.email || '';
+    }
+    if (typeof openModal === 'function') {
+        openModal('contact-modal');
+    } else {
+        const modal = document.getElementById('contact-modal');
+        if (modal) modal.classList.remove('hidden');
+    }
+}
+
+window.sendContactMessage = async function() {
+    const nameInput = document.getElementById('contact-name');
+    const infoInput = document.getElementById('contact-info');
+    const messageInput = document.getElementById('contact-message');
+    
+    if (!nameInput || !infoInput || !messageInput) return;
+
+    const name = nameInput.value.trim();
+    const info = infoInput.value.trim();
+    const message = messageInput.value.trim();
+
+    if (!name || !info || !message) {
+        showNotification('Zəhmət olmasa bütün xanaları doldurun.', 'error');
+        return;
+    }
+
+    const btn = document.querySelector('#contact-modal .btn-primary');
+    const originalText = btn.innerText ? btn.innerText : 'Göndər';
+    btn.disabled = true;
+    btn.innerText = 'Göndərilir...';
+
+    try {
+        const reportData = {
+            name: name,
+            contactInfo: info,
+            message: message,
+            userId: currentUser ? currentUser.id : 'anonim',
+            username: currentUser ? (currentUser.username || name) : name,
+            timestamp: Date.now(),
+            status: 'pending',
+            type: 'contact_form'
+        };
+
+        if (db) {
+            await db.collection('reports').add(reportData);
+        } else {
+            const reports = JSON.parse(localStorage.getItem('reports') || '[]');
+            reports.push({ ...reportData, id: Date.now().toString() });
+            localStorage.setItem('reports', JSON.stringify(reports));
+        }
+
+        showNotification('Mesajınız uğurla göndərildi. Təşəkkür edirik!', 'success');
+        closeModal('contact-modal');
+        
+        // Clear fields
+        messageInput.value = '';
+    } catch (error) {
+        console.error("Error sending contact message: ", error);
+        showNotification('Mesaj göndərilərkən xata baş verdi: ' + (error.message || 'Bilinməyən xata'), 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
+}
+
 function hideAllSections() {
     const sections = [
         'auth-section', 'dashboard-section', 'admin-dashboard-section', 
@@ -4985,7 +5055,7 @@ window.loadReports = async function() {
         }
 
         if (reports.length === 0) {
-            list.innerHTML = '<div style="text-align:center; padding: 40px; color: #64748b;">Hələ heç bir şikayət yoxdur.</div>';
+            list.innerHTML = '<div style="text-align:center; padding: 40px; color: #64748b;">Hələ heç bir şikayət və ya mesaj yoxdur.</div>';
             return;
         }
 
@@ -4995,19 +5065,41 @@ window.loadReports = async function() {
             div.className = 'list-item';
             div.style.borderLeft = report.status === 'pending' ? '4px solid #ef4444' : '4px solid #10b981';
             
-            const date = new Date(report.timestamp).toLocaleString('az-AZ');
+            const date = report.timestamp ? (report.timestamp.toDate ? report.timestamp.toDate() : new Date(report.timestamp)).toLocaleString('az-AZ') : 'Tarix yoxdur';
+            
+            let headerHtml = '';
+            if (report.type === 'contact_form') {
+                headerHtml = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 600; color: #10b981;">
+                            <i class="fas fa-envelope"></i> Əlaqə Mesajı
+                        </span>
+                    </div>
+                `;
+            } else {
+                headerHtml = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${report.questionType === 'public' ? 'Ümumi' : 'Kateqoriya'})
+                        </span>
+                        <button onclick="goToReportedQuestion('${report.categoryId || ''}', '${report.questionId}', '${report.questionType}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.7rem; border-radius: 4px;">
+                            <i class="fas fa-external-link-alt"></i> Suala get
+                        </button>
+                    </div>
+                `;
+            }
+            
+            const statusBadge = report.status === 'pending' ? 
+                '<span class="inbox-status status-pending"><i class="fas fa-clock"></i> Gözləyir</span>' : 
+                '<span class="inbox-status status-replied"><i class="fas fa-check-double"></i> Cavablandı</span>';
             
             div.innerHTML = `
                 <div style="flex: 1;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
                         <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-weight: 600; color: var(--primary-color);">
-                                    <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${report.questionType === 'public' ? 'Ümumi' : 'Kateqoriya'})
-                                </span>
-                                <button onclick="goToReportedQuestion('${report.categoryId || ''}', '${report.questionId}', '${report.questionType}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.7rem; border-radius: 4px;">
-                                    <i class="fas fa-external-link-alt"></i> Suala get
-                                </button>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                ${headerHtml}
+                                ${statusBadge}
                             </div>
                             ${report.questionTitle ? `
                                 <span style="font-size: 0.9rem; color: #1e293b; font-weight: 500;">
@@ -5018,25 +5110,35 @@ window.loadReports = async function() {
                         <span style="font-size: 0.8rem; color: #64748b;">${date}</span>
                     </div>
                     <div style="margin-bottom: 10px; background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 3px solid #cbd5e1; color: #1e293b;">
-                        <div style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin-bottom: 4px; font-weight: 600;">Şikayət:</div>
+                        <div style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin-bottom: 4px; font-weight: 600;">Mesaj:</div>
                         "${report.message}"
                     </div>
-                    <div style="font-size: 0.85rem; color: #64748b; display: flex; align-items: center; gap: 10px;">
-                        <span><i class="fas fa-user"></i> Göndərən: <strong>${report.username}</strong></span>
+
+                    ${report.adminReply ? `
+                        <div style="margin-bottom: 10px; background: #f0fdf4; padding: 12px; border-radius: 8px; border-left: 3px solid #22c55e; color: #166534;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: #15803d; margin-bottom: 4px; font-weight: 600;">Sizin Cavabınız:</div>
+                            "${report.adminReply}"
+                        </div>
+                    ` : ''}
+
+                    <div style="font-size: 0.85rem; color: #64748b; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <span><i class="fas fa-user"></i> Göndərən: <strong>${report.username || report.name || 'Qonaq'}</strong></span>
+                        ${report.contactInfo ? `<span>|</span> <span><i class="fas fa-at"></i> Əlaqə: <strong>${report.contactInfo}</strong></span>` : ''}
                         <span>|</span>
                         <span>ID: ${report.userId}</span>
                     </div>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="openReplyModal('${report.id}', '${report.message.replace(/'/g, "\\'")}')" class="btn-reply" title="Cavab ver">
+                <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+                    <button onclick="openReplyModal('${report.id}', \`${report.message.replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`)" class="btn-reply" title="Cavab yaz">
                         <i class="fas fa-reply"></i>
+                        <span>Cavab yaz</span>
                     </button>
                     ${report.status === 'pending' ? `
-                        <button onclick="markReportAsResolved('${report.id}')" class="btn-success" style="padding: 8px 12px; font-size: 0.8rem;" title="Həll edildi">
+                        <button onclick="markReportAsResolved('${report.id}')" class="btn-success" style="padding: 8px 12px; font-size: 0.8rem; height: 36px;" title="Həll edildi">
                             <i class="fas fa-check"></i>
                         </button>
                     ` : ''}
-                    <button onclick="deleteReport('${report.id}')" class="btn-outline" style="padding: 8px 12px; font-size: 0.8rem; border-color: #ef4444; color: #ef4444;" title="Sil">
+                    <button onclick="deleteReport('${report.id}')" class="btn-outline" style="padding: 8px 12px; font-size: 0.8rem; border-color: #ef4444; color: #ef4444; height: 36px;" title="Sil">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -5082,6 +5184,11 @@ window.submitReply = async function() {
     
     if (!message) return showNotification('Cavab mətni boş ola bilməz', 'warning');
     
+    const btn = document.querySelector('#reply-modal .btn-primary');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Göndərilir...';
+    
     try {
         const replyData = {
             adminReply: message,
@@ -5106,6 +5213,9 @@ window.submitReply = async function() {
     } catch (e) {
         console.error(e);
         showNotification('Xəta baş verdi', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     }
 }
 
@@ -5179,7 +5289,8 @@ window.loadUserInbox = async function() {
             div.innerHTML = `
                 <div class="inbox-header">
                     <span class="report-type">
-                        <i class="fas fa-flag"></i> ${report.questionType === 'public' ? 'Ümumi Sual' : 'Kateqoriya Sualı'}
+                        <i class="fas ${report.type === 'contact_form' ? 'fa-envelope' : 'fa-flag'}"></i> 
+                        ${report.type === 'contact_form' ? 'Əlaqə Mesajı' : (report.questionType === 'public' ? 'Ümumi Sual' : 'Kateqoriya Sualı')}
                     </span>
                     <span class="report-date">${date}</span>
                 </div>
