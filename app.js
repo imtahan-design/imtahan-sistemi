@@ -4997,7 +4997,8 @@ window.confirmFinishQuiz = function() {
     }
 
     okBtn.textContent = 'Bitir';
-    okBtn.className = 'btn-primary bg-danger border-none';
+    okBtn.classList.add('flex-1', 'bg-danger', 'border-none');
+    okBtn.classList.remove('border-danger', 'shadow-danger-sm', 'w-full');
 
     okBtn.onclick = function() {
         closeModal('confirm-modal');
