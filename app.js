@@ -921,7 +921,7 @@ window.checkAuthAction = async function() {
     const mode = urlParams.get('mode');
     const oobCode = urlParams.get('oobCode');
 
-    if (mode === 'resetPassword' && oobCode) {
+    if ((mode === 'resetPassword' || mode === 'action') && oobCode) {
         // Auth obyektinin hazır olmasını gözləyək
         if (!auth) {
             console.log("Auth hələ hazır deyil, gözlənilir...");
