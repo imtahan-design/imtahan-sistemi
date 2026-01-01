@@ -826,8 +826,15 @@ window.showForgotPassword = function() {
 }
 
 window.sendResetEmail = async function() {
-    const identifier = document.getElementById('reset-identifier').value.trim();
+    let identifier = document.getElementById('reset-identifier').value.trim();
     if (!identifier) return showNotification('İstifadəçi adı və ya email daxil edin!', 'error');
+
+    // Boşluqları təmizləyək və yalnız ilk hissəni götürək (əgər səhvən boşluq qoyulubsa)
+    if (identifier.includes(' ')) {
+        const parts = identifier.split(/\s+/);
+        // Əgər email varsa onu götür, yoxdursa ilk hissəni
+        identifier = parts.find(p => p.includes('@')) || parts[0];
+    }
 
     const btn = document.getElementById('btn-reset-pwd');
     const originalText = btn.innerHTML;
@@ -835,20 +842,43 @@ window.sendResetEmail = async function() {
     btn.disabled = true;
 
     try {
+        if (!auth) throw new Error("Firebase Auth sistemi yüklənməyib.");
+
         let email = identifier;
         
+        // Əgər daxil edilən email deyilse ( @ yoxdursa ), username kimi axtarırıq
         if (!identifier.includes('@')) {
-            const userQuery = await db.collection('users').where('username', '==', identifier).get();
-            if (userQuery.empty) {
-                email = `${identifier}@imtahan.site`;
+            const usernameLower = identifier.toLowerCase();
+            if (db) {
+                try {
+                    const userQuery = await db.collection('users').where('username', '==', usernameLower).get();
+                    if (!userQuery.empty) {
+                        const userData = userQuery.docs[0].data();
+                        email = userData.email || `${usernameLower}@imtahan.site`;
+                    } else {
+                        // İstifadəçi tapılmadısa, student formatında fallback
+                        email = `${usernameLower}@imtahan.site`;
+                    }
+                } catch (dbErr) {
+                    console.error("Firestore error in reset:", dbErr);
+                    // Firestore xətası olsa belə, student formatında davam edək
+                    email = `${usernameLower}@imtahan.site`;
+                }
             } else {
-                email = userQuery.docs[0].data().email || `${identifier}@imtahan.site`;
+                email = `${usernameLower}@imtahan.site`;
             }
         }
 
-        // ActionCodeSettings - Linki öz saytımıza yönləndirmək üçün
+        // URL-i daha sadə və təhlükəsiz formata salaq
+        // auth/invalid-continue-uri xətası adətən URL-in formatı ilə bağlı olur
+        let redirectUrl = window.location.origin + window.location.pathname;
+        if (!redirectUrl.endsWith('/')) {
+            // Əgər URL fayl adı ilə bitirsə (məs. index.html), onu təmizləyək və ya saxlayaq
+            // Amma ən yaxşısı root səviyyəsinə yönləndirməkdir
+        }
+        
         const actionCodeSettings = {
-            url: window.location.origin + window.location.pathname + '?mode=resetPassword',
+            url: redirectUrl + '?mode=resetPassword',
             handleCodeInApp: true
         };
 
@@ -859,8 +889,20 @@ window.sendResetEmail = async function() {
     } catch (error) {
         console.error("Password reset error:", error);
         let msg = 'Xəta baş verdi.';
-        if (error.code === 'auth/user-not-found') msg = 'Bu istifadəçi və ya email tapılmadı.';
-        else if (error.code === 'auth/invalid-email') msg = 'Email ünvanı düzgün deyil.';
+        
+        // Firebase Auth xətaları
+        if (error.code) {
+            switch(error.code) {
+                case 'auth/user-not-found': msg = 'Bu istifadəçi və ya email tapılmadı.'; break;
+                case 'auth/invalid-email': msg = 'Email ünvanı düzgün deyil.'; break;
+                case 'auth/too-many-requests': msg = 'Çox sayda cəhd edildi. Bir az sonra yenidən cəhd edin.'; break;
+                case 'auth/unauthorized-continue-uri': msg = 'Domen icazəsi yoxdur. Firebase Console-da bu domeni əlavə edin.'; break;
+                default: msg = `Firebase Xətası (${error.code}): ${error.message}`;
+            }
+        } else if (error.message) {
+            msg = `Sistem Xətası: ${error.message}`;
+        }
+        
         showNotification(msg, 'error');
     } finally {
         btn.innerHTML = originalText;
