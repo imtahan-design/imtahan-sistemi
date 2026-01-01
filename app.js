@@ -797,11 +797,28 @@ window.showLogin = function() {
     document.getElementById('register-box').classList.add('hidden');
 }
 
-window.showRegister = function() {
+window.showRegister = function(defaultRole = 'user') {
     hideAllSections();
     document.getElementById('auth-section').classList.remove('hidden');
     document.getElementById('login-box').classList.add('hidden');
     document.getElementById('register-box').classList.remove('hidden');
+    
+    // Set default role if provided
+    if (defaultRole === 'teacher') {
+        setTimeout(() => {
+            const roleSelect = document.getElementById('reg-role');
+            const wrapper = document.getElementById('reg-role-wrapper');
+            if (roleSelect && wrapper) {
+                const teacherOption = wrapper.querySelector('.custom-option[data-value="teacher"]');
+                if (teacherOption && typeof selectCustomOption === 'function') {
+                    selectCustomOption('reg-role-wrapper', teacherOption, 'reg-role', toggleEmailField);
+                } else {
+                    roleSelect.value = 'teacher';
+                    toggleEmailField();
+                }
+            }
+        }, 50);
+    }
 }
 
 window.login = async function() {
@@ -1218,14 +1235,7 @@ window.prepareQuizAction = function() {
             setTimeout(() => {
                 logout();
                 redirectAfterAuth = 'teacher_panel';
-                showRegister();
-                setTimeout(() => {
-                    const roleSelect = document.getElementById('reg-role');
-                    if (roleSelect) {
-                        roleSelect.value = 'teacher';
-                        toggleEmailField();
-                    }
-                }, 100);
+                showRegister('teacher');
             }, 1500);
         }
     } else {
@@ -1233,14 +1243,7 @@ window.prepareQuizAction = function() {
         
         setTimeout(() => {
             redirectAfterAuth = 'teacher_panel';
-            showRegister();
-            setTimeout(() => {
-                const roleSelect = document.getElementById('reg-role');
-                if (roleSelect) {
-                    roleSelect.value = 'teacher';
-                    toggleEmailField();
-                }
-            }, 100);
+            showRegister('teacher');
         }, 1500);
     }
 }
