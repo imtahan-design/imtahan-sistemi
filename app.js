@@ -89,14 +89,14 @@ window.onerror = function(message, source, lineno, colno, error) {
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
         loadingScreen.innerHTML = `
-            <div style="color: white; text-align: center; padding: 20px; background: rgba(0,0,0,0.8); border-radius: 10px;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #ff4757; margin-bottom: 20px;"></i>
-                <h2 style="margin-top: 15px;">Sistem yüklənə bilmədi</h2>
-                <p style="margin-top: 10px; opacity: 0.8;">Məlumat bazası ilə əlaqə kəsildi və ya şəbəkə xətası baş verdi.</p>
-                <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin: 15px 0; font-family: monospace; font-size: 12px; word-break: break-all; color: #ff9f43;">
+            <div class="text-white text-center p-6 bg-dark rounded-12 shadow-lg">
+                <i class="fas fa-exclamation-triangle text-6xl text-danger mb-6"></i>
+                <h2 class="mt-4">Sistem yüklənə bilmədi</h2>
+                <p class="mt-3 opacity-80">Məlumat bazası ilə əlaqə kəsildi və ya şəbəkə xətası baş verdi.</p>
+                <div class="bg-white opacity-10 p-3 rounded-md mt-4 text-xs italic text-warning">
                     ${message}
                 </div>
-                <button onclick="location.reload()" class="btn-primary" style="margin-top: 10px; background: white; color: var(--primary-color); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                <button onclick="location.reload()" class="btn-primary mt-4 bg-white text-primary border-none p-3 rounded-md cursor-pointer font-bold">
                     Səhifəni yenilə
                 </button>
             </div>
@@ -311,13 +311,13 @@ window.showInfoModal = function(type) {
             content = `
                 <h2><i class="fas fa-envelope"></i> Əlaqə</h2>
                 <p>Sual, təklif və ya texniki problem ilə bağlı bizimlə əlaqə saxlaya bilərsiniz:</p>
-                <ul style="list-style: none; padding: 0; margin-top: 20px;">
-                    <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
-                        <i class="fas fa-at" style="color: var(--primary-color); font-size: 1.5rem;"></i>
+                <ul class="list-none p-0 mt-6">
+                    <li class="mb-4 flex items-center gap-4">
+                        <i class="fas fa-at text-primary text-2xl"></i>
                         <span><strong>Email:</strong> info@imtahan.site</span>
                     </li>
-                    <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
-                        <i class="fas fa-map-marker-alt" style="color: #EF4444; font-size: 1.5rem;"></i>
+                    <li class="mb-4 flex items-center gap-4">
+                        <i class="fas fa-map-marker-alt text-danger text-2xl"></i>
                         <span><strong>Ünvan:</strong> Bakı şəhəri, Azərbaycan</span>
                     </li>
                 </ul>
@@ -328,7 +328,7 @@ window.showInfoModal = function(type) {
                 <h2><i class="fas fa-shield-alt"></i> Təhlükəsizlik və Məxfilik</h2>
                 <p><strong>İmtahan</strong> platformasında məlumatların təhlükəsizliyi bizim prioritetimizdir. Bütün özəl testlər və suallar xüsusi şifrələmə sistemləri vasitəsilə qorunur.</p>
                 
-                <div class="security-box" style="background: #e0f2fe; border-color: #7dd3fc; color: #0369a1;">
+                <div class="security-box bg-primary-light border-primary text-primary">
                     <i class="fas fa-user-shield"></i> <strong>Sizin Məlumatlarınız Bizimlə Güvəndədir:</strong> 
                     Şəxsi məlumatlarınız və yaratdığınız suallar heç bir halda 3-cü tərəflərlə paylaşılmır.
                 </div>
@@ -787,22 +787,29 @@ function updateUI() {
         const urlParams = new URLSearchParams(window.location.search);
         const isPrivateQuiz = urlParams.has('quiz');
         const hasAuthMode = urlParams.has('mode');
+        const page = urlParams.get('page');
         
-        if (!isPrivateQuiz && !hasAuthMode) {
+        if (!isPrivateQuiz && !hasAuthMode && page !== 'login' && page !== 'register') {
             showDashboard();
         }
     }
 }
 
 // --- Auth Functions ---
-window.showLogin = function() {
+window.showLogin = function(doPush = true) {
+    if (doPush) {
+        window.history.pushState({ page: 'login' }, '', '?page=login');
+    }
     hideAllSections();
     document.getElementById('auth-section').classList.remove('hidden');
     document.getElementById('login-box').classList.remove('hidden');
     document.getElementById('register-box').classList.add('hidden');
 }
 
-window.showRegister = function(defaultRole = 'user') {
+window.showRegister = function(defaultRole = 'user', doPush = true) {
+    if (doPush) {
+        window.history.pushState({ page: 'register' }, '', '?page=register');
+    }
     hideAllSections();
     document.getElementById('auth-section').classList.remove('hidden');
     document.getElementById('login-box').classList.add('hidden');
@@ -1430,6 +1437,29 @@ window.prepareQuizAction = function() {
     }
 }
 
+window.tryAIAction = function() {
+    if (currentUser) {
+        if (currentUser.role === 'teacher') {
+            showTeacherDashboard();
+            setTimeout(() => showCreatePrivateQuiz(), 100);
+            setTimeout(() => switchQuestionTab('ai'), 200);
+        } else {
+            showNotification('Süni İntellektlə test hazırlamaq üçün müəllim hesabı lazımdır. Müəllim qeydiyyatına yönləndirilirsiniz.', 'info');
+            setTimeout(() => {
+                logout();
+                redirectAfterAuth = 'teacher_panel_ai';
+                showRegister('teacher');
+            }, 1500);
+        }
+    } else {
+        showNotification('Süni İntellektlə test hazırlamaq üçün müəllim hesabı lazımdır. Müəllim qeydiyyatına yönləndirilirsiniz.', 'info');
+        setTimeout(() => {
+            redirectAfterAuth = 'teacher_panel_ai';
+            showRegister('teacher');
+        }, 1500);
+    }
+}
+
 window.showContactModal = function() {
     if (currentUser) {
         const nameInput = document.getElementById('contact-name');
@@ -1654,7 +1684,7 @@ window.editPrivateQuiz = async function(quizId) {
                     <label class="image-upload-label ${q.image ? 'hidden' : ''}" id="label_${uniqueId}">
                         <i class="fas fa-cloud-upload-alt"></i>
                         <span>Şəkil Əlavə Et</span>
-                        <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                        <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
                     </label>
                     <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}" value="${q.image || ''}">
                 </div>
@@ -1682,6 +1712,14 @@ window.editPrivateQuiz = async function(quizId) {
 }
 
 window.switchQuestionTab = function(method) {
+    // AI tabı üçün əlavə daxili yoxlanış
+    if (method === 'ai') {
+        if (!currentUser || (currentUser.role !== 'teacher' && currentUser.role !== 'admin')) {
+            showNotification('Süni İntellekt bölməsindən yalnız müəllimlər istifadə edə bilər.', 'error');
+            return;
+        }
+    }
+
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.method-content').forEach(c => c.classList.add('hidden'));
     
@@ -1695,10 +1733,10 @@ window.addManualQuestionForm = function() {
     
     const timeTypeEl = document.getElementById('private-quiz-time-type');
     const timeType = timeTypeEl ? timeTypeEl.value : 'none';
-    const timeInputDisplay = (timeType === 'total' || timeType === 'none') ? 'display:none;' : '';
+    const isTimeHidden = (timeType === 'total' || timeType === 'none');
 
     const div = document.createElement('div');
-    div.className = 'manual-question-item';
+    div.className = 'manual-question-item animate-up';
     div.innerHTML = `
         <div class="manual-q-header">
             <div class="manual-q-title">
@@ -1706,7 +1744,7 @@ window.addManualQuestionForm = function() {
                 <span>Yeni Sual</span>
             </div>
             <div class="manual-q-actions">
-                <div class="time-input-group" style="${timeInputDisplay}">
+                <div class="time-input-group ${isTimeHidden ? 'hidden' : ''}">
                     <i class="far fa-clock"></i>
                     <input type="number" class="manual-q-time" placeholder="Def">
                     <span>san</span>
@@ -1725,7 +1763,7 @@ window.addManualQuestionForm = function() {
                 <label class="image-upload-label" id="label_${uniqueId}">
                     <i class="fas fa-cloud-upload-alt"></i>
                     <span>Şəkil Əlavə Et</span>
-                    <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                    <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
                 </label>
                 <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
             </div>
@@ -1734,8 +1772,8 @@ window.addManualQuestionForm = function() {
             </div>
         </div>
         <div class="manual-options-grid" id="options_grid_${uniqueId}">
-            <div style="grid-column: 1 / -1; background: #fffbeb; border: 2px dashed #f59e0b; padding: 12px; border-radius: 8px; margin-bottom: 10px; color: #92400e; font-weight: bold; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 1.2rem;"></i>
+            <div class="grid-cols-full bg-warning-light border-warning border-dashed p-3 rounded-md mb-3 text-warning-dark font-bold flex items-center gap-3">
+                <i class="fas fa-exclamation-triangle text-xl"></i>
                 <span>DİQQƏT: Düzgün cavabın yanındakı dairəni mütləq işarələyin!</span>
             </div>
             <div class="manual-option-input">
@@ -1806,7 +1844,7 @@ window.handleQuestionImage = function(input, index) {
             const ctx = canvas.getContext('2d');
             
             // Arxa fonu ağ edirik (PNG-lərdə şəffaflıq JPG-də qara görünməsin deyə)
-            ctx.fillStyle = "#FFFFFF";
+            ctx.fillStyle = "white";
             ctx.fillRect(0, 0, width, height);
             
             ctx.drawImage(img, 0, 0, width, height);
@@ -1933,7 +1971,7 @@ window.parseBulkQuestions = function() {
     const isTotalTime = timeType === 'total';
     
     // Hide individual question time inputs if total time is selected
-    const timeInputDisplay = isTotalTime ? 'display:none;' : '';
+    const timeInputClass = isTotalTime ? 'hidden' : '';
 
     questions.forEach((q, idx) => {
         const uniqueId = Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000);
@@ -1946,7 +1984,7 @@ window.parseBulkQuestions = function() {
                     <span>Sual ${currentCount + idx + 1}</span>
                 </div>
                 <div class="manual-q-actions">
-                    <div class="time-input-group" style="${timeInputDisplay}">
+                    <div class="time-input-group ${timeInputClass}">
                         <i class="far fa-clock"></i>
                         <input type="number" class="manual-q-time" value="${q.time || ''}" placeholder="Def">
                         <span>san</span>
@@ -1965,7 +2003,7 @@ window.parseBulkQuestions = function() {
                         <label class="image-upload-label" id="label_${uniqueId}">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <span>Şəkil Əlavə Et</span>
-                            <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                            <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
                         </label>
                         <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
                     </div>
@@ -2078,7 +2116,7 @@ window.savePrivateQuizFinal = async function() {
 
 window.renderPrivateQuizzes = async function() {
     const grid = document.getElementById('private-quizzes-grid');
-    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Yüklənir...</p></div>';
+    grid.innerHTML = '<div class="grid-cols-full text-center p-10"><i class="fas fa-spinner fa-spin text-3xl text-primary"></i><p class="mt-4 text-muted">Yüklənir...</p></div>';
     
     let myQuizzes = [];
     if (db) {
@@ -2098,14 +2136,14 @@ window.renderPrivateQuizzes = async function() {
     grid.innerHTML = '';
     
     if (myQuizzes.length === 0) {
-        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 20px;">Hələ heç bir özəl test yaratmamısınız.</p>';
+        grid.innerHTML = '<p class="grid-cols-full text-center p-6 text-muted">Hələ heç bir özəl test yaratmamısınız.</p>';
         return;
     }
     
     myQuizzes.forEach(quiz => {
         const card = document.createElement('div');
         card.className = 'category-card';
-        if (quiz.isActive === false) card.style.opacity = '0.7';
+        if (quiz.isActive === false) card.classList.add('opacity-70');
         
         const baseUrl = window.location.origin + window.location.pathname;
         const quizLink = `${baseUrl}?quiz=${quiz.id}`;
@@ -2128,10 +2166,10 @@ window.renderPrivateQuizzes = async function() {
             <div class="icon-box"><i class="fas fa-link"></i></div>
             <h3>${quiz.title}</h3>
             <p>${quiz.questions.length} sual</p>
-            <div class="category-actions">
-                ${isActive ? `<button onclick="copyQuizLink('${quizLink}')" class="btn-primary" style="width:100%"><i class="fas fa-copy"></i> Linki Kopyala</button>` : '<button class="btn-primary" style="width:100%; opacity: 0.5; cursor: not-allowed;" disabled><i class="fas fa-lock"></i> Link Deaktivdir</button>'}
-                <button onclick="showStudentResults('${quiz.id}', '${quiz.title}')" class="btn-secondary" style="width:100%"><i class="fas fa-poll"></i> Nəticələr</button>
-                <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">Şifrə: <strong>${quiz.password}</strong></div>
+            <div class="category-actions flex flex-col gap-2 mt-3">
+                ${isActive ? `<button onclick="copyQuizLink('${quizLink}')" class="btn-primary w-full"><i class="fas fa-copy"></i> Linki Kopyala</button>` : '<button class="btn-primary w-full opacity-50 cursor-not-allowed" disabled><i class="fas fa-lock"></i> Link Deaktivdir</button>'}
+                <button onclick="showStudentResults('${quiz.id}', '${quiz.title}')" class="btn-secondary w-full"><i class="fas fa-poll"></i> Nəticələr</button>
+                <div class="text-xs text-muted mt-1">Şifrə: <strong>${quiz.password}</strong></div>
             </div>
         `;
         grid.appendChild(card);
@@ -2257,13 +2295,13 @@ window.showStudentResults = async function(quizId, quizTitle) {
     // Reset view
     document.getElementById('results-list-view').classList.remove('hidden');
     document.getElementById('analytics-view').classList.add('hidden');
-    document.getElementById('btn-show-analytics').style.display = 'none';
-    document.getElementById('btn-show-results').style.display = 'none';
+    document.getElementById('btn-show-analytics').classList.add('hidden');
+    document.getElementById('btn-show-results').classList.add('hidden');
     
     document.getElementById('results-modal-title').textContent = `${quizTitle} - Nəticələr`;
     modal.classList.remove('hidden');
     const tableBody = document.getElementById('student-results-body');
-    tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Yüklənir...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4"><i class="fas fa-spinner fa-spin mr-2"></i> Yüklənir...</td></tr>';
     
     if (db) {
         try {
@@ -2284,15 +2322,15 @@ window.showStudentResults = async function(quizId, quizTitle) {
 
             if (attempts.length > 0 && quizData) {
                 currentQuizAnalytics = { quiz: quizData, attempts: attempts };
-                document.getElementById('btn-show-analytics').style.display = 'block';
+                document.getElementById('btn-show-analytics').classList.remove('hidden');
                 prepareAnalyticsData();
             }
         } catch (e) {
             console.error("ShowStudentResults Error:", e);
-            tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: red;">Xəta: ${e.message}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-danger">Xəta: ${e.message}</td></tr>`;
         }
     } else {
-        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Firebase aktiv deyil.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-muted">Firebase aktiv deyil.</td></tr>';
     }
 }
 
@@ -2305,13 +2343,13 @@ window.toggleAnalyticsView = function() {
     if (listView.classList.contains('hidden')) {
         listView.classList.remove('hidden');
         analyticsView.classList.add('hidden');
-        btnAnalytics.style.display = 'block';
-        btnResults.style.display = 'none';
+        btnAnalytics.classList.remove('hidden');
+        btnResults.classList.add('hidden');
     } else {
         listView.classList.add('hidden');
         analyticsView.classList.remove('hidden');
-        btnAnalytics.style.display = 'none';
-        btnResults.style.display = 'block';
+        btnAnalytics.classList.add('hidden');
+        btnResults.classList.remove('hidden');
     }
 }
 
@@ -2374,17 +2412,19 @@ function prepareAnalyticsData() {
         const item = document.createElement('div');
         item.className = 'q-analysis-item';
         
+        const bgColorClass = correctPercent < 40 ? 'bg-danger' : (correctPercent < 70 ? 'bg-warning' : 'bg-success');
+        
         item.innerHTML = `
             <div class="q-header">
                 <span class="q-number">Sual #${idx + 1}</span>
                 <div class="q-stats">
                     <span class="stat-correct"><i class="fas fa-check"></i> ${stat.correct}</span>
                     <span class="stat-wrong"><i class="fas fa-times"></i> ${stat.wrong}</span>
-                    <span style="color: #64748b;"><i class="fas fa-minus"></i> ${stat.unanswered}</span>
+                    <span class="text-muted"><i class="fas fa-minus"></i> ${stat.unanswered}</span>
                 </div>
             </div>
-            <div class="progress-bar-container">
-                <div class="progress-bar-fill" style="width: ${correctPercent}%; background: ${correctPercent < 40 ? '#ef4444' : (correctPercent < 70 ? '#f59e0b' : '#10b981')}"></div>
+            <div class="progress-bar-container bg-bg h-2 rounded-full overflow-hidden">
+                <div class="progress-bar-fill h-full transition ${bgColorClass}" style="width: ${correctPercent}%;"></div>
             </div>
             <div class="q-text-preview" title="${stat.text}">${stat.text}</div>
         `;
@@ -2397,7 +2437,7 @@ function renderStudentResultsTable(attempts) {
     tableBody.innerHTML = '';
     
     if (attempts.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Hələ heç bir nəticə yoxdur.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-10 text-muted">Hələ heç bir nəticə yoxdur.</td></tr>';
         return;
     }
     
@@ -2453,6 +2493,12 @@ function handleUrlParams() {
         return;
     } else if (page === 'reports') {
         window.showReports(false);
+        return;
+    } else if (page === 'login') {
+        window.showLogin(false);
+        return;
+    } else if (page === 'register') {
+        window.showRegister(undefined, false);
         return;
     }
 
@@ -2807,7 +2853,7 @@ window.updateUserUsername = async function() {
 async function loadUserQuestions() {
     const list = document.getElementById('user-questions-list');
     const countBadge = document.getElementById('user-questions-count');
-    list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Yüklənir...</div>';
+    list.innerHTML = '<div class="text-center p-6"><i class="fas fa-spinner fa-spin mr-2"></i> Yüklənir...</div>';
 
     try {
         let questions = [];
@@ -2830,7 +2876,7 @@ async function loadUserQuestions() {
         countBadge.textContent = `${questions.length} sual`;
 
         if (questions.length === 0) {
-            list.innerHTML = '<p style="text-align:center; color:#888; padding: 20px;">Sizin tərəfinizdən əlavə edilmiş sual yoxdur.</p>';
+            list.innerHTML = '<p class="text-center text-muted p-10">Sizin tərəfinizdən əlavə edilmiş sual yoxdur.</p>';
             return;
         }
 
@@ -2838,23 +2884,22 @@ async function loadUserQuestions() {
         questions.forEach(q => {
             const cat = categories.find(c => c.id === q.categoryId);
             const div = document.createElement('div');
-            div.className = 'list-item';
-            div.style.marginBottom = '15px';
+            div.className = 'list-item mb-4 p-4 bg-white rounded-lg shadow-sm border flex justify-between items-start gap-4';
             div.innerHTML = `
-                <div style="flex: 1;">
-                    <div style="font-size: 0.8rem; color: var(--primary-color); margin-bottom: 5px;">
-                        <i class="fas fa-folder"></i> ${cat ? cat.name : 'Naməlum kateqoriya'}
+                <div class="flex-1">
+                    <div class="text-xs text-primary mb-1">
+                        <i class="fas fa-folder mr-1"></i> ${cat ? cat.name : 'Naməlum kateqoriya'}
                     </div>
-                    <div style="font-weight: 500;">${q.text}</div>
-                    <div style="font-size: 0.8rem; color: #888; margin-top: 5px;">
-                        ${q.options.map((opt, i) => `<span style="${i === q.correctIndex ? 'color: var(--success-color); font-weight: bold;' : ''}">${String.fromCharCode(65 + i)}) ${opt}</span>`).join(' | ')}
+                    <div class="font-semibold text-main">${q.text}</div>
+                    <div class="text-xs text-muted mt-2 flex flex-wrap gap-2">
+                        ${q.options.map((opt, i) => `<span class="${i === q.correctIndex ? 'text-success font-bold' : ''}">${String.fromCharCode(65 + i)}) ${opt}</span>`).join(' | ')}
                     </div>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <button onclick="editUserQuestion('${q.id}')" class="btn-outline" style="padding: 5px 10px; margin: 0; font-size: 0.8rem;" title="Düzəliş et">
+                <div class="flex gap-2">
+                    <button onclick="editUserQuestion('${q.id}')" class="btn-outline p-2 text-sm rounded-md" title="Düzəliş et">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button onclick="deleteUserQuestion('${q.id}')" class="btn-outline" style="padding: 5px 10px; margin: 0; font-size: 0.8rem; color: var(--danger-color); border-color: var(--danger-color);" title="Sil">
+                    <button onclick="deleteUserQuestion('${q.id}')" class="btn-outline p-2 text-sm rounded-md text-danger border-danger" title="Sil">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
@@ -2863,7 +2908,7 @@ async function loadUserQuestions() {
         });
     } catch (e) {
         console.error(e);
-        list.innerHTML = '<p style="text-align:center; color:red;">Sualları yükləmək mümkün olmadı.</p>';
+        list.innerHTML = '<p class="text-center text-danger p-6">Sualları yükləmək mümkün olmadı.</p>';
     }
 }
 
@@ -2986,7 +3031,7 @@ async function renderHistory() {
     }
 
     if (history.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Hələ heç bir test edilməyib.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-6 text-muted">Hələ heç bir test edilməyib.</td></tr>';
         document.getElementById('total-tests-count').textContent = '0';
         document.getElementById('avg-score-val').textContent = '0%';
         return;
@@ -3044,9 +3089,10 @@ function renderCategories() {
         backBtn.classList.add('hidden');
     }
 
-    filteredCategories.forEach(cat => {
+    filteredCategories.forEach((cat, index) => {
         const div = document.createElement('div');
-        div.className = 'category-card';
+        div.className = 'category-card animate-up';
+        div.style.animationDelay = `${index * 0.05}s`;
         
         // Simple icon mapping
         let icon = 'fa-book';
@@ -3082,7 +3128,7 @@ function renderCategories() {
                 ${hasSub ? `<button class="btn-secondary" onclick="enterCategory('${cat.id}')">Bölmələrə Bax</button>` : ''}
                 ${(hasQuestions || isXI) ? `<button class="btn-primary" onclick="startQuizCheck('${cat.id}')">Testə Başla</button>` : ''}
                 ${!hasSub ? `<button class="btn-outline" onclick="openPublicQuestionsFromDash('${cat.id}')"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
-                ${!hasSub && !hasQuestions && !isXI ? '<p style="color: #888; font-size: 0.8rem;">Tezliklə...</p>' : ''}
+                ${!hasSub && !hasQuestions && !isXI ? '<p class="text-muted text-xs italic">Tezliklə...</p>' : ''}
             </div>
         `;
         grid.appendChild(div);
@@ -3146,18 +3192,19 @@ function renderAdminCategories() {
     const addCatBtn = document.querySelector('.btn-primary[onclick="showAddCategoryModal()"]');
     
     if (currentUser && currentUser.role === 'moderator') {
-        if (exportBtn) exportBtn.style.display = 'none';
-        if (restoreBtn) restoreBtn.style.display = 'none';
-        if (addCatBtn) addCatBtn.style.display = 'none';
+        if (exportBtn) exportBtn.classList.add('hidden');
+        if (restoreBtn) restoreBtn.classList.add('hidden');
+        if (addCatBtn) addCatBtn.classList.add('hidden');
     } else if (currentUser && currentUser.role === 'admin') {
-        if (exportBtn) exportBtn.style.setProperty('display', 'inline-block', 'important');
-        if (restoreBtn) restoreBtn.style.setProperty('display', 'inline-block', 'important');
-        if (addCatBtn) addCatBtn.style.setProperty('display', 'inline-block', 'important');
+        if (exportBtn) exportBtn.classList.remove('hidden');
+        if (restoreBtn) restoreBtn.classList.remove('hidden');
+        if (addCatBtn) addCatBtn.classList.remove('hidden');
     }
 
-    filteredCategories.forEach(cat => {
+    filteredCategories.forEach((cat, index) => {
         const div = document.createElement('div');
-        div.className = 'category-card';
+        div.className = 'category-card animate-up';
+        div.style.animationDelay = `${index * 0.05}s`;
         
         let icon = 'fa-book';
         if (cat.name.toLowerCase().includes('ingilis')) icon = 'fa-language';
@@ -3183,7 +3230,7 @@ function renderAdminCategories() {
             </div>
             <h3>${cat.name}</h3>
             ${hasSub ? '' : `<p>${cat.questions ? cat.questions.length : 0} sual</p>`}
-            ${hasSub ? '<p style="font-size: 0.8rem; color: var(--primary-color);"><i class="fas fa-folder"></i> Alt bölmələr var</p>' : ''}
+            ${hasSub ? '<p class="text-xs text-primary"><i class="fas fa-folder"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
                 <button class="btn-secondary" onclick="enterAdminCategory('${cat.id}')">Bölməyə Bax</button>
                 <button class="btn-primary" onclick="openCategoryQuestions('${cat.id}')">Suallar (${cat.questions ? cat.questions.length : 0})</button>
@@ -3364,21 +3411,21 @@ window.showAddPublicQuestionModal = function() {
     document.getElementById('pub-q-text').value = '';
     const optionsContainer = document.getElementById('pub-q-options');
     optionsContainer.innerHTML = `
-        <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
-            <input type="radio" name="pub-q-correct" value="0" checked id="pub-opt-0" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
-            <input type="text" class="pub-opt" placeholder="A variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+        <div class="manual-option-input flex items-center gap-3 bg-bg p-3 rounded-12 border">
+            <input type="radio" name="pub-q-correct" value="0" checked id="pub-opt-0" class="w-5 h-5 cursor-pointer accent-primary">
+            <input type="text" class="pub-opt flex-1 border-none bg-transparent p-1 text-sm outline-none" placeholder="A variantı">
         </div>
-        <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
-            <input type="radio" name="pub-q-correct" value="1" id="pub-opt-1" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
-            <input type="text" class="pub-opt" placeholder="B variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+        <div class="manual-option-input flex items-center gap-3 bg-bg p-3 rounded-12 border">
+            <input type="radio" name="pub-q-correct" value="1" id="pub-opt-1" class="w-5 h-5 cursor-pointer accent-primary">
+            <input type="text" class="pub-opt flex-1 border-none bg-transparent p-1 text-sm outline-none" placeholder="B variantı">
         </div>
-        <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
-            <input type="radio" name="pub-q-correct" value="2" id="pub-opt-2" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
-            <input type="text" class="pub-opt" placeholder="C variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+        <div class="manual-option-input flex items-center gap-3 bg-bg p-3 rounded-12 border">
+            <input type="radio" name="pub-q-correct" value="2" id="pub-opt-2" class="w-5 h-5 cursor-pointer accent-primary">
+            <input type="text" class="pub-opt flex-1 border-none bg-transparent p-1 text-sm outline-none" placeholder="C variantı">
         </div>
-        <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
-            <input type="radio" name="pub-q-correct" value="3" id="pub-opt-3" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
-            <input type="text" class="pub-opt" placeholder="D variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+        <div class="manual-option-input flex items-center gap-3 bg-bg p-3 rounded-12 border">
+            <input type="radio" name="pub-q-correct" value="3" id="pub-opt-3" class="w-5 h-5 cursor-pointer accent-primary">
+            <input type="text" class="pub-opt flex-1 border-none bg-transparent p-1 text-sm outline-none" placeholder="D variantı">
         </div>
     `;
 }
@@ -3396,12 +3443,11 @@ window.addPublicOption = function() {
     const char = String.fromCharCode(charCode);
     
     const div = document.createElement('div');
-    div.className = 'manual-option-input';
-    div.style.cssText = 'display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;';
+    div.className = 'manual-option-input flex items-center gap-3 bg-bg p-3 rounded-12 border';
     div.innerHTML = `
-        <input type="radio" name="pub-q-correct" value="${optionCount}" id="pub-opt-${optionCount}" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
-        <input type="text" class="pub-opt" placeholder="${char} variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
-        <button onclick="this.parentElement.remove()" style="background:none; border:none; color:#ef4444; cursor:pointer; padding: 5px;"><i class="fas fa-times"></i></button>
+        <input type="radio" name="pub-q-correct" value="${optionCount}" id="pub-opt-${optionCount}" class="w-5 h-5 cursor-pointer accent-primary">
+        <input type="text" class="pub-opt flex-1 border-none bg-transparent p-1 text-sm outline-none" placeholder="${char} variantı">
+        <button onclick="this.parentElement.remove()" class="bg-none border-none text-danger cursor-pointer p-1"><i class="fas fa-times"></i></button>
     `;
     optionsContainer.appendChild(div);
 }
@@ -3456,7 +3502,7 @@ window.submitPublicQuestion = async function() {
 
 window.loadPublicQuestions = async function() {
     const list = document.getElementById('public-questions-list');
-    list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Yüklənir...</div>';
+    list.innerHTML = '<div class="text-center p-6"><i class="fas fa-spinner fa-spin"></i> Yüklənir...</div>';
 
     try {
         let questions = [];
@@ -3481,14 +3527,14 @@ window.loadPublicQuestions = async function() {
         renderPublicQuestions(questions);
     } catch (e) {
         console.error(e);
-        list.innerHTML = '<p style="text-align:center; color:red;">Sualları yükləmək mümkün olmadı.</p>';
+        list.innerHTML = '<p class="text-center text-danger p-4">Sualları yükləmək mümkün olmadı.</p>';
     }
 }
 
 function renderPublicQuestions(questions) {
     const list = document.getElementById('public-questions-list');
     if (questions.length === 0) {
-        list.innerHTML = '<p style="text-align:center; color:#888; padding: 40px;">Hələ heç kim sual əlavə etməyib. İlk sualı siz əlavə edin!</p>';
+        list.innerHTML = '<p class="text-center text-muted p-10">Hələ heç kim sual əlavə etməyib. İlk sualı siz əlavə edin!</p>';
         return;
     }
 
@@ -3507,9 +3553,9 @@ function renderPublicQuestions(questions) {
         div.innerHTML = `
             <div class="public-q-header">
                 <span><i class="fas fa-user"></i> ${q.authorName || 'Anonim'}</span>
-                <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="flex items-center gap-3">
                     <span>${q.createdAt ? (db ? new Date(q.createdAt.toDate()).toLocaleDateString() : new Date(q.createdAt).toLocaleDateString()) : ''}</span>
-                    ${isAdmin ? `<button onclick="deletePublicQuestion('${q.id}')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size: 0.9rem;" title="Sualı sil"><i class="fas fa-trash"></i></button>` : ''}
+                    ${isAdmin ? `<button onclick="deletePublicQuestion('${q.id}')" class="bg-none border-none text-danger cursor-pointer text-sm" title="Sualı sil"><i class="fas fa-trash"></i></button>` : ''}
                 </div>
             </div>
             <div class="public-q-text">${q.text}</div>
@@ -3680,7 +3726,7 @@ window.showTopUsers = async function() {
     hideAllSections();
     document.getElementById('top-users-section').classList.remove('hidden');
     const list = document.getElementById('top-users-list');
-    list.innerHTML = '<div style="text-align:center; padding: 40px;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">Hesablanır...</p></div>';
+    list.innerHTML = '<div class="text-center p-10"><i class="fas fa-spinner fa-spin text-3xl text-primary"></i><p class="mt-4 text-muted">Hesablanır...</p></div>';
 
     try {
         let questions = [];
@@ -3733,7 +3779,7 @@ window.showTopUsers = async function() {
 
         if (sortedUsers.length === 0) {
             const periodText = period === 'daily' ? 'günlük' : period === 'weekly' ? 'həftəlik' : period === 'monthly' ? 'aylıq' : 'ümumi';
-            list.innerHTML = `<div style="text-align:center; padding: 40px; color: #888;">Bu müddət ərzində (${periodText}) hələ heç bir aktivlik yoxdur.</div>`;
+            list.innerHTML = `<div class="text-center p-10 text-muted">Bu müddət ərzində (${periodText}) hələ heç bir aktivlik yoxdur.</div>`;
             return;
         }
 
@@ -3742,7 +3788,8 @@ window.showTopUsers = async function() {
             const rank = idx + 1;
             const score = Math.round((user.questions * 5) + user.likes - (user.dislikes * 0.5));
             const div = document.createElement('div');
-            div.className = 'leader-item';
+            div.className = 'leader-item animate-up';
+            div.style.animationDelay = `${idx * 0.05}s`;
             div.innerHTML = `
                 <div class="leader-rank ${rank <= 3 ? 'top-' + rank : ''}">${rank}</div>
                 <div class="leader-avatar">
@@ -3752,10 +3799,10 @@ window.showTopUsers = async function() {
                     <div class="leader-name">${user.name}</div>
                     <div class="leader-stats">
                         <div class="leader-stat" title="Paylaşılan sual sayı">
-                            <i class="fas fa-question-circle" style="color: var(--primary-color);"></i> ${user.questions} sual
+                            <i class="fas fa-question-circle text-primary"></i> ${user.questions} sual
                         </div>
                         <div class="leader-stat" title="Toplam bəyəni">
-                            <i class="fas fa-thumbs-up" style="color: #3b82f6;"></i> ${user.likes}
+                            <i class="fas fa-thumbs-up text-primary"></i> ${user.likes}
                         </div>
                     </div>
                 </div>
@@ -3768,7 +3815,7 @@ window.showTopUsers = async function() {
         });
     } catch (e) {
         console.error(e);
-        list.innerHTML = '<div style="text-align:center; padding: 40px; color: #ef4444;">Xəta baş verdi. Zəhmət olmasa yenidən yoxlayın.</div>';
+        list.innerHTML = '<div class="text-center p-10 text-danger">Xəta baş verdi. Zəhmət olmasa yenidən yoxlayın.</div>';
     }
 }
 
@@ -3801,7 +3848,7 @@ function startDiscussionListener() {
     if (discussionUnsubscribe) discussionUnsubscribe();
 
     const list = document.getElementById('comments-list');
-    list.innerHTML = '<div style="text-align:center; padding: 10px;"><i class="fas fa-spinner fa-spin"></i></div>';
+    list.innerHTML = '<div class="text-center p-2"><i class="fas fa-spinner fa-spin text-primary"></i></div>';
 
     if (db) {
         // Real-time Firestore listener
@@ -3819,7 +3866,7 @@ function startDiscussionListener() {
                 renderComments(comments);
             }, (error) => {
                 console.error("Listener error:", error);
-                list.innerHTML = '<p style="font-size:0.8rem; color:red;">Şərhləri yükləmək mümkün olmadı.</p>';
+                list.innerHTML = '<p class="text-xs text-danger text-center">Şərhləri yükləmək mümkün olmadı.</p>';
             });
     } else {
         // Fallback for LocalStorage (polling or manual reload)
@@ -3847,7 +3894,7 @@ window.closeModal = function(modalId) {
 
 async function loadComments() {
     const list = document.getElementById('comments-list');
-    list.innerHTML = '<div style="text-align:center; padding: 10px;"><i class="fas fa-spinner fa-spin"></i></div>';
+    list.innerHTML = '<div class="text-center p-2"><i class="fas fa-spinner fa-spin text-primary"></i></div>';
 
     try {
         let comments = [];
@@ -3871,14 +3918,14 @@ async function loadComments() {
         renderComments(comments);
     } catch (e) {
         console.error(e);
-        list.innerHTML = '<p style="font-size:0.8rem; color:red;">Şərhləri yükləmək mümkün olmadı.</p>';
+        list.innerHTML = '<p class="text-xs text-danger text-center">Şərhləri yükləmək mümkün olmadı.</p>';
     }
 }
 
 function renderComments(comments) {
     const list = document.getElementById('comments-list');
     if (comments.length === 0) {
-        list.innerHTML = '<p style="text-align:center; color:#888; padding: 20px; font-size:0.9rem;">Hələ müzakirə yoxdur. Fikrinizi bildirin!</p>';
+        list.innerHTML = '<p class="text-center text-muted p-4 text-sm">Hələ müzakirə yoxdur. Fikrinizi bildirin!</p>';
         return;
     }
 
@@ -3900,9 +3947,9 @@ function renderComments(comments) {
         div.innerHTML = `
             ${!isOwn ? `<div class="comment-author">${c.userName}</div>` : ''}
             <div class="comment-text">${c.text}</div>
-            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
-                <div class="comment-date" style="margin: 0;">${dateStr}</div>
-                ${(isOwn || isAdmin) ? `<button onclick="deleteComment('${c.id}')" style="background:none; border:none; color:inherit; opacity:0.5; cursor:pointer; font-size:0.7rem; padding:0;" title="Mesajı sil"><i class="fas fa-trash"></i></button>` : ''}
+            <div class="flex justify-end items-center gap-2">
+                <div class="comment-date m-0">${dateStr}</div>
+                ${(isOwn || isAdmin) ? `<button onclick="deleteComment('${c.id}')" class="bg-none border-none text-inherit opacity-50 cursor-pointer text-xs p-0" title="Mesajı sil"><i class="fas fa-trash"></i></button>` : ''}
             </div>
         `;
         list.appendChild(div);
@@ -4018,11 +4065,11 @@ function openCategory(id) {
         const startBtn = document.getElementById('start-quiz-btn');
         if (cat.questions.length === 0) {
             startBtn.disabled = true;
-            startBtn.style.opacity = 0.5;
+            startBtn.classList.add('opacity-50');
             startBtn.textContent = "Sual yoxdur";
         } else {
             startBtn.disabled = false;
-            startBtn.style.opacity = 1;
+            startBtn.classList.remove('opacity-50');
             startBtn.textContent = "Testə Başla";
         }
 
@@ -4040,7 +4087,7 @@ function renderQuestions() {
     const cat = categories.find(c => c.id === activeCategoryId);
     
     if (cat.questions.length === 0) {
-        list.innerHTML = '<p style="text-align:center; color:#888;">Hələ sual yoxdur.</p>';
+        list.innerHTML = '<p class="text-center text-muted">Hələ sual yoxdur.</p>';
         return;
     }
 
@@ -4347,7 +4394,7 @@ window.parseAdminBulkQuestions = function() {
                         <label class="image-upload-label" id="label_${uniqueId}">
                             <i class="fas fa-image"></i>
                             <span>Şəkil Əlavə Et</span>
-                            <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                            <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
                         </label>
                         <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
                     </div>
@@ -4410,7 +4457,7 @@ window.handleAdminBulkFileUpload = function(input) {
                             <label class="image-upload-label ${q.image ? 'hidden' : ''}" id="label_${uniqueId}">
                                 <i class="fas fa-image"></i>
                                 <span>Şəkil Əlavə Et</span>
-                                <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                                <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
                             </label>
                             <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}" value="${q.image || ''}">
                         </div>
@@ -4475,7 +4522,7 @@ window.addAdminQuestionForm = function() {
                 <label class="image-upload-label" id="label_${uniqueId}">
                     <i class="fas fa-image"></i>
                     <span>Şəkil Əlavə Et</span>
-                    <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" style="display:none;">
+                    <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
                 </label>
                 <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
             </div>
@@ -4484,7 +4531,7 @@ window.addAdminQuestionForm = function() {
             </div>
         </div>
         <div class="manual-options-grid">
-            <div style="grid-column: 1 / -1; background: #fffbeb; border: 1px solid #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 10px; color: #92400e; font-size: 0.9rem; display: flex; align-items: center; gap: 10px;">
+            <div class="grid-cols-full bg-warning-light border border-warning-light p-3 rounded-md mb-2 text-warning-dark text-sm flex items-center gap-2">
                 <i class="fas fa-info-circle"></i>
                 <span>Düzgün variantı seçməyi unutmayın!</span>
             </div>
@@ -4582,7 +4629,7 @@ window.resetEditingState = function() {
     if (addBtnContainer) addBtnContainer.classList.remove('hidden');
     
     const headerTitle = document.querySelector('#admin-question-section .modal-header h2');
-    if (headerTitle) headerTitle.innerHTML = '<i class="fas fa-plus-circle" style="color: var(--primary-color);"></i> Sual Əlavə Et';
+    if (headerTitle) headerTitle.innerHTML = '<i class="fas fa-plus-circle text-primary"></i> Sual Əlavə Et';
     
     const saveBtn = document.querySelector('.btn-save');
     if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-check-double"></i> Hamısını Yadda Saxla';
@@ -4606,7 +4653,7 @@ window.editCategoryQuestion = function(qId) {
     
     // Başlığı dəyiş
     const headerTitle = document.querySelector('#admin-question-section .modal-header h2');
-    headerTitle.innerHTML = '<i class="fas fa-edit" style="color: var(--primary-color);"></i> Suala Düzəliş Et';
+    headerTitle.innerHTML = '<i class="fas fa-edit text-primary"></i> Suala Düzəliş Et';
 
     const list = document.getElementById('admin-questions-list');
     list.innerHTML = '';
@@ -4769,7 +4816,7 @@ function loadQuestion() {
     const progressPercentage = ((currentQuiz.currentQuestionIndex + 1) / currentQuiz.questions.length) * 100;
     const progressBar = document.getElementById('quiz-progress-bar');
     if (progressBar) {
-        progressBar.style.width = `${progressPercentage}%`;
+        progressBar.parentElement.style.setProperty('--progress', `${progressPercentage}%`);
     }
 
     document.getElementById('question-counter').textContent = `Sual ${currentQuiz.currentQuestionIndex + 1}/${currentQuiz.questions.length}`;
@@ -4822,7 +4869,7 @@ function loadQuestion() {
 
     // Add report button for quiz question
     const reportBtnHtml = `
-        <button onclick="openReportModal('${q.id || currentQuiz.currentQuestionIndex}', 'quiz', '${q.text.substring(0, 50).replace(/'/g, "\\'")}...')" class="btn-report btn-report-quiz" style="margin-top: 15px; width: fit-content;">
+        <button onclick="openReportModal('${q.id || currentQuiz.currentQuestionIndex}', 'quiz', '${q.text.substring(0, 50).replace(/'/g, "\\'")}...')" class="btn-report btn-report-quiz mt-4 w-fit">
             <i class="fas fa-flag"></i> Sualda xəta var? Bildir
         </button>
     `;
@@ -4950,8 +4997,7 @@ window.confirmFinishQuiz = function() {
     }
 
     okBtn.textContent = 'Bitir';
-    okBtn.style.background = 'var(--danger-color)';
-    okBtn.style.borderColor = 'var(--danger-color)';
+    okBtn.className = 'btn-primary bg-danger border-none';
 
     okBtn.onclick = function() {
         closeModal('confirm-modal');
@@ -5150,7 +5196,7 @@ window.showQuizReview = function() {
 
         reviewItem.innerHTML = `
             <div class="review-question">${idx + 1}. ${q.text}</div>
-            ${q.image ? `<img src="${q.image}" style="max-width: 100%; border-radius: 8px; margin-bottom: 10px;">` : ''}
+            ${q.image ? `<img src="${q.image}" class="max-w-full rounded-md mb-2">` : ''}
             <div class="review-options">
                 ${optionsHtml}
             </div>
@@ -5235,7 +5281,7 @@ window.showReports = function(doPush = true) {
 
 window.loadReports = async function() {
     const list = document.getElementById('reports-list');
-    list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Yüklənir...</div>';
+    list.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin text-primary"></i> Yüklənir...</div>';
     
     try {
         let reports = [];
@@ -5247,34 +5293,33 @@ window.loadReports = async function() {
         }
 
         if (reports.length === 0) {
-            list.innerHTML = '<div style="text-align:center; padding: 40px; color: #64748b;">Hələ heç bir şikayət və ya mesaj yoxdur.</div>';
+            list.innerHTML = '<div class="text-center p-10 text-muted">Hələ heç bir şikayət və ya mesaj yoxdur.</div>';
             return;
         }
 
         list.innerHTML = '';
         reports.forEach(report => {
             const div = document.createElement('div');
-            div.className = 'list-item';
-            div.style.borderLeft = report.status === 'pending' ? '4px solid #ef4444' : '4px solid #10b981';
+            div.className = `list-item border-l-4 ${report.status === 'pending' ? 'border-danger' : 'border-success'}`;
             
             const date = report.timestamp ? (report.timestamp.toDate ? report.timestamp.toDate() : new Date(report.timestamp)).toLocaleString('az-AZ') : 'Tarix yoxdur';
             
             let headerHtml = '';
             if (report.type === 'contact_form') {
                 headerHtml = `
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-weight: 600; color: #10b981;">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-success">
                             <i class="fas fa-envelope"></i> Əlaqə Mesajı
                         </span>
                     </div>
                 `;
             } else {
                 headerHtml = `
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-weight: 600; color: var(--primary-color);">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-primary">
                             <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${report.questionType === 'public' ? 'Ümumi' : 'Kateqoriya'})
                         </span>
-                        <button onclick="goToReportedQuestion('${report.categoryId || ''}', '${report.questionId}', '${report.questionType}')" class="btn-primary" style="padding: 4px 8px; font-size: 0.7rem; border-radius: 4px;">
+                        <button onclick="goToReportedQuestion('${report.categoryId || ''}', '${report.questionId}', '${report.questionType}')" class="btn-primary p-1 px-2 text-xs rounded-sm">
                             <i class="fas fa-external-link-alt"></i> Suala get
                         </button>
                     </div>
@@ -5286,51 +5331,51 @@ window.loadReports = async function() {
                 '<span class="inbox-status status-replied"><i class="fas fa-check-double"></i> Cavablandı</span>';
             
             div.innerHTML = `
-                <div style="flex: 1;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="flex-1">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex flex-col gap-1">
+                            <div class="flex items-center gap-2">
                                 ${headerHtml}
                                 ${statusBadge}
                             </div>
                             ${report.questionTitle ? `
-                                <span style="font-size: 0.9rem; color: #1e293b; font-weight: 500;">
+                                <span class="text-sm text-main font-medium">
                                     <strong>Sual:</strong> ${report.questionTitle}
                                 </span>
                             ` : ''}
                         </div>
-                        <span style="font-size: 0.8rem; color: #64748b;">${date}</span>
+                        <span class="text-xs text-muted">${date}</span>
                     </div>
-                    <div style="margin-bottom: 10px; background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 3px solid #cbd5e1; color: #1e293b;">
-                        <div style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin-bottom: 4px; font-weight: 600;">Mesaj:</div>
+                    <div class="mb-2 bg-bg p-3 rounded-md border-l-2 border-border text-main">
+                        <div class="text-xs text-uppercase text-muted font-semibold mb-1">Mesaj:</div>
                         "${report.message}"
                     </div>
 
                     ${report.adminReply ? `
-                        <div style="margin-bottom: 10px; background: #f0fdf4; padding: 12px; border-radius: 8px; border-left: 3px solid #22c55e; color: #166534;">
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: #15803d; margin-bottom: 4px; font-weight: 600;">Sizin Cavabınız:</div>
+                        <div class="mb-2 bg-success-light p-3 rounded-md border-l-2 border-success text-success-dark">
+                            <div class="text-xs text-uppercase text-success-dark font-semibold mb-1">Sizin Cavabınız:</div>
                             "${report.adminReply}"
                         </div>
                     ` : ''}
 
-                    <div style="font-size: 0.85rem; color: #64748b; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <div class="text-sm text-muted flex items-center gap-2 flex-wrap">
                         <span><i class="fas fa-user"></i> Göndərən: <strong>${report.username || report.name || 'Qonaq'}</strong></span>
                         ${report.contactInfo ? `<span>|</span> <span><i class="fas fa-at"></i> Əlaqə: <strong>${report.contactInfo}</strong></span>` : ''}
                         <span>|</span>
                         <span>ID: ${report.userId}</span>
                     </div>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+                <div class="flex gap-2 items-center flex-shrink-0">
                     <button onclick="openReplyModal('${report.id}', \`${report.message.replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`)" class="btn-reply" title="Cavab yaz">
                         <i class="fas fa-reply"></i>
                         <span>Cavab yaz</span>
                     </button>
                     ${report.status === 'pending' ? `
-                        <button onclick="markReportAsResolved('${report.id}')" class="btn-success" style="padding: 8px 12px; font-size: 0.8rem; height: 36px;" title="Həll edildi">
+                        <button onclick="markReportAsResolved('${report.id}')" class="btn-success p-2 text-xs rounded-sm" title="Həll edildi">
                             <i class="fas fa-check"></i>
                         </button>
                     ` : ''}
-                    <button onclick="deleteReport('${report.id}')" class="btn-outline" style="padding: 8px 12px; font-size: 0.8rem; border-color: #ef4444; color: #ef4444; height: 36px;" title="Sil">
+                    <button onclick="deleteReport('${report.id}')" class="btn-outline p-2 text-xs rounded-sm border-danger text-danger" title="Sil">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -5339,7 +5384,7 @@ window.loadReports = async function() {
         });
     } catch (e) {
         console.error(e);
-        list.innerHTML = '<div style="text-align:center; padding: 20px; color: #ef4444;">Şikayətləri yükləmək mümkün olmadı.</div>';
+        list.innerHTML = '<div class="text-center p-5 text-danger">Şikayətləri yükləmək mümkün olmadı.</div>';
     }
 }
 
@@ -5417,11 +5462,11 @@ window.loadUserInbox = async function() {
     
     if (!list) return;
     if (!currentUser) {
-        list.innerHTML = '<div style="text-align:center; padding: 20px;">Giriş edilməyib.</div>';
+        list.innerHTML = '<div class="text-center p-5">Giriş edilməyib.</div>';
         return;
     }
     
-    list.innerHTML = '<div style="text-align:center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Yüklənir...</div>';
+    list.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin text-primary"></i> Yüklənir...</div>';
     
     try {
         let reports = [];
@@ -5484,7 +5529,7 @@ window.loadUserInbox = async function() {
 
             div.innerHTML = `
                 <div class="inbox-header">
-                    <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="flex items-center gap-2">
                         <span class="report-type">
                             <i class="fas ${report.type === 'contact_form' ? 'fa-envelope' : 'fa-flag'}"></i> 
                             ${report.type === 'contact_form' ? 'Əlaqə Mesajı' : (report.questionType === 'public' ? 'Ümumi Sual' : 'Kateqoriya Sualı')}
@@ -5500,14 +5545,14 @@ window.loadUserInbox = async function() {
                     <div class="admin-reply">
                         <div class="admin-reply-header">
                             <span><i class="fas fa-user-shield"></i> Admin Cavabı:</span>
-                            <span style="font-size: 0.75rem; opacity: 0.8;">${replyDate}</span>
+                            <span class="text-xs opacity-80">${replyDate}</span>
                         </div>
                         <div class="admin-reply-content">
                             "${report.adminReply}"
                         </div>
                     </div>
                 ` : `
-                    <div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">
+                    <div class="text-sm text-muted italic">
                         <i class="fas fa-clock"></i> Cavab gözlənilir...
                     </div>
                 `}
@@ -5516,9 +5561,9 @@ window.loadUserInbox = async function() {
         });
     } catch (e) {
         console.error("Inbox loading error:", e);
-        list.innerHTML = `<div style="text-align:center; padding: 20px; color: #ef4444;">
+        list.innerHTML = `<div class="text-center p-5 text-danger">
             Inboxu yükləmək mümkün olmadı.<br>
-            <small style="font-size: 0.7rem;">Xəta: ${e.message}</small>
+            <small class="text-xs">Xəta: ${e.message}</small>
         </div>`;
     }
 };
@@ -5555,11 +5600,9 @@ window.goToReportedQuestion = function(catId, qId, qType) {
             for (let el of elements) {
                 if (el.innerHTML.includes(qId)) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el.style.boxShadow = '0 0 15px var(--primary-color)';
-                    el.style.border = '2px solid var(--primary-color)';
+                    el.classList.add('highlight-primary');
                     setTimeout(() => {
-                        el.style.boxShadow = '';
-                        el.style.border = '';
+                        el.classList.remove('highlight-primary');
                     }, 3000);
                     break;
                 }
@@ -5574,11 +5617,9 @@ window.goToReportedQuestion = function(catId, qId, qType) {
             for (let el of elements) {
                 if (el.dataset.id == qId) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el.style.background = '#fef3c7'; // Sarılı rənglə işarələ
-                    el.style.borderLeft = '4px solid #f59e0b';
+                    el.classList.add('highlight-warning');
                     setTimeout(() => {
-                        el.style.background = '';
-                        el.style.borderLeft = '';
+                        el.classList.remove('highlight-warning');
                     }, 5000);
                     break;
                 }
@@ -5749,7 +5790,10 @@ window.handleAIImageSelect = async function(input) {
         document.querySelector('.upload-placeholder p').classList.add('hidden');
         
         const icons = document.querySelectorAll('.upload-placeholder i');
-        icons.forEach(icon => icon.style.color = 'var(--success-color)');
+        icons.forEach(icon => {
+            icon.classList.remove('text-primary', 'text-danger');
+            icon.classList.add('text-success');
+        });
     };
     reader.readAsDataURL(file);
 }
@@ -5781,14 +5825,19 @@ window.removeSelectedAIImage = function() {
     const icons = document.querySelectorAll('.upload-placeholder i');
     icons.forEach(icon => {
         if (icon.classList.contains('fa-file-pdf')) {
-            icon.style.color = '#ff4757';
+            icon.className = 'fas fa-file-pdf'; // Renk CSS-dən gəlir
         } else {
-            icon.style.color = 'var(--primary-color)';
+            icon.className = 'fas fa-image'; // Renk CSS-dən gəlir
         }
     });
 }
 
 window.generateAIQuestions = async function() {
+    // Daxili (Core) Təhlükəsizlik Yoxlanışı
+    if (!currentUser || (currentUser.role !== 'teacher' && currentUser.role !== 'admin')) {
+        return showNotification('Süni İntellekt funksiyasından yalnız müəllimlər istifadə edə bilər.', 'error');
+    }
+
     const context = document.getElementById('ai-context-text').value.trim();
     const count = document.getElementById('ai-question-count').value;
     const difficulty = document.getElementById('ai-difficulty').value;

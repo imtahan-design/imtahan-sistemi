@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>İmtahan – Onlayn Qiymətləndirmə Platforması</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%236c5ce7%22/><path d=%22M20 40 L50 20 L80 40 L50 60 Z%22 fill=%22white%22/><path d=%22M30 45 L30 65 C30 75 70 75 70 65 L70 45%22 fill=%22none%22 stroke=%22white%22 stroke-width=%225%22/><path d=%22M80 40 L80 60%22 fill=%22none%22 stroke=%22white%22 stroke-width=%223%22/></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%234f46e5%22/><path d=%22M20 40 L50 20 L80 40 L50 60 Z%22 fill=%22white%22/><path d=%22M30 45 L30 65 C30 75 70 75 70 65 L70 45%22 fill=%22none%22 stroke=%22white%22 stroke-width=%225%22/><path d=%22M80 40 L80 60%22 fill=%22none%22 stroke=%22white%22 stroke-width=%223%22/></svg>">
     <meta name="description" content="İmtahan.site - Azərbaycanın ən müasir onlayn sınaq imtahanı platforması. Müəllimlər üçün özəl test yaratma, şifrəli giriş və nəticələrin analizi imkanları.">
     <meta name="keywords" content="onlayn imtahan, sınaq imtahanı, test yarat, müəllim paneli, onlayn sınaq, imtahan.site, riyaziyyat sınağı, azərbaycan dili testi">
     <meta name="author" content="İmtahan.site">
@@ -24,29 +24,29 @@
 <body>
     <div id="app">
         <!-- Navigation -->
-        <nav id="navbar">
-            <div class="logo" onclick="showDashboard()">
+        <nav id="navbar" class="animate-fade">
+            <div class="logo animate-slide-right" onclick="showDashboard()">
                 <div class="logo-main">İmtahan</div>
                 <div class="logo-sub">onlayn qiymətləndirmə platforması</div>
             </div>
             
             <!-- Hamburger Menu Icon -->
-            <div class="menu-toggle" onclick="toggleSideMenu()">
+            <div class="menu-toggle animate-fade" onclick="toggleSideMenu()">
                 <i class="fas fa-bars"></i>
             </div>
 
-            <div class="nav-links">
-                <button onclick="showTopUsers()" class="btn-secondary" style="background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color);">
+            <div class="nav-links animate-fade delay-1">
+                <button onclick="showTopUsers()" class="btn-outline">
                     <i class="fas fa-trophy"></i> <span>Liderlər</span>
                 </button>
-                <button onclick="showContactModal()" class="btn-secondary" style="background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color);">
+                <button onclick="showContactModal()" class="btn-outline">
                     <i class="fas fa-envelope"></i> <span>Bizə Yazın</span>
                 </button>
-                <div id="guest-nav" class="hidden">
+                <div id="guest-nav" class="hidden animate-fade delay-2">
                     <button onclick="showLogin()" class="btn-secondary"><i class="fas fa-sign-in-alt"></i> <span>Giriş</span></button>
                     <button onclick="showRegister()" class="btn-primary"><i class="fas fa-user-plus"></i> <span>Qeydiyyat</span></button>
                 </div>
-                <div id="user-nav" class="hidden">
+                <div id="user-nav" class="hidden animate-fade delay-2">
                     <span id="user-display"></span>
                     <button onclick="showProfile()" class="btn-secondary"><i class="fas fa-user-circle"></i> <span>Profil</span></button>
                     <button id="teacher-panel-btn" onclick="showTeacherDashboard()" class="btn-primary"><i class="fas fa-chalkboard-teacher"></i> <span>Müəllim</span></button>
@@ -93,29 +93,29 @@
         <!-- Auth Pages -->
         <section id="auth-section">
             <div class="auth-container">
-                <div class="auth-box" id="login-box">
+                <div class="auth-box animate-scale" id="login-box">
                     <h2>Giriş</h2>
                     <input type="text" id="login-username" placeholder="İstifadəçi adı">
                     <input type="password" id="login-password" placeholder="Şifrə">
-                    <div style="text-align: right; margin-top: -10px; margin-bottom: 15px;">
-                        <a href="#" onclick="showForgotPassword()" style="font-size: 0.8rem; color: #6366f1; text-decoration: none;">Şifrəni unutmusunuz?</a>
+                    <div class="text-right mb-3">
+                        <a href="javascript:void(0)" onclick="showForgotPassword()" class="text-primary text-xs no-underline">Şifrəni unutmusunuz?</a>
                     </div>
-                    <button onclick="login()" class="btn-primary">Daxil ol</button>
-                    <p>Hesabınız yoxdur? <a href="#" onclick="showRegister()">Qeydiyyat</a></p>
+                    <button onclick="login()" class="btn-primary w-full">Daxil ol</button>
+                    <p class="mt-3 text-center">Hesabınız yoxdur? <a href="javascript:void(0)" onclick="showRegister()" class="text-primary no-underline">Qeydiyyat</a></p>
                 </div>
-                <div class="auth-box hidden" id="register-box">
+                <div class="auth-box hidden animate-scale" id="register-box">
                     <h2>Qeydiyyat</h2>
-                    <div class="reg-name-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <input type="text" id="reg-name" placeholder="Adınız" style="margin-bottom: 0;">
-                        <input type="text" id="reg-surname" placeholder="Soyadınız" style="margin-bottom: 0;">
+                    <div class="reg-name-row flex gap-2 mb-2">
+                        <input type="text" id="reg-name" placeholder="Adınız" class="m-0">
+                        <input type="text" id="reg-surname" placeholder="Soyadınız" class="m-0">
                     </div>
                     <input type="text" id="reg-username" placeholder="İstifadəçi adı (min. 5 simvol, bitişik)">
-                    <p id="username-hint" style="font-size: 0.7rem; color: #64748b; margin-top: -8px; margin-bottom: 10px; text-align: left; padding-left: 5px;">
+                    <p id="username-hint" class="text-muted mb-2 text-xs mt--2 text-left pl-2">
                         * Boşluq olmadan, yalnız hərf və rəqəm.
                     </p>
                     <input type="password" id="reg-password" placeholder="Şifrə (min. 8 işarə)">
-                    <div class="form-group" style="margin-top: 10px; text-align: left;">
-                        <label style="font-size: 0.9rem; color: #666;">Hesab növü:</label>
+                    <div class="form-group mt-2 text-left">
+                        <label class="text-muted text-sm">Hesab növü:</label>
                         <div class="custom-select-wrapper" id="reg-role-wrapper">
                             <div class="custom-select-trigger" onclick="toggleCustomSelect('reg-role-wrapper')">
                                 <span id="selected-reg-role">Şəxsi</span>
@@ -135,12 +135,12 @@
                             </select>
                         </div>
                     </div>
-                    <div id="teacher-email-group" class="hidden">
-                        <input type="email" id="reg-email" placeholder="Email ünvanınız" style="margin-top: 10px;">
-                        <p style="font-size: 0.75rem; color: #ef4444; margin-top: 4px;">* Müəllim qeydiyyatı üçün email təsdiqi vacibdir.</p>
+                    <div id="teacher-email-group" class="hidden animate-fade">
+                        <input type="email" id="reg-email" placeholder="Email ünvanınız" class="mt-2">
+                        <p class="text-danger mt-1 text-xs">* Müəllim qeydiyyatı üçün email təsdiqi vacibdir.</p>
                     </div>
-                    <button onclick="register()" class="btn-primary" style="margin-top: 15px;">Qeydiyyatdan keç</button>
-                    <p>Hesabınız var? <a href="#" onclick="showLogin()">Giriş</a></p>
+                    <button onclick="register()" class="btn-primary w-full mt-3">Qeydiyyatdan keç</button>
+                    <p class="mt-3 text-center">Hesabınız var? <a href="javascript:void(0)" onclick="showLogin()" class="text-primary no-underline">Giriş</a></p>
                 </div>
             </div>
         </section>
@@ -149,28 +149,28 @@
         <div id="verification-modal" class="modal hidden">
             <div class="modal-content auth-box">
                 <h2>Email Təsdiqi</h2>
-                <p id="verification-msg" style="font-size: 0.9rem; color: #64748b; margin-bottom: 20px;">
+                <p id="verification-msg" class="text-muted mb-4 text-sm">
                     Email ünvanınıza göndərilən 6 rəqəmli təsdiq kodunu daxil edin.
                 </p>
                 <div class="verification-code-inputs">
-                    <input type="text" id="v-code" maxlength="6" placeholder="000000" style="text-align: center; font-size: 24px; letter-spacing: 10px; font-weight: 800;">
+                    <input type="text" id="v-code" maxlength="6" placeholder="000000" class="text-center font-bold text-2xl tracking-widest">
                 </div>
-                <button onclick="confirmVerification()" class="btn-primary" style="margin-top: 20px; width: 100%;">Təsdiqlə</button>
-                <button onclick="closeVerification()" class="btn-secondary" style="margin-top: 10px; width: 100%;">Ləğv et</button>
+                <button onclick="confirmVerification()" class="btn-primary w-full mt-4">Təsdiqlə</button>
+                <button onclick="closeVerification()" class="btn-secondary w-full mt-2">Ləğv et</button>
             </div>
         </div>
 
         <!-- Teacher Dashboard -->
         <section id="teacher-dashboard-section" class="hidden">
             <div class="container">
-                <div class="header-actions">
+                <div class="header-actions animate-up">
                     <h2>Müəllim Paneli</h2>
-                    <div style="position: relative; display: inline-block;">
-                        <button id="btn-new-private-quiz" onclick="showCreatePrivateQuiz()" class="btn-primary">
+                    <div class="relative inline-block">
+                        <button id="btn-new-private-quiz" onclick="showCreatePrivateQuiz()" class="btn-primary pulse-glow">
                             <i class="fas fa-plus"></i> Yeni Özəl Test
                         </button>
                         <div id="quiz-guide-tooltip" class="guide-tooltip hidden">
-                            <div class="tooltip-content">
+                            <div class="tooltip-content animate-scale">
                                 <i class="fas fa-lightbulb"></i>
                                 <span>Bura klikləyərək sınaq hazırlamağa başlaya bilərsiniz</span>
                             </div>
@@ -179,7 +179,7 @@
                     </div>
                     <button onclick="showDashboard()" class="btn-secondary">Geri</button>
                 </div>
-                <div id="private-quizzes-grid" class="grid-container">
+                <div id="private-quizzes-grid" class="grid-container animate-up delay-1">
                     <!-- Teacher's private quizzes will be loaded here -->
                 </div>
             </div>
@@ -188,14 +188,14 @@
         <!-- Create Private Quiz Modal/Section -->
         <section id="create-private-quiz-section" class="hidden">
             <div class="container">
-                <div class="card" style="max-width: 900px; margin: 0 auto;">
+                <div class="card max-w-900 mx-auto animate-up">
                     <input type="hidden" id="editing-quiz-id" value="">
                     <div class="header-actions">
                         <h2 id="private-quiz-form-title">Yeni Özəl Test Yaradın</h2>
                         <button onclick="showTeacherDashboard()" class="btn-secondary">Geri</button>
                     </div>
                     
-                    <div class="quiz-setup-grid">
+                    <div class="quiz-setup-grid animate-up delay-1">
                         <div class="form-group">
                             <label><i class="fas fa-file-signature"></i> Testin Adı</label>
                             <input type="text" id="private-quiz-title" placeholder="Məs: Riyaziyyat - Sinif 5">
@@ -231,7 +231,7 @@
                         </div>
                     </div>
 
-                    <div class="question-input-methods">
+                    <div class="question-input-methods animate-up delay-2">
                         <div class="tabs-wrapper">
                             <div class="tabs">
                                 <button onclick="switchQuestionTab('manual')" id="tab-manual" class="tab-btn active">
@@ -247,18 +247,19 @@
                         </div>
 
                         <!-- Manual Entry -->
-                        <div id="method-manual" class="method-content">
-                            <div id="manual-questions-list">
+                        <!-- Manual Entry -->
+                        <div id="method-manual" class="method-content animate-fade">
+                            <div id="manual-questions-list" class="animate-up delay-1">
                                 <!-- Question forms will be added here -->
                             </div>
-                            <button onclick="addManualQuestionForm()" class="add-q-btn">
+                            <button onclick="addManualQuestionForm()" class="add-q-btn animate-up delay-2">
                                 <i class="fas fa-plus-circle"></i> Yeni Sual Sahəsi
                             </button>
                         </div>
 
                         <!-- Bulk Entry -->
-                        <div id="method-bulk" class="method-content hidden">
-                            <div class="bulk-info">
+                        <div id="method-bulk" class="method-content hidden animate-fade">
+                            <div class="bulk-info animate-up delay-1">
                                 <p><i class="fas fa-info-circle"></i> Sualları aşağıdakı formatda yapışdırın:</p>
                                 <div class="format-example">
                                     1. Birinci sual mətni?<br>
@@ -274,36 +275,36 @@
                                 </p>
                                 <p class="bulk-warning-red"><i class="fas fa-check-double"></i> Mətni suallara çevirə basdıqdan sonra sualların mətnini və variantlarını yenidən gözdən keçirin!</p>
                             </div>
-                            <textarea id="bulk-questions-text" placeholder="Sualları buraya yapışdırın..."></textarea>
-                            <button onclick="parseBulkQuestions()" class="btn-success" style="width: 100%;">
+                            <textarea id="bulk-questions-text" placeholder="Sualları buraya yapışdırın..." class="animate-up delay-2"></textarea>
+                            <button onclick="parseBulkQuestions()" class="btn-success w-full animate-up delay-3">
                                 <i class="fas fa-magic"></i> Mətni Suallara Çevir
                             </button>
                         </div>
 
                         <!-- AI Generation -->
-                        <div id="method-ai" class="method-content hidden">
-                            <div class="ai-info">
+                        <div id="method-ai" class="method-content hidden animate-fade">
+                            <div class="ai-info animate-up delay-1">
                                 <p><i class="fas fa-robot"></i> <strong>Süni İntellekt</strong> vasitəsilə mətndən suallar hazırlayın.</p>
                                 
                                 <div class="ai-limits-info">
-                                    <div class="limit-item">
+                                    <div class="limit-item animate-scale delay-2">
                                         <i class="fas fa-clock"></i>
                                         <span>Hər əməliyyat arası <strong>60 saniyə</strong> gözləmə</span>
                                     </div>
-                                    <div class="limit-item">
+                                    <div class="limit-item animate-scale delay-3">
                                         <i class="fas fa-calendar-day"></i>
                                         <span>Gündəlik <strong>15 dəfə</strong> sual yaratma limiti</span>
                                     </div>
-                                    <div class="limit-item">
+                                    <div class="limit-item animate-scale delay-4">
                                         <i class="fas fa-file-alt"></i>
                                         <span>Gündəlik <strong>6 fayl</strong> emalı (Maks. 10MB, 20 səhifə)</span>
                                     </div>
                                 </div>
 
-                                <p class="ai-warning-yellow">
+                                <p class="ai-warning-yellow animate-fade delay-5">
                                     <i class="fas fa-exclamation-triangle"></i> <strong>DİQQƏT:</strong> Suallar yaradıldıqdan sonra sual mətnlərini, variantları və düzgün cavabın düzgün seçildiyini mütləq yenidən yoxlayın!
                                 </p>
-                                <div class="ai-input-group">
+                                <div class="ai-input-group animate-up delay-3">
                                     <label>Mövzu mətni, material, sualların şəkli və ya PDF faylı:</label>
                                     <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni daxil edin və ya aşağıdan sualların şəklini/PDF faylını yükləyin..."></textarea>
                                 </div>
@@ -311,7 +312,7 @@
                                     <div class="image-upload-area" id="ai-image-drop-area">
                                         <input type="file" id="ai-question-image" accept="image/*,.pdf" class="hidden" onchange="handleAIImageSelect(this)">
                                         <div class="upload-placeholder" onclick="document.getElementById('ai-question-image').click()">
-                                            <i class="fas fa-file-pdf" style="color: #ff4757; margin-right: 10px;"></i>
+                                            <i class="fas fa-file-pdf text-danger mr-2"></i>
                                             <i class="fas fa-file-image"></i>
                                             <p>Sualların şəklini və ya PDF faylını yükləyin</p>
                                             <span id="selected-image-name" class="hidden"></span>
@@ -332,7 +333,7 @@
                                             <option value="20">20 sual</option>
                                         </select>
                                     </div>
-                                    <div class="q-difficulty-selector" style="margin-left: 15px;">
+                                    <div class="q-difficulty-selector ml-3">
                                         <label>Çətinlik:</label>
                                         <select id="ai-difficulty">
                                             <option value="easy">Asan</option>
@@ -357,7 +358,7 @@
                         </div>
                     </div>
 
-                    <div class="category-actions" style="margin-top: 30px; border-top: 2px solid #eee; padding-top: 25px;">
+                    <div class="category-actions mt-6 border-t pt-4">
                         <div id="question-count-badge" class="count-badge">
                             <i class="fas fa-check-circle"></i> 
                             Hazır olan sual sayı: <span id="ready-question-count">0</span>
@@ -376,12 +377,12 @@
                 <div class="auth-container">
                     <div class="auth-box">
                         <h2 id="join-quiz-title">Özəl Testə Giriş</h2>
-                        <div class="form-group" style="display: flex; gap: 10px;">
-                            <div style="flex: 1;">
+                        <div class="form-group flex gap-2">
+                            <div class="flex-1">
                                 <label>Adınız</label>
                                 <input type="text" id="student-first-name" placeholder="Ad">
                             </div>
-                            <div style="flex: 1;">
+                            <div class="flex-1">
                                 <label>Soyadınız</label>
                                 <input type="text" id="student-last-name" placeholder="Soyad">
                             </div>
@@ -398,14 +399,14 @@
 
         <!-- Student Results Modal -->
         <div id="student-results-modal" class="modal hidden">
-            <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-content max-w-900">
                 <div class="header-actions">
                     <h2 id="results-modal-title">İstifadəçi Nəticələri</h2>
                     <div class="modal-controls">
-                        <button id="btn-show-analytics" onclick="toggleAnalyticsView()" class="btn-primary" style="display: none;">
+                        <button id="btn-show-analytics" onclick="toggleAnalyticsView()" class="btn-primary hidden">
                             <i class="fas fa-chart-pie"></i> Sual Analizi
                         </button>
-                        <button id="btn-show-results" onclick="toggleAnalyticsView()" class="btn-primary" style="display: none;">
+                        <button id="btn-show-results" onclick="toggleAnalyticsView()" class="btn-primary hidden">
                             <i class="fas fa-list"></i> Nəticələr Siyahısı
                         </button>
                         <button onclick="closeModal('student-results-modal')" class="btn-secondary">Bağla</button>
@@ -459,43 +460,90 @@
         <section id="dashboard-section">
             <div class="container">
                 <!-- Hero Section (Site Məlumatı) -->
-                <div class="hero-section">
+                <div class="hero-section animate-up">
                     <div class="hero-content">
-                        <h1>İmtahan.site – Onlayn Qiymətləndirmə Platforması</h1>
-                        <p>Müəllimlər və tələbələr üçün nəzərdə tutulmuş müasir sınaq imtahan platforması. Burada siz həm hazır testləri işləyə, həm də öz testlərinizi yaradıb paylaşa bilərsiniz.</p>
+                        <div class="ai-badge animate-fade delay-1">
+                            <i class="fas fa-robot"></i> AI Texnologiyası Artıq Aktivdir!
+                        </div>
+                        <h1 class="animate-up delay-1">İmtahan.site – Onlayn Qiymətləndirmə Platforması</h1>
+                        <p class="animate-up delay-2">Müəllimlər və tələbələr üçün nəzərdə tutulmuş müasir sınaq imtahan platforması. Burada siz həm hazır testləri işləyə, həm də öz testlərinizi yaradıb paylaşa bilərsiniz.</p>
                         
-                        <div class="hero-actions-row">
+                        <div class="hero-actions-row animate-up delay-3">
                             <button class="btn-hero-info" onclick="openAboutModal()">
                                 Daha çox öyrən <i class="fas fa-chevron-right"></i>
                             </button>
-                            <button class="btn-prepare-quiz" onclick="prepareQuizAction()">
+                            <button class="btn-prepare-quiz pulse-glow" onclick="prepareQuizAction()">
                                 <i class="fas fa-magic"></i> Sınaq imtahanı hazırla
                             </button>
                         </div>
 
                         <div class="hero-features">
-                            <div class="hero-feature-item">
-                                <i class="fas fa-chalkboard-teacher"></i>
+                            <div class="hero-feature-item animate-scale delay-4">
+                                <i class="fas fa-chalkboard-teacher animate-float"></i>
                                 <span>Müəllimlər üçün: Test yarat, şifrə qoy və nəticələri izlə</span>
                             </div>
-                            <div class="hero-feature-item">
-                                <i class="fas fa-user-graduate"></i>
+                            <div class="hero-feature-item animate-scale delay-5">
+                                <i class="fas fa-user-graduate animate-float delay-1"></i>
                                 <span>Tələbələr üçün: Şifrəli testləri işlə və dərhal nəticəni gör</span>
                             </div>
-                            <div class="hero-feature-item">
-                                <i class="fas fa-users"></i>
+                            <div class="hero-feature-item animate-scale delay-5">
+                                <i class="fas fa-users animate-float delay-2"></i>
                                 <span>Hər kəs üçün: Sual paylaş, müzakirələrə qoşul və öyrən</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="header-actions">
+                <div class="header-actions animate-up delay-4">
                     <h2 id="dashboard-title">Mövcud İmtahanlar</h2>
                     <button id="dashboard-back-btn" class="btn-secondary hidden" onclick="navigateUp()"><i class="fas fa-arrow-left"></i> Geri</button>
                 </div>
                 <div id="categories-grid" class="grid-container">
                     <!-- Categories will be loaded here -->
+                </div>
+
+                <!-- AI Introduction Section -->
+                <div class="ai-intro-section animate-up delay-5">
+                    <div class="ai-card">
+                        <div class="ai-card-content">
+                            <h2>Süni İntellekt ilə Saniyələr İçində Test Yaradın</h2>
+                            <p>Artıq sualları tək-tək yazmağa vaxt itirməyin. Süni intellektimiz dərsliklər, mövzu mətnləri və şəkillər əsasında müəllimlər üçün ən vacib testləri anında hazırlayır:</p>
+                            
+                            <div class="ai-capabilities">
+                                <div class="cap-item">
+                                    <i class="fas fa-file-alt"></i>
+                                    <span>KSQ və BSQ</span>
+                                </div>
+                                <div class="cap-item">
+                                    <i class="fas fa-university"></i>
+                                    <span>Dövlət Qulluğu</span>
+                                </div>
+                                <div class="cap-item">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    <span>OTK və MİQ</span>
+                                </div>
+                                <div class="cap-item">
+                                    <i class="fas fa-trophy"></i>
+                                    <span>Olimpiada</span>
+                                </div>
+                                <div class="cap-item">
+                                    <i class="fas fa-book-open"></i>
+                                    <span>Dərslik Mövzuları</span>
+                                </div>
+                                <div class="cap-item">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span>Və digər mövzular</span>
+                                </div>
+                            </div>
+
+                            <button class="btn-ai-explore" onclick="tryAIAction()">
+                                <i class="fas fa-magic"></i> İndi Sına – Tamamilə Pulsuz!
+                            </button>
+                        </div>
+                        <div class="ai-card-visual animate-float">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -509,26 +557,26 @@
                 </div>
                 
                 <div class="profile-grid">
-                    <div class="profile-info-card card">
-                        <i class="fas fa-user-circle" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <div class="profile-info-card card animate-up">
+                        <i class="fas fa-user-circle text-primary text-6xl mb-4 animate-float"></i>
                         <h3 id="profile-full-name">Ad Soyad</h3>
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <p id="profile-username" style="color: var(--text-light); font-weight: 500; margin: 0;">@username</p>
+                        <div class="flex items-center justify-center gap-2">
+                            <p id="profile-username" class="text-muted font-semibold m-0">@username</p>
                             <button onclick="toggleUsernameBox()" class="btn-icon" title="Dəyişdir">
                                 <i class="fas fa-edit"></i>
                             </button>
                         </div>
-                        <p id="profile-role" style="color: var(--text-light); margin-bottom: 1rem; font-size: 0.8rem;">Rolu</p>
+                        <p id="profile-role" class="text-muted mb-3 text-sm">Rolu</p>
                         
-                        <div id="missing-username-box" class="hidden" style="margin-top: 15px; padding: 15px; background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px;">
-                            <p style="font-size: 0.8rem; color: #92400e; margin-bottom: 10px;">
+                        <div id="missing-username-box" class="hidden mt-3 p-4 bg-warning-light border-warning rounded-md animate-scale">
+                            <p class="text-xs text-warning-dark mb-2">
                                 <i class="fas fa-user-edit"></i> Hesabınız üçün istifadəçi adı təyin edin və ya dəyişin.
                             </p>
-                            <input type="text" id="new-profile-username" placeholder="Yeni istifadəçi adı" style="margin-bottom: 10px;">
-                            <button onclick="updateUserUsername()" class="btn-primary" style="width: 100%;">Təsdiqlə</button>
+                            <input type="text" id="new-profile-username" placeholder="Yeni istifadəçi adı" class="mb-2">
+                            <button onclick="updateUserUsername()" class="btn-primary w-full">Təsdiqlə</button>
                         </div>
 
-                        <div class="profile-stats-mini">
+                        <div class="profile-stats-mini animate-up delay-1">
                             <div class="stat-item">
                                 <span class="stat-label">Cəmi Test</span>
                                 <span id="total-tests-count" class="stat-value">0</span>
@@ -540,7 +588,7 @@
                         </div>
                     </div>
 
-                    <div class="history-card card">
+                    <div class="history-card card animate-up delay-2">
                         <h3>Test Tarixçəsi</h3>
                         <div class="history-container">
                             <table class="history-table">
@@ -561,26 +609,26 @@
                 </div>
 
                 <!-- User's Own Questions Section -->
-                <div id="user-questions-container" class="card" style="margin-top: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin: 0;"><i class="fas fa-question-circle"></i> Əlavə Etdiyim Suallar</h3>
-                        <span id="user-questions-count" class="badge" style="background: var(--primary-color); color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem;">0 sual</span>
+                <div id="user-questions-container" class="card mt-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="m-0"><i class="fas fa-question-circle"></i> Əlavə Etdiyim Suallar</h3>
+                        <span id="user-questions-count" class="badge bg-primary text-white px-3 py-1 rounded-lg text-sm">0 sual</span>
                     </div>
                     <div id="user-questions-list" class="list-container">
                         <!-- User's questions will be loaded here -->
-                        <p style="text-align: center; color: #888; padding: 20px;">Yüklənir...</p>
+                        <p class="text-center text-muted p-4">Yüklənir...</p>
                     </div>
                 </div>
 
                 <!-- User Inbox Section -->
-                <div id="user-inbox-container" class="card" style="margin-top: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin: 0;"><i class="fas fa-inbox"></i> Inbox (Şikayətlərim və Cavablar)</h3>
-                        <span id="user-inbox-count" class="badge" style="background: #10b981; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem;">0 mesaj</span>
+                <div id="user-inbox-container" class="card mt-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="m-0"><i class="fas fa-inbox"></i> Inbox (Şikayətlərim və Cavablar)</h3>
+                        <span id="user-inbox-count" class="badge bg-success text-white px-3 py-1 rounded-lg text-sm">0 mesaj</span>
                     </div>
                     <div id="user-inbox-list" class="list-container">
                         <!-- User inbox items will be loaded here -->
-                        <p style="text-align: center; color: #888; padding: 20px;">Yüklənir...</p>
+                        <p class="text-center text-muted p-4">Yüklənir...</p>
                     </div>
                 </div>
             </div>
@@ -590,7 +638,7 @@
         <section id="top-users-section" class="hidden">
             <div class="container">
                 <div class="header-actions">
-                    <h2><i class="fas fa-medal" style="color: #f59e0b;"></i> Liderlər Siyahısı</h2>
+                    <h2><i class="fas fa-medal text-warning"></i> Liderlər Siyahısı</h2>
                     <button onclick="showDashboard()" class="btn-secondary">Geri</button>
                 </div>
                 
@@ -607,9 +655,9 @@
                     </div>
                     <div id="top-users-list" class="leaderboard-list">
                         <!-- Top users will be loaded here -->
-                        <div style="text-align:center; padding: 40px;">
-                            <i class="fas fa-spinner fa-spin fa-2x"></i>
-                            <p style="margin-top: 10px;">Hesablanır...</p>
+                        <div class="text-center p-10">
+                            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                            <p class="mt-2">Hesablanır...</p>
                         </div>
                     </div>
                 </div>
@@ -620,21 +668,47 @@
         <section id="admin-dashboard-section" class="hidden">
             <div class="container">
                 <!-- Ziyarətçi Statistikası -->
-                <div id="visitor-stats-display" style="margin-bottom: 25px;">
-                    <!-- Stat card will be injected here -->
-                </div>
-
-                <div class="header-actions">
-                    <h2 id="admin-dashboard-title">Admin Paneli - Kateqoriyalar</h2>
-                    <div class="admin-top-actions" style="display: flex !important; flex-wrap: wrap !important; gap: 10px !important; justify-content: flex-end !important; visibility: visible !important; opacity: 1 !important;">
-                        <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()"><i class="fas fa-arrow-left"></i> Geri</button>
-                        <button id="restore-btn-global" class="btn-danger" onclick="restoreMissingQuestions()" style="display: inline-block !important; background-color: #dc3545 !important; color: white !important; font-weight: bold !important; padding: 10px 20px !important; border-radius: 8px !important; border: none !important; cursor: pointer !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;"><i class="fas fa-undo"></i> Sualları Bərpa Et</button>
-                        <button class="btn-success" onclick="exportData()" style="display: inline-block !important;">💾 Export</button>
-                        <button class="btn-outline" onclick="showReports()" style="display: inline-block !important;"><i class="fas fa-flag"></i> Şikayətlər</button>
-                        <button class="btn-primary" onclick="showAddCategoryModal()" style="display: inline-block !important;">+ Yeni Kateqoriya</button>
+                <div id="visitor-stats-display" class="mb-6 stats-grid">
+                    <div class="stat-card animate-up delay-1">
+                        <div class="stat-icon animate-float">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Ümumi İstifadəçi</span>
+                            <h3 class="stat-value" id="total-visitors">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card animate-up delay-2">
+                        <div class="stat-icon animate-float delay-1" style="color: var(--success-color); background: var(--success-light);">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Tamamlanmış İmtahan</span>
+                            <h3 class="stat-value" id="total-finished-quizzes">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card animate-up delay-3">
+                        <div class="stat-icon animate-float delay-2" style="color: var(--warning-color); background: var(--warning-light);">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Aktiv Suallar</span>
+                            <h3 class="stat-value" id="total-active-questions">0</h3>
+                        </div>
                     </div>
                 </div>
-                <div id="admin-categories-grid" class="grid-container">
+
+                <div class="header-actions animate-up delay-4">
+                    <h2 id="admin-dashboard-title">Admin Paneli - Kateqoriyalar</h2>
+                    <div class="admin-top-actions flex flex-wrap gap-2 justify-end">
+                        <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()"><i class="fas fa-arrow-left"></i> Geri</button>
+                        <button id="restore-btn-global" class="btn-danger px-5 py-2 rounded-lg font-bold shadow-md" onclick="restoreMissingQuestions()"><i class="fas fa-undo"></i> Sualları Bərpa Et</button>
+                        <button class="btn-success" onclick="exportData()">💾 Export</button>
+                        <button class="btn-outline" onclick="showReports()"><i class="fas fa-flag"></i> Şikayətlər</button>
+                        <button class="btn-primary" onclick="showAddCategoryModal()">+ Yeni Kateqoriya</button>
+                    </div>
+                </div>
+                <div id="admin-categories-grid" class="grid-container animate-up delay-5">
                     <!-- Admin Categories will be loaded here -->
                 </div>
             </div>
@@ -647,7 +721,7 @@
                     <button onclick="showAdminDashboard()" class="btn-secondary"><i class="fas fa-arrow-left"></i> Geri</button>
                     <h2><i class="fas fa-flag"></i> Gələn Şikayətlər və Təkliflər</h2>
                 </div>
-                <div id="reports-list" class="list-container" style="margin-top: 20px;">
+                <div id="reports-list" class="list-container mt-4">
                     <!-- Reports will be loaded here -->
                 </div>
             </div>
@@ -704,61 +778,61 @@
 
         <!-- Add Public Question Modal -->
         <div id="public-question-modal" class="modal hidden">
-            <div class="modal-content" style="max-width: 650px; padding: 0; overflow: hidden; border-radius: 20px;">
-                <div class="modal-header-brand" style="background: var(--primary-color); color: white; padding: 25px; position: relative;">
-                    <h2 style="margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 12px;">
+            <div class="modal-content overflow-hidden p-0 max-w-650 rounded-lg">
+                <div class="modal-header-brand p-6 relative bg-primary text-white">
+                    <h2 class="m-0 flex items-center text-lg gap-3">
                         <i class="fas fa-plus-circle"></i> Ümumi Sual Əlavə Et
                     </h2>
-                    <span class="close" onclick="closeModal('public-question-modal')" style="color: white; opacity: 0.8; position: absolute; top: 20px; right: 25px;">&times;</span>
-                    <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 0.9rem;">Təqdim etdiyiniz sual digər istifadəçilər tərəfindən görünəcək.</p>
+                    <span class="close text-white opacity-80 absolute top-20 right-25" onclick="closeModal('public-question-modal')">&times;</span>
+                    <p class="mt-2 text-sm opacity-90">Təqdim etdiyiniz sual digər istifadəçilər tərəfindən görünəcək.</p>
                 </div>
 
-                <div class="modal-body" style="padding: 30px;">
-                    <div class="form-group" style="margin-bottom: 25px;">
-                        <label style="font-weight: 600; color: var(--text-color); margin-bottom: 10px; display: block;">
-                            <i class="fas fa-pen-fancy" style="color: var(--primary-color); margin-right: 8px;"></i> Sualın mətni
+                <div class="modal-body p-6">
+                    <div class="form-group mb-4">
+                        <label class="mb-2 block font-semibold text-main">
+                            <i class="fas fa-pen-fancy text-primary mr-1"></i> Sualın mətni
                         </label>
-                        <textarea id="pub-q-text" placeholder="Sualı daxil edin..." style="width: 100%; min-height: 120px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; transition: all 0.3s; resize: vertical;"></textarea>
+                        <textarea id="pub-q-text" placeholder="Sualı daxil edin..." class="w-full min-h-120 p-4 border-2 rounded-md text-base transition resize-y"></textarea>
                     </div>
 
                     <div class="form-group">
-                        <label style="font-weight: 600; color: var(--text-color); margin-bottom: 15px; display: block;">
-                            <i class="fas fa-list-ul" style="color: var(--primary-color); margin-right: 8px;"></i> Variantlar və Düzgün Cavab
+                        <label class="mb-3 block font-semibold text-main">
+                            <i class="fas fa-list-ul text-primary mr-1"></i> Variantlar və Düzgün Cavab
                         </label>
                         
-                        <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 12px; border-radius: 10px; margin-bottom: 15px; color: #92400e; font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
+                        <div class="flex items-center gap-2 mb-3 text-sm bg-primary-light border rounded-md text-primary p-3">
                             <i class="fas fa-info-circle"></i>
                             <span>Düzgün variantı radio düyməsi ilə işarələyin.</span>
                         </div>
 
-                        <div id="pub-q-options" class="public-options-grid" style="display: grid; gap: 12px;">
-                            <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                                <input type="radio" name="pub-q-correct" value="0" checked id="pub-opt-0" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
-                                <input type="text" class="pub-opt" placeholder="A variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+                        <div id="pub-q-options" class="public-options-grid grid gap-3">
+                            <div class="manual-option-input flex items-center gap-3 bg-bg p-3 rounded-md border">
+                                <input type="radio" name="pub-q-correct" value="0" checked id="pub-opt-0" class="w-5 h-5 cursor-pointer accent-primary">
+                                <input type="text" class="pub-opt text-sm flex-1 no-border bg-transparent p-1 outline-none" placeholder="A variantı">
                             </div>
-                            <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                                <input type="radio" name="pub-q-correct" value="1" id="pub-opt-1" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
-                                <input type="text" class="pub-opt" placeholder="B variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+                            <div class="manual-option-input flex items-center gap-3 bg-bg p-3 rounded-md border">
+                                <input type="radio" name="pub-q-correct" value="1" id="pub-opt-1" class="w-5 h-5 cursor-pointer accent-primary">
+                                <input type="text" class="pub-opt text-sm flex-1 no-border bg-transparent p-1 outline-none" placeholder="B variantı">
                             </div>
-                            <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                                <input type="radio" name="pub-q-correct" value="2" id="pub-opt-2" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
-                                <input type="text" class="pub-opt" placeholder="C variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+                            <div class="manual-option-input flex items-center gap-3 bg-bg p-3 rounded-md border">
+                                <input type="radio" name="pub-q-correct" value="2" id="pub-opt-2" class="w-5 h-5 cursor-pointer accent-primary">
+                                <input type="text" class="pub-opt text-sm flex-1 no-border bg-transparent p-1 outline-none" placeholder="C variantı">
                             </div>
-                            <div class="manual-option-input" style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                                <input type="radio" name="pub-q-correct" value="3" id="pub-opt-3" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color);">
-                                <input type="text" class="pub-opt" placeholder="D variantı" style="flex: 1; border: none; background: transparent; padding: 5px; font-size: 0.95rem; outline: none;">
+                            <div class="manual-option-input flex items-center gap-3 bg-bg p-3 rounded-md border">
+                                <input type="radio" name="pub-q-correct" value="3" id="pub-opt-3" class="w-5 h-5 cursor-pointer accent-primary">
+                                <input type="text" class="pub-opt text-sm flex-1 no-border bg-transparent p-1 outline-none" placeholder="D variantı">
                             </div>
                         </div>
 
-                        <button onclick="addPublicOption()" class="btn-outline" style="width: 100%; margin-top: 15px; border-style: dashed; color: var(--primary-color);">
+                        <button onclick="addPublicOption()" class="btn-outline w-full mt-4 border-dashed text-primary">
                             <i class="fas fa-plus-circle"></i> Variant artır
                         </button>
                     </div>
                 </div>
 
-                <div class="modal-footer" style="padding: 20px 30px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 15px;">
-                    <button onclick="closeModal('public-question-modal')" class="btn-outline" style="flex: 1; margin: 0;">Ləğv et</button>
-                    <button onclick="submitPublicQuestion()" class="btn-primary" style="flex: 2; margin: 0;">
+                <div class="modal-footer p-6 flex gap-3 bg-bg border-t">
+                    <button onclick="closeModal('public-question-modal')" class="btn-outline flex-1 m-0">Ləğv et</button>
+                    <button onclick="submitPublicQuestion()" class="btn-primary flex-2 m-0">
                         <i class="fas fa-paper-plane"></i> Sualı Paylaş
                     </button>
                 </div>
@@ -767,21 +841,21 @@
 
         <!-- Discussion Modal -->
         <div id="discussion-modal" class="modal hidden">
-            <div class="modal-content" style="max-width: 700px; height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 15px;">
-                <div style="padding: 15px 20px; background: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-users" style="font-size: 1.2rem;"></i>
+            <div class="modal-content overflow-hidden p-0 flex flex-col max-w-700 h-90vh rounded-15">
+                <div class="p-4 flex justify-between items-center bg-primary text-white">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-users text-lg"></i>
                         <div>
-                            <h3 id="discussion-title" style="margin: 0; font-size: 1rem;">Müzakirə Qrupu</h3>
-                            <span style="font-size: 0.7rem; opacity: 0.8;">onlayn</span>
+                            <h3 id="discussion-title" class="m-0 text-sm">Müzakirə Qrupu</h3>
+                            <span class="text-xs opacity-80">onlayn</span>
                         </div>
                     </div>
-                    <span class="close" onclick="closeModal('discussion-modal')" style="color: white; margin: 0; font-size: 24px;">&times;</span>
+                    <span class="close m-0 text-xl text-white" onclick="closeModal('discussion-modal')">&times;</span>
                 </div>
                 
-                <div id="discussion-question-text" class="discussion-q-preview" style="margin: 0; border-radius: 0; background: #fffbe6; border-bottom: 1px solid #ffe58f; padding: 10px 20px; font-size: 0.9rem; color: #856404;"></div>
+                <div id="discussion-question-text" class="discussion-q-preview m-0 text-sm rounded-none bg-warning-light border-warning-b p-3 px-5 text-warning-dark"></div>
                 
-                <div id="comments-list" class="comments-container" style="flex: 1; overflow-y: auto;">
+                <div id="comments-list" class="comments-container flex-1 overflow-y-auto">
                     <!-- Comments will be loaded here -->
                 </div>
                 
@@ -827,30 +901,34 @@
 
         <!-- Anonymous Name Modal -->
         <div id="anonymous-name-modal" class="modal hidden">
-            <div class="modal-content" style="max-width: 400px; text-align: center; padding: 30px; border-radius: 20px;">
-                <h3 style="margin-bottom: 15px;">Müzakirəyə qoşulun</h3>
-                <p style="color: var(--text-muted); margin-bottom: 20px;">Fikir bildirmək üçün adınızı daxil edin:</p>
-                <div class="form-group">
-                    <input type="text" id="anon-name-input" placeholder="Adınız..." style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; text-align: center; font-size: 1.1rem;">
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button onclick="closeModal('anonymous-name-modal')" class="btn-outline" style="flex: 1; margin: 0;">Ləğv et</button>
-                    <button onclick="saveAnonymousName()" class="btn-primary" style="flex: 1; margin: 0;">Davam et</button>
+            <div class="modal-content max-w-400 rounded-lg">
+                <div class="text-center p-4">
+                    <h3 class="mb-2">Müzakirəyə qoşulun</h3>
+                    <p class="text-muted mb-4">Fikir bildirmək üçün adınızı daxil edin:</p>
+                    <div class="form-group">
+                        <input type="text" id="anon-name-input" placeholder="Adınız..." class="w-full text-center text-lg p-3 border rounded-md">
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="closeModal('anonymous-name-modal')" class="btn-outline w-full m-0">Ləğv et</button>
+                        <button onclick="saveAnonymousName()" class="btn-primary w-full m-0">Davam et</button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Custom Confirm Modal -->
         <div id="confirm-modal" class="modal hidden">
-            <div class="modal-content" style="max-width: 400px; text-align: center; padding: 30px; border-radius: 20px;">
-                <div style="font-size: 3rem; color: var(--warning-color); margin-bottom: 15px;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <h3 id="confirm-modal-title" style="margin-bottom: 10px;">Əminsiniz?</h3>
-                <p id="confirm-modal-text" style="color: var(--text-muted); margin-bottom: 25px;">Bu mesajı silmək istədiyinizə əminsiniz?</p>
-                <div style="display: flex; gap: 10px;">
-                    <button id="confirm-cancel-btn" onclick="closeModal('confirm-modal')" class="btn-outline" style="flex: 1; margin: 0;">Ləğv et</button>
-                    <button id="confirm-ok-btn" class="btn-primary" style="flex: 1; margin: 0; background: var(--danger-color); border-color: var(--danger-color);">Sil</button>
+            <div class="modal-content max-w-400 rounded-lg">
+                <div class="text-center p-4">
+                    <div class="mb-4 text-5xl text-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3 id="confirm-modal-title" class="mb-2">Əminsiniz?</h3>
+                    <p id="confirm-modal-text" class="text-muted mb-4">Bu mesajı silmək istədiyinizə əminsiniz?</p>
+                    <div class="flex gap-2">
+                        <button id="confirm-cancel-btn" onclick="closeModal('confirm-modal')" class="btn-outline w-full m-0">Ləğv et</button>
+                        <button id="confirm-ok-btn" class="btn-primary w-full m-0 bg-danger border-danger shadow-danger-sm">Sil</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -905,12 +983,12 @@
                         <span class="stat-label">Yanlış</span>
                     </div>
                     <div class="stat-item">
-                        <span id="unanswered-count" class="stat-value" style="color: #64748b;">0</span>
+                        <span id="unanswered-count" class="stat-value text-muted">0</span>
                         <span class="stat-label">Cavablandırılmayan</span>
                     </div>
                 </div>
-                <button id="review-btn" onclick="showQuizReview()" class="btn-secondary" style="width: 100%; margin-bottom: 10px;">Suallara Bax</button>
-                <button onclick="showDashboard()" class="btn-primary" style="width: 100%;">Ana Səhifəyə Qayıt</button>
+                <button id="review-btn" onclick="showQuizReview()" class="btn-secondary w-full mb-2">Suallara Bax</button>
+                <button onclick="showDashboard()" class="btn-primary w-full">Ana Səhifəyə Qayıt</button>
             </div>
         </section>
 
@@ -926,7 +1004,7 @@
                 <div id="review-list">
                     <!-- Reviewed questions will be here -->
                 </div>
-                <button onclick="showDashboard()" class="btn-primary" style="width: 100%; margin-top: 20px;">Ana Səhifəyə Qayıt</button>
+                <button onclick="showDashboard()" class="btn-primary w-full mt-4">Ana Səhifəyə Qayıt</button>
             </div>
         </section>
     </div>
@@ -952,15 +1030,15 @@
         <!-- Admin Add Question Section -->
         <section id="admin-question-section" class="hidden">
             <div class="container">
-                <div class="card" style="max-width: 1100px; margin: 0 auto; padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: 95vh;">
-                    <div class="modal-header" style="border-radius: 12px 12px 0 0;">
-                        <h2><i class="fas fa-plus-circle" style="color: var(--primary-color);"></i> Sual Əlavə Et</h2>
+                <div class="card max-w-1100 mx-auto p-0 overflow-hidden flex flex-col h-90vh">
+                    <div class="modal-header rounded-12">
+                        <h2><i class="fas fa-plus-circle text-primary"></i> Sual Əlavə Et</h2>
                         <button onclick="hideAdminQuestionPage()" class="btn-secondary">
                             <i class="fas fa-arrow-left"></i> Geri
                         </button>
                     </div>
                     
-                    <div class="modal-body" style="padding: 30px; overflow-y: auto; flex: 1;">
+                    <div class="modal-body p-6 overflow-y-auto flex-1">
                         <!-- Admin Question Tabs -->
                         <div class="question-input-methods">
                             <div class="tabs-wrapper">
@@ -985,7 +1063,7 @@
                                 <div id="admin-questions-list" class="manual-questions-list">
                                     <!-- Suallar bura gələcək -->
                                 </div>
-                                <div class="add-q-btn-container" style="margin-top: 20px;">
+                                <div class="add-q-btn-container mt-4">
                                     <button onclick="addAdminQuestionForm()" class="add-q-btn">
                                         <i class="fas fa-plus-circle"></i> Yeni Sual Sətri
                                     </button>
@@ -1009,24 +1087,24 @@
                                         <i class="fas fa-exclamation-circle"></i> Sual mətni ilə variantlar arasında və variantların özləri arasında boş sətir buraxmayın!
                                     </p>
                                 </div>
-                                <textarea id="admin-bulk-questions-text" placeholder="Sualları buraya yapışdırın..." style="min-height: 300px;"></textarea>
-                                <button onclick="parseAdminBulkQuestions()" class="btn-primary" style="width: 100%; margin-top: 15px;">
+                                <textarea id="admin-bulk-questions-text" placeholder="Sualları buraya yapışdırın..." class="w-full min-h-300"></textarea>
+                                <button onclick="parseAdminBulkQuestions()" class="btn-primary w-full mt-3">
                                     <i class="fas fa-magic"></i> Mətni Suallara Çevir
                                 </button>
                             </div>
 
                             <!-- File Upload (JSON) -->
                             <div id="admin-method-file" class="admin-method-content hidden">
-                                <div style="text-align: center; padding: 60px 20px; border: 2px dashed #e2e8f0; border-radius: 16px; background: #f8fafc;">
-                                    <i class="fas fa-file-upload" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 20px; opacity: 0.5;"></i>
-                                    <h3 style="margin-bottom: 10px;">JSON Faylı Yüklə</h3>
-                                    <p style="color: var(--text-muted); margin-bottom: 30px;">Sistemə uyğun formatda olan JSON faylını seçin.</p>
-                                    <input type="file" id="admin-bulk-file" accept=".json" style="display: none;" onchange="handleAdminBulkFileUpload(this)">
+                                <div class="text-center p-10 border-2 border-dashed border-color rounded-16 bg-color">
+                                    <i class="fas fa-file-upload text-primary mb-4 opacity-50 text-6xl"></i>
+                                    <h3 class="mb-2">JSON Faylı Yüklə</h3>
+                                    <p class="text-muted mb-6">Sistemə uyğun formatda olan JSON faylını seçin.</p>
+                                    <input type="file" id="admin-bulk-file" accept=".json" class="hidden" onchange="handleAdminBulkFileUpload(this)">
                                     <button onclick="document.getElementById('admin-bulk-file').click()" class="btn-primary">
                                         <i class="fas fa-upload"></i> Fayl Seçin
                                     </button>
-                                    <div style="margin-top: 25px;">
-                                        <a href="#" onclick="downloadSampleJSON()" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
+                                    <div class="mt-6">
+                                        <a href="#" onclick="downloadSampleJSON()" class="text-primary no-underline font-bold">
                                             <i class="fas fa-download"></i> Nümunə JSON yüklə
                                         </a>
                                     </div>
@@ -1055,7 +1133,7 @@
                                                 <option value="20">20 sual</option>
                                             </select>
                                         </div>
-                                        <div class="q-difficulty-selector" style="margin-left: 15px;">
+                                        <div class="q-difficulty-selector ml-3">
                                             <label>Çətinlik:</label>
                                             <select id="admin-ai-difficulty">
                                                 <option value="easy">Asan</option>
@@ -1101,7 +1179,7 @@
                     <span class="logo-sub">Onlayn İmtahan Platforması</span>
                 </div>
                 <p>Azərbaycanın ən müasir onlayn qiymətləndirmə platforması. <b>Sınaq imtahanları</b>, özəl test yaratma və nəticələrin analizi üçün mükəmməl vasitə.</p>
-                <p style="margin-top: 10px; font-size: 0.8rem; color: #9ca3af;"><i class="fas fa-shield-alt"></i> Bütün məlumatlar şifrələmə ilə qorunur.</p>
+                <p class="mt-2 text-xs text-muted"><i class="fas fa-shield-alt"></i> Bütün məlumatlar şifrələmə ilə qorunur.</p>
             </div>
             <div class="footer-section links">
                 <h4>Faydalı Linklər</h4>
@@ -1137,7 +1215,7 @@
                 <button onclick="closeModal('contact-modal')" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 15px; color: var(--text-color);">Suallarınız, təklifləriniz və ya aşkar etdiyiniz xətalar barədə bizə məlumat verin.</p>
+                <p class="mb-3 text-main">Suallarınız, təklifləriniz və ya aşkar etdiyiniz xətalar barədə bizə məlumat verin.</p>
                 <div class="input-group">
                     <label>Adınız:</label>
                     <input type="text" id="contact-name" placeholder="Adınızı qeyd edin">
@@ -1152,7 +1230,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button onclick="sendContactMessage()" class="btn-primary" style="width: 100%;">Göndər</button>
+                <button onclick="sendContactMessage()" class="btn-primary w-full">Göndər</button>
             </div>
         </div>
     </div>
@@ -1208,7 +1286,7 @@
                     </label>
                 </div>
             </div>
-            <div class="setup-footer" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="setup-footer flex flex-col gap-2">
                 <button onclick="confirmStartQuiz()" class="btn-primary start-quiz-btn">
                     <i class="fas fa-play"></i> İmtahana Başla
                 </button>
@@ -1227,7 +1305,7 @@
                 <button onclick="closeModal('report-modal')" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <p id="report-q-title" style="font-weight: 500; margin-bottom: 15px; color: var(--text-color);"></p>
+                <p id="report-q-title" class="font-semibold mb-3 text-main"></p>
                 <div class="input-group">
                     <label>Şikayət və ya təklifiniz:</label>
                     <textarea id="report-message" placeholder="Məsələn: Sualın cavabı səhvdir, yazı xətası var və s." rows="4"></textarea>
@@ -1248,19 +1326,19 @@
 
     <!-- Admin Reply Modal -->
     <div id="reply-modal" class="modal hidden">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content max-w-500">
             <div class="modal-header">
                 <h2><i class="fas fa-reply"></i> Şikayətə Cavab Ver</h2>
                 <button onclick="closeModal('reply-modal')" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem;">
+                <div class="bg-bg p-4 rounded-md mb-4 text-sm">
                     <strong>İstifadəçinin mesajı:</strong>
-                    <p id="reply-user-msg" style="margin-top: 5px; color: #475569; font-style: italic;"></p>
+                    <p id="reply-user-msg" class="mt-1 text-muted italic"></p>
                 </div>
                 <div class="input-group">
                     <label>Cavabınız:</label>
-                    <textarea id="reply-message" placeholder="İstifadəçiyə veriləcək cavabı bura yazın..." rows="4" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;"></textarea>
+                    <textarea id="reply-message" placeholder="İstifadəçiyə veriləcək cavabı bura yazın..." rows="4" class="w-full p-2 rounded-md border"></textarea>
                 </div>
                 <input type="hidden" id="reply-report-id">
             </div>
@@ -1275,34 +1353,32 @@
 
     <!-- Forgot Password Modal -->
     <div id="forgot-password-modal" class="modal hidden">
-        <div class="modal-content" style="max-width: 450px; border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
-            <div class="modal-header" style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); padding: 25px; border: none;">
-                <h2 style="color: white; margin: 0; font-size: 1.5rem;"><i class="fas fa-key" style="margin-right: 10px;"></i> Şifrəni Bərpa Et</h2>
-                <button onclick="closeModal('forgot-password-modal')" class="close-btn" style="color: white; opacity: 0.8; font-size: 2rem;">&times;</button>
+        <div class="modal-content max-w-450 rounded-20 overflow-hidden border-none shadow-lg">
+            <div class="modal-header bg-primary p-6 border-none">
+                <h2 class="text-white m-0 text-2xl"><i class="fas fa-key mr-2"></i> Şifrəni Bərpa Et</h2>
+                <button onclick="closeModal('forgot-password-modal')" class="close-btn text-white opacity-80 text-3xl">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 30px; background: #fff;">
-                <div style="text-align: center; margin-bottom: 25px;">
-                    <div style="width: 60px; height: 60px; background: #eef2ff; color: #6366f1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 1.5rem;">
+            <div class="modal-body p-10 bg-white">
+                <div class="text-center mb-6">
+                    <div class="w-15 h-15 bg-primary-light text-primary rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
                         <i class="fas fa-user-shield"></i>
                     </div>
-                    <p style="font-size: 0.95rem; color: #475569; line-height: 1.6; margin: 0;">
+                    <p class="text-sm text-muted m-0">
                         Qeydiyyatdan keçdiyiniz istifadəçi adını və ya email ünvanını daxil edin.
                     </p>
                 </div>
-                <div class="input-group" style="margin-bottom: 0;">
-                    <div style="position: relative;">
-                        <i class="fas fa-at" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                <div class="input-group m-0">
+                    <div class="relative">
+                        <i class="fas fa-at absolute left-4 top-50 translate-y--50 text-muted"></i>
                         <input type="text" id="reset-identifier" placeholder="İstifadəçi adı və ya Email" 
-                            style="width: 100%; padding: 14px 15px 14px 45px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; transition: all 0.3s; outline: none; background: #f8fafc;"
-                            onfocus="this.style.borderColor='#6366f1'; this.style.background='#fff'; this.style.boxShadow='0 0 0 4px rgba(99, 102, 241, 0.1)'"
-                            onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc'; this.style.boxShadow='none'">
+                            class="w-full pl-12 py-3 border-2 rounded-12 text-base transition outline-none bg-bg focus-border-primary">
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 20px 30px 30px; background: #fff; border: none; display: flex; gap: 12px;">
-                <button onclick="closeModal('forgot-password-modal')" class="btn-outline" style="flex: 1; padding: 12px; border-radius: 12px; font-weight: 600; color: #64748b; border: 2px solid #e2e8f0;">Ləğv et</button>
-                <button onclick="sendResetEmail()" class="btn-primary" id="btn-reset-pwd" style="flex: 2; padding: 12px; border-radius: 12px; font-weight: 600; background: #6366f1; border: none; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);">
-                    <i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Təlimatları Göndər
+            <div class="modal-footer p-6 px-10 bg-white border-none flex gap-3">
+                <button onclick="closeModal('forgot-password-modal')" class="btn-outline flex-1 p-3 rounded-12 font-semibold text-muted border-2">Ləğv et</button>
+                <button onclick="sendResetEmail()" class="btn-primary flex-2 p-3 rounded-12 font-semibold bg-primary border-none shadow-md" id="btn-reset-pwd">
+                    <i class="fas fa-paper-plane mr-2"></i> Təlimatları Göndər
                 </button>
             </div>
         </div>
@@ -1310,41 +1386,37 @@
 
     <!-- New Password Modal -->
     <div id="reset-password-modal" class="modal hidden">
-        <div class="modal-content" style="max-width: 450px; border-radius: 20px; overflow: hidden; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
-            <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 25px; border: none;">
-                <h2 style="color: white; margin: 0; font-size: 1.5rem;"><i class="fas fa-lock" style="margin-right: 10px;"></i> Yeni Şifrə</h2>
-                <button onclick="closeModal('reset-password-modal')" class="close-btn" style="color: white; opacity: 0.8; font-size: 2rem;">&times;</button>
+        <div class="modal-content max-w-450 rounded-20 overflow-hidden border-none shadow-lg">
+            <div class="modal-header bg-success p-6 border-none">
+                <h2 class="text-white m-0 text-2xl"><i class="fas fa-lock mr-2"></i> Yeni Şifrə</h2>
+                <button onclick="closeModal('reset-password-modal')" class="close-btn text-white opacity-80 text-3xl">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 30px; background: #fff;">
-                <div id="reset-email-display" style="text-align: center; font-size: 0.9rem; color: #059669; margin-bottom: 25px; background: #ecfdf5; padding: 10px; border-radius: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <div class="modal-body p-10 bg-white">
+                <div id="reset-email-display" class="text-center text-sm text-success-dark mb-6 bg-success-light p-3 rounded-md font-semibold flex items-center justify-center gap-2">
                     <i class="fas fa-user-check"></i> <span></span>
                 </div>
                 
-                <div class="input-group" style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #334155; font-size: 0.9rem;">Yeni Şifrə:</label>
-                    <div style="position: relative;">
-                        <i class="fas fa-shield-alt" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                <div class="form-group mb-4">
+                    <label class="block mb-2 font-semibold text-main text-sm">Yeni Şifrə:</label>
+                    <div class="relative">
+                        <i class="fas fa-shield-alt absolute left-4 top-50 translate-y--50 text-muted"></i>
                         <input type="password" id="new-password-input" placeholder="Minimum 8 simvol" 
-                            style="width: 100%; padding: 14px 15px 14px 45px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; transition: all 0.3s; outline: none; background: #f8fafc;"
-                            onfocus="this.style.borderColor='#10b981'; this.style.background='#fff'; this.style.boxShadow='0 0 0 4px rgba(16, 185, 129, 0.1)'"
-                            onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc'; this.style.boxShadow='none'">
+                            class="w-full pl-12 py-3 border-2 rounded-12 text-base transition outline-none bg-bg focus-border-success">
                     </div>
                 </div>
 
-                <div class="input-group" style="margin-bottom: 0;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #334155; font-size: 0.9rem;">Şifrəni Təkrarla:</label>
-                    <div style="position: relative;">
-                        <i class="fas fa-check-double" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                <div class="form-group m-0">
+                    <label class="block mb-2 font-semibold text-main text-sm">Şifrəni Təkrarla:</label>
+                    <div class="relative">
+                        <i class="fas fa-check-double absolute left-4 top-50 translate-y--50 text-muted"></i>
                         <input type="password" id="confirm-password-input" placeholder="Yenidən daxil edin" 
-                            style="width: 100%; padding: 14px 15px 14px 45px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; transition: all 0.3s; outline: none; background: #f8fafc;"
-                            onfocus="this.style.borderColor='#10b981'; this.style.background='#fff'; this.style.boxShadow='0 0 0 4px rgba(16, 185, 129, 0.1)'"
-                            onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc'; this.style.boxShadow='none'">
+                            class="w-full pl-12 py-3 border-2 rounded-12 text-base transition outline-none bg-bg focus-border-success">
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 20px 30px 30px; background: #fff; border: none;">
-                <button onclick="submitNewPassword()" class="btn-primary" id="btn-submit-new-pwd" style="width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; background: #10b981; border: none; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2); font-size: 1rem;">
-                    <i class="fas fa-check-circle" style="margin-right: 8px;"></i> Şifrəni Yenilə
+            <div class="modal-footer p-6 px-10 bg-white border-none">
+                <button onclick="submitNewPassword()" class="btn-primary w-full p-4 rounded-12 font-semibold bg-success border-none shadow-md text-base" id="btn-submit-new-pwd">
+                    <i class="fas fa-check-circle mr-2"></i> Şifrəni Yenilə
                 </button>
             </div>
         </div>
