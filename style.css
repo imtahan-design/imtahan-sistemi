@@ -1828,6 +1828,9 @@ nav:hover {
         min-height: auto;
     }
 
+    .logo {
+        line-height: 1 !important;
+    }
     .logo-main {
         font-size: 20px;
         letter-spacing: -0.5px;
@@ -5284,11 +5287,18 @@ nav:hover {
         border-radius: 10px !important;
         min-height: auto !important;
     }
+    .logo {
+        line-height: 1 !important;
+    }
     .logo-main {
         font-size: 16px !important;
     }
     .logo-sub {
-        display: none !important;
+        display: block !important;
+        font-size: 7px !important;
+        margin-top: -2px !important;
+        opacity: 0.7 !important;
+        white-space: nowrap !important;
     }
     .menu-toggle {
         padding: 4px 8px !important;
