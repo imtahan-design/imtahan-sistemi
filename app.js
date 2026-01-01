@@ -1942,8 +1942,9 @@ window.parseBulkQuestions = function() {
         let correctIndex = 0;
         
         lines.slice(1).forEach(line => {
-            if (line.match(/^[A-J][\s.)]/i)) {
-                options.push(line.replace(/^[A-J][\s.)]*/i, ''));
+            const variantMatch = line.match(/^[A-J][\s.)\-:]{1,3}/i);
+            if (variantMatch) {
+                options.push(line.substring(variantMatch[0].length).trim());
             } else if (line.toLowerCase().includes('doğru:') || line.toLowerCase().includes('cavab:')) {
                 const parts = line.split(':');
                 if (parts.length > 1) {
@@ -4176,6 +4177,7 @@ window.generateAdminAIQuestions = async function() {
     Cavablar yalnız Azərbaycan dilində olsun. 
     Hər sualın 4 variantı olsun. 
     Variantların daxilində "A)", "1)" kimi prefikslər yazma, yalnız variantın mətnini yaz.
+    Əgər variantın mətni dırnaq işarəsi (", “, ”) ilə başlayırsa, onu olduğu kimi saxla.
     Nəticəni yalnız aşağıdakı JSON formatında qaytar (heç bir əlavə mətn yazma, yalnız JSON):
     [
       {
@@ -4344,8 +4346,9 @@ window.parseAdminBulkQuestions = function() {
         let correctIndex = 0;
         
         lines.slice(1).forEach(line => {
-            if (line.match(/^[A-J][\s.)]/i)) {
-                options.push(line.replace(/^[A-J][\s.)]*/i, ''));
+            const variantMatch = line.match(/^[A-J][\s.)\-:]{1,3}/i);
+            if (variantMatch) {
+                options.push(line.substring(variantMatch[0].length).trim());
             } else if (line.toLowerCase().includes('doğru:') || line.toLowerCase().includes('cavab:')) {
                 const parts = line.split(':');
                 if (parts.length > 1) {
@@ -5947,6 +5950,7 @@ window.generateAIQuestions = async function() {
     Cavablar yalnız Azərbaycan dilində olsun. 
     Hər sualın 4 variantı olsun. 
     Variantların daxilində "A)", "1)" kimi prefikslər yazma, yalnız variantın mətnini yaz.
+    Əgər variantın mətni dırnaq işarəsi (", “, ”) ilə başlayırsa, onu olduğu kimi saxla.
     Nəticəni yalnız aşağıdakı JSON formatında qaytar (heç bir əlavə mətn yazma, yalnız JSON):
     [
       {
