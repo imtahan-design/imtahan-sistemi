@@ -1762,11 +1762,8 @@ window.editPrivateQuiz = async function(quizId) {
 
                         <div class="video-preview-container ${q.videoId ? '' : 'hidden'}" id="video_preview_${uniqueId}">
                             ${q.videoId ? (q.videoType === 'youtube' ? `
-                                <div class="video-wrapper">
-                                    <iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1&fs=0&controls=1" allowfullscreen></iframe>
-                                    <div class="video-overlay-title"></div>
-                                    <div class="video-overlay-logo"></div>
-                                    <div class="video-overlay-left-bottom"></div>
+                                <div class="plyr__video-embed" id="player_${uniqueId}">
+                                    <iframe src="https://www.youtube.com/embed/${q.videoId}?origin=${window.location.origin}&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe>
                                 </div>
                             ` : `<div class="video-placeholder"><i class="fas fa-check-circle"></i> <span>Video Yüklənib</span></div>`) : ''}
                             <button type="button" class="remove-video-btn" onclick="removeQuestionVideo('${uniqueId}')">
@@ -1799,6 +1796,12 @@ window.editPrivateQuiz = async function(quizId) {
             </div>
         `;
         list.appendChild(div);
+
+        if (q.videoId && q.videoType === 'youtube') {
+            new Plyr(`#player_${uniqueId}`, {
+                youtube: { noCookie: true, rel: 0, showinfo: 0, iv_load_policy: 3, modestbranding: 1 }
+            });
+        }
     });
     
     switchQuestionTab('manual');
@@ -2247,16 +2250,16 @@ function updateVideoPreview(uniqueId, videoId, type) {
         preview.classList.remove('hidden');
         if (type === 'youtube') {
             preview.innerHTML = `
-                <div class="video-wrapper">
-                    <iframe src="https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1&fs=0&controls=1" allowfullscreen></iframe>
-                    <div class="video-overlay-title"></div>
-                    <div class="video-overlay-logo"></div>
-                    <div class="video-overlay-left-bottom"></div>
+                <div class="plyr__video-embed" id="player_${uniqueId}">
+                    <iframe src="https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe>
                 </div>
                 <button type="button" class="remove-video-btn" onclick="removeQuestionVideo('${uniqueId}')">
                     <i class="fas fa-times"></i>
                 </button>
             `;
+            new Plyr(`#player_${uniqueId}`, {
+                youtube: { noCookie: true, rel: 0, showinfo: 0, iv_load_policy: 3, modestbranding: 1 }
+            });
         } else {
             preview.innerHTML = `
                 <div class="video-placeholder">
@@ -5547,11 +5550,8 @@ window.showQuizReview = function() {
                 <div class="question-video-container mb-3">
                     ${q.videoType === 'youtube' ? 
                         `
-                        <div class="video-wrapper">
-                            <iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1&fs=0&controls=1" allowfullscreen></iframe>
-                            <div class="video-overlay-title"></div>
-                            <div class="video-overlay-logo"></div>
-                            <div class="video-overlay-left-bottom"></div>
+                        <div class="plyr__video-embed" id="review_player_${idx}">
+                            <iframe src="https://www.youtube.com/embed/${q.videoId}?origin=${window.location.origin}&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe>
                         </div>
                         ` : 
                         `<div class="video-placeholder"><i class="fas fa-play-circle"></i> <span>Video İzah Yüklənib</span></div>`
@@ -5573,6 +5573,12 @@ window.showQuizReview = function() {
             ` : ''}
         `;
         reviewList.appendChild(reviewItem);
+
+        if (q.videoId && q.videoType === 'youtube') {
+            new Plyr(`#review_player_${idx}`, {
+                youtube: { noCookie: true, rel: 0, showinfo: 0, iv_load_policy: 3, modestbranding: 1 }
+            });
+        }
     });
 }
 
