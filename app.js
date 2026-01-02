@@ -1981,7 +1981,7 @@ window.handleQuestionImage = function(input, index, droppedFile = null) {
             // Firestore limitini yoxlayırıq (təxminən 800KB limit qoyuruq ki, digər datalarla 1MB-ı keçməsin)
             if (compressedBase64.length > 800 * 1024) {
                 showNotification('Şəkil sıxıldıqdan sonra hələ də çox böyükdür. Zəhmət olmasa daha kiçik şəkil seçin.', 'error');
-                input.value = '';
+                if (input) input.value = '';
                 return;
             }
 
@@ -2037,6 +2037,10 @@ window.initDragAndDrop = function(uniqueId) {
     const dropZone = document.getElementById(`label_${uniqueId}`);
     if (!dropZone) return;
 
+    // Browserin default davranışını (faylı açmaq) hər yerdə dayandırırıq
+    window.addEventListener('dragover', (e) => e.preventDefault(), false);
+    window.addEventListener('drop', (e) => e.preventDefault(), false);
+
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, (e) => {
             e.preventDefault();
@@ -2058,8 +2062,10 @@ window.initDragAndDrop = function(uniqueId) {
 
     dropZone.addEventListener('drop', (e) => {
         const dt = e.dataTransfer;
-        const file = dt.files[0];
-        window.handleQuestionImage(null, uniqueId, file);
+        const files = dt.files;
+        if (files && files.length > 0) {
+            window.handleQuestionImage(null, uniqueId, files[0]);
+        }
     }, false);
 };
 
