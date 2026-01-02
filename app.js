@@ -2295,9 +2295,6 @@ window.handleVideoUpload = async function(input, uniqueId) {
     const progress = document.getElementById(`video_progress_${uniqueId}`);
     const bar = document.getElementById(`video_bar_${uniqueId}`);
     const status = document.getElementById(`video_status_${uniqueId}`);
-    const preview = document.getElementById(`video_preview_${uniqueId}`);
-    const videoIdInput = document.getElementById(`video_id_${uniqueId}`);
-    const videoTypeInput = document.getElementById(`video_type_${uniqueId}`);
 
     if (progress) progress.classList.remove('hidden');
     if (status) {
@@ -2310,37 +2307,54 @@ window.handleVideoUpload = async function(input, uniqueId) {
     formData.append('video', file);
     formData.append('title', 'Sual Video İzahı');
 
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/upload-video`, {
-            method: 'POST',
-            body: formData
-        });
+    let attempts = 0;
+    const maxAttempts = 5;
+    const retryDelay = 5000; // 5 saniyə
 
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.details || data.error || 'Yükləmə zamanı xəta baş verdi');
-        }
-        
-        if (data.success && data.videoId) {
-            if (bar) bar.style.width = '100%';
-            if (status) status.textContent = 'Video hazırlandı';
-            showNotification('Video izah uğurla əlavə edildi!', 'success');
+    const uploadAction = async () => {
+        try {
+            attempts++;
+            const response = await fetch(`${BACKEND_URL}/api/upload-video`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
             
-            setTimeout(() => {
+            if (!response.ok) {
+                throw new Error(data.details || data.error || 'Yükləmə zamanı xəta baş verdi');
+            }
+            
+            if (data.success && data.videoId) {
+                if (bar) bar.style.width = '100%';
+                if (status) status.textContent = 'Video hazırlandı';
+                showNotification('Video izah uğurla əlavə edildi!', 'success');
+                
+                setTimeout(() => {
+                    if (progress) progress.classList.add('hidden');
+                    if (status) status.classList.add('hidden');
+                    updateVideoPreview(uniqueId, data.videoId, 'youtube'); 
+                }, 1000);
+            } else {
+                throw new Error(data.error || 'Naməlum xəta');
+            }
+        } catch (error) {
+            console.error(`Yükləmə cəhdi ${attempts} uğursuz oldu:`, error);
+            
+            if (attempts < maxAttempts && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
+                if (status) {
+                    status.textContent = `Server oyanır, yenidən cəhd edilir (${attempts}/${maxAttempts})...`;
+                }
+                setTimeout(uploadAction, retryDelay);
+            } else {
+                showNotification('Video yüklənərkən xəta: ' + error.message, 'error');
                 if (progress) progress.classList.add('hidden');
                 if (status) status.classList.add('hidden');
-                updateVideoPreview(uniqueId, data.videoId, 'youtube'); 
-            }, 1000);
-        } else {
-            throw new Error(data.error || 'Naməlum xəta');
+            }
         }
-    } catch (error) {
-        console.error('Video upload error:', error);
-        showNotification('Video yüklənərkən xəta: ' + error.message, 'error');
-        if (progress) progress.classList.add('hidden');
-        if (status) status.classList.add('hidden');
-    }
+    };
+
+    uploadAction();
 };
 
 // addYoutubeVideo funksiyası artıq showYoutubeInput daxilindədir, köhnəni silirik
