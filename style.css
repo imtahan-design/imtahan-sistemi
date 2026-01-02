@@ -2246,12 +2246,14 @@ nav:hover {
         position: static;
         transform: none;
         margin-left: auto;
+        font-size: 20px !important;
+        padding: 6px !important;
     }
 
     nav {
-        padding: 8px 12px;
-        margin-bottom: 12px;
-        border-radius: 12px;
+        padding: 4px 8px;
+        margin-bottom: 8px;
+        border-radius: 10px;
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
@@ -2259,24 +2261,34 @@ nav:hover {
     }
 
     .logo {
+        gap: 6px !important;
         line-height: 1 !important;
     }
+
+    .logo-icon {
+        width: 28px !important;
+        height: 28px !important;
+    }
+
     .logo-main {
-        font-size: 20px;
-        letter-spacing: -0.5px;
-        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        font-size: 16px !important;
+        letter-spacing: -0.3px;
+        background: linear-gradient(135deg, #fff 0%, #94a3b8 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
         font-weight: 800;
+        text-transform: uppercase;
     }
     
     .logo-sub {
-        font-size: 9px;
-        letter-spacing: 0.3px;
-        margin-top: 1px;
+        font-size: 7px !important;
+        letter-spacing: 0.1px;
+        margin-top: 0px;
         font-weight: 600;
-        color: var(--text-main);
-        opacity: 0.8;
+        color: #38bdf8 !important;
+        opacity: 0.9;
+        white-space: nowrap;
+        text-transform: lowercase;
     }
 }
 
@@ -2370,7 +2382,7 @@ nav:hover {
 }
 
 .side-menu-header {
-    padding: 32px 24px;
+    padding: 20px 24px;
     border-bottom: 1px solid var(--glass-border);
     display: flex;
     justify-content: space-between;
