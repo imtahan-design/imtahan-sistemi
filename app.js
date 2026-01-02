@@ -1950,8 +1950,8 @@ window.handleQuestionImage = function(input, index, droppedFile = null) {
             let width = img.width;
             let height = img.height;
 
-            // Maksimum ölçü 1024px (həm en, həm hündürlük)
-            const MAX_SIZE = 1024;
+            // Maksimum ölçü 1024px-dən 800px-ə endiririk ki, 40 sual 1MB-a sığsın
+            const MAX_SIZE = 800;
             if (width > height) {
                 if (width > MAX_SIZE) {
                     height *= MAX_SIZE / width;
@@ -1974,20 +1974,22 @@ window.handleQuestionImage = function(input, index, droppedFile = null) {
             
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Şəkli JPG formatına çeviririk və 0.7 keyfiyyətlə sıxırıq
-            // Bu həm PNG xətasını aradan qaldırır, həm də yaddaşa qənaət edir
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            // Şəkli JPG formatına çeviririk və keyfiyyəti 0.7-dən 0.5-ə endiririk
+            // Bu, hər şəklin ölçüsünü təxminən 15-25 KB arasına salacaq.
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
             
-            // Firestore limitini yoxlayırıq (təxminən 800KB limit qoyuruq ki, digər datalarla 1MB-ı keçməsin)
-            if (compressedBase64.length > 800 * 1024) {
-                showNotification('Şəkil sıxıldıqdan sonra hələ də çox böyükdür. Zəhmət olmasa daha kiçik şəkil seçin.', 'error');
-                if (input) input.value = '';
-                return;
+            // Firestore limitini yoxlayırıq (40 sual üçün hər şəkil max 20-25KB olmalıdır)
+            if (compressedBase64.length > 30 * 1024) {
+                // Əgər hələ də böyükdürsə, bir az da sıxırıq
+                const ultraCompressed = canvas.toDataURL('image/jpeg', 0.3);
+                document.getElementById(`data_${index}`).value = ultraCompressed;
+                const preview = document.getElementById(`preview_${index}`);
+                preview.querySelector('img').src = ultraCompressed;
+            } else {
+                document.getElementById(`data_${index}`).value = compressedBase64;
+                const preview = document.getElementById(`preview_${index}`);
+                preview.querySelector('img').src = compressedBase64;
             }
-
-            document.getElementById(`data_${index}`).value = compressedBase64;
-            const preview = document.getElementById(`preview_${index}`);
-            preview.querySelector('img').src = compressedBase64;
             preview.classList.remove('hidden');
             document.getElementById(`label_${index}`).classList.add('hidden');
         };
@@ -2418,11 +2420,13 @@ window.savePrivateQuizFinal = async function() {
     const password = document.getElementById('private-quiz-password').value;
     const timeType = document.getElementById('private-quiz-time-type').value;
     const defaultTime = parseInt(document.getElementById('private-quiz-default-time').value) || 45;
+    const autoFillEnabled = document.getElementById('auto-variants-toggle') ? document.getElementById('auto-variants-toggle').checked : false;
     
     if (!title || !password) return showNotification('Zəhmət olmasa testin adını və şifrəsini daxil edin.', 'error');
     
     const questionItems = document.querySelectorAll('.manual-question-item');
     const questions = [];
+    const variantLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     
     questionItems.forEach((item) => {
         const textEl = item.querySelector('.manual-q-text');
@@ -2437,6 +2441,20 @@ window.savePrivateQuizFinal = async function() {
         const correctInput = item.querySelector('input[type="radio"]:checked');
         
         if ((text || imageData) && optionInputs.length > 0 && correctInput) {
+            const options = Array.from(optionInputs).map((input, i) => {
+                let val = input.value.trim();
+                if (autoFillEnabled && val === "") {
+                    return variantLetters[i] || `Variant ${i+1}`;
+                }
+                return val;
+            });
+
+            // Əgər avtomatik doldurma deaktivdirsə və boş variant varsa, bu sualı keçmirik (yoxlama üçün saxlayırıq)
+            if (!autoFillEnabled && options.some(opt => opt === "")) {
+                // Bu halda sualı əlavə etmirik və aşağıda xəta verəcəyik
+                return;
+            }
+
             questions.push({
                 text: text,
                 image: imageData || null,
@@ -2444,7 +2462,7 @@ window.savePrivateQuizFinal = async function() {
                 videoType: videoType || null,
                 explanation: explanation || null,
                 time: (timeType === 'per-question' && customTime) ? parseInt(customTime) : null,
-                options: Array.from(optionInputs).map(i => i.value),
+                options: options,
                 correctIndex: parseInt(correctInput.value)
             });
         }
