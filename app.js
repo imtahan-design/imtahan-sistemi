@@ -1200,19 +1200,17 @@ let verificationCode = null;
 
 async function sendVerificationEmail(email, code) {
     try {
-        const formData = new FormData();
-        formData.append('email', email);
-        formData.append('code', code);
-
-        const response = await fetch('mail.php', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-        return data.status === 'success';
+        await emailjs.send(
+            "service_rjwl984",
+            "template_y8eq8n8",
+            {
+                user_email: email,
+                code: code
+            }
+        );
+        return true;
     } catch (error) {
-        console.error("Email göndərmə xətası:", error);
+        console.error("EmailJS xətası:", error);
         return false;
     }
 }
