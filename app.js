@@ -1763,7 +1763,7 @@ window.editPrivateQuiz = async function(quizId) {
                         <div class="video-preview-container ${q.videoId ? '' : 'hidden'}" id="video_preview_${uniqueId}">
                             ${q.videoId ? (q.videoType === 'youtube' ? `
                                 <div class="video-wrapper">
-                                    <iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1" allowfullscreen></iframe>
+                                    <iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1&fs=0&controls=1" allowfullscreen></iframe>
                                     <div class="video-overlay-title"></div>
                                     <div class="video-overlay-logo"></div>
                                     <div class="video-overlay-left-bottom"></div>
@@ -2248,7 +2248,7 @@ function updateVideoPreview(uniqueId, videoId, type) {
         if (type === 'youtube') {
             preview.innerHTML = `
                 <div class="video-wrapper">
-                    <iframe src="https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1" allowfullscreen></iframe>
+                    <iframe src="https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1&fs=0&controls=1" allowfullscreen></iframe>
                     <div class="video-overlay-title"></div>
                     <div class="video-overlay-logo"></div>
                     <div class="video-overlay-left-bottom"></div>
@@ -5548,7 +5548,7 @@ window.showQuizReview = function() {
                     ${q.videoType === 'youtube' ? 
                         `
                         <div class="video-wrapper">
-                            <iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1" allowfullscreen></iframe>
+                            <iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1&fs=0&controls=1" allowfullscreen></iframe>
                             <div class="video-overlay-title"></div>
                             <div class="video-overlay-logo"></div>
                             <div class="video-overlay-left-bottom"></div>
