@@ -330,20 +330,33 @@
 
                         <!-- Manual Entry -->
                         <div id="method-manual" class="method-content animate-up">
-                            <div class="auto-variants-control">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="auto-variants-toggle">
-                                    <span class="slider round"></span>
-                                </label>
-                                <span class="control-label">Boş variantları avtomatik doldur (A, B, C, D, E)</span>
-                                <i class="fas fa-info-circle info-icon" title="Əgər sualın variantlarını şəklin daxilində saxlamısınızsa, bu funksiyanı aktiv edin. Sistem boş variantları avtomatik hərflərlə dolduracaq."></i>
+                            <div class="manual-controls-row" style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                                <div class="auto-variants-control" style="margin-bottom: 0;">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="auto-variants-toggle">
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span class="control-label">Boş variantları avtomatik doldur (A, B, C, D, E)</span>
+                                    <i class="fas fa-info-circle info-icon" title="Əgər sualın variantlarını şəklin daxilində saxlamısınızsa, bu funksiyanı aktiv edin. Sistem boş variantları avtomatik hərflərlə dolduracaq."></i>
+                                </div>
+                                <button onclick="addEToAllQuestions()" class="btn-secondary" style="padding: 10px 15px; font-size: 0.9rem; height: fit-content; border-radius: 8px;">
+                                    <i class="fas fa-plus-square"></i> Hamısına E variantı əlavə et
+                                </button>
                             </div>
                             <div id="manual-questions-list">
                                 <!-- Question forms will be added here -->
                             </div>
-                            <button onclick="addManualQuestionForm()" class="add-q-btn">
-                                <i class="fas fa-plus-circle"></i> Yeni Sual Sahəsi
-                            </button>
+                            <div class="add-q-btns-row">
+                                <button onclick="addManualQuestionForm()" class="add-q-btn">
+                                    <i class="fas fa-plus-circle"></i> Yeni Sual Sahəsi
+                                </button>
+                                <button onclick="addMultipleQuestions(5)" class="add-q-btn btn-secondary" style="background: #334155; width: auto; padding: 0 25px;">
+                                    <i class="fas fa-layer-group"></i> +5 Sual
+                                </button>
+                                <button onclick="addMultipleQuestions(10)" class="add-q-btn btn-secondary" style="background: #334155; width: auto; padding: 0 25px;">
+                                    <i class="fas fa-layer-group"></i> +10 Sual
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Bulk Entry -->

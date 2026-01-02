@@ -3314,9 +3314,9 @@ nav:hover {
 .add-q-btn {
     width: 100%;
     padding: 15px;
-    background: rgba(99, 102, 241, 0.1);
-    border: 2px dashed rgba(99, 102, 241, 0.3);
-    color: var(--primary-light);
+    background: var(--primary-color);
+    border: none;
+    color: white;
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -3326,13 +3326,30 @@ nav:hover {
     align-items: center;
     gap: 10px;
     margin-top: 10px;
+    box-shadow: var(--shadow-sm);
 }
 
 .add-q-btn:hover {
-    background: rgba(99, 102, 241, 0.2);
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
     color: white;
-    border-style: solid;
-    border-color: var(--primary-color);
+}
+
+.add-q-btns-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+    .add-q-btns-row {
+        grid-template-columns: 1fr;
+    }
+    .add-q-btn {
+        width: 100% !important;
+    }
 }
 
 .count-badge {

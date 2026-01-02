@@ -1789,6 +1789,7 @@ window.editPrivateQuiz = async function(quizId) {
                 youtube: { noCookie: true, rel: 0, showinfo: 0, iv_load_policy: 3, modestbranding: 1 }
             });
         }
+        initDragAndDrop(uniqueId);
     });
     
     switchQuestionTab('manual');
@@ -1821,11 +1822,13 @@ window.addManualQuestionForm = function() {
 
     const div = document.createElement('div');
     div.className = 'manual-question-item animate-up';
+    div.setAttribute('data-id', uniqueId);
+    const currentCount = document.querySelectorAll('.manual-question-item').length;
     div.innerHTML = `
         <div class="manual-q-header">
             <div class="manual-q-title">
                 <i class="fas fa-plus-circle"></i>
-                <span>Yeni Sual</span>
+                <span>Sual ${currentCount + 1}</span>
             </div>
             <div class="manual-q-actions">
                 <div class="time-input-group ${isTimeHidden ? 'hidden' : ''}">
@@ -1979,19 +1982,19 @@ window.handleQuestionImage = function(input, index, droppedFile = null) {
             const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
             
             // Firestore limitini yoxlayırıq (40 sual üçün hər şəkil max 20-25KB olmalıdır)
+            let preview = document.getElementById(`preview_${index}`);
             if (compressedBase64.length > 30 * 1024) {
                 // Əgər hələ də böyükdürsə, bir az da sıxırıq
                 const ultraCompressed = canvas.toDataURL('image/jpeg', 0.3);
                 document.getElementById(`data_${index}`).value = ultraCompressed;
-                const preview = document.getElementById(`preview_${index}`);
                 preview.querySelector('img').src = ultraCompressed;
             } else {
                 document.getElementById(`data_${index}`).value = compressedBase64;
-                const preview = document.getElementById(`preview_${index}`);
                 preview.querySelector('img').src = compressedBase64;
             }
             preview.classList.remove('hidden');
             document.getElementById(`label_${index}`).classList.add('hidden');
+            if (input) input.value = ''; // Reset input
         };
         img.src = e.target.result;
     };
@@ -2035,13 +2038,16 @@ window.updateOptionValues = function(uniqueId) {
     });
 }
 
+// Global drag-and-drop prevention (only once)
+if (!window.dndInitialized) {
+    window.addEventListener('dragover', (e) => e.preventDefault(), false);
+    window.addEventListener('drop', (e) => e.preventDefault(), false);
+    window.dndInitialized = true;
+}
+
 window.initDragAndDrop = function(uniqueId) {
     const dropZone = document.getElementById(`label_${uniqueId}`);
     if (!dropZone) return;
-
-    // Browserin default davranışını (faylı açmaq) hər yerdə dayandırırıq
-    window.addEventListener('dragover', (e) => e.preventDefault(), false);
-    window.addEventListener('drop', (e) => e.preventDefault(), false);
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, (e) => {
@@ -2078,8 +2084,49 @@ window.removeQuestionImage = function(index) {
 }
 
 window.updateQuestionCount = function() {
-    const manualCount = document.querySelectorAll('.manual-question-item').length;
-    document.getElementById('ready-question-count').textContent = manualCount;
+    const questions = document.querySelectorAll('.manual-question-item');
+    document.getElementById('ready-question-count').textContent = questions.length;
+    
+    // Update question numbering in titles
+    questions.forEach((q, idx) => {
+        const titleSpan = q.querySelector('.manual-q-title span');
+        if (titleSpan) {
+            titleSpan.textContent = `Sual ${idx + 1}`;
+        }
+    });
+}
+
+window.addEToAllQuestions = function() {
+    const questionItems = document.querySelectorAll('.manual-question-item');
+    if (questionItems.length === 0) return showNotification('Hələ heç bir sual yoxdur.', 'info');
+    
+    let addedCount = 0;
+    questionItems.forEach(item => {
+        const optionsGrid = item.querySelector('.manual-options-grid');
+        const currentOptions = optionsGrid.querySelectorAll('.manual-option-input');
+        
+        // Əgər 4 variant varsa (A, B, C, D), E əlavə edirik
+        if (currentOptions.length === 4) {
+            const uniqueId = item.getAttribute('data-id');
+            if (uniqueId) {
+                addManualOption(uniqueId);
+                addedCount++;
+            }
+        }
+    });
+    
+    if (addedCount > 0) {
+        showNotification(`${addedCount} suala E variantı əlavə edildi.`, 'success');
+    } else {
+        showNotification('Heç bir uyğun sual tapılmadı (artıq E variantı ola bilər və ya variant sayı 4-dən fərqlidir).', 'info');
+    }
+}
+
+window.addMultipleQuestions = function(count) {
+    for (let i = 0; i < count; i++) {
+        addManualQuestionForm();
+    }
+    showNotification(`${count} yeni sual sahəsi əlavə edildi.`, 'success');
 }
 
 window.parseBulkQuestions = function() {
