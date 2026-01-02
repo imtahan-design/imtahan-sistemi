@@ -15,14 +15,22 @@
     <meta property="og:url" content="https://imtahan.site/">
     <meta property="og:title" content="İmtahan – Onlayn Qiymətləndirmə Platforması">
     <meta property="og:description" content="Azərbaycanın ən müasir onlayn sınaq imtahanı platforması. Müəllimlər üçün özəl test yaratma, şifrəli giriş və nəticələrin analizi.">
-    <meta property="og:image" content="https://imtahan.site/assets/og-image.png">
+    <meta property="og:image" content="https://imtahan.site/assets/logo.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="İmtahan.site">
+
+    <!-- WhatsApp / Telegram -->
+    <meta itemprop="name" content="İmtahan – Onlayn Qiymətləndirmə Platforması">
+    <meta itemprop="description" content="Azərbaycanın ən müasir onlayn sınaq imtahanı platforması.">
+    <meta itemprop="image" content="https://imtahan.site/assets/logo.png">
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://imtahan.site/">
-    <meta property="twitter:title" content="İmtahan – Onlayn Qiymətləndirmə Platforması">
-    <meta property="twitter:description" content="Azərbaycanın ən müasir onlayn sınaq imtahanı platforması. Müəllimlər üçün özəl test yaratma, şifrəli giriş və nəticələrin analizi.">
-    <meta property="twitter:image" content="https://imtahan.site/assets/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://imtahan.site/">
+    <meta name="twitter:title" content="İmtahan – Onlayn Qiymətləndirmə Platforması">
+    <meta name="twitter:description" content="Azərbaycanın ən müasir onlayn sınaq imtahanı platforması.">
+    <meta name="twitter:image" content="https://imtahan.site/assets/logo.png">
 
     <link rel="stylesheet" href="style.css?v=6.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -51,8 +59,34 @@
         <!-- Navigation -->
         <nav id="navbar">
             <div class="logo" onclick="showDashboard()">
-                <div class="logo-main">İmtahan</div>
-                <div class="logo-sub">onlayn qiymətləndirmə platforması</div>
+                <div class="logo-icon">
+                    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#00d2ff;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#3a7bd5;stop-opacity:1" />
+                            </linearGradient>
+                            <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="3" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                            </filter>
+                        </defs>
+                        <path d="M100 20 L170 60 V140 L100 180 L30 140 V60 L100 20Z" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
+                        <path d="M80 60 H120 V80 H80 V60Z" fill="white" />
+                        <path d="M90 90 H110 V160 H90 V90Z" fill="white" />
+                        <path d="M50 70 L70 60 V140 L50 150 V70Z" fill="url(#shieldGrad)" opacity="0.6" />
+                        <path d="M150 70 L130 60 V140 L150 150 V70Z" fill="url(#shieldGrad)" opacity="0.6" />
+                        <rect x="70" y="100" width="10" height="2" fill="white" opacity="0.3" />
+                        <rect x="120" y="100" width="10" height="2" fill="white" opacity="0.3" />
+                        <rect x="70" y="130" width="10" height="2" fill="white" opacity="0.3" />
+                        <rect x="120" y="130" width="10" height="2" fill="white" opacity="0.3" />
+                        <path d="M80 170 L100 180 L120 170" stroke="#00ff88" stroke-width="3" stroke-linecap="round" filter="url(#softGlow)" />
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <div class="logo-main">İmtahan</div>
+                    <div class="logo-sub">onlayn qiymətləndirmə platforması</div>
+                </div>
             </div>
             
             <!-- Hamburger Menu Icon -->
@@ -85,8 +119,31 @@
         <div id="side-menu-overlay" class="side-menu-overlay" onclick="toggleSideMenu()"></div>
         <div id="side-menu" class="side-menu">
             <div class="side-menu-header">
-                <div class="logo">
-                    <div class="logo-main">İmtahan</div>
+                <div class="logo" onclick="menuNavigate(showDashboard)">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="shieldGradSide" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#00d2ff;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#3a7bd5;stop-opacity:1" />
+                                </linearGradient>
+                                <filter id="softGlowSide" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feGaussianBlur stdDeviation="3" result="blur" />
+                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                </filter>
+                            </defs>
+                            <path d="M100 20 L170 60 V140 L100 180 L30 140 V60 L100 20Z" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
+                            <path d="M80 60 H120 V80 H80 V60Z" fill="white" />
+                            <path d="M90 90 H110 V160 H90 V90Z" fill="white" />
+                            <path d="M50 70 L70 60 V140 L50 150 V70Z" fill="url(#shieldGradSide)" opacity="0.6" />
+                            <path d="M150 70 L130 60 V140 L150 150 V70Z" fill="url(#shieldGradSide)" opacity="0.6" />
+                            <path d="M80 170 L100 180 L120 170" stroke="#00ff88" stroke-width="3" stroke-linecap="round" filter="url(#softGlowSide)" />
+                        </svg>
+                    </div>
+                    <div class="logo-text">
+                        <div class="logo-main">İmtahan</div>
+                        <div class="logo-sub">onlayn platforma</div>
+                    </div>
                 </div>
                 <button class="close-menu" onclick="toggleSideMenu()">&times;</button>
             </div>
@@ -585,7 +642,26 @@
                             </button>
                         </div>
                         <div class="ai-card-visual">
-                            <i class="fas fa-robot"></i>
+                            <div class="sovereign-logo-visual">
+                                <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <defs>
+                                        <linearGradient id="shieldGradAI" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#00d2ff;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#3a7bd5;stop-opacity:1" />
+                                        </linearGradient>
+                                        <filter id="softGlowAI" x="-20%" y="-20%" width="140%" height="140%">
+                                            <feGaussianBlur stdDeviation="3" result="blur" />
+                                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                        </filter>
+                                    </defs>
+                                    <path d="M100 20 L170 60 V140 L100 180 L30 140 V60 L100 20Z" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
+                                    <path d="M80 60 H120 V80 H80 V60Z" fill="white" />
+                                    <path d="M90 90 H110 V160 H90 V90Z" fill="white" />
+                                    <path d="M50 70 L70 60 V140 L50 150 V70Z" fill="url(#shieldGradAI)" opacity="0.6" />
+                                    <path d="M150 70 L130 60 V140 L150 150 V70Z" fill="url(#shieldGradAI)" opacity="0.6" />
+                                    <path d="M80 170 L100 180 L120 170" stroke="#00ff88" stroke-width="3" stroke-linecap="round" filter="url(#softGlowAI)" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1233,8 +1309,25 @@
         <div class="footer-content">
             <div class="footer-section brand">
                 <div class="logo">
-                    <span class="logo-main">İMTAHAN.SİTE</span>
-                    <span class="logo-sub">Onlayn İmtahan Platforması</span>
+                    <div class="logo-icon footer-logo-icon">
+                        <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="shieldGradFooter" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#00d2ff;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#3a7bd5;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M100 20 L170 60 V140 L100 180 L30 140 V60 L100 20Z" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
+                            <path d="M80 60 H120 V80 H80 V60Z" fill="white" />
+                            <path d="M90 90 H110 V160 H90 V90Z" fill="white" />
+                            <path d="M50 70 L70 60 V140 L50 150 V70Z" fill="url(#shieldGradFooter)" opacity="0.6" />
+                            <path d="M150 70 L130 60 V140 L150 150 V70Z" fill="url(#shieldGradFooter)" opacity="0.6" />
+                        </svg>
+                    </div>
+                    <div class="logo-text">
+                        <span class="logo-main">İMTAHAN.SİTE</span>
+                        <span class="logo-sub">Onlayn İmtahan Platforması</span>
+                    </div>
                 </div>
                 <p>Azərbaycanın ən müasir onlayn qiymətləndirmə platforması. <b>Sınaq imtahanları</b>, özəl test yaratma və nəticələrin analizi üçün mükəmməl vasitə.</p>
                 <p class="mt-2 text-xs text-muted"><i class="fas fa-shield-alt"></i> Bütün məlumatlar şifrələmə ilə qorunur.</p>
