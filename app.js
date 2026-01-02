@@ -6503,3 +6503,28 @@ window.generateAIQuestions = async function() {
         alert("Xəta təfərrüatı: " + lastError);
     }
 };
+
+// --- Sharing Logic ---
+window.sharePlatform = function() {
+    const shareData = {
+        title: 'İmtahan – Onlayn Qiymətləndirmə Platforması',
+        text: 'Müasir onlayn imtahan platforması ilə saniyələr içində test yaradın və işləyin!',
+        url: 'https://imtahan.site/'
+    };
+
+    if (navigator.share) {
+        navigator.share(shareData).catch(err => console.log('Error sharing:', err));
+    } else {
+        copyToClipboard('https://imtahan.site/');
+        showNotification('Platforma linki kopyalandı! Dostlarınızla paylaşa bilərsiniz.', 'success');
+    }
+}
+
+function copyToClipboard(text) {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+}

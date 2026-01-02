@@ -3483,20 +3483,41 @@ nav:hover {
     border-color: var(--primary-light);
 }
 
-.btn-reply {
-    background: #6366f1;
+.btn-share-platform {
+    padding: 12px 25px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-share-platform:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background: #10b981;
     color: white;
     border: none;
-    padding: 8px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.8rem;
+    padding: 12px 20px;
+    border-radius: 12px;
     font-weight: 600;
-    transition: all 0.3s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
+
+.btn-success:hover {
+    background: #059669;
+    transform: translateY(-2px);
+}
+
 
 .btn-reply:hover {
     background: #4f46e5;
