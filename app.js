@@ -15,7 +15,7 @@ let GEMINI_API_KEY = "";
 
 const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? "http://localhost:5000"
-    : "https://imtahan-server.onrender.com"; // Bura öz Render URL-inizi daxil edin
+    : "https://imtahan-backend-7w71.onrender.com";
 
 // Firebase-dən API açarını yükləyən funksiya
 async function loadAiApiKey() {
@@ -1863,7 +1863,7 @@ window.addManualQuestionForm = function() {
                 </div>
 
                 <div class="manual-q-video-box" id="video_box_${uniqueId}">
-                    <div class="video-upload-label" onclick="toggleVideoOptions('${uniqueId}')">
+                    <div class="video-upload-label" onclick="toggleVideoOptions('${uniqueId}', event)">
                         <i class="fas fa-video"></i>
                         <span>Video İzah</span>
                     </div>
@@ -2195,15 +2195,27 @@ window.parseBulkQuestions = function() {
 }
 
 // --- Video Explanation Handlers ---
-window.toggleVideoOptions = function(uniqueId) {
+window.toggleVideoOptions = function(uniqueId, event) {
+    if (event) event.stopPropagation();
+    console.log('Toggle video options for:', uniqueId);
     const menu = document.getElementById(`video_options_${uniqueId}`);
     if (menu) {
-        menu.classList.toggle('hidden');
+        const isHidden = menu.classList.contains('hidden');
         
-        // Digər menyuları bağla
+        // Digər bütün menyuları bağla
         document.querySelectorAll('.video-options-menu').forEach(m => {
-            if (m.id !== `video_options_${uniqueId}`) m.classList.add('hidden');
+            m.classList.add('hidden');
         });
+
+        // Əgər əvvəl bağlı idisə, indi aç
+        if (isHidden) {
+            menu.classList.remove('hidden');
+            console.log('Menu opened');
+        } else {
+            console.log('Menu closed');
+        }
+    } else {
+        console.error('Menu element not found:', `video_options_${uniqueId}`);
     }
 };
 
