@@ -3439,6 +3439,13 @@ nav:hover {
     margin-bottom: 4px;
 }
 
+.image-upload-label.drag-active {
+    background: var(--primary-light);
+    border: 2px dashed var(--primary-color);
+    color: var(--primary-color);
+    border-radius: var(--radius-sm);
+}
+
 /* Inbox Styles */
 .inbox-item {
     background: var(--card-bg);

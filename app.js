@@ -1847,7 +1847,7 @@ window.addManualQuestionForm = function() {
                     </div>
                     <label class="image-upload-label" id="label_${uniqueId}">
                         <i class="fas fa-cloud-upload-alt"></i>
-                        <span>Şəkil Əlavə Et</span>
+                        <span>Şəkil Əlavə Et və ya Sürüklə</span>
                         <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
                     </label>
                     <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
@@ -1928,12 +1928,19 @@ window.addManualQuestionForm = function() {
         </button>
     `;
     list.appendChild(div);
+    initDragAndDrop(uniqueId);
     updateQuestionCount();
 }
 
-window.handleQuestionImage = function(input, index) {
-    const file = input.files[0];
+window.handleQuestionImage = function(input, index, droppedFile = null) {
+    const file = droppedFile || (input ? input.files[0] : null);
     if (!file) return;
+
+    // Faylın tipini yoxlayırıq
+    if (!file.type.startsWith('image/')) {
+        showNotification('Zəhmət olmasa yalnız şəkil faylı seçin.', 'error');
+        return;
+    }
 
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -2025,6 +2032,36 @@ window.updateOptionValues = function(uniqueId) {
         input.placeholder = `${char} variantı`;
     });
 }
+
+window.initDragAndDrop = function(uniqueId) {
+    const dropZone = document.getElementById(`label_${uniqueId}`);
+    if (!dropZone) return;
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.add('drag-active');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.remove('drag-active');
+        }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const file = dt.files[0];
+        window.handleQuestionImage(null, uniqueId, file);
+    }, false);
+};
 
 window.removeQuestionImage = function(index) {
     document.getElementById(`data_${index}`).value = '';
@@ -2122,7 +2159,7 @@ window.parseBulkQuestions = function() {
                             </div>
                             <label class="image-upload-label" id="label_${uniqueId}">
                                 <i class="fas fa-cloud-upload-alt"></i>
-                                <span>Şəkil Əlavə Et</span>
+                                <span>Şəkil Əlavə Et və ya Sürüklə</span>
                                 <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
                             </label>
                             <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
@@ -2172,6 +2209,7 @@ window.parseBulkQuestions = function() {
                 </div>
             `;
             list.appendChild(div);
+            initDragAndDrop(uniqueId);
         });
         
         // Clear textarea after success
