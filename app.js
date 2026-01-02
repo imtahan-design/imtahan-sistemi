@@ -2383,12 +2383,14 @@ window.savePrivateQuizFinal = async function() {
     const questions = [];
     
     questionItems.forEach((item) => {
-        const text = item.querySelector('.manual-q-text').value;
-        const imageData = item.querySelector('.manual-q-img-data').value;
-        const videoId = item.querySelector('.manual-q-video-id').value;
-        const videoType = item.querySelector('.manual-q-video-type').value;
-        const explanation = item.querySelector('.manual-q-explanation').value;
-        const customTime = item.querySelector('.manual-q-time').value;
+        const textEl = item.querySelector('.manual-q-text');
+        const text = textEl ? textEl.value : '';
+        const imageEl = item.querySelector('.manual-q-img-data');
+        const imageData = imageEl ? imageEl.value : '';
+        const videoId = item.querySelector('.manual-q-video-id') ? item.querySelector('.manual-q-video-id').value : null;
+        const videoType = item.querySelector('.manual-q-video-type') ? item.querySelector('.manual-q-video-type').value : null;
+        const explanation = item.querySelector('.manual-q-explanation') ? item.querySelector('.manual-q-explanation').value : null;
+        const customTime = item.querySelector('.manual-q-time') ? item.querySelector('.manual-q-time').value : null;
         const optionInputs = item.querySelectorAll('.manual-opt');
         const correctInput = item.querySelector('input[type="radio"]:checked');
         
@@ -6476,8 +6478,9 @@ window.generateAIQuestions = async function() {
                     }
                 });
                 
-                success = true;
+                switchQuestionTab('manual');
                 showNotification(`${questions.length} sual uğurla yaradıldı!`, 'success');
+                success = true;
                 removeSelectedAIImage(); // Clear after success
                 break; 
 
