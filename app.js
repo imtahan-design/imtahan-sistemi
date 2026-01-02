@@ -13,7 +13,7 @@ const firebaseConfig = {
 // Təhlükəsizlik üçün: API açarını birbaşa koda yazmırıq, DB-dən çəkirik.
 let GEMINI_API_KEY = "";
 
-const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === ''
     ? "http://localhost:5000"
     : "https://imtahan-backend-7w71.onrender.com";
 
@@ -1761,7 +1761,14 @@ window.editPrivateQuiz = async function(quizId) {
                         <div class="video-status hidden" id="video_status_${uniqueId}"></div>
 
                         <div class="video-preview-container ${q.videoId ? '' : 'hidden'}" id="video_preview_${uniqueId}">
-                            ${q.videoId ? (q.videoType === 'youtube' ? `<iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0" allowfullscreen></iframe>` : `<div class="video-placeholder"><i class="fas fa-check-circle"></i> <span>Video Yüklənib</span></div>`) : ''}
+                            ${q.videoId ? (q.videoType === 'youtube' ? `
+                                <div class="video-wrapper">
+                                    <iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1" allowfullscreen></iframe>
+                                    <div class="video-overlay-title"></div>
+                                    <div class="video-overlay-logo"></div>
+                                    <div class="video-overlay-left-bottom"></div>
+                                </div>
+                            ` : `<div class="video-placeholder"><i class="fas fa-check-circle"></i> <span>Video Yüklənib</span></div>`) : ''}
                             <button type="button" class="remove-video-btn" onclick="removeQuestionVideo('${uniqueId}')">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -1776,14 +1783,8 @@ window.editPrivateQuiz = async function(quizId) {
                 </div>
             </div>
             <div class="manual-q-explanation-row">
-                <div class="form-group">
-                    <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
-                    <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin...">${q.explanation || ''}</textarea>
-                </div>
-                <div class="form-group">
-                    <label><i class="fab fa-youtube"></i> Youtube İzah Linki (Opsional)</label>
-                    <input type="text" class="manual-q-youtube" value="${q.youtubeLink || ''}" placeholder="https://www.youtube.com/watch?v=...">
-                </div>
+                <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
+                <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin...">${q.explanation || ''}</textarea>
             </div>
             <div class="manual-options-grid">
                 ${q.options.map((opt, optIdx) => `
@@ -2246,7 +2247,12 @@ function updateVideoPreview(uniqueId, videoId, type) {
         preview.classList.remove('hidden');
         if (type === 'youtube') {
             preview.innerHTML = `
-                <iframe src="https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0" allowfullscreen></iframe>
+                <div class="video-wrapper">
+                    <iframe src="https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1" allowfullscreen></iframe>
+                    <div class="video-overlay-title"></div>
+                    <div class="video-overlay-logo"></div>
+                    <div class="video-overlay-left-bottom"></div>
+                </div>
                 <button type="button" class="remove-video-btn" onclick="removeQuestionVideo('${uniqueId}')">
                     <i class="fas fa-times"></i>
                 </button>
@@ -2375,6 +2381,7 @@ window.savePrivateQuizFinal = async function() {
         const imageData = item.querySelector('.manual-q-img-data').value;
         const videoId = item.querySelector('.manual-q-video-id').value;
         const videoType = item.querySelector('.manual-q-video-type').value;
+        const explanation = item.querySelector('.manual-q-explanation').value;
         const customTime = item.querySelector('.manual-q-time').value;
         const optionInputs = item.querySelectorAll('.manual-opt');
         const correctInput = item.querySelector('input[type="radio"]:checked');
@@ -2385,6 +2392,7 @@ window.savePrivateQuizFinal = async function() {
                 image: imageData || null,
                 videoId: videoId || null,
                 videoType: videoType || null,
+                explanation: explanation || null,
                 time: (timeType === 'per-question' && customTime) ? parseInt(customTime) : null,
                 options: Array.from(optionInputs).map(i => i.value),
                 correctIndex: parseInt(correctInput.value)
@@ -4858,14 +4866,8 @@ window.addAdminQuestionForm = function() {
             </div>
         </div>
         <div class="manual-q-explanation-row">
-            <div class="form-group">
-                <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
-                <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin..."></textarea>
-            </div>
-            <div class="form-group">
-                <label><i class="fab fa-youtube"></i> Youtube İzah Linki (Opsional)</label>
-                <input type="text" class="manual-q-youtube" placeholder="https://www.youtube.com/watch?v=...">
-            </div>
+            <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
+            <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin..."></textarea>
         </div>
         <div class="manual-options-grid">
             <div class="grid-cols-full bg-warning-light border border-warning-light p-3 rounded-md mb-2 text-warning-dark text-sm flex items-center gap-2">
@@ -5544,7 +5546,14 @@ window.showQuizReview = function() {
             ${q.videoId && q.videoType ? `
                 <div class="question-video-container mb-3">
                     ${q.videoType === 'youtube' ? 
-                        `<iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0" allowfullscreen></iframe>` : 
+                        `
+                        <div class="video-wrapper">
+                            <iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1" allowfullscreen></iframe>
+                            <div class="video-overlay-title"></div>
+                            <div class="video-overlay-logo"></div>
+                            <div class="video-overlay-left-bottom"></div>
+                        </div>
+                        ` : 
                         `<div class="video-placeholder"><i class="fas fa-play-circle"></i> <span>Video İzah Yüklənib</span></div>`
                     }
                 </div>
@@ -5556,6 +5565,12 @@ window.showQuizReview = function() {
                 <i class="fas fa-${statusIcon}-circle"></i>
                 ${statusText}
             </div>
+            ${q.explanation ? `
+                <div class="review-explanation-box mt-4 p-4 rounded-lg bg-gray-50 border border-gray-200">
+                    <h4 class="text-sm font-bold mb-2 text-primary"><i class="fas fa-info-circle mr-2"></i>Sualın İzahı:</h4>
+                    <p class="text-sm text-gray-700 mb-0">${q.explanation}</p>
+                </div>
+            ` : ''}
         `;
         reviewList.appendChild(reviewItem);
     });
