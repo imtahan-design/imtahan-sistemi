@@ -268,23 +268,10 @@ document.addEventListener('click', function(e) {
 window.toggleSideMenu = function() {
     const sideMenu = document.getElementById('side-menu');
     const overlay = document.getElementById('side-menu-overlay');
-    sideMenu.classList.toggle('active');
-    overlay.classList.toggle('active');
-}
-
-window.menuNavigate = function(actionFunc) {
-    toggleSideMenu(); // Close menu
-    if (typeof actionFunc === 'function') {
-        actionFunc();
+    if (sideMenu && overlay) {
+        sideMenu.classList.toggle('active');
+        overlay.classList.toggle('active');
     }
-}
-
-// Info Modal Logic
-window.toggleSideMenu = function() {
-    const sideMenu = document.getElementById('side-menu');
-    const overlay = document.getElementById('side-menu-overlay');
-    sideMenu.classList.toggle('active');
-    overlay.classList.toggle('active');
 }
 
 window.menuNavigate = function(actionFunc) {
@@ -1213,17 +1200,19 @@ let verificationCode = null;
 
 async function sendVerificationEmail(email, code) {
     try {
-        await emailjs.send(
-            "service_rjwl984",
-            "template_y8eq8n8",
-            {
-                user_email: email,
-                code: code
-            }
-        );
-        return true;
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('code', code);
+
+        const response = await fetch('mail.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        return data.status === 'success';
     } catch (error) {
-        console.error("EmailJS xətası:", error);
+        console.error("Email göndərmə xətası:", error);
         return false;
     }
 }
