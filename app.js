@@ -2307,9 +2307,11 @@ window.handleVideoUpload = async function(input, uniqueId) {
             body: formData
         });
 
-        if (!response.ok) throw new Error('Yükləmə zamanı xəta baş verdi');
-
         const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.details || data.error || 'Yükləmə zamanı xəta baş verdi');
+        }
         
         if (data.success && data.videoId) {
             if (bar) bar.style.width = '100%';
