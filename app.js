@@ -13,6 +13,8 @@ const firebaseConfig = {
 // Təhlükəsizlik üçün: API açarını birbaşa koda yazmırıq, DB-dən çəkirik.
 let GEMINI_API_KEY = "";
 
+const BACKEND_URL = "http://localhost:5000"; // Real server URL-i bura daxil edilməlidir
+
 // Firebase-dən API açarını yükləyən funksiya
 async function loadAiApiKey() {
     try {
@@ -2237,26 +2239,39 @@ window.handleVideoUpload = function(input, uniqueId) {
     }
     if (bar) bar.style.width = '0%';
 
-    // Simulyasiya edilmiş yükləmə (Real tətbiqdə burada API çağırışı olacaq)
-    let p = 0;
-    const interval = setInterval(() => {
-        p += Math.random() * 15;
-        if (p >= 100) {
-            p = 100;
+    const formData = new FormData();
+    formData.append('video', file);
+    formData.append('title', 'Sual Video İzahı');
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/upload-video`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) throw new Error('Yükləmə zamanı xəta baş verdi');
+
+        const data = await response.json();
+        
+        if (data.success && data.videoId) {
             if (bar) bar.style.width = '100%';
-            clearInterval(interval);
-            showNotification('Video uğurla yükləndi!', 'success');
+            if (status) status.textContent = 'Video hazırlandı';
+            showNotification('Video izah uğurla əlavə edildi!', 'success');
             
             setTimeout(() => {
                 if (progress) progress.classList.add('hidden');
                 if (status) status.classList.add('hidden');
-                const videoId = 'uploaded_' + Date.now();
-                updateVideoPreview(uniqueId, videoId, 'upload');
-            }, 500);
+                updateVideoPreview(uniqueId, data.videoId, 'youtube'); 
+            }, 1000);
         } else {
-            if (bar) bar.style.width = p + '%';
+            throw new Error(data.error || 'Naməlum xəta');
         }
-    }, 300);
+    } catch (error) {
+        console.error('Video upload error:', error);
+        showNotification('Video yüklənərkən xəta: ' + error.message, 'error');
+        if (progress) progress.classList.add('hidden');
+        if (status) status.classList.add('hidden');
+    }
 };
 
 // addYoutubeVideo funksiyası artıq showYoutubeInput daxilindədir, köhnəni silirik
