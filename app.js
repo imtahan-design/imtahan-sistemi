@@ -1676,20 +1676,65 @@ window.editPrivateQuiz = async function(quizId) {
                 </div>
             </div>
             <div class="manual-q-content">
-                <div class="manual-q-image-container">
-                    <div class="image-preview ${q.image ? '' : 'hidden'}" id="preview_${uniqueId}">
-                        <img src="${q.image || ''}" alt="Sual şəkli">
-                        <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
+                <div class="manual-q-media-row">
+                    <div class="manual-q-image-container">
+                        <div class="image-preview ${q.image ? '' : 'hidden'}" id="preview_${uniqueId}">
+                            <img src="${q.image || ''}" alt="Sual şəkli">
+                            <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
+                        </div>
+                        <label class="image-upload-label ${q.image ? 'hidden' : ''}" id="label_${uniqueId}">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Şəkil Əlavə Et</span>
+                            <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
+                        </label>
+                        <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}" value="${q.image || ''}">
                     </div>
-                    <label class="image-upload-label ${q.image ? 'hidden' : ''}" id="label_${uniqueId}">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span>Şəkil Əlavə Et</span>
-                        <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
-                    </label>
-                    <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}" value="${q.image || ''}">
+
+                    <div class="manual-q-video-box" id="video_box_${uniqueId}">
+                        <div class="video-upload-label ${q.videoId ? 'hidden' : ''}" onclick="toggleVideoOptions('${uniqueId}')">
+                            <i class="fas fa-video"></i>
+                            <span>Video İzah</span>
+                        </div>
+                        
+                        <div id="video_options_${uniqueId}" class="video-options-menu hidden">
+                            <button type="button" class="video-option-item" onclick="showYoutubeInput('${uniqueId}')">
+                                <i class="fab fa-youtube"></i> Youtube-dan əlavə et
+                            </button>
+                            <button type="button" class="video-option-item" onclick="triggerVideoUpload('${uniqueId}')">
+                                <i class="fas fa-upload"></i> Video yüklə
+                            </button>
+                        </div>
+                        
+                        <input type="file" id="video_file_${uniqueId}" accept="video/*" class="hidden" onchange="handleVideoUpload(this, '${uniqueId}')">
+                        
+                        <div class="video-progress hidden" id="video_progress_${uniqueId}">
+                            <div class="video-bar" id="video_bar_${uniqueId}"></div>
+                        </div>
+                        <div class="video-status hidden" id="video_status_${uniqueId}"></div>
+
+                        <div class="video-preview-container ${q.videoId ? '' : 'hidden'}" id="video_preview_${uniqueId}">
+                            ${q.videoId ? (q.videoType === 'youtube' ? `<iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0" allowfullscreen></iframe>` : `<div class="video-placeholder"><i class="fas fa-check-circle"></i> <span>Video Yüklənib</span></div>`) : ''}
+                            <button type="button" class="remove-video-btn" onclick="removeQuestionVideo('${uniqueId}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" class="manual-q-video-id" id="video_id_${uniqueId}" value="${q.videoId || ''}">
+                        <input type="hidden" class="manual-q-video-type" id="video_type_${uniqueId}" value="${q.videoType || ''}">
+                    </div>
                 </div>
+
                 <div class="manual-q-text-container">
                     <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin...">${q.text || ''}</textarea>
+                </div>
+            </div>
+            <div class="manual-q-explanation-row">
+                <div class="form-group">
+                    <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
+                    <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin...">${q.explanation || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label><i class="fab fa-youtube"></i> Youtube İzah Linki (Opsional)</label>
+                    <input type="text" class="manual-q-youtube" value="${q.youtubeLink || ''}" placeholder="https://www.youtube.com/watch?v=...">
                 </div>
             </div>
             <div class="manual-options-grid">
@@ -1755,18 +1800,52 @@ window.addManualQuestionForm = function() {
             </div>
         </div>
         <div class="manual-q-content">
-            <div class="manual-q-image-container">
-                <div class="image-preview hidden" id="preview_${uniqueId}">
-                    <img src="" alt="Sual şəkli">
-                    <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
+            <div class="manual-q-media-row">
+                <div class="manual-q-image-container">
+                    <div class="image-preview hidden" id="preview_${uniqueId}">
+                        <img src="" alt="Sual şəkli">
+                        <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
+                    </div>
+                    <label class="image-upload-label" id="label_${uniqueId}">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Şəkil Əlavə Et</span>
+                        <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
+                    </label>
+                    <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
                 </div>
-                <label class="image-upload-label" id="label_${uniqueId}">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    <span>Şəkil Əlavə Et</span>
-                    <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
-                </label>
-                <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
+
+                <div class="manual-q-video-box" id="video_box_${uniqueId}">
+                    <div class="video-upload-label" onclick="toggleVideoOptions('${uniqueId}')">
+                        <i class="fas fa-video"></i>
+                        <span>Video İzah</span>
+                    </div>
+                    
+                    <div id="video_options_${uniqueId}" class="video-options-menu hidden">
+                        <button type="button" class="video-option-item" onclick="showYoutubeInput('${uniqueId}')">
+                            <i class="fab fa-youtube"></i> Youtube-dan əlavə et
+                        </button>
+                        <button type="button" class="video-option-item" onclick="triggerVideoUpload('${uniqueId}')">
+                            <i class="fas fa-upload"></i> Video yüklə
+                        </button>
+                    </div>
+                    
+                    <input type="file" id="video_file_${uniqueId}" accept="video/*" class="hidden" onchange="handleVideoUpload(this, '${uniqueId}')">
+                    
+                    <div class="video-progress hidden" id="video_progress_${uniqueId}">
+                        <div class="video-bar" id="video_bar_${uniqueId}"></div>
+                    </div>
+                    <div class="video-status hidden" id="video_status_${uniqueId}"></div>
+
+                    <div class="video-preview-container hidden" id="video_preview_${uniqueId}">
+                        <button type="button" class="remove-video-btn" onclick="removeQuestionVideo('${uniqueId}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" class="manual-q-video-id" id="video_id_${uniqueId}" value="">
+                    <input type="hidden" class="manual-q-video-type" id="video_type_${uniqueId}" value="">
+                </div>
             </div>
+
             <div class="manual-q-text-container">
                 <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin..."></textarea>
             </div>
@@ -1996,18 +2075,47 @@ window.parseBulkQuestions = function() {
                     </div>
                 </div>
                 <div class="manual-q-content">
-                    <div class="manual-q-image-container">
-                        <div class="image-preview hidden" id="preview_${uniqueId}">
-                            <img src="" alt="Sual şəkli">
-                            <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
+                    <div class="manual-q-media-row">
+                        <div class="manual-q-image-container">
+                            <div class="image-preview hidden" id="preview_${uniqueId}">
+                                <img src="" alt="Sual şəkli">
+                                <button onclick="removeQuestionImage('${uniqueId}')" class="remove-img-btn"><i class="fas fa-times"></i></button>
+                            </div>
+                            <label class="image-upload-label" id="label_${uniqueId}">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Şəkil Əlavə Et</span>
+                                <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
+                            </label>
+                            <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
                         </div>
-                        <label class="image-upload-label" id="label_${uniqueId}">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <span>Şəkil Əlavə Et</span>
-                            <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
-                        </label>
-                        <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
+
+                        <div class="manual-q-video-box" id="video_box_${uniqueId}">
+                            <div class="video-upload-label" onclick="toggleVideoOptions('${uniqueId}')">
+                                <i class="fas fa-video"></i>
+                                <span>Video İzah</span>
+                            </div>
+                            
+                            <div id="video_options_${uniqueId}" class="video-options-menu hidden">
+                                <button type="button" class="video-option-item" onclick="showYoutubeInput('${uniqueId}')">
+                                    <i class="fab fa-youtube"></i> Youtube-dan əlavə et
+                                </button>
+                                <button type="button" class="video-option-item" onclick="triggerVideoUpload('${uniqueId}')">
+                                    <i class="fas fa-upload"></i> Video yüklə
+                                </button>
+                            </div>
+                            
+                            <input type="file" id="video_file_${uniqueId}" accept="video/*" class="hidden" onchange="handleVideoUpload(this, '${uniqueId}')">
+                            
+                            <div class="video-preview-container hidden" id="video_preview_${uniqueId}">
+                                <button type="button" class="remove-video-btn" onclick="removeQuestionVideo('${uniqueId}')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" class="manual-q-video-id" id="video_id_${uniqueId}" value="">
+                            <input type="hidden" class="manual-q-video-type" id="video_type_${uniqueId}" value="">
+                        </div>
                     </div>
+
                     <div class="manual-q-text-container">
                         <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin...">${q.text}</textarea>
                     </div>
@@ -2038,6 +2146,143 @@ window.parseBulkQuestions = function() {
     }
 }
 
+// --- Video Explanation Handlers ---
+window.toggleVideoOptions = function(uniqueId) {
+    const menu = document.getElementById(`video_options_${uniqueId}`);
+    if (menu) {
+        menu.classList.toggle('hidden');
+        
+        // Digər menyuları bağla
+        document.querySelectorAll('.video-options-menu').forEach(m => {
+            if (m.id !== `video_options_${uniqueId}`) m.classList.add('hidden');
+        });
+    }
+};
+
+window.showYoutubeInput = function(uniqueId) {
+    const url = prompt("Youtube video linkini daxil edin:");
+    if (url) {
+        const videoId = extractYoutubeId(url);
+        if (videoId) {
+            updateVideoPreview(uniqueId, videoId, 'youtube');
+        } else {
+            showNotification('Düzgün Youtube linki daxil edin!', 'error');
+        }
+    }
+};
+
+function updateVideoPreview(uniqueId, videoId, type) {
+    const videoIdInput = document.getElementById(`video_id_${uniqueId}`);
+    const videoTypeInput = document.getElementById(`video_type_${uniqueId}`);
+    const preview = document.getElementById(`video_preview_${uniqueId}`);
+    const label = document.querySelector(`#video_box_${uniqueId} .video-upload-label`);
+
+    if (videoIdInput) videoIdInput.value = videoId;
+    if (videoTypeInput) videoTypeInput.value = type;
+    
+    if (label) label.classList.add('hidden');
+    
+    if (preview) {
+        preview.classList.remove('hidden');
+        if (type === 'youtube') {
+            preview.innerHTML = `
+                <iframe src="https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0" allowfullscreen></iframe>
+                <button type="button" class="remove-video-btn" onclick="removeQuestionVideo('${uniqueId}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+        } else {
+            preview.innerHTML = `
+                <div class="video-placeholder">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Video Yüklənib</span>
+                </div>
+                <button type="button" class="remove-video-btn" onclick="removeQuestionVideo('${uniqueId}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+        }
+    }
+}
+
+window.triggerVideoUpload = function(uniqueId) {
+    const menu = document.getElementById(`video_options_${uniqueId}`);
+    const fileInput = document.getElementById(`video_file_${uniqueId}`);
+    if (menu) menu.classList.add('hidden');
+    if (fileInput) fileInput.click();
+};
+
+window.handleVideoUpload = function(input, uniqueId) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Ölçü yoxlanışı (məsələn, max 100MB)
+    if (file.size > 100 * 1024 * 1024) {
+        showNotification('Video ölçüsü çox böyükdür (Maks: 100MB)', 'error');
+        input.value = '';
+        return;
+    }
+
+    const progress = document.getElementById(`video_progress_${uniqueId}`);
+    const bar = document.getElementById(`video_bar_${uniqueId}`);
+    const status = document.getElementById(`video_status_${uniqueId}`);
+    const preview = document.getElementById(`video_preview_${uniqueId}`);
+    const videoIdInput = document.getElementById(`video_id_${uniqueId}`);
+    const videoTypeInput = document.getElementById(`video_type_${uniqueId}`);
+
+    if (progress) progress.classList.remove('hidden');
+    if (status) {
+        status.classList.remove('hidden');
+        status.textContent = 'Video emal olunur...';
+    }
+    if (bar) bar.style.width = '0%';
+
+    // Simulyasiya edilmiş yükləmə (Real tətbiqdə burada API çağırışı olacaq)
+    let p = 0;
+    const interval = setInterval(() => {
+        p += Math.random() * 15;
+        if (p >= 100) {
+            p = 100;
+            if (bar) bar.style.width = '100%';
+            clearInterval(interval);
+            showNotification('Video uğurla yükləndi!', 'success');
+            
+            setTimeout(() => {
+                if (progress) progress.classList.add('hidden');
+                if (status) status.classList.add('hidden');
+                const videoId = 'uploaded_' + Date.now();
+                updateVideoPreview(uniqueId, videoId, 'upload');
+            }, 500);
+        } else {
+            if (bar) bar.style.width = p + '%';
+        }
+    }, 300);
+};
+
+// addYoutubeVideo funksiyası artıq showYoutubeInput daxilindədir, köhnəni silirik
+window.removeQuestionVideo = function(uniqueId) {
+    const idInput = document.getElementById(`video_id_${uniqueId}`);
+    const typeInput = document.getElementById(`video_type_${uniqueId}`);
+    const preview = document.getElementById(`video_preview_${uniqueId}`);
+    const label = document.querySelector(`#video_box_${uniqueId} .video-upload-label`);
+    
+    if (idInput) idInput.value = '';
+    if (typeInput) typeInput.value = '';
+    
+    if (label) label.classList.remove('hidden');
+    
+    if (preview) {
+        preview.classList.add('hidden');
+        preview.innerHTML = '';
+    }
+};
+
+function extractYoutubeId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
 window.savePrivateQuizFinal = async function() {
     const editingId = document.getElementById('editing-quiz-id').value;
     const title = document.getElementById('private-quiz-title').value;
@@ -2053,6 +2298,8 @@ window.savePrivateQuizFinal = async function() {
     questionItems.forEach((item) => {
         const text = item.querySelector('.manual-q-text').value;
         const imageData = item.querySelector('.manual-q-img-data').value;
+        const videoId = item.querySelector('.manual-q-video-id').value;
+        const videoType = item.querySelector('.manual-q-video-type').value;
         const customTime = item.querySelector('.manual-q-time').value;
         const optionInputs = item.querySelectorAll('.manual-opt');
         const correctInput = item.querySelector('input[type="radio"]:checked');
@@ -2061,6 +2308,8 @@ window.savePrivateQuizFinal = async function() {
             questions.push({
                 text: text,
                 image: imageData || null,
+                videoId: videoId || null,
+                videoType: videoType || null,
                 time: (timeType === 'per-question' && customTime) ? parseInt(customTime) : null,
                 options: Array.from(optionInputs).map(i => i.value),
                 correctIndex: parseInt(correctInput.value)
@@ -4530,7 +4779,17 @@ window.addAdminQuestionForm = function() {
                 <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
             </div>
             <div class="manual-q-text-container">
-                <textarea class="manual-q-text" placeholder="Sualın mətnini daxil edin..."></textarea>
+                <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin..."></textarea>
+            </div>
+        </div>
+        <div class="manual-q-explanation-row">
+            <div class="form-group">
+                <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
+                <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin..."></textarea>
+            </div>
+            <div class="form-group">
+                <label><i class="fab fa-youtube"></i> Youtube İzah Linki (Opsional)</label>
+                <input type="text" class="manual-q-youtube" placeholder="https://www.youtube.com/watch?v=...">
             </div>
         </div>
         <div class="manual-options-grid">
@@ -4831,6 +5090,12 @@ function loadQuestion() {
         img.classList.remove('hidden');
     } else {
         img.classList.add('hidden');
+    }
+
+    const videoContainer = document.getElementById('question-video');
+    if (videoContainer) {
+        videoContainer.classList.add('hidden');
+        videoContainer.innerHTML = '';
     }
 
     const optionsArea = document.getElementById('options-area');
@@ -5201,6 +5466,14 @@ window.showQuizReview = function() {
         reviewItem.innerHTML = `
             <div class="review-question">${idx + 1}. ${q.text}</div>
             ${q.image ? `<img src="${q.image}" class="max-w-full rounded-md mb-2">` : ''}
+            ${q.videoId && q.videoType ? `
+                <div class="question-video-container mb-3">
+                    ${q.videoType === 'youtube' ? 
+                        `<iframe src="https://www.youtube.com/embed/${q.videoId}?modestbranding=1&rel=0" allowfullscreen></iframe>` : 
+                        `<div class="video-placeholder"><i class="fas fa-play-circle"></i> <span>Video İzah Yüklənib</span></div>`
+                    }
+                </div>
+            ` : ''}
             <div class="review-options">
                 ${optionsHtml}
             </div>
