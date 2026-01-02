@@ -13,7 +13,9 @@ const firebaseConfig = {
 // Təhlükəsizlik üçün: API açarını birbaşa koda yazmırıq, DB-dən çəkirik.
 let GEMINI_API_KEY = "";
 
-const BACKEND_URL = "http://localhost:5000"; // Real server URL-i bura daxil edilməlidir
+const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? "http://localhost:5000"
+    : "https://imtahan-server.onrender.com"; // Bura öz Render URL-inizi daxil edin
 
 // Firebase-dən API açarını yükləyən funksiya
 async function loadAiApiKey() {
@@ -408,6 +410,7 @@ async function loadData() {
             privateQuizzes = [];
 
             console.log("Categories loaded from Firebase");
+            saveCategories(); 
             
             // Dövlət qulluğu miqrasiyası (Tamamilə deaktiv edildi)
             // setTimeout(() => runDovletQulluguMigration(), 2000); 
@@ -660,8 +663,25 @@ async function runDovletQulluguMigration() {
     }
 }
 
+function showLoading(message = "Yüklənir...") {
+    const loader = document.getElementById('loading-screen');
+    if (loader) {
+        const text = loader.querySelector('p');
+        if (text) text.textContent = message;
+        loader.classList.remove('hidden');
+    }
+}
+
+function hideLoading() {
+    const loader = document.getElementById('loading-screen');
+    if (loader) {
+        loader.classList.add('hidden');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("Sistem başladılır...");
+    showLoading("Sistem hazırlanır...");
     
     // UI-nı dərhal göstər (Loading vəziyyətində)
     updateUI();
@@ -679,6 +699,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     handleUrlParams();
     updateUI(); // Məlumatlar gəldikdən sonra yenidən yenilə
+    hideLoading();
     console.log("Sistem hazırdır.");
 });
 
@@ -712,7 +733,9 @@ async function migrateUserReferences(oldId, newId) {
 }
 
 function updateUI() {
-    navbar.classList.remove('hidden');
+    console.log("Updating UI. Current User:", currentUser);
+    const nav = document.getElementById('navbar');
+    if (nav) nav.classList.remove('hidden');
     
     // Check if we are in a private quiz link
     const isPrivateQuiz = new URLSearchParams(window.location.search).has('quiz');
@@ -720,74 +743,97 @@ function updateUI() {
     if (currentUser) {
         document.body.classList.remove('role-student', 'role-teacher', 'role-admin', 'role-moderator');
         document.body.classList.add('role-' + currentUser.role);
-        document.getElementById('guest-nav').classList.add('hidden');
-        document.getElementById('user-nav').classList.remove('hidden');
+        
+        const guestNav = document.getElementById('guest-nav');
+        const userNav = document.getElementById('user-nav');
+        if (guestNav) guestNav.classList.add('hidden');
+        if (userNav) userNav.classList.remove('hidden');
         
         const displayName = (currentUser.name && currentUser.surname) 
             ? `${currentUser.name} ${currentUser.surname}` 
             : (currentUser.username || 'İstifadəçi');
             
-        document.getElementById('user-display').textContent = `Salam, ${displayName}`;
+        const userDisplay = document.getElementById('user-display');
+        if (userDisplay) userDisplay.textContent = `Salam, ${displayName}`;
         
         // Side menu updates
-        document.getElementById('side-guest-nav').classList.add('hidden');
-        document.getElementById('side-user-nav').classList.remove('hidden');
-        document.getElementById('side-user-info').classList.remove('hidden');
-        document.getElementById('side-user-display').textContent = `Salam, ${displayName}`;
+        const sideGuestNav = document.getElementById('side-guest-nav');
+        const sideUserNav = document.getElementById('side-user-nav');
+        const sideUserInfo = document.getElementById('side-user-info');
+        const sideUserDisplay = document.getElementById('side-user-display');
+
+        if (sideGuestNav) sideGuestNav.classList.add('hidden');
+        if (sideUserNav) sideUserNav.classList.remove('hidden');
+        if (sideUserInfo) sideUserInfo.classList.remove('hidden');
+        if (sideUserDisplay) sideUserDisplay.textContent = `Salam, ${displayName}`;
         
         const teacherBtn = document.getElementById('teacher-panel-btn');
         const sideTeacherBtn = document.getElementById('side-teacher-btn');
         if (currentUser.role === 'teacher' || currentUser.role === 'admin') {
-            teacherBtn.classList.remove('hidden');
+            if (teacherBtn) teacherBtn.classList.remove('hidden');
             if (sideTeacherBtn) sideTeacherBtn.classList.remove('hidden');
         } else {
-            teacherBtn.classList.add('hidden');
+            if (teacherBtn) teacherBtn.classList.add('hidden');
             if (sideTeacherBtn) sideTeacherBtn.classList.add('hidden');
         }
         
         const adminBtn = document.getElementById('admin-panel-btn');
         const sideAdminBtn = document.getElementById('side-admin-btn');
         if (currentUser.role === 'admin' || currentUser.role === 'moderator') {
-            adminBtn.classList.remove('hidden');
+            if (adminBtn) adminBtn.classList.remove('hidden');
             if (sideAdminBtn) sideAdminBtn.classList.remove('hidden');
             
             // Change text if moderator
             if (currentUser.role === 'moderator') {
                 const modHtml = '<i class="fas fa-tasks"></i> Moderator Paneli';
-                adminBtn.innerHTML = modHtml;
+                if (adminBtn) adminBtn.innerHTML = modHtml;
                 if (sideAdminBtn) sideAdminBtn.innerHTML = modHtml;
             } else {
                 const adminHtml = '<i class="fas fa-user-shield"></i> Admin Paneli';
-                adminBtn.innerHTML = adminHtml;
+                if (adminBtn) adminBtn.innerHTML = adminHtml;
                 if (sideAdminBtn) sideAdminBtn.innerHTML = adminHtml;
             }
         } else {
-            adminBtn.classList.add('hidden');
+            if (adminBtn) adminBtn.classList.add('hidden');
             if (sideAdminBtn) sideAdminBtn.classList.add('hidden');
         }
         
         // If not already in admin view or quiz, show public dashboard
         const urlParams = new URLSearchParams(window.location.search);
-        if (!isPrivateQuiz && !urlParams.has('mode') &&
-            document.getElementById('admin-dashboard-section').classList.contains('hidden') && 
-            document.getElementById('category-admin-section').classList.contains('hidden') &&
-            document.getElementById('quiz-section').classList.contains('hidden')) {
-            showDashboard();
+        const adminDashboardSection = document.getElementById('admin-dashboard-section');
+        const categoryAdminSection = document.getElementById('category-admin-section');
+        const quizSection = document.getElementById('quiz-section');
+
+        if (!isPrivateQuiz && !urlParams.has('mode')) {
+            // Əgər giriş səhifəsindəyiksə və ya heç bir xüsusi bölmə açıq deyilsə, dashboard-u göstər
+            const isAuthPage = urlParams.get('page') === 'login' || urlParams.get('page') === 'register';
+            const noSectionOpen = (!adminDashboardSection || adminDashboardSection.classList.contains('hidden')) && 
+                                (!categoryAdminSection || categoryAdminSection.classList.contains('hidden')) &&
+                                (!quizSection || quizSection.classList.contains('hidden'));
+
+            if (isAuthPage || noSectionOpen) {
+                showDashboard();
+            }
         }
     } else {
-        document.getElementById('guest-nav').classList.remove('hidden');
-        document.getElementById('user-nav').classList.add('hidden');
+        const guestNav = document.getElementById('guest-nav');
+        const userNav = document.getElementById('user-nav');
+        if (guestNav) guestNav.classList.remove('hidden');
+        if (userNav) userNav.classList.add('hidden');
         
         // Side menu updates
-        document.getElementById('side-guest-nav').classList.remove('hidden');
-        document.getElementById('side-user-nav').classList.add('hidden');
-        document.getElementById('side-user-info').classList.add('hidden');
+        const sideGuestNav = document.getElementById('side-guest-nav');
+        const sideUserNav = document.getElementById('side-user-nav');
+        const sideUserInfo = document.getElementById('side-user-info');
+        
+        if (sideGuestNav) sideGuestNav.classList.remove('hidden');
+        if (sideUserNav) sideUserNav.classList.add('hidden');
+        if (sideUserInfo) sideUserInfo.classList.add('hidden');
 
         const teacherBtn = document.getElementById('teacher-panel-btn');
         if (teacherBtn) teacherBtn.classList.add('hidden');
         
         const urlParams = new URLSearchParams(window.location.search);
-        const isPrivateQuiz = urlParams.has('quiz');
         const hasAuthMode = urlParams.has('mode');
         const page = urlParams.get('page');
         
@@ -2214,7 +2260,7 @@ window.triggerVideoUpload = function(uniqueId) {
     if (fileInput) fileInput.click();
 };
 
-window.handleVideoUpload = function(input, uniqueId) {
+window.handleVideoUpload = async function(input, uniqueId) {
     const file = input.files[0];
     if (!file) return;
 
