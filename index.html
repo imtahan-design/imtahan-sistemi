@@ -247,22 +247,40 @@
             <div class="container">
                 <div class="header-actions animate-up">
                     <h2>Müəllim Paneli</h2>
-                    <div class="relative inline-block">
-                        <button id="btn-new-private-quiz" onclick="showCreatePrivateQuiz()" class="btn-primary pulse-glow">
-                            <i class="fas fa-plus"></i> Yeni Özəl Test
+                    <div class="flex gap-2">
+                        <button id="btn-show-teacher-reports" onclick="showTeacherReports()" class="btn-primary" style="background: var(--warning-color); border-color: var(--warning-hover);">
+                            <i class="fas fa-flag"></i> Şikayətlər <span id="teacher-reports-count" class="ml-1 bg-white text-warning-dark px-1.5 rounded-full text-[10px] hidden">0</span>
                         </button>
-                        <div id="quiz-guide-tooltip" class="guide-tooltip hidden">
-                            <div class="tooltip-content">
-                                <i class="fas fa-lightbulb"></i>
-                                <span>Bura klikləyərək sınaq hazırlamağa başlaya bilərsiniz</span>
+                        <div class="relative inline-block">
+                            <button id="btn-new-private-quiz" onclick="showCreatePrivateQuiz()" class="btn-primary pulse-glow">
+                                <i class="fas fa-plus"></i> Yeni Özəl Test
+                            </button>
+                            <div id="quiz-guide-tooltip" class="guide-tooltip hidden">
+                                <div class="tooltip-content">
+                                    <i class="fas fa-lightbulb"></i>
+                                    <span>Bura klikləyərək sınaq hazırlamağa başlaya bilərsiniz</span>
+                                </div>
+                                <div class="tooltip-arrow"></div>
                             </div>
-                            <div class="tooltip-arrow"></div>
                         </div>
                     </div>
                     <button onclick="showDashboard()" class="btn-secondary">Geri</button>
                 </div>
                 <div id="private-quizzes-grid" class="grid-container animate-up delay-2">
                     <!-- Teacher's private quizzes will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Teacher Reports Section -->
+        <section id="teacher-reports-section" class="hidden">
+            <div class="container">
+                <div class="header-actions animate-up">
+                    <h2>Testlərinizə Gələn Şikayətlər</h2>
+                    <button onclick="showTeacherDashboard()" class="btn-secondary">Geri</button>
+                </div>
+                <div id="teacher-reports-list" class="flex flex-col gap-4 animate-up delay-1">
+                    <!-- Teacher's reports will be loaded here -->
                 </div>
             </div>
         </section>
@@ -853,9 +871,6 @@
                         <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()"><i class="fas fa-arrow-left"></i> Geri</button>
                         <button id="restore-btn-global" class="btn-danger px-5 py-2 rounded-lg font-bold shadow-md" onclick="restoreMissingQuestions()"><i class="fas fa-undo"></i> Sualları Bərpa Et</button>
                         <button class="btn-success" onclick="exportData()">💾 Export</button>
-                        <a href="instagram_post.html" target="_blank" class="btn-primary" style="background: var(--ai-gradient); text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-                            <i class="fab fa-instagram"></i> Instagram Post
-                        </a>
                         <button class="btn-outline" onclick="showReports()"><i class="fas fa-flag"></i> Şikayətlər</button>
                         <button class="btn-primary" onclick="showAddCategoryModal()">+ Yeni Kateqoriya</button>
                     </div>

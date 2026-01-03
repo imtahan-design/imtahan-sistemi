@@ -1549,7 +1549,9 @@ window.sendContactMessage = async function() {
             contactInfo: info,
             message: message,
             userId: currentUser ? currentUser.id : 'anonim',
-            username: currentUser ? (currentUser.username || name) : name,
+            username: currentUser ? 
+                (`${currentUser.name || ''} ${currentUser.surname || ''}`.trim() || currentUser.username || name) : 
+                name,
             timestamp: Date.now(),
             status: 'pending',
             type: 'contact_form'
@@ -1584,7 +1586,7 @@ function hideAllSections() {
         'profile-section', 'teacher-dashboard-section', 
         'create-private-quiz-section', 'private-access-section',
         'admin-question-section', 'review-section', 'public-questions-section',
-        'top-users-section', 'reports-section'
+        'top-users-section', 'reports-section', 'teacher-reports-section'
     ];
     sections.forEach(id => {
         const elem = document.getElementById(id);
@@ -1616,6 +1618,123 @@ window.showTeacherDashboard = function(doPush = true) {
     hideAllSections();
     document.getElementById('teacher-dashboard-section').classList.remove('hidden');
     renderPrivateQuizzes();
+    updateTeacherReportsBadge();
+}
+
+window.showTeacherReports = function() {
+    hideAllSections();
+    document.getElementById('teacher-reports-section').classList.remove('hidden');
+    loadTeacherReports();
+}
+
+window.loadTeacherReports = async function() {
+    const listContainer = document.getElementById('teacher-reports-list');
+    if (!listContainer) return;
+    
+    listContainer.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-primary"></i><p class="mt-2">Şikayətlər yüklənir...</p></div>';
+    
+    try {
+        if (!db || !currentUser) return;
+        
+        const snapshot = await db.collection('reports')
+            .where('teacherId', '==', currentUser.id)
+            .get();
+            
+        if (snapshot.empty) {
+            listContainer.innerHTML = '<div class="text-center py-12 bg-white/5 rounded-xl border border-dashed border-white/10"><i class="fas fa-check-circle text-4xl text-green-500/50 mb-3"></i><p class="text-white/60">Hələ ki, heç bir şikayət yoxdur.</p></div>';
+            return;
+        }
+        
+        // Sənədləri massivə yığıb tarixinə görə sıralayaq (Index tələbini aradan qaldırmaq üçün)
+        const reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        reports.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        
+        let html = '';
+        reports.forEach(report => {
+            let date = 'Naməlum';
+            if (report.timestamp) {
+                // Həm nömrə (Date.now()), həm də Firestore Timestamp dəstəyi
+                const ts = typeof report.timestamp === 'number' ? report.timestamp : 
+                          (report.timestamp.seconds ? report.timestamp.seconds * 1000 : report.timestamp);
+                date = new Date(ts).toLocaleString('az-AZ');
+            }
+            const isRead = report.status === 'resolved';
+            
+            html += `
+                <div class="report-card ${isRead ? 'opacity-70' : 'border-l-4 border-warning'}" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-medium px-2 py-1 rounded bg-warning/20 text-warning">
+                            ${report.categoryName || 'Özəl Test'}
+                        </span>
+                        <span class="text-xs text-white/40">${date}</span>
+                    </div>
+                    <p class="text-white/90 mb-4" style="font-size: 0.95rem; line-height: 1.5;">
+                        <i class="fas fa-quote-left text-primary/40 mr-2"></i>
+                        ${report.message || report.reason}
+                    </p>
+                    <div class="flex justify-between items-center pt-4 border-t border-white/5">
+                        <div class="text-xs text-white/50">
+                            <i class="fas fa-user mr-1"></i> Göndərən: ${report.username || report.name || report.userName || 'Anonim'}
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="goToReportedQuestion('${report.categoryId}', '${report.questionId}', 'private', \`${(report.questionTitle || report.questionText || '').replace(/"/g, '&quot;')}\`)" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                <i class="fas fa-eye mr-1"></i> Suala Bax
+                            </button>
+                            ${!isRead ? `
+                                <button onclick="markReportAsResolvedByTeacher('${report.id}')" class="btn-primary" style="background: var(--success-color); border-color: var(--success-hover); padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                    <i class="fas fa-check mr-1"></i> Həll Edildi
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        listContainer.innerHTML = html;
+        
+    } catch (error) {
+        console.error("Error loading teacher reports:", error);
+        listContainer.innerHTML = '<div class="text-center py-8 text-red-400">Şikayətləri yükləyərkən xəta baş verdi.</div>';
+    }
+}
+
+window.markReportAsResolvedByTeacher = async function(reportId) {
+    if (!confirm('Bu şikayəti həll edilmiş kimi qeyd etmək istəyirsiniz?')) return;
+    
+    try {
+        if (db) {
+            await db.collection('reports').doc(reportId).update({ status: 'resolved' });
+            showNotification('Şikayət həll edilmiş kimi qeyd olundu', 'success');
+            loadTeacherReports();
+            updateTeacherReportsBadge();
+        }
+    } catch (error) {
+        console.error("Error resolving report:", error);
+        showNotification('Xəta baş verdi', 'error');
+    }
+}
+
+window.updateTeacherReportsBadge = async function() {
+    const badge = document.getElementById('teacher-reports-count');
+    if (!badge || !currentUser || !db) return;
+    
+    try {
+        const snapshot = await db.collection('reports')
+            .where('teacherId', '==', currentUser.id)
+            .where('status', '==', 'pending')
+            .get();
+            
+        const count = snapshot.size;
+        if (count > 0) {
+            badge.textContent = count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error("Error updating teacher badge:", error);
+    }
 }
 
 window.toggleTimeInputType = function() {
@@ -3091,6 +3210,7 @@ window.accessPrivateQuiz = async function() {
 
 function startPrivateQuiz() {
     currentQuiz = {
+        id: activePrivateQuiz.id, // Store the real quiz ID
         categoryId: 'private',
         questions: activePrivateQuiz.questions,
         currentQuestionIndex: 0,
@@ -5342,8 +5462,13 @@ function loadQuestion() {
     existingReportBtns.forEach(btn => btn.remove());
 
     // Add report button for quiz question
+    const reportQId = q.id || `q_idx_${currentQuiz.currentQuestionIndex}`;
+    const reportQType = currentQuiz.categoryId === 'private' ? 'private' : 'category';
+    const reportQCatId = currentQuiz.id || currentQuiz.categoryId;
+    const reportQTitle = q.text.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
     const reportBtnHtml = `
-        <button onclick="openReportModal('${q.id || currentQuiz.currentQuestionIndex}', 'quiz', '${q.text.substring(0, 50).replace(/'/g, "\\'")}...')" class="btn-report btn-report-quiz mt-4 w-fit">
+        <button onclick="openReportModal('${reportQId}', '${reportQType}', \`${reportQTitle}\`, '${reportQCatId}')" class="btn-report btn-report-quiz mt-4 w-fit">
             <i class="fas fa-flag"></i> Sualda xəta var? Bildir
         </button>
     `;
@@ -5714,12 +5839,12 @@ window.hideReview = function() {
 }
 
 // --- Reporting System ---
-window.openReportModal = function(qId, qType, qTitle) {
+window.openReportModal = function(qId, qType, qTitle, qCatId = null) {
     document.getElementById('report-q-id').value = qId;
     document.getElementById('report-q-type').value = qType;
     document.getElementById('report-q-title-val').value = qTitle;
-    document.getElementById('report-q-cat-id').value = activeCategoryId || '';
-    document.getElementById('report-q-title').textContent = `Sual: ${qTitle}`;
+    document.getElementById('report-q-cat-id').value = qCatId || activeCategoryId || '';
+    document.getElementById('report-q-title').textContent = `Sual: ${qTitle.length > 60 ? qTitle.substring(0, 60) + '...' : qTitle}`;
     document.getElementById('report-message').value = '';
     document.getElementById('report-modal').classList.remove('hidden');
 }
@@ -5742,10 +5867,55 @@ window.submitReport = async function() {
         categoryId: qCatId,
         message: message,
         userId: currentUser ? currentUser.id : 'anonim',
-        username: currentUser ? currentUser.username : 'Anonim',
+        username: currentUser ? 
+            (`${currentUser.name || ''} ${currentUser.surname || ''}`.trim() || currentUser.username) : 
+            (typeof studentName !== 'undefined' && studentName ? studentName : 'Anonim'),
         timestamp: Date.now(),
         status: 'pending'
     };
+
+    // Əgər sual özəl testdədirsə və ya categoryId yoxdursa, məlumatları tapmağa çalışaq
+    if (qType === 'private' || qType === 'quiz' || !qCatId) {
+        try {
+            if (db) {
+                // 1. Əgər qCatId varsa, onun özəl test olub-olmadığını yoxlayaq
+                if (qCatId) {
+                    const quizDoc = await db.collection('private_quizzes').doc(qCatId).get();
+                    if (quizDoc.exists) {
+                        report.teacherId = quizDoc.data().teacherId;
+                    }
+                }
+
+                // 2. Əgər teacherId hələ də yoxdursa, bütün özəl testlərdə sual ID-si ilə axtaraq
+                if (!report.teacherId) {
+                    const quizSnapshot = await db.collection('private_quizzes').get();
+                    for (const doc of quizSnapshot.docs) {
+                        const data = doc.data();
+                        if (data.questions && data.questions.some(q => q.id == qId || (qTitle && q.text && q.text.includes(qTitle.substring(0, 30))))) {
+                            report.teacherId = data.teacherId;
+                            if (!report.categoryId) report.categoryId = doc.id;
+                            if (report.questionType === 'public') report.questionType = 'private'; 
+                            break;
+                        }
+                    }
+                }
+
+                // 3. Əgər hələ də yoxdursa, kateqoriyalarda axtaraq (categoryId tapmaq üçün)
+                if (!report.categoryId) {
+                    const catSnapshot = await db.collection('categories').get();
+                    for (const doc of catSnapshot.docs) {
+                        const data = doc.data();
+                        if (data.questions && data.questions.some(q => q.id == qId || (qTitle && q.text && q.text.includes(qTitle.substring(0, 30))))) {
+                            report.categoryId = doc.id;
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Teacher/Category lookup error:", err);
+        }
+    }
 
     try {
         if (db) {
@@ -5788,16 +5958,21 @@ window.loadReports = async function() {
         let allUsers = [];
 
         if (db) {
-            // Şikayətləri, bütün şəxsi testləri və istifadəçiləri yükləyək
-            const [reportSnapshot, quizSnapshot, userSnapshot] = await Promise.all([
+            // Şikayətləri, bütün şəxsi testləri, kateqoriyaları və istifadəçiləri yükləyək
+            const [reportSnapshot, quizSnapshot, catSnapshot, userSnapshot] = await Promise.all([
                 db.collection('reports').orderBy('timestamp', 'desc').get(),
                 db.collection('private_quizzes').get(),
+                db.collection('categories').get(),
                 db.collection('users').get()
             ]);
             
             reports = reportSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             allQuizzes = quizSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const allCats = catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             allUsers = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            // Ehtiyat variant kimi kateqoriyaları da quiz siyahısına qataq (eyni strukturda olduqları üçün)
+            allQuizzes = [...allQuizzes, ...allCats];
         } else {
             reports = JSON.parse(localStorage.getItem('reports') || '[]').sort((a, b) => b.timestamp - a.timestamp);
         }
@@ -5816,29 +5991,71 @@ window.loadReports = async function() {
             
             // Sualın hansı testə və ya müəllimə aid olduğunu tapaq
             let ownerInfo = '';
-            if (report.questionId) {
-                const foundQuiz = allQuizzes.find(quiz => 
-                    quiz.questions && quiz.questions.some(q => q.id == report.questionId || (report.questionTitle && q.text && q.text.includes(report.questionTitle.substring(0, 30))))
-                );
-                
-                if (foundQuiz) {
-                    let authorName = foundQuiz.authorName;
-                    
-                    // Əgər authorName yoxdursa, teacherId ilə istifadəçilər arasından tapaq
-                    if (!authorName && foundQuiz.teacherId) {
-                        const teacher = allUsers.find(u => u.id == foundQuiz.teacherId);
-                        if (teacher) {
-                            authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
-                        }
-                    }
+            let foundQuiz = null;
 
+            // 1. Əvvəlcə categoryId ilə tapaq
+            if (report.categoryId && report.categoryId !== 'private') {
+                foundQuiz = allQuizzes.find(q => q.id == report.categoryId);
+            }
+
+            // 2. Əgər tapılmasa və ya categoryId 'private' idisə, questionId və ya mətnlə axtaraq
+            if (!foundQuiz) {
+                const searchTitle = report.questionTitle ? report.questionTitle.replace(/\.\.\.$/, '').trim() : "";
+                
+                foundQuiz = allQuizzes.find(quiz => 
+                    quiz.questions && quiz.questions.some((q, idx) => 
+                        (q.id && report.questionId && q.id == report.questionId) || 
+                        (report.questionId && (report.questionId == idx || report.questionId == `q_idx_${idx}`)) ||
+                        (searchTitle && q.text && q.text.includes(searchTitle.substring(0, 30)))
+                    )
+                );
+            }
+
+            // 3. Əgər hələ də tapılmasa və reportda teacherId varsa, müəllimin digər testlərinə baxaq (ehtimal azdır amma yenə də)
+            if (!foundQuiz && report.teacherId) {
+                foundQuiz = allQuizzes.find(q => q.teacherId == report.teacherId);
+            }
+
+            if (foundQuiz) {
+                let authorName = foundQuiz.authorName;
+                
+                // Əgər authorName yoxdursa, teacherId ilə istifadəçilər arasından tapaq
+                if (!authorName && foundQuiz.teacherId) {
+                    const teacher = allUsers.find(u => u.id == foundQuiz.teacherId);
+                    if (teacher) {
+                        authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
+                    }
+                }
+                
+                // Əgər yenə yoxdursa və reportda teacherId varsa
+                if (!authorName && report.teacherId) {
+                    const teacher = allUsers.find(u => u.id == report.teacherId);
+                    if (teacher) {
+                        authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
+                    }
+                }
+
+                ownerInfo = `
+                    <div class="mt-1 flex items-center gap-2">
+                        ${authorName ? `
+                            <span class="text-[10px] bg-primary-light text-primary px-2 py-0.5 rounded-full border border-primary/20">
+                                <i class="fas fa-user-tie"></i> Müəllim: ${authorName}
+                            </span>
+                        ` : ''}
+                        <span class="text-[10px] bg-warning-light text-warning-dark px-2 py-0.5 rounded-full border border-warning/20">
+                            <i class="fas fa-file-alt"></i> Test/Kateqoriya: ${foundQuiz.title || foundQuiz.name || 'Adsız'}
+                        </span>
+                    </div>
+                `;
+            } else if (report.teacherId) {
+                // Sual tapılmasa belə, əgər müəllim ID-si varsa onu göstərək
+                const teacher = allUsers.find(u => u.id == report.teacherId);
+                if (teacher) {
+                    const authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
                     ownerInfo = `
                         <div class="mt-1 flex items-center gap-2">
                             <span class="text-[10px] bg-primary-light text-primary px-2 py-0.5 rounded-full border border-primary/20">
-                                <i class="fas fa-user-tie"></i> Müəllim: ${authorName || 'Naməlum'}
-                            </span>
-                            <span class="text-[10px] bg-warning-light text-warning-dark px-2 py-0.5 rounded-full border border-warning/20">
-                                <i class="fas fa-file-alt"></i> Test: ${foundQuiz.title}
+                                <i class="fas fa-user-tie"></i> Müəllim: ${authorName}
                             </span>
                         </div>
                     `;
@@ -5855,11 +6072,15 @@ window.loadReports = async function() {
                     </div>
                 `;
             } else {
+                let typeLabel = 'Ümumi';
+                if (report.questionType === 'private' || report.questionType === 'quiz') typeLabel = 'Özəl Test';
+                else if (report.questionType === 'category') typeLabel = 'Kateqoriya';
+
                 headerHtml = `
                     <div class="flex flex-col">
                         <div class="flex items-center gap-2">
                             <span class="font-semibold text-primary">
-                                <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${report.questionType === 'public' ? 'Ümumi' : 'Kateqoriya'})
+                                <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${typeLabel})
                             </span>
                             <button onclick="goToReportedQuestion('${report.categoryId || ''}', '${report.questionId}', '${report.questionType}', \`${(report.questionTitle || '').replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`)" class="btn-primary p-1 px-2 text-xs rounded-sm">
                                 <i class="fas fa-external-link-alt"></i> Suala get
@@ -5903,7 +6124,7 @@ window.loadReports = async function() {
                     ` : ''}
 
                     <div class="text-sm text-muted flex items-center gap-2 flex-wrap">
-                        <span><i class="fas fa-user"></i> Göndərən: <strong>${report.username || report.name || 'Qonaq'}</strong></span>
+                        <span><i class="fas fa-user"></i> Göndərən: <strong>${report.username || report.name || report.userName || 'Qonaq'}</strong></span>
                         ${report.contactInfo ? `<span>|</span> <span><i class="fas fa-at"></i> Əlaqə: <strong>${report.contactInfo}</strong></span>` : ''}
                         <span>|</span>
                         <span>ID: ${report.userId}</span>
@@ -6131,8 +6352,41 @@ window.deleteReport = async function(reportId) {
 }
 
 window.goToReportedQuestion = async function(catId, qId, qType, questionText = "") {
-    if (!catId) {
-        showNotification('Kateqoriya ID-si tapılmadı, sual bütün bazada axtarılır...', 'info');
+    // Clean question text from truncation dots and escape characters
+    const cleanText = questionText ? questionText.replace(/\.\.\.$/, '').trim() : "";
+    
+    // Əgər catId varsa və bu bir özəl testdirsə (və 'private' deyilsə)
+    if (catId && catId !== 'private' && (qType === 'private' || qType === 'quiz' || !qType)) {
+        try {
+            if (db) {
+                const quizDoc = await db.collection('private_quizzes').doc(catId).get();
+                if (quizDoc.exists) {
+                    showNotification('Özəl testə yönləndirilir...', 'info');
+                    showTeacherDashboard();
+                    setTimeout(() => {
+                        editPrivateQuiz(catId);
+                        setTimeout(() => {
+                            const questions = document.querySelectorAll('.question-item');
+                            for (let el of questions) {
+                                if (el.innerHTML.includes(qId) || (cleanText && el.innerHTML.includes(cleanText.substring(0, 30)))) {
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    el.style.border = "2px solid var(--warning-color)";
+                                    el.style.boxShadow = "0 0 15px var(--warning-soft)";
+                                    break;
+                                }
+                            }
+                        }, 1000);
+                    }, 1000);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.error("Private quiz check error:", e);
+        }
+    }
+
+    if (!catId || catId === 'private') {
+        showNotification('Sual bazada axtarılır...', 'info');
         
         try {
             if (db) {
@@ -6158,8 +6412,7 @@ window.goToReportedQuestion = async function(catId, qId, qType, questionText = "
                             if (catData.questions && Array.isArray(catData.questions)) {
                                 const found = catData.questions.find(q => 
                                     (qId && (q.id == qId || String(q.id) === String(qId))) || 
-                                    (questionText && q.text && q.text === questionText) ||
-                                    (questionText && q.text && q.text.includes(questionText.substring(0, 50)))
+                                    (cleanText && q.text && (q.text === cleanText || q.text.includes(cleanText.substring(0, 50)) || cleanText.includes(q.text.substring(0, 50))))
                                 );
                                 if (found) {
                                     catId = doc.id;
@@ -6176,13 +6429,13 @@ window.goToReportedQuestion = async function(catId, qId, qType, questionText = "
                             for (let doc of pQuizzes.docs) {
                                 const quizData = doc.data();
                                 if (quizData.questions && Array.isArray(quizData.questions)) {
-                                    const found = quizData.questions.find(q => 
-                                        (qId && (q.id == qId || String(q.id) === String(qId))) || 
-                                        (questionText && q.text && q.text === questionText)
+                                    const found = quizData.questions.find((q, idx) => 
+                                        (qId && (q.id == qId || String(q.id) === String(qId) || qId == idx || qId == `q_idx_${idx}`)) || 
+                                        (cleanText && q.text && (q.text === cleanText || q.text.includes(cleanText.substring(0, 50)) || cleanText.includes(q.text.substring(0, 50))))
                                     );
                                     if (found) {
                                         catId = doc.id;
-                                        qType = 'private'; // Yeni tip
+                                        qType = 'private';
                                         
                                         let teacherName = quizData.authorName;
                                         if (!teacherName && quizData.teacherId) {
@@ -6199,14 +6452,23 @@ window.goToReportedQuestion = async function(catId, qId, qType, questionText = "
                                         
                                         teacherName = teacherName || 'Naməlum Müəllim';
                                         const testTitle = quizData.title || 'Adsız Test';
-                                        showNotification(`Sual şəxsi test daxilində tapıldı. Müəllim: ${teacherName}, Test: ${testTitle}. Müəllim panelinə keçid edilir...`, 'info');
+                                        showNotification(`Sual şəxsi test daxilində tapıldı. Müəllim: ${teacherName}, Test: ${testTitle}.`, 'info');
+                                        
+                                        // Birbaşa keçid edirik
                                         showTeacherDashboard();
                                         setTimeout(() => {
-                                            const quizEl = document.querySelector(`.quiz-card[data-id="${doc.id}"]`);
-                                            if (quizEl) {
-                                                quizEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                                quizEl.style.border = "2px solid var(--primary-color)";
-                                            }
+                                            editPrivateQuiz(catId);
+                                            setTimeout(() => {
+                                                const questions = document.querySelectorAll('.question-item');
+                                                for (let el of questions) {
+                                                    if (el.innerHTML.includes(qId) || (cleanText && el.innerHTML.includes(cleanText.substring(0, 30)))) {
+                                                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                        el.style.border = "2px solid var(--warning-color)";
+                                                        el.style.boxShadow = "0 0 15px var(--warning-soft)";
+                                                        break;
+                                                    }
+                                                }
+                                            }, 1000);
                                         }, 1000);
                                         return;
                                     }
@@ -6232,7 +6494,7 @@ window.goToReportedQuestion = async function(catId, qId, qType, questionText = "
         setTimeout(() => {
             const elements = document.getElementsByClassName('public-q-card');
             for (let el of elements) {
-                if (el.dataset.id == qId || el.innerHTML.includes(qId) || (questionText && el.innerHTML.includes(questionText.substring(0, 20)))) {
+                if (el.dataset.id == qId || el.innerHTML.includes(qId) || (cleanText && el.innerHTML.includes(cleanText.substring(0, 20)))) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     el.classList.add('highlight-primary');
                     setTimeout(() => el.classList.remove('highlight-primary'), 3000);
@@ -6240,12 +6502,30 @@ window.goToReportedQuestion = async function(catId, qId, qType, questionText = "
                 }
             }
         }, 1200);
+    } else if (qType === 'private') {
+        // Əgər özəl testdirsə, müəllim panelinə keç və testi redaktə et
+        showTeacherDashboard();
+        setTimeout(() => {
+            editPrivateQuiz(catId);
+            setTimeout(() => {
+                // Sualı redaktə pəncərəsində tap və vurğula
+                const questions = document.querySelectorAll('.question-item');
+                for (let el of questions) {
+                    if (el.innerHTML.includes(qId) || (cleanText && el.innerHTML.includes(cleanText.substring(0, 30)))) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        el.style.border = "2px solid var(--warning-color)";
+                        el.style.boxShadow = "0 0 15px var(--warning-soft)";
+                        break;
+                    }
+                }
+            }, 800);
+        }, 500);
     } else {
         openCategory(catId);
         setTimeout(() => {
             const elements = document.getElementsByClassName('question-item');
             for (let el of elements) {
-                if (el.dataset.id == qId || (questionText && el.innerHTML.includes(questionText.substring(0, 20)))) {
+                if (el.dataset.id == qId || (cleanText && el.innerHTML.includes(cleanText.substring(0, 20)))) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     el.classList.add('highlight-warning');
                     setTimeout(() => el.classList.remove('highlight-warning'), 5000);
