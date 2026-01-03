@@ -175,34 +175,46 @@ async function trackVisitor() {
  }
  
  // Ziyarətçi statistikasını yükləyən funksiya
- async function loadVisitorStats() {
-     try {
-         if (!db) return;
-         
-         const doc = await db.collection('settings').doc('visitor_stats').get();
-         if (doc.exists) {
-             const data = doc.data();
-             const totalVisits = data.totalVisits || 0;
-             const lastVisit = data.lastVisit ? data.lastVisit.toDate().toLocaleString('az-AZ') : 'Məlumat yoxdur';
-             
-             const statsContainer = document.getElementById('visitor-stats-display');
-             if (statsContainer) {
-                 statsContainer.innerHTML = `
-                     <div class="stat-card visitor-stat">
-                         <div class="stat-icon"><i class="fas fa-eye"></i></div>
-                         <div class="stat-info">
-                             <span class="stat-label">Ümumi Ziyarət Sayı</span>
-                             <span class="stat-value">${totalVisits}</span>
-                             <span class="stat-sub">Son giriş: ${lastVisit}</span>
-                         </div>
-                     </div>
-                 `;
-             }
-         }
-     } catch (e) {
-         console.error("Statistika yükləmə xətası:", e);
-     }
- }
+async function loadAdminDashboardStats() {
+    try {
+        if (!db) return;
+
+        // 1. Ümumi İstifadəçi Sayı
+        const usersSnapshot = await db.collection('users').get();
+        const totalUsers = usersSnapshot.size;
+        const totalUsersElem = document.getElementById('total-visitors');
+        if (totalUsersElem) totalUsersElem.textContent = totalUsers;
+
+        // 2. Bugünkü Qeydiyyatlar
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const todayRegSnapshot = await db.collection('users')
+            .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
+            .get();
+        const todayRegElem = document.getElementById('today-registrations');
+        if (todayRegElem) todayRegElem.textContent = todayRegSnapshot.size;
+
+        // 3. Tamamlanmış İmtahanlar (attempts kolleksiyasından)
+        const attemptsSnapshot = await db.collection('attempts').get();
+        const totalAttemptsElem = document.getElementById('total-finished-quizzes');
+        if (totalAttemptsElem) totalAttemptsElem.textContent = attemptsSnapshot.size;
+
+        // 4. Aktiv Suallar
+        let totalQuestions = 0;
+        categories.forEach(cat => {
+            if (cat.questions) totalQuestions += cat.questions.length;
+        });
+        
+        const publicQuestionsSnapshot = await db.collection('public_questions').get();
+        totalQuestions += publicQuestionsSnapshot.size;
+        
+        const totalQuestionsElem = document.getElementById('total-active-questions');
+        if (totalQuestionsElem) totalQuestionsElem.textContent = totalQuestions;
+
+    } catch (e) {
+        console.error("Admin statistika yükləmə xətası:", e);
+    }
+}
 
 // Initialize EmailJS
 emailjs.init("gwXl5HH3P9Bja5iBN");
@@ -2519,6 +2531,7 @@ window.savePrivateQuizFinal = async function() {
     
     const quizData = {
         teacherId: currentUser.id,
+        authorName: `${currentUser.name || ''} ${currentUser.surname || ''}`.trim() || currentUser.username || 'Naməlum',
         title: title,
         password: password,
         timeType: timeType,
@@ -2660,6 +2673,7 @@ window.savePrivateQuiz = function() {
             
             const newQuiz = {
                 teacherId: currentUser.id,
+                authorName: `${currentUser.name || ''} ${currentUser.surname || ''}`.trim() || currentUser.username || 'Naməlum',
                 title: title,
                 password: password,
                 questions: questions,
@@ -3210,7 +3224,7 @@ window.showAdminDashboard = function(doPush = true) {
     hideAllSections();
     document.getElementById('admin-dashboard-section').classList.remove('hidden');
     renderAdminCategories();
-    loadVisitorStats(); // Statistikanı yüklə
+    loadAdminDashboardStats(); // Statistikanı yüklə
 }
 
 window.showProfile = function(doPush = true) {
@@ -5770,9 +5784,20 @@ window.loadReports = async function() {
     
     try {
         let reports = [];
+        let allQuizzes = [];
+        let allUsers = [];
+
         if (db) {
-            const snapshot = await db.collection('reports').orderBy('timestamp', 'desc').get();
-            reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Şikayətləri, bütün şəxsi testləri və istifadəçiləri yükləyək
+            const [reportSnapshot, quizSnapshot, userSnapshot] = await Promise.all([
+                db.collection('reports').orderBy('timestamp', 'desc').get(),
+                db.collection('private_quizzes').get(),
+                db.collection('users').get()
+            ]);
+            
+            reports = reportSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            allQuizzes = quizSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            allUsers = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } else {
             reports = JSON.parse(localStorage.getItem('reports') || '[]').sort((a, b) => b.timestamp - a.timestamp);
         }
@@ -5789,6 +5814,37 @@ window.loadReports = async function() {
             
             const date = report.timestamp ? (report.timestamp.toDate ? report.timestamp.toDate() : new Date(report.timestamp)).toLocaleString('az-AZ') : 'Tarix yoxdur';
             
+            // Sualın hansı testə və ya müəllimə aid olduğunu tapaq
+            let ownerInfo = '';
+            if (report.questionId) {
+                const foundQuiz = allQuizzes.find(quiz => 
+                    quiz.questions && quiz.questions.some(q => q.id == report.questionId || (report.questionTitle && q.text && q.text.includes(report.questionTitle.substring(0, 30))))
+                );
+                
+                if (foundQuiz) {
+                    let authorName = foundQuiz.authorName;
+                    
+                    // Əgər authorName yoxdursa, teacherId ilə istifadəçilər arasından tapaq
+                    if (!authorName && foundQuiz.teacherId) {
+                        const teacher = allUsers.find(u => u.id == foundQuiz.teacherId);
+                        if (teacher) {
+                            authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
+                        }
+                    }
+
+                    ownerInfo = `
+                        <div class="mt-1 flex items-center gap-2">
+                            <span class="text-[10px] bg-primary-light text-primary px-2 py-0.5 rounded-full border border-primary/20">
+                                <i class="fas fa-user-tie"></i> Müəllim: ${authorName || 'Naməlum'}
+                            </span>
+                            <span class="text-[10px] bg-warning-light text-warning-dark px-2 py-0.5 rounded-full border border-warning/20">
+                                <i class="fas fa-file-alt"></i> Test: ${foundQuiz.title}
+                            </span>
+                        </div>
+                    `;
+                }
+            }
+
             let headerHtml = '';
             if (report.type === 'contact_form') {
                 headerHtml = `
@@ -5800,13 +5856,16 @@ window.loadReports = async function() {
                 `;
             } else {
                 headerHtml = `
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-primary">
-                            <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${report.questionType === 'public' ? 'Ümumi' : 'Kateqoriya'})
-                        </span>
-                        <button onclick="goToReportedQuestion('${report.categoryId || ''}', '${report.questionId}', '${report.questionType}')" class="btn-primary p-1 px-2 text-xs rounded-sm">
-                            <i class="fas fa-external-link-alt"></i> Suala get
-                        </button>
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-primary">
+                                <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${report.questionType === 'public' ? 'Ümumi' : 'Kateqoriya'})
+                            </span>
+                            <button onclick="goToReportedQuestion('${report.categoryId || ''}', '${report.questionId}', '${report.questionType}', \`${(report.questionTitle || '').replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`)" class="btn-primary p-1 px-2 text-xs rounded-sm">
+                                <i class="fas fa-external-link-alt"></i> Suala get
+                            </button>
+                        </div>
+                        ${ownerInfo}
                     </div>
                 `;
             }
@@ -6071,45 +6130,129 @@ window.deleteReport = async function(reportId) {
     }
 }
 
-window.goToReportedQuestion = function(catId, qId, qType) {
+window.goToReportedQuestion = async function(catId, qId, qType, questionText = "") {
     if (!catId) {
-        return showNotification('Bu şikayətdə kateqoriya məlumatı yoxdur (köhnə şikayət).', 'error');
+        showNotification('Kateqoriya ID-si tapılmadı, sual bütün bazada axtarılır...', 'info');
+        
+        try {
+            if (db) {
+                // 1. Ümumi suallarda axtar (Doc ID ilə)
+                const pubDoc = await db.collection('public_questions').doc(qId).get();
+                if (pubDoc.exists) {
+                    const data = pubDoc.data();
+                    catId = data.categoryId;
+                    qType = 'public';
+                } else {
+                    // 2. Ümumi suallarda axtar (Sualın daxilindəki ID sahəsi ilə)
+                    const pubQuery = await db.collection('public_questions').where('id', '==', qId).get();
+                    if (!pubQuery.empty) {
+                        const data = pubQuery.docs[0].data();
+                        catId = data.categoryId;
+                        qType = 'public';
+                        qId = pubQuery.docs[0].id;
+                    } else {
+                        // 3. Kateqoriyalarda axtar (İçindəki suallar massivində)
+                        const cats = await db.collection('categories').get();
+                        for (let doc of cats.docs) {
+                            const catData = doc.data();
+                            if (catData.questions && Array.isArray(catData.questions)) {
+                                const found = catData.questions.find(q => 
+                                    (qId && (q.id == qId || String(q.id) === String(qId))) || 
+                                    (questionText && q.text && q.text === questionText) ||
+                                    (questionText && q.text && q.text.includes(questionText.substring(0, 50)))
+                                );
+                                if (found) {
+                                    catId = doc.id;
+                                    qType = 'category';
+                                    qId = found.id;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // 4. Əgər kateqoriyalarda tapılmasa, onda Şəxsi Testlərdə axtar
+                        if (!catId) {
+                            const pQuizzes = await db.collection('private_quizzes').get();
+                            for (let doc of pQuizzes.docs) {
+                                const quizData = doc.data();
+                                if (quizData.questions && Array.isArray(quizData.questions)) {
+                                    const found = quizData.questions.find(q => 
+                                        (qId && (q.id == qId || String(q.id) === String(qId))) || 
+                                        (questionText && q.text && q.text === questionText)
+                                    );
+                                    if (found) {
+                                        catId = doc.id;
+                                        qType = 'private'; // Yeni tip
+                                        
+                                        let teacherName = quizData.authorName;
+                                        if (!teacherName && quizData.teacherId) {
+                                            try {
+                                                const userDoc = await db.collection('users').doc(String(quizData.teacherId)).get();
+                                                if (userDoc.exists) {
+                                                    const userData = userDoc.data();
+                                                    teacherName = `${userData.name || ''} ${userData.surname || ''}`.trim() || userData.username;
+                                                }
+                                            } catch (e) {
+                                                console.error("Teacher fetch error:", e);
+                                            }
+                                        }
+                                        
+                                        teacherName = teacherName || 'Naməlum Müəllim';
+                                        const testTitle = quizData.title || 'Adsız Test';
+                                        showNotification(`Sual şəxsi test daxilində tapıldı. Müəllim: ${teacherName}, Test: ${testTitle}. Müəllim panelinə keçid edilir...`, 'info');
+                                        showTeacherDashboard();
+                                        setTimeout(() => {
+                                            const quizEl = document.querySelector(`.quiz-card[data-id="${doc.id}"]`);
+                                            if (quizEl) {
+                                                quizEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                quizEl.style.border = "2px solid var(--primary-color)";
+                                            }
+                                        }, 1000);
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Sual axtarış xətası:", err);
+        }
+
+        if (!catId) {
+            return showNotification('Sual heç bir bazada tapılmadı. Ola bilsin ki, silinib və ya formatı dəyişib.', 'error');
+        }
     }
     
+    // Keçid məntiqi eyni qalır...
     if (qType === 'public') {
         activeCategoryId = catId;
         showPublicQuestions();
-        // Suala qədər sürüşdür (scrolling)
         setTimeout(() => {
             const elements = document.getElementsByClassName('public-q-card');
             for (let el of elements) {
-                if (el.innerHTML.includes(qId)) {
+                if (el.dataset.id == qId || el.innerHTML.includes(qId) || (questionText && el.innerHTML.includes(questionText.substring(0, 20)))) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     el.classList.add('highlight-primary');
-                    setTimeout(() => {
-                        el.classList.remove('highlight-primary');
-                    }, 3000);
+                    setTimeout(() => el.classList.remove('highlight-primary'), 3000);
                     break;
                 }
             }
-        }, 1000);
+        }, 1200);
     } else {
-        // Kateqoriya sualı üçün (admin panelində)
         openCategory(catId);
-        // Sualı siyahıda tap və işarələ
         setTimeout(() => {
             const elements = document.getElementsByClassName('question-item');
             for (let el of elements) {
-                if (el.dataset.id == qId) {
+                if (el.dataset.id == qId || (questionText && el.innerHTML.includes(questionText.substring(0, 20)))) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     el.classList.add('highlight-warning');
-                    setTimeout(() => {
-                        el.classList.remove('highlight-warning');
-                    }, 5000);
+                    setTimeout(() => el.classList.remove('highlight-warning'), 5000);
                     break;
                 }
             }
-        }, 800);
+        }, 1200);
     }
 }
 

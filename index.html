@@ -819,6 +819,15 @@
                         </div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-icon" style="color: var(--primary-color); background: var(--primary-light);">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Bugünkü Qeydiyyat</span>
+                            <h3 class="stat-value" id="today-registrations">0</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card">
                         <div class="stat-icon" style="color: var(--success-color); background: var(--success-light);">
                             <i class="fas fa-check-circle"></i>
                         </div>
@@ -844,6 +853,9 @@
                         <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()"><i class="fas fa-arrow-left"></i> Geri</button>
                         <button id="restore-btn-global" class="btn-danger px-5 py-2 rounded-lg font-bold shadow-md" onclick="restoreMissingQuestions()"><i class="fas fa-undo"></i> Sualları Bərpa Et</button>
                         <button class="btn-success" onclick="exportData()">💾 Export</button>
+                        <a href="instagram_post.html" target="_blank" class="btn-primary" style="background: var(--ai-gradient); text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="fab fa-instagram"></i> Instagram Post
+                        </a>
                         <button class="btn-outline" onclick="showReports()"><i class="fas fa-flag"></i> Şikayətlər</button>
                         <button class="btn-primary" onclick="showAddCategoryModal()">+ Yeni Kateqoriya</button>
                     </div>
