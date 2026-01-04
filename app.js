@@ -1105,97 +1105,31 @@ window.login = async function() {
 
     try {
         if (db && auth) {
-            // 1. Firestore-dan istifadəçi adını və ya emaili axtarırıq
-            let userQuery;
-            if (username.includes('@')) {
-                userQuery = await db.collection('users').where('email', '==', username).get();
-            } else {
-                userQuery = await db.collection('users').where('username', '==', username).get();
-            }
+            // Pro Shield Update: Birbaşa Auth üzərindən giriş (Daha sürətli və təhlükəsiz)
+            const userEmail = username.includes('@') ? username : `${username}@imtahan.site`;
             
-            if (userQuery.empty) {
-                // Əgər tapılmadısa, bəlkə köhnə tələbədir (email-siz qeydiyyat)
-                // Onlar üçün email formatı: username@imtahan.site
-                if (!username.includes('@')) {
-                    const fallbackEmail = `${username}@imtahan.site`;
-                    userQuery = await db.collection('users').where('email', '==', fallbackEmail).get();
-                }
-            }
-
-            if (userQuery.empty) {
-                throw new Error('İstifadəçi adı və ya şifrə yanlışdır!');
-            }
-
-            const userData = userQuery.docs[0].data();
-            const userEmail = userData.email || `${username}@imtahan.site`; // Fallback email
-
-            // 2. Firebase Auth ilə giriş edirik
             let userCredential;
             try {
                 userCredential = await auth.signInWithEmailAndPassword(userEmail, pass);
-
-                // Sənəd ID-si Auth UID ilə eyni deyilse, miqrasiya edək (Köhnə hesablar üçün)
-                if (userQuery.docs[0].id !== userCredential.user.uid) {
-                    const { password, ...safeData } = userData;
-                    const oldDocId = userQuery.docs[0].id;
-                    const newUid = userCredential.user.uid;
-                    
-                    try {
-                        await db.collection('users').doc(oldDocId).delete();
-                        await db.collection('users').doc(newUid).set({
-                            ...safeData,
-                            id: newUid
-                        });
-                        console.log("User document migrated to Auth UID");
-                        
-                        // Digər kolleksiyalardakı ID-ləri də yeniləyək
-                        await migrateUserReferences(oldDocId, newUid);
-                    } catch (migErr) {
-                        console.error("Migration error:", migErr);
-                    }
-                }
             } catch (authError) {
-                // Əgər istifadəçi Auth-da tapılmadısa, amma Firestore-da varsa (Köhnə hesablar üçün miqrasiya)
-                if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-login-credentials') {
-                    if (userData.password && userData.password === pass) {
-                        // Köhnə şifrə düzdür! İndi onu Auth-da yaradaq
-                        try {
-                            const newAuthUser = await auth.createUserWithEmailAndPassword(userEmail, pass);
-                            
-                            // Firestore-dan açıq şifrəni silək və sənəd ID-sini Auth UID-si ilə dəyişək (Təhlükəsizlik və qaydalar üçün)
-                            const { password, ...safeData } = userData;
-                            const oldDocId = userQuery.docs[0].id;
-                            const newUid = newAuthUser.user.uid;
-
-                            if (oldDocId !== newUid) {
-                                await db.collection('users').doc(oldDocId).delete();
-                            }
-                            
-                            await db.collection('users').doc(newUid).set({
-                                ...safeData,
-                                id: newUid
-                            });
-                            
-                            // Digər kolleksiyalardakı ID-ləri də yeniləyək
-                            await migrateUserReferences(oldDocId, newUid);
-                            
-                            userCredential = newAuthUser;
-                        } catch (createError) {
-                            if (createError.code === 'auth/weak-password') {
-                                throw new Error('Firebase təhlükəsizlik qaydalarına görə şifrə ən azı 6 simvol olmalıdır. Zəhmət olmasa bazada şifrənizi yeniləyin (məs: 123456) və yenidən cəhd edin.');
-                            }
-                            throw createError;
-                        }
-                    } else {
-                        throw authError; // Şifrə səhvdirsə, normal xətanı göstər
-                    }
-                } else {
-                    throw authError;
-                }
+                // Şifrə səhvdir və ya istifadəçi tapılmadı
+                throw new Error('İstifadəçi adı və ya şifrə yanlışdır!');
             }
-            const user = { id: userCredential.user.uid, ...userData };
-            delete user.password; // Obyektdən şifrəni silirik
 
+            // Giriş uğurlu oldu, indi istifadəçi məlumatlarını çəkirik
+            const uid = userCredential.user.uid;
+            const doc = await db.collection('users').doc(uid).get();
+            
+            if (!doc.exists) {
+                // Auth-da var, amma Firestore-da silinib? (Nadir hal)
+                throw new Error('İstifadəçi məlumatları tapılmadı.');
+            }
+
+            const userData = doc.data();
+            // Obyektdən şifrəni silirik (Təhlükəsizlik)
+            if (userData.password) delete userData.password;
+
+            const user = { id: uid, ...userData };
             currentUser = user;
             localStorage.setItem('currentUser', JSON.stringify(user));
             updateUI();
@@ -4623,20 +4557,16 @@ window.sendComment = async function() {
     const text = document.getElementById('new-comment-text').value.trim();
     if (!text) return;
 
-    // Check if user is logged in or has a stored anonymous name
-    let displayName = currentUser ? currentUser.username : localStorage.getItem('anon_display_name');
-    let userId = currentUser ? currentUser.id : 'anon_' + (localStorage.getItem('anon_id') || Date.now());
-
-    if (!displayName) {
-        // Show anonymous name modal
-        document.getElementById('anonymous-name-modal').classList.remove('hidden');
+    // Pro Shield: Yalnız qeydiyyatlı istifadəçilər şərh yaza bilər
+    if (!currentUser) {
+        showNotification('Şərh yazmaq üçün zəhmət olmasa qeydiyyatdan keçin və ya daxil olun.', 'warning');
         return;
     }
 
     const newComment = {
         questionId: currentDiscussionQuestionId,
-        userId: userId,
-        userName: displayName,
+        userId: currentUser.id,
+        userName: currentUser.username,
         text: text,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
