@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xəbərlər – İmtahan Platforması</title>
+  <link rel="shortcut icon" href="assets/logo.png" type="image/png">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #ec4899;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --bg-body: #f3f4f6;
+      --bg-card: #ffffff;
+      --border: #e5e7eb;
+      --radius: 16px;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      --gradient-2: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
+      --gradient-3: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+      --gradient-4: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Navigation */
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 1rem 0;
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .nav-logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--gradient-1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+    }
+
+    .nav-logo-text h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .nav-logo-text span {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .nav-btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-btn-secondary {
+      color: var(--text-muted);
+      background: transparent;
+    }
+
+    .nav-btn-secondary:hover {
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+      background: linear-gradient(to bottom, #ffffff, var(--bg-body));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 0.875rem;
+      color: var(--primary);
+      font-weight: 600;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      background: var(--gradient-1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    /* Search & Filters */
+    .filters-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      transform: translateY(-30px);
+      position: relative;
+      z-index: 10;
+    }
+
+    .filters-card {
+      background: white;
+      padding: 16px;
+      border-radius: 20px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      border: 1px solid var(--border);
+    }
+
+    .search-wrapper {
+      flex: 1;
+      position: relative;
+      min-width: 300px;
+    }
+
+    .search-wrapper i {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 14px 16px 14px 48px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 1rem;
+      background: #f9fafb;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+    }
+
+    .filter-select {
+      padding: 14px 24px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 0.95rem;
+      background: #f9fafb;
+      cursor: pointer;
+      min-width: 180px;
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* News Grid */
+    .news-section {
+      padding: 40px 0 80px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 32px;
+    }
+
+    .news-card {
+      background: white;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+    }
+
+    .news-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-lg);
+      border-color: rgba(99,102,241,0.3);
+    }
+
+    .card-image-wrapper {
+      height: 220px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Abstract Gradients for Placeholders */
+    .bg-gradient-1 { background: var(--gradient-1); }
+    .bg-gradient-2 { background: var(--gradient-2); }
+    .bg-gradient-3 { background: var(--gradient-3); }
+    .bg-gradient-4 { background: var(--gradient-4); }
+
+    .card-icon {
+      font-size: 4rem;
+      color: rgba(255, 255, 255, 0.9);
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+      transform: scale(1);
+      transition: transform 0.5s ease;
+    }
+
+    .news-card:hover .card-icon {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .card-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-main);
+      box-shadow: var(--shadow-sm);
+      z-index: 2;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .card-content {
+      padding: 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-meta {
+      display: flex;
+      gap: 16px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+
+    .card-excerpt {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+      flex: 1;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .read-more {
+      color: var(--primary);
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: gap 0.2s;
+    }
+
+    .read-more:hover {
+      gap: 10px;
+    }
+
+    .card-actions button {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .card-actions button:hover {
+      background: #f3f4f6;
+      color: var(--secondary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2.5rem;
+      }
+      
+      .filters-card {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-wrapper, .filter-select {
+        width: 100%;
+        min-width: auto;
+      }
+
+      .newsletter-form {
+        flex-direction: column;
+      }
+      
+      .newsletter-form input {
+        width: 100%;
+      }
+      
+      .newsletter-form button {
+        width: 100%;
+      }
+    }
+
+    /* Newsletter */
+    .newsletter-section {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      padding: 80px 24px;
+      text-align: center;
+      color: white;
+      margin-top: 60px;
+    }
+
+    .newsletter-content {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .newsletter-content h2 {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+      color: white;
+    }
+
+    .newsletter-content p {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .newsletter-form {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .newsletter-form input {
+      flex: 1;
+      padding: 16px 24px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1rem;
+      min-width: 250px;
+      max-width: 400px;
+    }
+
+    .newsletter-form input:focus {
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(255,255,255,0.3);
+    }
+
+    .newsletter-form button {
+      padding: 16px 32px;
+      background: #1f2937;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .newsletter-form button:hover {
+      transform: scale(1.05);
+      background: #111827;
+    }
+
+    /* Footer */
+    .news-footer {
+      background: #1f2937;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 40px 24px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .news-footer p {
+        color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <div class="nav-logo-icon">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+        <div class="nav-logo-text">
+          <h1>İmtahan</h1>
+          <span>Təhsil Platforması</span>
+        </div>
+      </a>
+      <a href="index.html" class="nav-btn nav-btn-secondary">
+        <i class="fas fa-arrow-left"></i>
+        Ana Səhifəyə Qayıt
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <i class="fas fa-bolt"></i> Yeniliklər
+      </div>
+      <h1 class="hero-title">Təhsil Xəbərləri və Yeniliklər</h1>
+      <p class="hero-desc">Platformamızdakı ən son yeniliklər, təhsil proqramları və müsabiqələr haqqında məlumatları buradan izləyin.</p>
+    </div>
+  </section>
+
+  <!-- Filters -->
+  <div class="filters-container">
+    <div class="filters-card">
+      <div class="search-wrapper">
+        <i class="fas fa-search"></i>
+        <input type="text" id="newsSearch" class="search-input" placeholder="Xəbərlərdə axtar...">
+      </div>
+      <select id="categoryFilter" class="filter-select">
+        <option value="all">Bütün kateqoriyalar</option>
+        <option value="rəsmi">Rəsmi Xəbərlər</option>
+        <option value="təlim">Təlimlər</option>
+        <option value="müsabiqə">Müsabiqələr</option>
+        <option value="yenilik">Texnoloji Yeniliklər</option>
+      </select>
+      <select id="sortFilter" class="filter-select">
+        <option value="newest">Ən yeni</option>
+        <option value="oldest">Ən köhnə</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- News Grid -->
+  <section class="news-section">
+    <div class="news-grid" id="newsGrid">
+      
+      <!-- Card 1 -->
+      <article class="news-card" data-category="rəsmi" data-date="2026-01-05">
+        <div class="card-image-wrapper bg-gradient-1">
+          <span class="card-badge" style="color: var(--primary)">Rəsmi</span>
+          <i class="fas fa-file-signature card-icon"></i>
+        </div>
+        <div class="card-content">
+          <div class="card-meta">
+            <div class="meta-item"><i class="far fa-calendar"></i> 05 Yanvar 2026</div>
+            <div class="meta-item"><i class="far fa-clock"></i> 3 dəq</div>
+          </div>
+          <h3 class="card-title">Yeni Tədris Proqramı Təsdiqləndi</h3>
+          <p class="card-excerpt">Təhsil Nazirliyi tərəfindən təsdiqlənmiş yeni kurikulum standartları və rəqəmsal qiymətləndirmə metodları haqqında ətraflı məlumat.</p>
+          <div class="card-footer">
+            <a href="#" class="read-more">Davamını oxu <i class="fas fa-arrow-right"></i></a>
+            <div class="card-actions">
+              <button title="Bəyən"><i class="far fa-heart"></i></button>
+              <button title="Paylaş"><i class="far fa-share-square"></i></button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 2 -->
+      <article class="news-card" data-category="təlim" data-date="2026-01-03">
+        <div class="card-image-wrapper bg-gradient-2">
+          <span class="card-badge" style="color: #0ea5e9">Təlim</span>
+          <i class="fas fa-chalkboard-teacher card-icon"></i>
+        </div>
+        <div class="card-content">
+          <div class="card-meta">
+            <div class="meta-item"><i class="far fa-calendar"></i> 03 Yanvar 2026</div>
+            <div class="meta-item"><i class="far fa-clock"></i> 5 dəq</div>
+          </div>
+          <h3 class="card-title">Müəllimlər üçün Rəqəmsal Təlimlər</h3>
+          <p class="card-excerpt">Onlayn platformalardan istifadə və AI alətlərinin tədrisdə tətbiqi mövzusunda ödənişsiz vebinarlar silsiləsi başlayır.</p>
+          <div class="card-footer">
+            <a href="#" class="read-more">Davamını oxu <i class="fas fa-arrow-right"></i></a>
+            <div class="card-actions">
+              <button title="Bəyən"><i class="far fa-heart"></i></button>
+              <button title="Paylaş"><i class="far fa-share-square"></i></button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 3 -->
+      <article class="news-card" data-category="müsabiqə" data-date="2025-12-29">
+        <div class="card-image-wrapper bg-gradient-3">
+          <span class="card-badge" style="color: #f59e0b">Müsabiqə</span>
+          <i class="fas fa-trophy card-icon"></i>
+        </div>
+        <div class="card-content">
+          <div class="card-meta">
+            <div class="meta-item"><i class="far fa-calendar"></i> 29 Dekabr 2025</div>
+            <div class="meta-item"><i class="far fa-clock"></i> 4 dəq</div>
+          </div>
+          <h3 class="card-title">"Gələcəyin Alimləri" Müsabiqəsi</h3>
+          <p class="card-excerpt">Şagirdlər arasında keçirilən respublika fənn olimpiadasının qeydiyyat mərhələsi başladı. Qaliblərə xüsusi mükafatlar var.</p>
+          <div class="card-footer">
+            <a href="#" class="read-more">Davamını oxu <i class="fas fa-arrow-right"></i></a>
+            <div class="card-actions">
+              <button title="Bəyən"><i class="far fa-heart"></i></button>
+              <button title="Paylaş"><i class="far fa-share-square"></i></button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 4 -->
+      <article class="news-card" data-category="yenilik" data-date="2026-01-01">
+        <div class="card-image-wrapper bg-gradient-4">
+          <span class="card-badge" style="color: #ec4899">Yenilik</span>
+          <i class="fas fa-robot card-icon"></i>
+        </div>
+        <div class="card-content">
+          <div class="card-meta">
+            <div class="meta-item"><i class="far fa-calendar"></i> 01 Yanvar 2026</div>
+            <div class="meta-item"><i class="far fa-clock"></i> 6 dəq</div>
+          </div>
+          <h3 class="card-title">Süni İntellektlə Sual Hazırlanması</h3>
+          <p class="card-excerpt">Artıq müəllimlər bir kliklə test sualları hazırlaya biləcəklər. Yeni AI modulunun təqdimatı və istifadə qaydaları.</p>
+          <div class="card-footer">
+            <a href="#" class="read-more">Davamını oxu <i class="fas fa-arrow-right"></i></a>
+            <div class="card-actions">
+              <button title="Bəyən"><i class="far fa-heart"></i></button>
+              <button title="Paylaş"><i class="far fa-share-square"></i></button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Newsletter Section -->
+  <section class="newsletter-section">
+    <div class="newsletter-content">
+      <h2>Yeniliklərdən xəbərdar olun</h2>
+      <p>Ən son təhsil xəbərlərini və yenilikləri email ünvanınıza göndərək.</p>
+      <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Abunə olduğunuz üçün təşəkkür edirik!');">
+        <input type="email" placeholder="Email ünvanınızı daxil edin" required>
+        <button type="submit">Abunə ol</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="news-footer">
+    <div class="nav-container" style="flex-direction: column;">
+      <div class="nav-logo" style="justify-content: center; margin-bottom: 20px;">
+        <div class="nav-logo-icon">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+        <div class="nav-logo-text" style="text-align: left;">
+          <h1 style="color: white;">İmtahan</h1>
+          <span style="color: #9ca3af;">Təhsil Platforması</span>
+        </div>
+      </div>
+      <p>&copy; 2026 İmtahan. Bütün hüquqlar qorunur.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const searchInput = document.getElementById('newsSearch');
+      const categoryFilter = document.getElementById('categoryFilter');
+      const sortFilter = document.getElementById('sortFilter');
+      const newsGrid = document.getElementById('newsGrid');
+      const newsCards = Array.from(newsGrid.querySelectorAll('.news-card'));
+
+      function filterNews() {
+        const searchText = searchInput.value.toLowerCase();
+        const selectedCategory = categoryFilter.value;
+        const sortOrder = sortFilter.value;
+
+        // Filter
+        let filteredCards = newsCards.filter(card => {
+          const title = card.querySelector('.card-title').textContent.toLowerCase();
+          const excerpt = card.querySelector('.card-excerpt').textContent.toLowerCase();
+          const category = card.dataset.category;
+          
+          const matchesSearch = title.includes(searchText) || excerpt.includes(searchText);
+          const matchesCategory = selectedCategory === 'all' || category === selectedCategory;
+          
+          return matchesSearch && matchesCategory;
+        });
+
+        // Sort
+        if (sortOrder === 'newest') {
+          filteredCards.sort((a, b) => new Date(b.dataset.date) - new Date(a.dataset.date));
+        } else {
+          filteredCards.sort((a, b) => new Date(a.dataset.date) - new Date(b.dataset.date));
+        }
+
+        // Render
+        newsGrid.innerHTML = '';
+        if (filteredCards.length > 0) {
+          filteredCards.forEach((card, index) => {
+            // Re-apply animation
+            card.style.animation = 'none';
+            card.offsetHeight; /* trigger reflow */
+            card.style.animation = `fadeInUp 0.5s ease forwards ${index * 0.1}s`;
+            newsGrid.appendChild(card);
+          });
+        } else {
+          newsGrid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">
+              <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
+              <h3>Nəticə tapılmadı</h3>
+              <p>Axtarış sorğunuza uyğun xəbər yoxdur.</p>
+            </div>
+          `;
+        }
+      }
+
+      // Event Listeners
+      searchInput.addEventListener('input', filterNews);
+      categoryFilter.addEventListener('change', filterNews);
+      sortFilter.addEventListener('change', filterNews);
+
+      // Add Animation Keyframes
+      const styleSheet = document.createElement("style");
+      styleSheet.textContent = `
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `;
+      document.head.appendChild(styleSheet);
+
+      // Initial Animation
+      newsCards.forEach((card, index) => {
+        card.style.animation = `fadeInUp 0.5s ease forwards ${index * 0.1}s`;
+      });
+
+      // Like Button Interaction
+      const likeBtns = document.querySelectorAll('.card-actions button:first-child');
+      likeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const icon = this.querySelector('i');
+          if (icon.classList.contains('far')) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            icon.style.color = '#ef4444';
+            this.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+              this.style.transform = 'scale(1)';
+            }, 200);
+          } else {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+            icon.style.color = '';
+          }
+        });
+      });
+
+      // Share Button Interaction
+      const shareBtns = document.querySelectorAll('.card-actions button:last-child');
+      shareBtns.forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const card = this.closest('.news-card');
+          const title = card.querySelector('.card-title').textContent;
+          const text = card.querySelector('.card-excerpt').textContent;
+          const url = window.location.href;
+
+          if (navigator.share) {
+            try {
+              await navigator.share({
+                title: title,
+                text: text,
+                url: url
+              });
+            } catch (err) {
+              console.log('Share canceled');
+            }
+          } else {
+            // Fallback for desktop
+            try {
+              await navigator.clipboard.writeText(`${title} - ${url}`);
+              const originalIcon = this.innerHTML;
+              this.innerHTML = '<i class="fas fa-check" style="color: #10b981"></i>';
+              setTimeout(() => {
+                this.innerHTML = originalIcon;
+              }, 2000);
+            } catch (err) {
+              console.error('Copy failed', err);
+            }
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
