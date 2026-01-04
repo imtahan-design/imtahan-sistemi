@@ -48,6 +48,8 @@
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <!-- Data Compression Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
@@ -55,6 +57,8 @@
 
     <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 </head>
 <body>
     <div id="app">
@@ -529,12 +533,12 @@
                 <div class="auth-container">
                     <div class="auth-box">
                         <h2 id="join-quiz-title">Özəl Testə Giriş</h2>
-                        <div class="form-group flex gap-2">
-                            <div class="flex-1">
+                        <div class="form-group flex gap-2" style="display: flex; gap: 10px;">
+                            <div style="flex: 1;">
                                 <label>Adınız</label>
                                 <input type="text" id="student-first-name" placeholder="Ad">
                             </div>
-                            <div class="flex-1">
+                            <div style="flex: 1;">
                                 <label>Soyadınız</label>
                                 <input type="text" id="student-last-name" placeholder="Soyad">
                             </div>

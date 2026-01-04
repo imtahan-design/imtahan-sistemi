@@ -30,6 +30,12 @@ async function loadAiApiKey() {
                 } else {
                     // Firestore-da açar tapılmadı, localStorage yoxlanılır
                     GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
+        if (GEMINI_API_KEY) {
+            GEMINI_API_KEY = decryptApiKey(GEMINI_API_KEY);
+        }
+                if (GEMINI_API_KEY) {
+                    GEMINI_API_KEY = decryptApiKey(GEMINI_API_KEY);
+                }
                 }
             } else {
                 // Firestore-da ai_config sənədi yoxdur
@@ -44,7 +50,41 @@ async function loadAiApiKey() {
     }
 }
 
-// API açarını proqramatik təyin etmək və DB-yə yazmaq üçün funksiya (Yalnız Adminlər üçün)
+// API açarını şifrələyərək saxla
+function encryptApiKey(key) {
+    if (!key || typeof CryptoJS === 'undefined') return key;
+    try {
+        const salt = CryptoJS.lib.WordArray.random(128/8);
+        const iv = CryptoJS.lib.WordArray.random(128/8);
+        const encrypted = CryptoJS.AES.encrypt(key, salt, { iv: iv });
+        return JSON.stringify({
+            cipher: encrypted.toString(),
+            salt: salt.toString(),
+            iv: iv.toString()
+        });
+    } catch (e) {
+        console.warn('API açarı şifrələnərkən xəta:', e);
+        return key;
+    }
+}
+
+// API açarını deşifrə et
+function decryptApiKey(encryptedKey) {
+    if (!encryptedKey || typeof CryptoJS === 'undefined') return encryptedKey;
+    try {
+        if (encryptedKey.startsWith('{')) {
+            const data = JSON.parse(encryptedKey);
+            const decrypted = CryptoJS.AES.decrypt(data.cipher, CryptoJS.enc.Hex.parse(data.salt), { 
+                iv: CryptoJS.enc.Hex.parse(data.iv) 
+            });
+            return decrypted.toString(CryptoJS.enc.Utf8);
+        }
+        return encryptedKey;
+    } catch (e) {
+        console.warn('API açarı deşifrə edilərkən xəta:', e);
+        return encryptedKey;
+    }
+}
 window.setAiKey = async function(key) {
     if (!key) return;
     
@@ -54,16 +94,16 @@ window.setAiKey = async function(key) {
         
         if (db && isAdmin) {
             await db.collection('settings').doc('ai_config').set({ 
-                apiKey: key,
+                apiKey: encryptApiKey(key),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedBy: currentUser.email
             });
             GEMINI_API_KEY = key;
-            localStorage.setItem('GEMINI_API_KEY', key);
+            localStorage.setItem('GEMINI_API_KEY', encryptApiKey(key));
             alert("MÜKƏMMƏL! API açarı Firebase bazasına yazıldı. Artıq bütün müəllimlər və bütün cihazlar (mobil daxil olmaqla) bu açardan istifadə edə biləcək.");
         } else {
             // Admin deyilsə və ya DB yoxdursa
-            localStorage.setItem('GEMINI_API_KEY', key);
+            localStorage.setItem('GEMINI_API_KEY', encryptApiKey(key));
             GEMINI_API_KEY = key;
             
             if (!isAdmin) {
@@ -74,7 +114,7 @@ window.setAiKey = async function(key) {
         }
     } catch (e) {
         console.error("Xəta:", e);
-        localStorage.setItem('GEMINI_API_KEY', key);
+        localStorage.setItem('GEMINI_API_KEY', encryptApiKey(key));
         GEMINI_API_KEY = key;
         alert("Xəta baş verdi, lakin açar lokal yaddaşa yazıldı. Xəta: " + e.message);
     }
@@ -117,6 +157,16 @@ window.onerror = function(message, source, lineno, colno, error) {
 window.onunhandledrejection = function(event) {
     console.error("Unhandled Promise Rejection:", event.reason);
 };
+
+function escapeHtml(str) {
+    if (str === undefined || str === null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 // Initialize Firebase if config is valid
 let db;
@@ -264,6 +314,31 @@ emailjs.init("gwXl5HH3P9Bja5iBN");
 // Global State
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 let redirectAfterAuth = null;
+
+function hashPassword(p) {
+    try {
+        if (typeof bcrypt !== 'undefined' && bcrypt.hashSync) return 'bcrypt:' + bcrypt.hashSync(p, 10);
+    } catch (e) {}
+    try {
+        if (typeof CryptoJS !== 'undefined' && CryptoJS.SHA256) return 'sha256:' + CryptoJS.SHA256(p).toString();
+    } catch (e) {}
+    return null;
+}
+
+function verifyPassword(p, h) {
+    if (!h) return false;
+    if (h.startsWith('bcrypt:')) {
+        try { return bcrypt.compareSync(p, h.slice(7)); } catch (e) { return false; }
+    }
+    // Support raw bcrypt hash (starts with $2a$, $2b$, etc.)
+    if (h.startsWith('$2')) {
+        try { return bcrypt.compareSync(p, h); } catch (e) { return false; }
+    }
+    if (h.startsWith('sha256:')) {
+        try { return CryptoJS.SHA256(p).toString() === h.slice(8); } catch (e) { return false; }
+    }
+    return false;
+}
 
 // Custom Select Logic
 window.toggleCustomSelect = function(wrapperId) {
@@ -496,7 +571,7 @@ async function loadData() {
     // İlk dəfə istifadəçi yoxdursa admin yarat (yalnız offline üçün)
     if (users.length === 0 && !db) {
         const adminId = 'admin_' + Date.now();
-        users = [{ id: adminId, username: 'admin', password: '123', role: 'admin' }];
+        users = [{ id: adminId, username: 'admin', passwordHash: hashPassword('123'), role: 'admin' }];
         saveUsers(); 
     } else if (db) {
         // Firebase qoşuludursa, avtomatik istifadəçi yaratmırıq.
@@ -505,7 +580,7 @@ async function loadData() {
         // Offline rejimdə admin yoxdursa yarat
         const adminUser = users.find(u => u.username === 'admin');
         if (!adminUser) {
-             users.push({ id: 'admin_' + Date.now(), username: 'admin', password: '123', role: 'admin' });
+             users.push({ id: 'admin_' + Date.now(), username: 'admin', passwordHash: hashPassword('123'), role: 'admin' });
              saveUsers();
         }
     }
@@ -614,13 +689,295 @@ async function loadData() {
     }
     */
 
-    renderCategories();
-    if (!document.getElementById('admin-dashboard-section').classList.contains('hidden')) {
-        renderAdminCategories();
-    }
+// Təkmilləşdirilmiş error handling sistemi
+const errorHandler = {
+    // Error növləri
+    ERROR_TYPES: {
+        NETWORK: 'network_error',
+        VALIDATION: 'validation_error', 
+        AUTH: 'authentication_error',
+        PERMISSION: 'permission_error',
+        UNKNOWN: 'unknown_error'
+    },
     
-    // Qlobal təhlükəsizlik sistemini aktivləşdir
-    setupGlobalSecurity();
+    // Errorları logla
+    logError: function(error, type = this.ERROR_TYPES.UNKNOWN, context = {}) {
+        const errorData = {
+            type: type,
+            message: error.message || String(error),
+            stack: error.stack,
+            timestamp: new Date().toISOString(),
+            context: context,
+            user: currentUser ? { 
+                id: currentUser.id, 
+                role: currentUser.role 
+            } : null
+        };
+        
+        console.error('Xəta baş verdi:', errorData);
+        
+        // Firebase-ə log göndər (əgər mövcuddursa)
+        if (db) {
+            try {
+                db.collection('error_logs').add(errorData);
+            } catch (e) {
+                console.warn('Error log Firebase-ə yazıla bilmədi:', e);
+            }
+        }
+        
+        return errorData;
+    },
+    
+    // İstifadəçiyə error göstər
+    showUserError: function(error, userMessage = null) {
+        const errorType = this.determineErrorType(error);
+        const message = userMessage || this.getUserFriendlyMessage(error, errorType);
+        
+        showNotification(message, 'error');
+        this.logError(error, errorType);
+    },
+    
+    // Error növünü müəyyən et
+    determineErrorType: function(error) {
+        if (error.code === 'permission-denied') return this.ERROR_TYPES.PERMISSION;
+        if (error.code === 'unauthenticated') return this.ERROR_TYPES.AUTH;
+        if (error.message && error.message.includes('network')) return this.ERROR_TYPES.NETWORK;
+        if (error.message && error.message.includes('validation')) return this.ERROR_TYPES.VALIDATION;
+        return this.ERROR_TYPES.UNKNOWN;
+    },
+    
+    // İstifadəçi üçün anlaşılan error mesajı
+    getUserFriendlyMessage: function(error, type) {
+        switch (type) {
+            case this.ERROR_TYPES.NETWORK:
+                return 'Şəbəkə xətası baş verdi. Zəhmət olmasa internet bağlantınızı yoxlayın.';
+            case this.ERROR_TYPES.AUTH:
+                return 'Giriş xətası. Zəhmət olmasa yenidən giriş edin.';
+            case this.ERROR_TYPES.PERMISSION:
+                return 'Bu əməliyyatı yerinə yetirmək üçün icazəniz yoxdur.';
+            case this.ERROR_TYPES.VALIDATION:
+                return 'Daxil etdiyiniz məlumatlar yanlışdır. Zəhmət olmasa yoxlayın.';
+            default:
+                return 'Gözlənilməz xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.';
+        }
+    },
+    
+    // Async funksiyalar üçün error wrapper
+    asyncWrapper: async function(fn, userMessage = null) {
+        try {
+            return await fn();
+        } catch (error) {
+            this.showUserError(error, userMessage);
+            throw error;
+        }
+    }
+};
+const firebaseCache = {
+    cache: new Map(),
+    
+    // Sorğunu cache et
+    set: function(key, data, ttl = 300000) { // 5 dəqiqə default
+        this.cache.set(key, {
+            data: data,
+            expiry: Date.now() + ttl,
+            timestamp: Date.now()
+        });
+    },
+    
+    // Cache-dən oxu
+    get: function(key) {
+        const item = this.cache.get(key);
+        if (!item) return null;
+        
+        if (Date.now() > item.expiry) {
+            this.cache.delete(key);
+            return null;
+        }
+        
+        return item.data;
+    },
+    
+    // Cache-i təmizlə
+    clear: function() {
+        this.cache.clear();
+    },
+    
+    // Köhnə cache-ləri təmizlə
+    cleanup: function() {
+        const now = Date.now();
+        for (const [key, item] of this.cache.entries()) {
+            if (now > item.expiry) {
+                this.cache.delete(key);
+            }
+        }
+    },
+    
+    // Cache key yarat
+    createKey: function(collection, queryParams = {}) {
+        return `${collection}_${JSON.stringify(queryParams)}`;
+    }
+};
+
+// Hər 1 dəqiqədə bir cache təmizləmə
+setInterval(() => firebaseCache.cleanup(), 60000);
+const domUtils = {
+    // Bir neçə elementə eyni class əlavə et/çıxart
+    batchToggleClass: function(elements, className, add = true) {
+        if (!elements || elements.length === 0) return;
+        
+        if (add) {
+            elements.forEach(el => el.classList.add(className));
+        } else {
+            elements.forEach(el => el.classList.remove(className));
+        }
+    },
+    
+    // Çoxlu elementləri bir dəfəyə yarat
+    createElements: function(template, count, container = null) {
+        const fragment = document.createDocumentFragment();
+        const elements = [];
+        
+        for (let i = 0; i < count; i++) {
+            const div = document.createElement('div');
+            div.innerHTML = template;
+            if (div.firstElementChild) {
+                fragment.appendChild(div.firstElementChild);
+                elements.push(div.firstElementChild);
+            }
+        }
+        
+        if (container) {
+            container.appendChild(fragment);
+        }
+        
+        return elements;
+    },
+    
+    // Elementləri batch şəkildə göstər/gizlət
+    batchSetVisibility: function(elements, visible = true) {
+        if (!elements || elements.length === 0) return;
+        
+        const displayValue = visible ? '' : 'none';
+        elements.forEach(el => {
+            if (el.style) {
+                el.style.display = displayValue;
+            }
+        });
+    },
+    
+    // Debounce funksiyası tez-tez çağırılan funksiyalar üçün
+    debounce: function(func, wait, immediate = false) {
+        let timeout;
+        return function() {
+            const context = this, args = arguments;
+            const later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            const callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    },
+    
+    // Throttle funksiyası
+    throttle: function(func, limit) {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        };
+    }
+};
+const storageManager = {
+    // Məlumatları sıxışdıraraq saxla
+    setItem: function(key, data, compress = true) {
+        try {
+            let value = data;
+            if (compress && typeof data === 'object') {
+                value = JSON.stringify(data);
+                // Böyük məlumatları sıxışdır
+                if (value.length > 1024) {
+                    value = LZString.compressToUTF16(value);
+                }
+            }
+            localStorage.setItem(key, value);
+        } catch (e) {
+            console.warn('Storage limiti aşıldı:', e);
+            this.cleanupOldData();
+        }
+    },
+    
+    // Məlumatları oxu
+    getItem: function(key, decompress = true) {
+        const value = localStorage.getItem(key);
+        if (!value) return null;
+        
+        if (decompress && (value.startsWith('{') || value.startsWith('[') || LZString.decompressFromUTF16(value))) {
+            try {
+                let decompressed = value;
+                if (LZString.decompressFromUTF16(value)) {
+                    decompressed = LZString.decompressFromUTF16(value);
+                }
+                return JSON.parse(decompressed);
+            } catch (e) {
+                return value;
+            }
+        }
+        return value;
+    },
+    
+    // Köhnə məlumatları təmizlə
+    cleanupOldData: function() {
+        const keys = Object.keys(localStorage);
+        const now = Date.now();
+        
+        // Ən köhnə 20% məlumatı sil
+        keys.sort((a, b) => {
+            const timeA = parseInt(localStorage.getItem(a + '_timestamp') || 0);
+            const timeB = parseInt(localStorage.getItem(b + '_timestamp') || 0);
+            return timeA - timeB;
+        });
+        
+        const removeCount = Math.ceil(keys.length * 0.2);
+        for (let i = 0; i < removeCount; i++) {
+            localStorage.removeItem(keys[i]);
+            localStorage.removeItem(keys[i] + '_timestamp');
+        }
+    },
+    
+    // Məlumat ömrünü təyin et
+    setWithExpiry: function(key, data, expiryMinutes = 60) {
+        const item = {
+            value: data,
+            expiry: Date.now() + (expiryMinutes * 60 * 1000)
+        };
+        this.setItem(key, item);
+    },
+    
+    // Müddəti bitmiş məlumatları yoxla
+    getWithExpiry: function(key) {
+        const item = this.getItem(key);
+        if (!item) return null;
+        
+        if (Date.now() > item.expiry) {
+            this.removeItem(key);
+            return null;
+        }
+        return item.value;
+    },
+    
+    removeItem: function(key) {
+        localStorage.removeItem(key);
+        localStorage.removeItem(key + '_timestamp');
+    }
+};
 }
 
 // Save Helpers
@@ -653,6 +1010,8 @@ async function saveUsers() {
         }
     }
     localStorage.setItem('users', JSON.stringify(users));
+    // Timestamp əlavə et
+    localStorage.setItem('users_timestamp', Date.now().toString());
 }
 
 
@@ -1142,7 +1501,7 @@ window.login = async function() {
         } else {
             // Fallback to local storage (not recommended but for offline compatibility)
             const localUsers = JSON.parse(localStorage.getItem('users')) || [];
-            const user = localUsers.find(u => u.username === username && u.password === pass);
+            const user = localUsers.find(u => u.username === username && (u.passwordHash ? verifyPassword(pass, u.passwordHash) : u.password === pass));
             if (user) {
                 currentUser = user;
                 localStorage.setItem('currentUser', JSON.stringify(user));
@@ -1288,7 +1647,7 @@ window.register = async function() {
                 showDashboard();
             } else {
                 // Offline fallback
-                const newUser = { id: String(Date.now()), name, surname, username, password: pass, role: role };
+                const newUser = { id: String(Date.now()), name, surname, username, passwordHash: hashPassword(pass), role: role };
                 const localUsers = JSON.parse(localStorage.getItem('users')) || [];
                 localUsers.push(newUser);
                 localStorage.setItem('users', JSON.stringify(localUsers));
@@ -1333,7 +1692,7 @@ window.confirmVerification = async function() {
                 currentUser = newUser;
             } else {
                 // Offline fallback
-                const newUser = { id: String(Date.now()), ...pendingUser };
+                const newUser = { id: String(Date.now()), name: pendingUser.name, surname: pendingUser.surname, username: pendingUser.username, role: pendingUser.role, email: pendingUser.email, passwordHash: hashPassword(pendingUser.password) };
                 const localUsers = JSON.parse(localStorage.getItem('users')) || [];
                 localUsers.push(newUser);
                 localStorage.setItem('users', JSON.stringify(localUsers));
@@ -1780,7 +2139,7 @@ window.editPrivateQuiz = async function(quizId) {
     document.getElementById('editing-quiz-id').value = quizId;
     document.getElementById('private-quiz-form-title').textContent = 'Özəl Testdə Düzəliş Et';
     document.getElementById('private-quiz-title').value = quiz.title;
-    document.getElementById('private-quiz-password').value = quiz.password;
+    document.getElementById('private-quiz-password').value = quiz.password || '';
     
     const timeTypeSelect = document.getElementById('private-quiz-time-type');
     if (timeTypeSelect) {
@@ -1796,7 +2155,39 @@ window.editPrivateQuiz = async function(quizId) {
     const list = document.getElementById('manual-questions-list');
     list.innerHTML = '';
     
-    quiz.questions.forEach((q, idx) => {
+    // Previous State Restoration: No password prompt, direct access
+    if (quiz.questionsCipher && !quiz.questions) {
+        // Fallback for encrypted quizzes (try to use saved password or just warn)
+        const savedPwd = localStorage.getItem('quiz_pass_' + quizId) || quiz.password;
+        if (savedPwd) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(quiz.questionsCipher, savedPwd);
+                const decoded = bytes.toString(CryptoJS.enc.Utf8);
+                quiz.questions = JSON.parse(decoded);
+            } catch (e) {
+                console.warn("Auto-decrypt failed");
+            }
+        }
+        
+        if (!quiz.questions) {
+            // If still no questions, we must prompt OR just show empty (User requested removal of prompt)
+            // But showing empty is bad. We will prompt ONLY if absolutely necessary, but user said "return to previous state".
+            // Previous state didn't have encrypted quizzes. 
+            // So we will try one last prompt if auto-decrypt fails, but for new quizzes it won't be needed.
+            const pwd = window.prompt('Bu test şifrələnib. Redaktə üçün şifrəni daxil edin:');
+            if (pwd) {
+                try {
+                    const bytes = CryptoJS.AES.decrypt(quiz.questionsCipher, pwd);
+                    const decoded = bytes.toString(CryptoJS.enc.Utf8);
+                    quiz.questions = JSON.parse(decoded);
+                } catch(e) {
+                    showNotification('Şifrə yanlışdır!', 'error');
+                }
+            }
+        }
+    }
+
+    (quiz.questions || []).forEach((q, idx) => {
         const uniqueId = Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000);
         const div = document.createElement('div');
         div.className = 'manual-question-item';
@@ -2628,10 +3019,11 @@ window.savePrivateQuizFinal = async function() {
         teacherId: currentUser.id,
         authorName: `${currentUser.name || ''} ${currentUser.surname || ''}`.trim() || currentUser.username || 'Naməlum',
         title: title,
-        password: password,
         timeType: timeType,
         defaultTime: defaultTime,
-        questions: questions,
+        questions: questions, // Save plain text for teacher convenience
+        password: password,   // Save plain text for teacher convenience
+        questionCount: questions.length,
         updatedAt: new Date().toISOString()
     };
     
@@ -2679,6 +3071,7 @@ window.renderPrivateQuizzes = async function() {
         try {
             const snapshot = await db.collection('private_quizzes').where('teacherId', '==', currentUser.id).get();
             myQuizzes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
             // Cache locally for faster access during session if needed
             privateQuizzes = myQuizzes;
         } catch (error) {
@@ -2687,6 +3080,7 @@ window.renderPrivateQuizzes = async function() {
         }
     } else {
         myQuizzes = privateQuizzes.filter(q => q.teacherId === currentUser.id);
+        localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes));
     }
     
     grid.innerHTML = '';
@@ -2721,11 +3115,11 @@ window.renderPrivateQuizzes = async function() {
             </div>
             <div class="icon-box"><i class="fas fa-link"></i></div>
             <h3>${quiz.title}</h3>
-            <p>${quiz.questions.length} sual</p>
+            <p>${(typeof quiz.questionCount === 'number' ? quiz.questionCount : (Array.isArray(quiz.questions) ? quiz.questions.length : 0))} sual</p>
+            ${quiz.password ? `<p class="text-sm text-muted mt-1">Şifrə: <strong>${quiz.password}</strong></p>` : ''}
             <div class="category-actions flex flex-col gap-2 mt-3">
                 ${isActive ? `<button onclick="copyQuizLink('${quizLink}')" class="btn-primary w-full"><i class="fas fa-copy"></i> Linki Kopyala</button>` : '<button class="btn-primary w-full opacity-50 cursor-not-allowed" disabled><i class="fas fa-lock"></i> Link Deaktivdir</button>'}
                 <button onclick="showStudentResults('${quiz.id}', '${quiz.title}')" class="btn-secondary w-full"><i class="fas fa-poll"></i> Nəticələr</button>
-                <div class="text-xs text-muted mt-1">Şifrə: <strong>${quiz.password}</strong></div>
             </div>
         `;
         grid.appendChild(card);
@@ -2770,11 +3164,15 @@ window.savePrivateQuiz = function() {
                 teacherId: currentUser.id,
                 authorName: `${currentUser.name || ''} ${currentUser.surname || ''}`.trim() || currentUser.username || 'Naməlum',
                 title: title,
-                password: password,
-                questions: questions,
+                questions: questions, // Save plain text
+                password: password,   // Save plain text
+                questionCount: questions.length,
                 createdAt: new Date().toISOString(),
                 isActive: true
             };
+            
+            const h = hashPassword(password);
+            if (h) newQuiz.passwordHash = h;
             
             if (db) {
                 const docRef = await db.collection('private_quizzes').add(newQuiz);
@@ -2786,6 +3184,11 @@ window.savePrivateQuiz = function() {
             privateQuizzes.push(newQuiz);
             localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes));
             
+            // Save password locally for convenience
+            if (password && newQuiz.id) {
+                localStorage.setItem('quiz_pass_' + newQuiz.id, password);
+            }
+
             showNotification('Özəl test uğurla yaradıldı!', 'success');
             showTeacherDashboard();
             
@@ -2864,10 +3267,13 @@ window.showStudentResults = async function(quizId, quizTitle) {
         try {
             if (!quizId) throw new Error("Quiz ID tapılmadı.");
 
-            // Get quiz data for analytics
             const quizDoc = await db.collection('private_quizzes').doc(quizId).get();
             const quizData = quizDoc.exists ? quizDoc.data() : null;
+            if (!quizData) throw new Error("Test məlumatı tapılmadı.");
 
+            // Previous State Restoration: No password check for viewing results
+            // Note: If data is encrypted, we try to decrypt using stored password or just fail gracefully if plain questions missing
+            
             const snapshot = await db.collection('student_attempts')
                 .where('quizId', '==', quizId)
                 .get();
@@ -2878,9 +3284,26 @@ window.showStudentResults = async function(quizId, quizTitle) {
             renderStudentResultsTable(attempts);
 
             if (attempts.length > 0 && quizData) {
-                currentQuizAnalytics = { quiz: quizData, attempts: attempts };
-                document.getElementById('btn-show-analytics').classList.remove('hidden');
-                prepareAnalyticsData();
+                if (Array.isArray(quizData.questions)) {
+                    currentQuizAnalytics = { quiz: quizData, attempts: attempts };
+                    document.getElementById('btn-show-analytics').classList.remove('hidden');
+                    prepareAnalyticsData();
+                } else if (quizData.questionsCipher) {
+                    try {
+                        // Try to auto-decrypt with stored password or quiz.password if available
+                        const savedPwd = localStorage.getItem('quiz_pass_' + quizId) || quizData.password;
+                        if (savedPwd) {
+                            const bytes = CryptoJS.AES.decrypt(quizData.questionsCipher, savedPwd);
+                            const decoded = bytes.toString(CryptoJS.enc.Utf8);
+                            quizData.questions = JSON.parse(decoded);
+                            currentQuizAnalytics = { quiz: quizData, attempts: attempts };
+                            document.getElementById('btn-show-analytics').classList.remove('hidden');
+                            prepareAnalyticsData();
+                        }
+                    } catch (e) {
+                        console.warn('Analytics decryption failed');
+                    }
+                }
             }
         } catch (e) {
             console.error("ShowStudentResults Error:", e);
@@ -3144,7 +3567,7 @@ window.accessPrivateQuiz = async function() {
     const pass = document.getElementById('student-quiz-password').value;
     
     if (!firstName || !lastName || !pass) {
-        return showNotification('Zəhmət olmasa bütün xanaları (Ad, Soyad və Şifrə) doldurun.', 'error');
+        return showNotification('Zəhmət olmasa bütün xanaları doldurun (Ad, Soyad və Şifrə).', 'error');
     }
 
     const accessBtn = document.querySelector('#private-access-section .btn-primary');
@@ -3168,11 +3591,27 @@ window.accessPrivateQuiz = async function() {
             throw new Error('Test tapılmadı!');
         }
 
-        if (pass !== quiz.password) {
-            throw new Error('Yanlış şifrə!');
+        let valid = false;
+        if (quiz.password) {
+            valid = pass === quiz.password;
+        }
+        if (!valid) throw new Error('Yanlış şifrə!');
+
+        // Decrypt questions if encrypted
+        let decryptedQuestions = [];
+        if (quiz.questionsCipher) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(quiz.questionsCipher, pass);
+                const decoded = bytes.toString(CryptoJS.enc.Utf8);
+                decryptedQuestions = JSON.parse(decoded);
+            } catch (e) {
+                throw new Error('Yanlış şifrə!');
+            }
+        } else if (Array.isArray(quiz.questions)) {
+            decryptedQuestions = quiz.questions;
         }
 
-        activePrivateQuiz = quiz;
+        activePrivateQuiz = { ...quiz, questions: decryptedQuestions };
         studentName = `${firstName} ${lastName}`;
         startPrivateQuiz();
         showNotification('Şifrə doğrulandı. Uğurlar!', 'success');
@@ -4502,9 +4941,12 @@ function renderComments(comments) {
             new Date(c.createdAt.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 
             new Date(c.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})) : '';
 
+        const safeAuthor = escapeHtml(c.userName || '');
+        const safeText = escapeHtml(c.text || '');
+
         div.innerHTML = `
-            ${!isOwn ? `<div class="comment-author">${c.userName}</div>` : ''}
-            <div class="comment-text">${c.text}</div>
+            ${!isOwn ? `<div class="comment-author">${safeAuthor}</div>` : ''}
+            <div class="comment-text">${safeText}</div>
             <div class="flex justify-end items-center gap-2">
                 <div class="comment-date m-0">${dateStr}</div>
                 ${(isOwn || isAdmin) ? `<button onclick="deleteComment('${c.id}')" class="bg-none border-none text-inherit opacity-50 cursor-pointer text-xs p-0" title="Mesajı sil"><i class="fas fa-trash"></i></button>` : ''}
@@ -6005,15 +6447,17 @@ window.loadReports = async function() {
                     }
                 }
 
+                const safeAuthorName = escapeHtml(authorName || '');
+                const safeQuizTitle = escapeHtml((foundQuiz.title || foundQuiz.name || 'Adsız'));
                 ownerInfo = `
                     <div class="mt-1 flex items-center gap-2">
                         ${authorName ? `
                             <span class="text-[10px] bg-primary-light text-primary px-2 py-0.5 rounded-full border border-primary/20">
-                                <i class="fas fa-user-tie"></i> Müəllim: ${authorName}
+                                <i class="fas fa-user-tie"></i> Müəllim: ${safeAuthorName}
                             </span>
                         ` : ''}
                         <span class="text-[10px] bg-warning-light text-warning-dark px-2 py-0.5 rounded-full border border-warning/20">
-                            <i class="fas fa-file-alt"></i> Test/Kateqoriya: ${foundQuiz.title || foundQuiz.name || 'Adsız'}
+                            <i class="fas fa-file-alt"></i> Test/Kateqoriya: ${safeQuizTitle}
                         </span>
                     </div>
                 `;
@@ -6022,10 +6466,11 @@ window.loadReports = async function() {
                 const teacher = allUsers.find(u => u.id == report.teacherId);
                 if (teacher) {
                     const authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
+                    const safeAuthorName = escapeHtml(authorName || '');
                     ownerInfo = `
                         <div class="mt-1 flex items-center gap-2">
                             <span class="text-[10px] bg-primary-light text-primary px-2 py-0.5 rounded-full border border-primary/20">
-                                <i class="fas fa-user-tie"></i> Müəllim: ${authorName}
+                                <i class="fas fa-user-tie"></i> Müəllim: ${safeAuthorName}
                             </span>
                         </div>
                     `;
@@ -6065,6 +6510,12 @@ window.loadReports = async function() {
                 '<span class="inbox-status status-pending"><i class="fas fa-clock"></i> Gözləyir</span>' : 
                 '<span class="inbox-status status-replied"><i class="fas fa-check-double"></i> Cavablandı</span>';
             
+            const safeQuestionTitle = report.questionTitle ? escapeHtml(report.questionTitle) : '';
+            const safeMessage = escapeHtml(report.message || '');
+            const safeAdminReply = escapeHtml(report.adminReply || '');
+            const safeSender = escapeHtml(report.username || report.name || report.userName || 'Qonaq');
+            const safeContact = report.contactInfo ? escapeHtml(report.contactInfo) : '';
+
             div.innerHTML = `
                 <div class="flex-1">
                     <div class="flex justify-between items-start mb-2">
@@ -6075,7 +6526,7 @@ window.loadReports = async function() {
                             </div>
                             ${report.questionTitle ? `
                                 <span class="text-sm text-main font-medium">
-                                    <strong>Sual:</strong> ${report.questionTitle}
+                                    <strong>Sual:</strong> ${safeQuestionTitle}
                                 </span>
                             ` : ''}
                         </div>
@@ -6083,19 +6534,19 @@ window.loadReports = async function() {
                     </div>
                     <div class="mb-2 bg-bg p-3 rounded-md border-l-2 border-border text-main">
                         <div class="text-xs text-uppercase text-muted font-semibold mb-1">Mesaj:</div>
-                        "${report.message}"
+                        "${safeMessage}"
                     </div>
 
                     ${report.adminReply ? `
                         <div class="mb-2 bg-success-light p-3 rounded-md border-l-2 border-success text-success-dark">
                             <div class="text-xs text-uppercase text-success-dark font-semibold mb-1">Sizin Cavabınız:</div>
-                            "${report.adminReply}"
+                            "${safeAdminReply}"
                         </div>
                     ` : ''}
 
                     <div class="text-sm text-muted flex items-center gap-2 flex-wrap">
-                        <span><i class="fas fa-user"></i> Göndərən: <strong>${report.username || report.name || report.userName || 'Qonaq'}</strong></span>
-                        ${report.contactInfo ? `<span>|</span> <span><i class="fas fa-at"></i> Əlaqə: <strong>${report.contactInfo}</strong></span>` : ''}
+                        <span><i class="fas fa-user"></i> Göndərən: <strong>${safeSender}</strong></span>
+                        ${report.contactInfo ? `<span>|</span> <span><i class="fas fa-at"></i> Əlaqə: <strong>${safeContact}</strong></span>` : ''}
                         <span>|</span>
                         <span>ID: ${report.userId}</span>
                     </div>
@@ -6274,7 +6725,7 @@ window.loadUserInbox = async function() {
                     <span class="report-date">${date}</span>
                 </div>
                 <div class="report-content">
-                    <strong>Şikayətiniz:</strong> "${report.message}"
+                    <strong>Şikayətiniz:</strong> "${escapeHtml(report.message || '')}"
                 </div>
                 ${report.adminReply ? `
                     <div class="admin-reply">
@@ -6283,7 +6734,7 @@ window.loadUserInbox = async function() {
                             <span class="text-xs opacity-80">${replyDate}</span>
                         </div>
                         <div class="admin-reply-content">
-                            "${report.adminReply}"
+                            "${escapeHtml(report.adminReply || '')}"
                         </div>
                     </div>
                 ` : `
