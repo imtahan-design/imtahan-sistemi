@@ -5930,20 +5930,18 @@ window.loadReports = async function() {
         let allUsers = [];
 
         if (db) {
-            // Şikayətləri, bütün şəxsi testləri, kateqoriyaları və istifadəçiləri yükləyək
-            const [reportSnapshot, quizSnapshot, catSnapshot, userSnapshot] = await Promise.all([
+            // Şikayətləri, bütün şəxsi testləri və kateqoriyaları yükləyək (İstifadəçiləri yükləmirik - Təhlükəsizlik)
+            const [reportSnapshot, quizSnapshot, catSnapshot] = await Promise.all([
                 db.collection('reports').orderBy('timestamp', 'desc').get(),
                 db.collection('private_quizzes').get(),
-                db.collection('categories').get(),
-                db.collection('users').get()
+                db.collection('categories').get()
             ]);
             
             reports = reportSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             allQuizzes = quizSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const allCats = catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            allUsers = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            // Ehtiyat variant kimi kateqoriyaları da quiz siyahısına qataq (eyni strukturda olduqları üçün)
+            
+            // Ehtiyat variant kimi kateqoriyaları da quiz siyahısına qataq
             allQuizzes = [...allQuizzes, ...allCats];
         } else {
             reports = JSON.parse(localStorage.getItem('reports') || '[]').sort((a, b) => b.timestamp - a.timestamp);
