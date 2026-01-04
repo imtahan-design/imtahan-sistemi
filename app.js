@@ -340,6 +340,16 @@ function verifyPassword(p, h) {
     return false;
 }
 
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // Custom Select Logic
 window.toggleCustomSelect = function(wrapperId) {
     const wrapper = document.getElementById(wrapperId);
@@ -1999,17 +2009,17 @@ window.loadTeacherReports = async function() {
                 <div class="report-card ${isRead ? 'opacity-70' : 'border-l-4 border-warning'}" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
                     <div class="flex justify-between items-start mb-3">
                         <span class="text-xs font-medium px-2 py-1 rounded bg-warning/20 text-warning">
-                            ${report.categoryName || 'Özəl Test'}
+                            ${escapeHtml(report.categoryName || 'Özəl Test')}
                         </span>
                         <span class="text-xs text-white/40">${date}</span>
                     </div>
                     <p class="text-white/90 mb-4" style="font-size: 0.95rem; line-height: 1.5;">
                         <i class="fas fa-quote-left text-primary/40 mr-2"></i>
-                        ${report.message || report.reason}
+                        ${escapeHtml(report.message || report.reason || '')}
                     </p>
                     <div class="flex justify-between items-center pt-4 border-t border-white/5">
                         <div class="text-xs text-white/50">
-                            <i class="fas fa-user mr-1"></i> Göndərən: ${report.username || report.name || report.userName || 'Anonim'}
+                            <i class="fas fa-user mr-1"></i> Göndərən: ${escapeHtml(report.username || report.name || report.userName || 'Anonim')}
                         </div>
                         <div class="flex gap-2">
                             <button onclick="goToReportedQuestion('${report.categoryId}', '${report.questionId}', 'private', \`${(report.questionTitle || report.questionText || '').replace(/"/g, '&quot;')}\`)" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
@@ -3114,9 +3124,9 @@ window.renderPrivateQuizzes = async function() {
                 </div>
             </div>
             <div class="icon-box"><i class="fas fa-link"></i></div>
-            <h3>${quiz.title}</h3>
+            <h3>${escapeHtml(quiz.title)}</h3>
             <p>${(typeof quiz.questionCount === 'number' ? quiz.questionCount : (Array.isArray(quiz.questions) ? quiz.questions.length : 0))} sual</p>
-            ${quiz.password ? `<p class="text-sm text-muted mt-1">Şifrə: <strong>${quiz.password}</strong></p>` : ''}
+            ${quiz.password ? `<p class="text-sm text-muted mt-1">Şifrə: <strong>${escapeHtml(quiz.password)}</strong></p>` : ''}
             <div class="category-actions flex flex-col gap-2 mt-3">
                 ${isActive ? `<button onclick="copyQuizLink('${quizLink}')" class="btn-primary w-full"><i class="fas fa-copy"></i> Linki Kopyala</button>` : '<button class="btn-primary w-full opacity-50 cursor-not-allowed" disabled><i class="fas fa-lock"></i> Link Deaktivdir</button>'}
                 <button onclick="showStudentResults('${quiz.id}', '${quiz.title}')" class="btn-secondary w-full"><i class="fas fa-poll"></i> Nəticələr</button>
@@ -3125,6 +3135,8 @@ window.renderPrivateQuizzes = async function() {
         grid.appendChild(card);
     });
 }
+
+// kopyalama helperi kaldırıldı (icazəsiz əlavə düymə tələb olunmur)
 
 window.togglePrivateQuizStatus = async function(id) {
     const quiz = privateQuizzes.find(q => q.id === id);
@@ -3186,7 +3198,7 @@ window.savePrivateQuiz = function() {
             
             // Save password locally for convenience
             if (password && newQuiz.id) {
-                localStorage.setItem('quiz_pass_' + newQuiz.id, password);
+                
             }
 
             showNotification('Özəl test uğurla yaradıldı!', 'success');
@@ -3287,7 +3299,7 @@ window.showStudentResults = async function(quizId, quizTitle) {
                 if (Array.isArray(quizData.questions)) {
                     currentQuizAnalytics = { quiz: quizData, attempts: attempts };
                     document.getElementById('btn-show-analytics').classList.remove('hidden');
-                    prepareAnalyticsData();
+                    schedulePrepareAnalytics();
                 } else if (quizData.questionsCipher) {
                     try {
                         // Try to auto-decrypt with stored password or quiz.password if available
@@ -3298,7 +3310,7 @@ window.showStudentResults = async function(quizId, quizTitle) {
                             quizData.questions = JSON.parse(decoded);
                             currentQuizAnalytics = { quiz: quizData, attempts: attempts };
                             document.getElementById('btn-show-analytics').classList.remove('hidden');
-                            prepareAnalyticsData();
+                            schedulePrepareAnalytics();
                         }
                     } catch (e) {
                         console.warn('Analytics decryption failed');
@@ -3406,10 +3418,24 @@ function prepareAnalyticsData() {
             <div class="progress-bar-container bg-bg h-2 rounded-full overflow-hidden">
                 <div class="progress-bar-fill h-full transition ${bgColorClass}" style="width: ${correctPercent}%;"></div>
             </div>
-            <div class="q-text-preview" title="${stat.text}">${stat.text}</div>
+            <div class="q-text-preview" title="${escapeHtml(stat.text || '')}">${escapeHtml(stat.text || '')}</div>
         `;
         analysisList.appendChild(item);
     });
+}
+
+function schedulePrepareAnalytics() {
+    try {
+        if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(() => {
+                prepareAnalyticsData();
+            }, { timeout: 1000 });
+        } else {
+            setTimeout(() => prepareAnalyticsData(), 0);
+        }
+    } catch (e) {
+        setTimeout(() => prepareAnalyticsData(), 0);
+    }
 }
 
 function renderStudentResultsTable(attempts) {
@@ -3433,7 +3459,7 @@ function renderStudentResultsTable(attempts) {
         const wrong = attempt.wrong !== undefined ? attempt.wrong : (attempt.total - attempt.score - unanswered);
         
         tr.innerHTML = `
-            <td>${attempt.studentName}</td>
+            <td>${escapeHtml(attempt.studentName || '')}</td>
             <td><span class="accuracy-badge ${badgeClass}">${accuracy}%</span></td>
             <td>${date}</td>
             <td>${attempt.score} / ${wrong} / ${unanswered}</td>
@@ -3885,11 +3911,11 @@ async function loadUserQuestions() {
             div.innerHTML = `
                 <div class="flex-1">
                     <div class="text-xs text-primary mb-1">
-                        <i class="fas fa-folder mr-1"></i> ${cat ? cat.name : 'Naməlum kateqoriya'}
+                        <i class="fas fa-folder mr-1"></i> ${escapeHtml(cat ? cat.name : 'Naməlum kateqoriya')}
                     </div>
-                    <div class="font-semibold text-main">${q.text}</div>
+                    <div class="font-semibold text-main">${escapeHtml(q.text || '')}</div>
                     <div class="text-xs text-muted mt-2 flex flex-wrap gap-2">
-                        ${q.options.map((opt, i) => `<span class="${i === q.correctIndex ? 'text-success font-bold' : ''}">${String.fromCharCode(65 + i)}) ${opt}</span>`).join(' | ')}
+                        ${q.options.map((opt, i) => `<span class="${i === q.correctIndex ? 'text-success font-bold' : ''}">${String.fromCharCode(65 + i)}) ${escapeHtml(opt || '')}</span>`).join(' | ')}
                     </div>
                 </div>
                 <div class="flex gap-2">
@@ -4054,7 +4080,7 @@ async function renderHistory() {
         const wrong = attempt.wrong !== undefined ? attempt.wrong : (attempt.total - attempt.score - unanswered);
         
         tr.innerHTML = `
-            <td>${attempt.categoryName}</td>
+            <td>${escapeHtml(attempt.categoryName || '')}</td>
             <td>${date}</td>
             <td><span class="accuracy-badge ${badgeClass}">${accuracy}%</span></td>
             <td>${attempt.score} / ${wrong} / ${unanswered}</td>
@@ -4119,7 +4145,7 @@ function renderCategories() {
 
         div.innerHTML = `
             <i class="fas ${icon}"></i>
-            <h3>${cat.name}</h3>
+            <h3>${escapeHtml(cat.name || '')}</h3>
             ${hasSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
                 ${hasSub ? `<button class="btn-secondary" onclick="enterCategory('${cat.id}')">Bölmələrə Bax</button>` : ''}
@@ -4225,7 +4251,7 @@ function renderAdminCategories() {
                 </div>
                 ` : ''}
             </div>
-            <h3>${cat.name}</h3>
+            <h3>${escapeHtml(cat.name || '')}</h3>
             ${hasSub ? '' : `<p>${cat.questions ? cat.questions.length : 0} sual</p>`}
             ${hasSub ? '<p class="text-xs text-primary"><i class="fas fa-folder"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
