@@ -26,13 +26,13 @@ async function loadAiApiKey() {
                 const data = doc.data();
                 if (data && data.apiKey) {
                     GEMINI_API_KEY = data.apiKey;
-                    console.log("AI API açarı Firestore-dan yükləndi.");
+                    // API açarı uğurla yükləndi
                 } else {
-                    console.warn("Firestore-da açar tapılmadı, localStorage yoxlanılır.");
+                    // Firestore-da açar tapılmadı, localStorage yoxlanılır
                     GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
                 }
             } else {
-                console.warn("Firestore-da ai_config sənədi yoxdur, localStorage yoxlanılır.");
+                // Firestore-da ai_config sənədi yoxdur
                 GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
             }
         } else {
@@ -86,19 +86,23 @@ window.onerror = function(message, source, lineno, colno, error) {
     
     // "596 - Reklam" xətası üçün xüsusi yoxlama
     if (message && (message.includes('596') || message.toLowerCase().includes('reklam'))) {
-        console.warn("Xüsusi reklam və ya şəbəkə xətası aşkarlandı:", message);
+        // Reklam xətaları adətən zərərsizdir, istifadəçini narahat etməyək
+        return true; 
     }
 
     // If we are in a loading state, maybe we should show an error to the user
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+        // Təhlükəsizlik üçün mesajı təmizləyirik (XSS qarşısı almaq üçün)
+        const safeMessage = message ? String(message).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : "Naməlum xəta";
+
         loadingScreen.innerHTML = `
             <div class="text-white text-center p-6 bg-dark rounded-12 shadow-lg">
                 <i class="fas fa-exclamation-triangle text-6xl text-danger mb-6"></i>
                 <h2 class="mt-4">Sistem yüklənə bilmədi</h2>
                 <p class="mt-3 opacity-80">Məlumat bazası ilə əlaqə kəsildi və ya şəbəkə xətası baş verdi.</p>
                 <div class="bg-white opacity-10 p-3 rounded-md mt-4 text-xs italic text-warning">
-                    ${message}
+                    ${safeMessage}
                 </div>
                 <button onclick="location.reload()" class="btn-primary mt-4 bg-white text-primary border-none p-3 rounded-md cursor-pointer font-bold">
                     Səhifəni yenilə
@@ -129,14 +133,14 @@ try {
                 analytics = firebase.analytics();
             }
         } catch (e) {
-            console.log("Analytics not supported in this environment");
+            // Analytics not supported
         }
-        console.log("Firebase initialized");
+        // Firebase initialized
         
         // Track Visitor
         trackVisitor();
     } else {
-        console.log("Firebase config not set. Using LocalStorage fallback.");
+        // Firebase config not set
     }
 } catch (e) {
     console.error("Firebase initialization error:", e);
@@ -179,6 +183,28 @@ async function loadAdminDashboardStats() {
     try {
         if (!db) return;
 
+        // Cache yoxlanışı (5 dəqiqəlik)
+        const cachedStats = sessionStorage.getItem('adminStatsCache');
+        if (cachedStats) {
+            const cacheData = JSON.parse(cachedStats);
+            if (Date.now() - cacheData.timestamp < 300000) { // 5 dəqiqə
+                const stats = cacheData.data;
+                const totalUsersElem = document.getElementById('total-visitors');
+                if (totalUsersElem) totalUsersElem.textContent = stats.totalUsers;
+
+                const todayRegElem = document.getElementById('today-registrations');
+                if (todayRegElem) todayRegElem.textContent = stats.todayReg;
+
+                const totalAttemptsElem = document.getElementById('total-finished-quizzes');
+                if (totalAttemptsElem) totalAttemptsElem.textContent = stats.totalAttempts;
+
+                const totalQuestionsElem = document.getElementById('total-active-questions');
+                if (totalQuestionsElem) totalQuestionsElem.textContent = stats.totalQuestions;
+                
+                return; // Cache-dən yükləndi, sorğuya ehtiyac yoxdur
+            }
+        }
+
         // 1. Ümumi İstifadəçi Sayı
         const usersSnapshot = await db.collection('users').get();
         const totalUsers = usersSnapshot.size;
@@ -191,25 +217,41 @@ async function loadAdminDashboardStats() {
         const todayRegSnapshot = await db.collection('users')
             .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
             .get();
+        const todayReg = todayRegSnapshot.size;
         const todayRegElem = document.getElementById('today-registrations');
-        if (todayRegElem) todayRegElem.textContent = todayRegSnapshot.size;
+        if (todayRegElem) todayRegElem.textContent = todayReg;
 
         // 3. Tamamlanmış İmtahanlar (attempts kolleksiyasından)
         const attemptsSnapshot = await db.collection('attempts').get();
+        const totalAttempts = attemptsSnapshot.size;
         const totalAttemptsElem = document.getElementById('total-finished-quizzes');
-        if (totalAttemptsElem) totalAttemptsElem.textContent = attemptsSnapshot.size;
+        if (totalAttemptsElem) totalAttemptsElem.textContent = totalAttempts;
 
         // 4. Aktiv Suallar
         let totalQuestions = 0;
-        categories.forEach(cat => {
-            if (cat.questions) totalQuestions += cat.questions.length;
-        });
+        if (typeof categories !== 'undefined') {
+            categories.forEach(cat => {
+                if (cat.questions) totalQuestions += cat.questions.length;
+            });
+        }
         
         const publicQuestionsSnapshot = await db.collection('public_questions').get();
         totalQuestions += publicQuestionsSnapshot.size;
         
         const totalQuestionsElem = document.getElementById('total-active-questions');
         if (totalQuestionsElem) totalQuestionsElem.textContent = totalQuestions;
+
+        // Cache-ə yaz
+        const cachePayload = {
+            timestamp: Date.now(),
+            data: {
+                totalUsers,
+                todayReg,
+                totalAttempts,
+                totalQuestions
+            }
+        };
+        sessionStorage.setItem('adminStatsCache', JSON.stringify(cachePayload));
 
     } catch (e) {
         console.error("Admin statistika yükləmə xətası:", e);
