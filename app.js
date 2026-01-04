@@ -4937,7 +4937,12 @@ window.closeModal = function(modalId) {
             discussionUnsubscribe = null;
         }
     }
-    originalCloseModal(modalId);
+    if (typeof originalCloseModal === 'function') {
+        originalCloseModal(modalId);
+    } else {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.add('hidden');
+    }
 }
 
 async function loadComments() {

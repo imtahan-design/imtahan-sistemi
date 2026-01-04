@@ -117,6 +117,9 @@
                 <button onclick="showTopUsers()" class="btn-outline">
                     <i class="fas fa-trophy"></i> <span>Liderlər</span>
                 </button>
+                <button onclick="handleNewsClick()" class="btn-outline">
+                    <i class="fas fa-newspaper"></i> <span>Xəbərlər</span>
+                </button>
                 <button onclick="showContactModal()" class="btn-outline">
                     <i class="fas fa-envelope"></i> <span>Bizə Yazın</span>
                 </button>
@@ -174,6 +177,7 @@
                 <div class="side-menu-links">
                     <button onclick="menuNavigate(showDashboard)"><i class="fas fa-home"></i> Ana Səhifə</button>
                     <button onclick="menuNavigate(showTopUsers)"><i class="fas fa-trophy"></i> Liderlər</button>
+                    <button onclick="handleNewsClick(); toggleSideMenu();"><i class="fas fa-newspaper"></i> Xəbərlər</button>
                     <button onclick="menuNavigate(showContactModal)"><i class="fas fa-envelope"></i> Bizə Yazın</button>
                     
                     <div id="side-guest-nav">
@@ -1638,6 +1642,59 @@
             </div>
         </div>
     </div>
+
+    <!-- Construction Modal -->
+    <div id="construction-modal" class="modal hidden" style="z-index: 99999;">
+        <div class="modal-content text-center max-w-450 rounded-20" style="max-width: 450px; border-radius: 20px;">
+            <div class="modal-header border-none justify-center pt-6" style="border: none; justify-content: center; padding-top: 24px;">
+                <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #f59e0b, #ea580c); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; margin: 0 auto; box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);">
+                    <i class="fas fa-hard-hat"></i>
+                </div>
+            </div>
+            <div class="modal-body px-8 pb-2" style="padding: 0 32px 8px 32px; text-align: center;">
+                <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 12px; color: var(--text-main);">Səhifə Hazırlanır</h3>
+                <p style="color: var(--text-muted); font-size: 16px; line-height: 1.6;">
+                    Xəbərlər bölməsini sizin üçün daha mükəmməl edirik. 
+                    <br>Tezliklə yeni dizayn və funksionallıqla xidmətinizdə olacağıq!
+                </p>
+            </div>
+            <div class="modal-footer border-none justify-center pb-8" style="border: none; justify-content: center; padding-bottom: 32px;">
+                <button onclick="closeConstructionModal()" class="btn-primary" style="padding: 12px 32px; border-radius: 50px; font-weight: 600; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); transform: scale(1); transition: transform 0.2s;">
+                    <i class="fas fa-check mr-2"></i> Anlaşıldı
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const IS_NEWS_READY = true;
+
+        function showConstructionModal() {
+            const modal = document.getElementById('construction-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                modal.style.display = 'flex'; // Force display
+            }
+        }
+
+        function closeConstructionModal() {
+            const modal = document.getElementById('construction-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                modal.style.display = 'none';
+            }
+        }
+
+        function handleNewsClick() {
+            if (IS_NEWS_READY) {
+                window.location.href = 'news.html';
+            } else {
+                showConstructionModal();
+            }
+        }
+    </script>
 
     <script src="app.js?v=6.1" defer></script>
 </body>
