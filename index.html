@@ -37,10 +37,16 @@
     <meta name="twitter:description" content="Azərbaycanın ən müasir onlayn sınaq imtahanı platforması.">
     <meta name="twitter:image" content="https://imtahan.site/assets/logo.png">
 
-    <!-- Fonts (Optimized Loading) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- Preload critical resources -->
+    <link rel="preload" href="style.css?v=6.0" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" crossorigin="anonymous">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- DNS prefetch for external domains -->
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//www.gstatic.com">
 
     <link rel="stylesheet" href="style.css?v=6.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
