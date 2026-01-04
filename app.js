@@ -17,6 +17,13 @@ const BACKEND_URL = window.location.hostname === 'localhost' || window.location.
     ? "http://localhost:5000"
     : "https://imtahan-backend-7w71.onrender.com";
 
+try {
+    const p = window.location.pathname.toLowerCase();
+    if (p.endsWith('/index.html')) {
+        window.history.replaceState({}, document.title, '/');
+    }
+} catch (e) {}
+
 // Firebase-dən API açarını yükləyən funksiya
 async function loadAiApiKey() {
     try {
