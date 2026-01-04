@@ -1494,22 +1494,46 @@ window.login = async function() {
 
             // Giriş uğurlu oldu, indi istifadəçi məlumatlarını çəkirik
             const uid = userCredential.user.uid;
-            const doc = await db.collection('users').doc(uid).get();
-            
-            if (!doc.exists) {
-                // Auth-da var, amma Firestore-da silinib? (Nadir hal)
-                throw new Error('İstifadəçi məlumatları tapılmadı.');
+            let user = null;
+            let firestoreDoc = null;
+            try {
+                const doc = await db.collection('users').doc(uid).get();
+                firestoreDoc = doc;
+                if (doc.exists) {
+                    const userData = doc.data();
+                    if (userData && userData.password) delete userData.password;
+                    user = { id: uid, ...userData };
+                }
+            } catch (dbErr) {
+                // Firestore oxunuşu alınmadı (quota exceeded və s.)
+                console.warn('Firestore oxu alınmadı, lokal fallback istifadə olunur:', dbErr && dbErr.message);
             }
 
-            const userData = doc.data();
-            // Obyektdən şifrəni silirik (Təhlükəsizlik)
-            if (userData.password) delete userData.password;
+            if (!user) {
+                // Lokal keşdən istifadə et, uyğun istifadəçi tapılarsa
+                const cached = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (cached && (cached.id === uid || cached.email === userEmail)) {
+                    user = cached;
+                } else {
+                    // Minimal profil (məhdud rejim)
+                    user = {
+                        id: uid,
+                        username: userEmail.split('@')[0],
+                        email: userEmail,
+                        role: 'student'
+                    };
+                }
+            }
 
-            const user = { id: uid, ...userData };
             currentUser = user;
             localStorage.setItem('currentUser', JSON.stringify(user));
             updateUI();
-            showNotification('Xoş gəldiniz, ' + user.username + '!', 'success');
+            showNotification(
+                firestoreDoc && firestoreDoc.exists
+                    ? ('Xoş gəldiniz, ' + (user.username || user.email) + '!')
+                    : 'Uğurlu giriş (məhdud rejim).',
+                'success'
+            );
             
             if (redirectAfterAuth === 'teacher_panel' && user.role === 'teacher') {
                 redirectAfterAuth = null;
@@ -1986,7 +2010,17 @@ window.loadTeacherReports = async function() {
     listContainer.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-primary"></i><p class="mt-2">Şikayətlər yüklənir...</p></div>';
     
     try {
-        if (!db || !currentUser) return;
+        if (!currentUser) return;
+        if (!db) {
+            const cached = JSON.parse(localStorage.getItem('teacherReports:' + currentUser.id) || '[]');
+            if (Array.isArray(cached) && cached.length) {
+                renderTeacherReports(cached, listContainer);
+                return;
+            } else {
+                listContainer.innerHTML = '<div class="text-center py-12 bg-white/5 rounded-xl border border-dashed border-white/10"><i class="fas fa-database text-4xl text-primary/50 mb-3"></i><p class="text-white/60">Hazırda məlumat yoxdur.</p></div>';
+                return;
+            }
+        }
         
         const snapshot = await db.collection('reports')
             .where('teacherId', '==', currentUser.id)
@@ -2000,55 +2034,72 @@ window.loadTeacherReports = async function() {
         // Sənədləri massivə yığıb tarixinə görə sıralayaq (Index tələbini aradan qaldırmaq üçün)
         const reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         reports.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        try {
+            localStorage.setItem('teacherReports:' + currentUser.id, JSON.stringify(reports));
+            localStorage.setItem('teacherReportsCount:' + currentUser.id, String(reports.filter(r => r.status !== 'resolved').length));
+        } catch (e) {}
         
-        let html = '';
-        reports.forEach(report => {
-            let date = 'Naməlum';
-            if (report.timestamp) {
-                // Həm nömrə (Date.now()), həm də Firestore Timestamp dəstəyi
-                const ts = typeof report.timestamp === 'number' ? report.timestamp : 
-                          (report.timestamp.seconds ? report.timestamp.seconds * 1000 : report.timestamp);
-                date = new Date(ts).toLocaleString('az-AZ');
-            }
-            const isRead = report.status === 'resolved';
-            
-            html += `
-                <div class="report-card ${isRead ? 'opacity-70' : 'border-l-4 border-warning'}" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
-                    <div class="flex justify-between items-start mb-3">
-                        <span class="text-xs font-medium px-2 py-1 rounded bg-warning/20 text-warning">
-                            ${escapeHtml(report.categoryName || 'Özəl Test')}
-                        </span>
-                        <span class="text-xs text-white/40">${date}</span>
-                    </div>
-                    <p class="text-white/90 mb-4" style="font-size: 0.95rem; line-height: 1.5;">
-                        <i class="fas fa-quote-left text-primary/40 mr-2"></i>
-                        ${escapeHtml(report.message || report.reason || '')}
-                    </p>
-                    <div class="flex justify-between items-center pt-4 border-t border-white/5">
-                        <div class="text-xs text-white/50">
-                            <i class="fas fa-user mr-1"></i> Göndərən: ${escapeHtml(report.username || report.name || report.userName || 'Anonim')}
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="goToReportedQuestion('${report.categoryId}', '${report.questionId}', 'private', \`${(report.questionTitle || report.questionText || '').replace(/"/g, '&quot;')}\`)" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                                <i class="fas fa-eye mr-1"></i> Suala Bax
-                            </button>
-                            ${!isRead ? `
-                                <button onclick="markReportAsResolvedByTeacher('${report.id}')" class="btn-primary" style="background: var(--success-color); border-color: var(--success-hover); padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                                    <i class="fas fa-check mr-1"></i> Həll Edildi
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        listContainer.innerHTML = html;
+        renderTeacherReports(reports, listContainer);
         
     } catch (error) {
         console.error("Error loading teacher reports:", error);
-        listContainer.innerHTML = '<div class="text-center py-8 text-red-400">Şikayətləri yükləyərkən xəta baş verdi.</div>';
+        // Fallback to cache
+        try {
+            const cached = JSON.parse(localStorage.getItem('teacherReports:' + currentUser.id) || '[]');
+            if (Array.isArray(cached) && cached.length) {
+                renderTeacherReports(cached, listContainer);
+                showNotification('Məhdud rejim: şikayətlər keşdən göstərilir.', 'warning');
+            } else {
+                listContainer.innerHTML = '<div class="text-center py-8 text-red-400">Şikayətləri yükləyərkən xəta baş verdi.</div>';
+            }
+        } catch (e) {
+            listContainer.innerHTML = '<div class="text-center py-8 text-red-400">Şikayətləri yükləyərkən xəta baş verdi.</div>';
+        }
     }
+}
+
+function renderTeacherReports(reports, listContainer) {
+    let html = '';
+    reports.forEach(report => {
+        let date = 'Naməlum';
+        if (report.timestamp) {
+            const ts = typeof report.timestamp === 'number' ? report.timestamp : 
+                      (report.timestamp.seconds ? report.timestamp.seconds * 1000 : report.timestamp);
+            date = new Date(ts).toLocaleString('az-AZ');
+        }
+        const isRead = report.status === 'resolved';
+        
+        html += `
+            <div class="report-card ${isRead ? 'opacity-70' : 'border-l-4 border-warning'}" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
+                <div class="flex justify-between items-start mb-3">
+                    <span class="text-xs font-medium px-2 py-1 rounded bg-warning/20 text-warning">
+                        ${escapeHtml(report.categoryName || 'Özəl Test')}
+                    </span>
+                    <span class="text-xs text-white/40">${date}</span>
+                </div>
+                <p class="text-white/90 mb-4" style="font-size: 0.95rem; line-height: 1.5;">
+                    <i class="fas fa-quote-left text-primary/40 mr-2"></i>
+                    ${escapeHtml(report.message || report.reason || '')}
+                </p>
+                <div class="flex justify-between items-center pt-4 border-t border-white/5">
+                    <div class="text-xs text-white/50">
+                        <i class="fas fa-user mr-1"></i> Göndərən: ${escapeHtml(report.username || report.name || report.userName || 'Anonim')}
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="goToReportedQuestion('${report.categoryId}', '${report.questionId}', 'private', \`${(report.questionTitle || report.questionText || '').replace(/"/g, '&quot;')}\`)" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                            <i class="fas fa-eye mr-1"></i> Suala Bax
+                        </button>
+                        ${!isRead ? `
+                            <button onclick="markReportAsResolvedByTeacher('${report.id}')" class="btn-primary" style="background: var(--success-color); border-color: var(--success-hover); padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                <i class="fas fa-check mr-1"></i> Həll Edildi
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    listContainer.innerHTML = html;
 }
 
 window.markReportAsResolvedByTeacher = async function(reportId) {
@@ -2061,6 +2112,15 @@ window.markReportAsResolvedByTeacher = async function(reportId) {
             loadTeacherReports();
             updateTeacherReportsBadge();
         }
+        // Update local cache too
+        try {
+            const key = 'teacherReports:' + (currentUser ? currentUser.id : '');
+            const cached = JSON.parse(localStorage.getItem(key) || '[]');
+            const updated = cached.map(r => r.id === reportId ? { ...r, status: 'resolved' } : r);
+            localStorage.setItem(key, JSON.stringify(updated));
+            const pendingCount = updated.filter(r => r.status !== 'resolved').length;
+            localStorage.setItem('teacherReportsCount:' + (currentUser ? currentUser.id : ''), String(pendingCount));
+        } catch (e) {}
     } catch (error) {
         console.error("Error resolving report:", error);
         showNotification('Xəta baş verdi', 'error');
@@ -2084,8 +2144,19 @@ window.updateTeacherReportsBadge = async function() {
         } else {
             badge.classList.add('hidden');
         }
+        try { localStorage.setItem('teacherReportsCount:' + currentUser.id, String(count)); } catch (e) {}
     } catch (error) {
         console.error("Error updating teacher badge:", error);
+        // Fallback to cached count
+        try {
+            const cached = parseInt(localStorage.getItem('teacherReportsCount:' + currentUser.id) || '0', 10);
+            if (cached > 0) {
+                badge.textContent = cached;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        } catch (e) {}
     }
 }
 
@@ -3091,9 +3162,22 @@ window.renderPrivateQuizzes = async function() {
             
             // Cache locally for faster access during session if needed
             privateQuizzes = myQuizzes;
+            try { localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes)); } catch (e) {}
         } catch (error) {
             console.error("Error fetching my quizzes:", error);
-            showNotification('Testlərinizi yükləyərkən xəta baş verdi.', 'error');
+            // Fallback to local cache (quota exceeded / offline)
+            try {
+                const cached = JSON.parse(localStorage.getItem('privateQuizzes') || '[]');
+                myQuizzes = cached.filter(q => q.teacherId === (currentUser && currentUser.id));
+                if (myQuizzes.length > 0) {
+                    privateQuizzes = cached;
+                    showNotification('Məhdud rejim: testlər keşdən göstərilir.', 'warning');
+                } else {
+                    showNotification('Testlərinizi yükləyərkən xəta baş verdi.', 'error');
+                }
+            } catch (e) {
+                showNotification('Testlərinizi yükləyərkən xəta baş verdi.', 'error');
+            }
         }
     } else {
         myQuizzes = privateQuizzes.filter(q => q.teacherId === currentUser.id);
