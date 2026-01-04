@@ -3157,6 +3157,27 @@ window.togglePrivateQuizStatus = async function(id) {
     }
 }
 
+function softValidateQuestions(input) {
+    const warnings = [];
+    const result = [];
+    const arr = Array.isArray(input) ? input : [];
+    for (let i = 0; i < arr.length; i++) {
+        const q = arr[i] || {};
+        const text = typeof q.text === 'string' ? q.text.trim() : '';
+        const opts = Array.isArray(q.options) ? q.options.map(o => String(o || '').trim()).filter(o => o) : [];
+        let correct = q.correctIndex !== undefined ? q.correctIndex : (q.correct !== undefined ? q.correct : q.answer);
+        if (!text || opts.length < 2) {
+            warnings.push(i + 1);
+            continue;
+        }
+        if (!Number.isInteger(correct) || correct < 0 || correct >= opts.length) {
+            correct = 0;
+        }
+        result.push({ text, options: opts, correctIndex: correct });
+    }
+    return { questions: result, warnings };
+}
+
 window.savePrivateQuiz = function() {
     const title = document.getElementById('private-quiz-title').value;
     const password = document.getElementById('private-quiz-password').value;
@@ -3169,8 +3190,9 @@ window.savePrivateQuiz = function() {
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
-            const questions = JSON.parse(e.target.result);
-            if (!Array.isArray(questions)) throw new Error('Düzgün sual formatı deyil.');
+            const raw = JSON.parse(e.target.result);
+            const { questions, warnings } = softValidateQuestions(raw);
+            if (!Array.isArray(questions) || questions.length === 0) throw new Error('Düzgün sual formatı deyil.');
             
             const newQuiz = {
                 teacherId: currentUser.id,
@@ -3202,6 +3224,9 @@ window.savePrivateQuiz = function() {
             }
 
             showNotification('Özəl test uğurla yaradıldı!', 'success');
+            if (warnings && warnings.length) {
+                showNotification(`Formatı yararsız olan ${warnings.length} sual keçildi.`, 'warning');
+            }
             showTeacherDashboard();
             
             // Clear inputs
@@ -5179,11 +5204,7 @@ window.generateAdminAIQuestions = async function() {
         return showNotification('Daxil edilən məlumat çox qısadır. Zəhmət olmasa daha ətraflı yazın.', 'warning');
     }
 
-    if (!GEMINI_API_KEY) {
-        if (loading) loading.classList.add('hidden');
-        if (btn) btn.disabled = false;
-        return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib. Zəhmət olmasa adminlə əlaqə saxlayın.', 'error');
-    }
+    
 
     let difficultyText = "";
     if (difficulty === "easy") {
@@ -5235,18 +5256,18 @@ window.generateAdminAIQuestions = async function() {
         for (const modelName of models) {
             if (success) break;
             try {
-                const url = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
                 const generationConfig = {};
                 if (apiVer === "v1beta") {
                     generationConfig.response_mime_type = "application/json";
                 }
-
-                const response = await fetch(url, {
+                const response = await fetch(`${BACKEND_URL}/api/ai/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
+                        apiVer,
+                        modelName,
                         contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: generationConfig
+                        generationConfig
                     })
                 });
 
@@ -7258,11 +7279,7 @@ window.generateAIQuestions = async function() {
         return showNotification('Mətn çox qısadır. Daha keyfiyyətli suallar üçün daha çox məlumat daxil edin.', 'warning');
     }
 
-    if (!GEMINI_API_KEY) {
-        if (loading) loading.classList.add('hidden');
-        if (btn) btn.disabled = false;
-        return showNotification('Süni İntellekt funksiyası üçün API açarı təyin edilməyib. Zəhmət olmasa adminlə əlaqə saxlayın.', 'error');
-    }
+    
 
     let prompt = `Sən bir peşəkar müəllimsən. `;
     
@@ -7358,18 +7375,18 @@ window.generateAIQuestions = async function() {
         for (const modelName of models) {
             if (success) break;
             try {
-                const url = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
                 console.log(`Cəhd edilir: ${apiVer} / ${modelName}`);
                 
                 const generationConfig = {};
                 if (apiVer === "v1beta") {
                     generationConfig.response_mime_type = "application/json";
                 }
-
-                const response = await fetch(url, {
+                const response = await fetch(`${BACKEND_URL}/api/ai/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        apiVer,
+                        modelName,
                         contents: contents,
                         generationConfig: generationConfig
                     })
