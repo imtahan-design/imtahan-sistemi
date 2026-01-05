@@ -277,35 +277,22 @@ function updateTicker(list) {
         container.innerHTML = '<span style="padding:0 20px;">Xəbər yoxdur.</span>';
         return;
     }
-    const html = list.slice(0, 10).map(n => `<a href="view.html?id=${n.id}" class="ticker-item">${n.title}</a>`).join('');
-    container.innerHTML = html; 
-    
-    // JS Animation Fallback (Robust)
-    container.style.animation = 'none'; // Disable CSS animation
-    container.style.paddingLeft = '0';
-    container.style.display = 'inline-block';
-    
-    let parentWidth = container.parentElement.offsetWidth;
-    let pos = parentWidth;
-    
-    // Clear any previous animation loop if we were to store the ID
-    // Since we reload page mostly, it's fine.
-    
-    const animate = () => {
-        pos--;
-        if (pos < -container.scrollWidth) {
-            pos = container.parentElement.offsetWidth;
-        }
-        container.style.transform = `translateX(${pos}px)`;
-        requestAnimationFrame(animate);
-    };
 
-    // Small delay to ensure layout is calculated
-    setTimeout(() => {
-        parentWidth = container.parentElement.offsetWidth;
-        pos = parentWidth;
-        animate();
-    }, 100);
+    // 1. Prepare items HTML
+    const itemsHtml = list.slice(0, 10).map(n => `<a href="view.html?id=${n.id}" class="ticker-item">${n.title}</a>`).join('');
+    
+    // 2. Double the content for seamless looping
+    container.innerHTML = itemsHtml + itemsHtml; 
+    
+    // 3. Reset Styles for CSS Animation
+    container.style.display = 'flex';
+    container.style.width = 'max-content';
+    container.style.animation = 'none'; // Reset trigger
+    container.offsetHeight; // Trigger reflow
+    container.style.animation = 'ticker-scroll 40s linear infinite';
+    
+    // 4. Remove any JS fallback logic if it exists (Clean slate)
+    // No JS animation loop needed. CSS keyframes handle it.
 }
 
 function formatDate(dateStr) {

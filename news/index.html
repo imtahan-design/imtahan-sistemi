@@ -548,25 +548,33 @@
       
       .ticker-wrapper {
         width: 100%;
-        height: 36px;
+        height: 40px;
         background: rgba(255,255,255,0.05);
-        display: block; 
-        white-space: nowrap; 
         overflow: hidden; /* Mask content */
         position: relative;
+        display: flex;
+        align-items: center;
       }
       
       .ticker-content {
-          display: inline-block;
+          display: flex;
           white-space: nowrap;
-          padding-left: 100%; /* Start from far right */
-          /* Animation will be handled by JS to ensure reliability */
+          /* Animation is set in JS/CSS class */
+      }
+
+      @keyframes ticker-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
       }
 
       .ticker-item {
-        font-size: 0.85rem;
-        padding: 0 10px;
-        display: inline-block;
+        font-size: 0.95rem;
+        padding: 0 20px;
+        color: white;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        height: 100%;
       }
 
       /* Newsletter Mobile */

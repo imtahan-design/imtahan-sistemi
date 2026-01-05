@@ -795,12 +795,22 @@
             itemsToRender = [...itemsToRender, ...itemsToRender, ...itemsToRender];
         }
 
-        tickerContent.innerHTML = itemsToRender.map(item => `
+        const itemsHtml = itemsToRender.map(item => `
             <a href="view.html?id=${item.id}" class="ticker-item">
                 ${item.category ? `<span style="color:var(--secondary); font-weight:bold; margin-right:5px;">[${item.category.toUpperCase()}]</span>` : ''}
                 ${escapeHtml(item.title)}
             </a>
         `).join('');
+
+        // Double content for seamless loop
+        tickerContent.innerHTML = itemsHtml + itemsHtml;
+
+        // Apply CSS Animation
+        tickerContent.style.display = 'flex';
+        tickerContent.style.width = 'max-content';
+        tickerContent.style.animation = 'none'; 
+        tickerContent.offsetHeight; // Reflow
+        tickerContent.style.animation = 'ticker-scroll 40s linear infinite';
     }
 
     function escapeHtml(text) {
