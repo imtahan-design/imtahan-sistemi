@@ -1499,7 +1499,23 @@ window.login = async function() {
     try {
         if (db && auth) {
             // Pro Shield Update: Birbaşa Auth üzərindən giriş (Daha sürətli və təhlükəsiz)
-            const userEmail = username.includes('@') ? username : `${username}@imtahan.site`;
+            let userEmail = username;
+            
+            if (!username.includes('@')) {
+                // İstifadəçi adı daxil edilib. Əvvəlcə bazadan bu istifadəçi adının emailini tapaq.
+                try {
+                    const userDoc = await db.collection('users').where('username', '==', username).limit(1).get();
+                    if (!userDoc.empty) {
+                        userEmail = userDoc.docs[0].data().email;
+                    } else {
+                        // Əgər bazada tapılmasa, standart şagird formatını yoxlayaq
+                        userEmail = `${username}@imtahan.site`;
+                    }
+                } catch (e) {
+                    console.warn("Username lookup failed:", e);
+                    userEmail = `${username}@imtahan.site`;
+                }
+            }
             
             let userCredential;
             try {
