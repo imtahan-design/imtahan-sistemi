@@ -1131,6 +1131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateUI(); // Məlumatlar gəldikdən sonra yenidən yenilə
     hideLoading();
     console.log("Sistem hazırdır.");
+    if (typeof updateApiKeyUI === 'function') updateApiKeyUI();
 });
 
 async function migrateUserReferences(oldId, newId) {
@@ -1479,6 +1480,9 @@ window.addEventListener('DOMContentLoaded', () => {
         setTimeout(checkAuthAction, 1000);
     }
 });
+
+// News Navigation - Controlled by index.html inline script (IS_NEWS_READY)
+
 
 window.login = async function() {
     const username = document.getElementById('login-username').value;
@@ -5730,36 +5734,56 @@ window.generateAdminAIQuestions = async function() {
     let lastError = "";
     let success = false;
 
+    async function geminiRequest(apiVer, modelName, contents, generationConfig) {
+        const useBackend = !GEMINI_API_KEY;
+        if (useBackend) {
+            const resp = await fetch(`${BACKEND_URL}/api/ai/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apiVer, modelName, contents, generationConfig })
+            });
+            return await resp.json();
+        }
+        const apiUrl = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents, generationConfig })
+        });
+        const ct = response.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+            const data = await response.json();
+            if (data && data.error && (data.error.status === "PERMISSION_DENIED" || data.error.status === "UNAUTHENTICATED")) {
+                const resp = await fetch(`${BACKEND_URL}/api/ai/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiVer, modelName, contents, generationConfig })
+                });
+                return await resp.json();
+            }
+            return data;
+        } else {
+            const text = await response.text();
+            throw new Error('Non-JSON response: ' + text.slice(0, 200));
+        }
+    }
+
     for (const apiVer of apiVersions) {
         if (success) break;
         for (const modelName of models) {
             if (success) break;
             try {
-                const generationConfig = {};
-                if (apiVer === "v1beta") {
-                    generationConfig.response_mime_type = "application/json";
-                }
-                const apiUrl = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig
-                    })
-                });
-
-                let data;
-                const ct = response.headers.get('content-type') || '';
-                if (ct.includes('application/json')) {
-                    data = await response.json();
-                } else {
-                    const text = await response.text();
-                    throw new Error('Non-JSON response: ' + text.slice(0, 200));
-                }
+                const generationConfig = apiVer === "v1beta" ? { response_mime_type: "application/json" } : {};
+                const data = await geminiRequest(apiVer, modelName, [{ parts: [{ text: prompt }] }], generationConfig);
                 if (data.error) {
-                    lastError = data.error.message;
+                    const errorMsg = (typeof data.error === 'string') ? data.error : (data.error.message || JSON.stringify(data.error));
+                    lastError = errorMsg;
                     console.warn(`API Xətası (${modelName}, ${apiVer}):`, lastError);
+                    
+                    if (errorMsg === 'API key missing') {
+                        // Backend-dən gələn xüsusi xəta
+                        break; // Digər modelləri yoxlamağa ehtiyac yoxdur
+                    }
                     continue;
                 }
 
@@ -5837,6 +5861,8 @@ window.generateAdminAIQuestions = async function() {
             msg = '⚠️ AI limiti bitdi. Zəhmət olmasa biraz gözləyin.';
         } else if (lastError.includes('Safety')) {
             msg = '⚠️ Məzmun uyğunsuz olduğu üçün bloklandı.';
+        } else if (lastError === 'API key missing' || lastError.includes('API açarı tapılmadı')) {
+            msg = '⚠️ API açarı tapılmadı. Zəhmət olmasa Admin paneldən əlavə edin.';
         } else {
             msg = 'Xəta: ' + (lastError.length > 50 ? lastError.substring(0, 50) + '...' : lastError);
         }
@@ -7952,28 +7978,41 @@ window.generateAIQuestions = async function() {
             try {
                 console.log(`Cəhd edilir: ${apiVer} / ${modelName}`);
                 
-                const generationConfig = {};
-                if (apiVer === "v1beta") {
-                    generationConfig.response_mime_type = "application/json";
-                }
-                const apiUrl = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: contents,
-                        generationConfig: generationConfig
-                    })
-                });
-
-                let data;
-                const ct = response.headers.get('content-type') || '';
-                if (ct.includes('application/json')) {
-                    data = await response.json();
-                } else {
-                    const text = await response.text();
-                    throw new Error('Non-JSON response: ' + text.slice(0, 200));
-                }
+                const generationConfig = apiVer === "v1beta" ? { response_mime_type: "application/json" } : {};
+                const responseData = await (async () => {
+                    if (!GEMINI_API_KEY) {
+                        const r = await fetch(`${BACKEND_URL}/api/ai/generate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ apiVer, modelName, contents, generationConfig })
+                        });
+                        return await r.json();
+                    } else {
+                        const apiUrl = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+                        const r = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents, generationConfig })
+                        });
+                        const ct = r.headers.get('content-type') || '';
+                        if (ct.includes('application/json')) {
+                            const d = await r.json();
+                            if (d && d.error && (d.error.status === "PERMISSION_DENIED" || d.error.status === "UNAUTHENTICATED")) {
+                                const rb = await fetch(`${BACKEND_URL}/api/ai/generate`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ apiVer, modelName, contents, generationConfig })
+                                });
+                                return await rb.json();
+                            }
+                            return d;
+                        } else {
+                            const t = await r.text();
+                            throw new Error('Non-JSON response: ' + t.slice(0, 200));
+                        }
+                    }
+                })();
+                const data = responseData;
                 
                 if (data.error) {
                     lastError = data.error.message;
@@ -8076,6 +8115,8 @@ window.generateAIQuestions = async function() {
             msg = '⚠️ AI limiti bitdi. Zəhmət olmasa biraz gözləyin.';
         } else if (lastError.includes('Safety')) {
             msg = '⚠️ Məzmun uyğunsuz olduğu üçün bloklandı.';
+        } else if (lastError === 'API key missing' || lastError.includes('API açarı tapılmadı')) {
+            msg = '⚠️ API açarı tapılmadı. Zəhmət olmasa Admin paneldən əlavə edin.';
         } else {
             msg = 'Xəta: ' + (lastError.length > 50 ? lastError.substring(0, 50) + '...' : lastError);
         }
@@ -8107,3 +8148,10 @@ function copyToClipboard(text) {
     document.execCommand('copy');
     document.body.removeChild(el);
 }
+window.updateApiKeyUI = function() {
+    // Admin key UI removed
+};
+window.saveAdminAiKey = async function() {
+    // Admin key save logic removed (handled via server env)
+    showNotification('API açarı server tərəfindən idarə olunur.', 'info');
+};
