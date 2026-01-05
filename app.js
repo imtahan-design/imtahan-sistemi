@@ -2045,6 +2045,11 @@ window.loadTeacherReports = async function(initial = false) {
             const bt = typeof b.timestamp === 'number' ? b.timestamp : (b.timestamp && b.timestamp.seconds ? b.timestamp.seconds * 1000 : 0);
             return bt - at;
         });
+        if (allReports.length === 0) {
+            listContainer.innerHTML = '<div class="text-center py-12 bg-white/5 rounded-xl border border-dashed border-white/10"><i class="fas fa-check-circle text-4xl text-green-500/50 mb-3"></i><p class="text-white/60">Hələ ki, heç bir şikayət yoxdur.</p></div>';
+            if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
+            return;
+        }
         state.fallbackAll = state.fallbackAll || allReports;
         const start = state.pageIndex * PAGE_SIZE;
         const end = start + PAGE_SIZE;
