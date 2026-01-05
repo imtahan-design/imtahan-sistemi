@@ -292,6 +292,9 @@
                 <div id="private-quizzes-grid" class="grid-container animate-up delay-2">
                     <!-- Teacher's private quizzes will be loaded here -->
                 </div>
+                <div class="text-center mt-4">
+                    <button id="private-quizzes-load-more" onclick="loadMorePrivateQuizzes()" class="btn-secondary hidden">Daha çox yüklə</button>
+                </div>
             </div>
         </section>
 
@@ -304,6 +307,9 @@
                 </div>
                 <div id="teacher-reports-list" class="flex flex-col gap-4 animate-up delay-1">
                     <!-- Teacher's reports will be loaded here -->
+                </div>
+                <div class="text-center mt-4">
+                    <button id="teacher-reports-load-more" onclick="loadMoreTeacherReports()" class="btn-secondary hidden">Daha çox yüklə</button>
                 </div>
             </div>
         </section>
@@ -595,6 +601,9 @@
                         </table>
                     </div>
                 </div>
+                <div class="text-center mt-4">
+                    <button id="student-results-load-more" onclick="loadMoreStudentResults()" class="btn-secondary hidden">Daha çox yüklə</button>
+                </div>
 
                 <div id="analytics-view" class="hidden">
                     <div class="analytics-container">
@@ -799,6 +808,9 @@
                         <!-- User's questions will be loaded here -->
                         <p class="text-center text-muted p-4">Yüklənir...</p>
                     </div>
+                    <div class="text-center mt-2">
+                        <button id="user-questions-load-more" onclick="loadMoreUserQuestions()" class="btn-secondary hidden">Daha çox yüklə</button>
+                    </div>
                 </div>
 
                 <!-- User Inbox Section -->
@@ -810,6 +822,9 @@
                     <div id="user-inbox-list" class="list-container">
                         <!-- User inbox items will be loaded here -->
                         <p class="text-center text-muted p-4">Yüklənir...</p>
+                    </div>
+                    <div class="text-center mt-2">
+                        <button id="user-inbox-load-more" onclick="loadMoreUserInbox()" class="btn-secondary hidden">Daha çox yüklə</button>
                     </div>
                 </div>
             </div>
@@ -914,6 +929,9 @@
                 <div id="reports-list" class="list-container mt-4 animate-up delay-1">
                     <!-- Reports will be loaded here -->
                 </div>
+                <div class="text-center mt-4">
+                    <button id="admin-reports-load-more" onclick="loadMoreAdminReports()" class="btn-secondary hidden">Daha çox yüklə</button>
+                </div>
             </div>
         </section>
 
@@ -962,6 +980,9 @@
 
                 <div id="public-questions-list" class="public-questions-grid animate-up delay-2">
                     <!-- Public questions will be loaded here -->
+                </div>
+                <div class="text-center mt-4">
+                    <button id="public-questions-load-more" onclick="loadMorePublicQuestions()" class="btn-secondary hidden">Daha çox yüklə</button>
                 </div>
             </div>
         </section>

@@ -31,25 +31,18 @@ async function loadAiApiKey() {
             const doc = await db.collection('settings').doc('ai_config').get();
             if (doc.exists) {
                 const data = doc.data();
-                if (data && data.apiKey) {
-                    GEMINI_API_KEY = data.apiKey;
-                    // API açarı uğurla yükləndi
-                } else {
-                    // Firestore-da açar tapılmadı, localStorage yoxlanılır
-                    GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
-        if (GEMINI_API_KEY) {
-            GEMINI_API_KEY = decryptApiKey(GEMINI_API_KEY);
-        }
-                if (GEMINI_API_KEY) {
-                    GEMINI_API_KEY = decryptApiKey(GEMINI_API_KEY);
-                }
-                }
+                const enc = (data && data.apiKey) ? data.apiKey : (localStorage.getItem('GEMINI_API_KEY') || "");
+                const dk = enc ? decryptApiKey(enc) : enc;
+                GEMINI_API_KEY = dk || '';
             } else {
-                // Firestore-da ai_config sənədi yoxdur
-                GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
+                const ls = localStorage.getItem('GEMINI_API_KEY') || "";
+                const dk = ls ? decryptApiKey(ls) : ls;
+                GEMINI_API_KEY = dk || '';
             }
         } else {
-            GEMINI_API_KEY = localStorage.getItem('GEMINI_API_KEY') || "";
+            const ls = localStorage.getItem('GEMINI_API_KEY') || "";
+            const dk = ls ? decryptApiKey(ls) : ls;
+            GEMINI_API_KEY = dk || '';
         }
     } catch (e) {
         console.error("API açarı yüklənərkən xəta:", e);
@@ -1510,30 +1503,13 @@ window.login = async function() {
             }
 
             if (!user) {
-                // Lokal keşdən istifadə et, uyğun istifadəçi tapılarsa
-                const cached = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                if (cached && (cached.id === uid || cached.email === userEmail)) {
-                    user = cached;
-                } else {
-                    // Minimal profil (məhdud rejim)
-                    user = {
-                        id: uid,
-                        username: userEmail.split('@')[0],
-                        email: userEmail,
-                        role: 'student'
-                    };
-                }
+                throw new Error('İstifadəçi profili tapılmadı!');
             }
 
             currentUser = user;
             localStorage.setItem('currentUser', JSON.stringify(user));
             updateUI();
-            showNotification(
-                firestoreDoc && firestoreDoc.exists
-                    ? ('Xoş gəldiniz, ' + (user.username || user.email) + '!')
-                    : 'Uğurlu giriş (məhdud rejim).',
-                'success'
-            );
+            showNotification('Xoş gəldiniz, ' + (user.username || user.email) + '!', 'success');
             
             if (redirectAfterAuth === 'teacher_panel' && user.role === 'teacher') {
                 redirectAfterAuth = null;
@@ -1993,69 +1969,125 @@ window.showTeacherDashboard = function(doPush = true) {
 
     hideAllSections();
     document.getElementById('teacher-dashboard-section').classList.remove('hidden');
-    renderPrivateQuizzes();
+    window.__privateQuizzesState = { quizzes: [], lastDoc: null, hasMore: true, loading: false, fallbackAll: null, pageIndex: 0 };
+    renderPrivateQuizzes(true);
     updateTeacherReportsBadge();
 }
 
 window.showTeacherReports = function() {
     hideAllSections();
     document.getElementById('teacher-reports-section').classList.remove('hidden');
-    loadTeacherReports();
+    // Reset pagination state
+    window.__teacherReportsState = {
+        reports: [],
+        lastDoc: null,
+        hasMore: true,
+        loading: false,
+        fallbackAll: null,
+        pageIndex: 0
+    };
+    loadTeacherReports(true);
 }
 
-window.loadTeacherReports = async function() {
+window.loadTeacherReports = async function(initial = false) {
     const listContainer = document.getElementById('teacher-reports-list');
+    const loadMoreBtn = document.getElementById('teacher-reports-load-more');
     if (!listContainer) return;
     
-    listContainer.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-primary"></i><p class="mt-2">Şikayətlər yüklənir...</p></div>';
+    const state = window.__teacherReportsState || (window.__teacherReportsState = { reports: [], lastDoc: null, hasMore: true, loading: false, fallbackAll: null, pageIndex: 0 });
+    const PAGE_SIZE = 5;
+    
+    if (initial) {
+        listContainer.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-primary"></i><p class="mt-2">Şikayətlər yüklənir...</p></div>';
+    } else {
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
+        }
+    }
     
     try {
         if (!currentUser) return;
         if (!db) {
-            const cached = JSON.parse(localStorage.getItem('teacherReports:' + currentUser.id) || '[]');
-            if (Array.isArray(cached) && cached.length) {
-                renderTeacherReports(cached, listContainer);
-                return;
-            } else {
-                listContainer.innerHTML = '<div class="text-center py-12 bg-white/5 rounded-xl border border-dashed border-white/10"><i class="fas fa-database text-4xl text-primary/50 mb-3"></i><p class="text-white/60">Hazırda məlumat yoxdur.</p></div>';
-                return;
-            }
-        }
-        
-        const snapshot = await db.collection('reports')
-            .where('teacherId', '==', currentUser.id)
-            .get();
-            
-        if (snapshot.empty) {
-            listContainer.innerHTML = '<div class="text-center py-12 bg-white/5 rounded-xl border border-dashed border-white/10"><i class="fas fa-check-circle text-4xl text-green-500/50 mb-3"></i><p class="text-white/60">Hələ ki, heç bir şikayət yoxdur.</p></div>';
+            listContainer.innerHTML = '<div class="text-center py-12 bg-white/5 rounded-xl border border-dashed border-white/10"><i class="fas fa-database text-4xl text-primary/50 mb-3"></i><p class="text-white/60">Hazırda məlumat yoxdur.</p></div>';
             return;
         }
-        
-        // Sənədləri massivə yığıb tarixinə görə sıralayaq (Index tələbini aradan qaldırmaq üçün)
-        const reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        reports.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        let reportsPage = [];
+        let usedFallback = false;
         try {
-            localStorage.setItem('teacherReports:' + currentUser.id, JSON.stringify(reports));
-            localStorage.setItem('teacherReportsCount:' + currentUser.id, String(reports.filter(r => r.status !== 'resolved').length));
-        } catch (e) {}
+            let q = db.collection('reports')
+                .where('teacherId', '==', currentUser.id)
+                .orderBy('timestamp', 'desc')
+                .limit(PAGE_SIZE);
+            if (state.lastDoc) {
+                q = q.startAfter(state.lastDoc);
+            }
+            const snapshot = await q.get();
+            
+            if (snapshot.empty && state.reports.length === 0) {
+                listContainer.innerHTML = '<div class="text-center py-12 bg-white/5 rounded-xl border border-dashed border-white/10"><i class="fas fa-check-circle text-4xl text-green-500/50 mb-3"></i><p class="text-white/60">Hələ ki, heç bir şikayət yoxdur.</p></div>';
+                if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
+                return;
+            }
+            
+            reportsPage = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            state.lastDoc = snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : state.lastDoc;
+            if (reportsPage.length < PAGE_SIZE) {
+                state.hasMore = false;
+            }
+        } catch (queryErr) {
+            // Fallback: tam siyahını bir dəfə oxu və client-side səhifələ
+            usedFallback = true;
+            const snapshot = await db.collection('reports')
+                .where('teacherId', '==', currentUser.id)
+                .get();
+            const allReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            allReports.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            state.fallbackAll = state.fallbackAll || allReports;
+            const start = state.pageIndex * PAGE_SIZE;
+            const end = start + PAGE_SIZE;
+            reportsPage = state.fallbackAll.slice(start, end);
+            state.pageIndex += 1;
+            if (end >= state.fallbackAll.length) {
+                state.hasMore = false;
+            }
+            errorHandler.logError(queryErr, errorHandler.ERROR_TYPES.UNKNOWN, { scope: 'teacher_reports_pagination_fallback' });
+        }
         
-        renderTeacherReports(reports, listContainer);
+        if (initial) {
+            listContainer.innerHTML = '';
+        }
+        state.reports = state.reports.concat(reportsPage);
+        appendTeacherReports(reportsPage, listContainer);
+        
+        if (loadMoreBtn) {
+            if (state.hasMore) {
+                loadMoreBtn.classList.remove('hidden');
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = 'Daha çox yüklə';
+            } else {
+                loadMoreBtn.classList.add('hidden');
+            }
+        }
         
     } catch (error) {
         console.error("Error loading teacher reports:", error);
-        // Fallback to cache
-        try {
-            const cached = JSON.parse(localStorage.getItem('teacherReports:' + currentUser.id) || '[]');
-            if (Array.isArray(cached) && cached.length) {
-                renderTeacherReports(cached, listContainer);
-                showNotification('Məhdud rejim: şikayətlər keşdən göstərilir.', 'warning');
-            } else {
-                listContainer.innerHTML = '<div class="text-center py-8 text-red-400">Şikayətləri yükləyərkən xəta baş verdi.</div>';
-            }
-        } catch (e) {
-            listContainer.innerHTML = '<div class="text-center py-8 text-red-400">Şikayətləri yükləyərkən xəta baş verdi.</div>';
+        errorHandler.logError(error, errorHandler.ERROR_TYPES.UNKNOWN, { scope: 'teacher_reports_load' });
+        listContainer.innerHTML = '<div class="text-center py-8 text-red-400">Şikayətləri yükləyərkən xəta baş verdi.</div>';
+        const loadMoreBtn2 = document.getElementById('teacher-reports-load-more');
+        if (loadMoreBtn2) {
+            loadMoreBtn2.disabled = false;
+            loadMoreBtn2.innerHTML = 'Daha çox yüklə';
         }
     }
+}
+
+window.loadMoreTeacherReports = function() {
+    if (!window.__teacherReportsState || window.__teacherReportsState.loading === true) return;
+    window.__teacherReportsState.loading = true;
+    loadTeacherReports(false).finally(() => {
+        window.__teacherReportsState.loading = false;
+    });
 }
 
 function renderTeacherReports(reports, listContainer) {
@@ -2102,6 +2134,54 @@ function renderTeacherReports(reports, listContainer) {
     listContainer.innerHTML = html;
 }
 
+function appendTeacherReports(reports, listContainer) {
+    let html = '';
+    reports.forEach(report => {
+        let date = 'Naməlum';
+        if (report.timestamp) {
+            const ts = typeof report.timestamp === 'number' ? report.timestamp : 
+                      (report.timestamp.seconds ? report.timestamp.seconds * 1000 : report.timestamp);
+            date = new Date(ts).toLocaleString('az-AZ');
+        }
+        const isRead = report.status === 'resolved';
+        
+        html += `
+            <div class="report-card ${isRead ? 'opacity-70' : 'border-l-4 border-warning'}" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
+                <div class="flex justify-between items-start mb-3">
+                    <span class="text-xs font-medium px-2 py-1 rounded bg-warning/20 text-warning">
+                        ${escapeHtml(report.categoryName || 'Özəl Test')}
+                    </span>
+                    <span class="text-xs text-white/40">${date}</span>
+                </div>
+                <p class="text-white/90 mb-4" style="font-size: 0.95rem; line-height: 1.5;">
+                    <i class="fas fa-quote-left text-primary/40 mr-2"></i>
+                    ${escapeHtml(report.message || report.reason || '')}
+                </p>
+                <div class="flex justify-between items-center pt-4 border-t border-white/5">
+                    <div class="text-xs text-white/50">
+                        <i class="fas fa-user mr-1"></i> Göndərən: ${escapeHtml(report.username || report.name || report.userName || 'Anonim')}
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="goToReportedQuestion('${report.categoryId}', '${report.questionId}', 'private', \`${(report.questionTitle || report.questionText || '').replace(/\"/g, '&quot;')}\`)" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                            <i class="fas fa-eye mr-1"></i> Suala Bax
+                        </button>
+                        ${!isRead ? `
+                            <button onclick="markReportAsResolvedByTeacher('${report.id}')" class="btn-primary" style="background: var(--success-color); border-color: var(--success-hover); padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                <i class="fas fa-check mr-1"></i> Həll Edildi
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    while (wrapper.firstElementChild) {
+        listContainer.appendChild(wrapper.firstElementChild);
+    }
+}
+
 window.markReportAsResolvedByTeacher = async function(reportId) {
     if (!confirm('Bu şikayəti həll edilmiş kimi qeyd etmək istəyirsiniz?')) return;
     
@@ -2144,19 +2224,8 @@ window.updateTeacherReportsBadge = async function() {
         } else {
             badge.classList.add('hidden');
         }
-        try { localStorage.setItem('teacherReportsCount:' + currentUser.id, String(count)); } catch (e) {}
     } catch (error) {
         console.error("Error updating teacher badge:", error);
-        // Fallback to cached count
-        try {
-            const cached = parseInt(localStorage.getItem('teacherReportsCount:' + currentUser.id) || '0', 10);
-            if (cached > 0) {
-                badge.textContent = cached;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        } catch (e) {}
     }
 }
 
@@ -3150,57 +3219,95 @@ window.savePrivateQuizFinal = async function() {
     }
 }
 
-window.renderPrivateQuizzes = async function() {
+window.renderPrivateQuizzes = async function(initial = false) {
     const grid = document.getElementById('private-quizzes-grid');
-    grid.innerHTML = '<div class="grid-cols-full text-center p-10"><i class="fas fa-spinner fa-spin text-3xl text-primary"></i><p class="mt-4 text-muted">Yüklənir...</p></div>';
-    
-    let myQuizzes = [];
-    if (db) {
-        try {
-            const snapshot = await db.collection('private_quizzes').where('teacherId', '==', currentUser.id).get();
-            myQuizzes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            // Cache locally for faster access during session if needed
-            privateQuizzes = myQuizzes;
-            try { localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes)); } catch (e) {}
-        } catch (error) {
-            console.error("Error fetching my quizzes:", error);
-            // Fallback to local cache (quota exceeded / offline)
+    const loadMoreBtn = document.getElementById('private-quizzes-load-more');
+    const PAGE_SIZE = 5;
+    const state = window.__privateQuizzesState || (window.__privateQuizzesState = { quizzes: [], lastDoc: null, hasMore: true, loading: false, fallbackAll: null, pageIndex: 0 });
+    if (initial) {
+        grid.innerHTML = '<div class="grid-cols-full text-center p-10"><i class="fas fa-spinner fa-spin text-3xl text-primary"></i><p class="mt-4 text-muted">Yüklənir...</p></div>';
+        state.quizzes = [];
+        state.lastDoc = null;
+        state.hasMore = true;
+        state.fallbackAll = null;
+        state.pageIndex = 0;
+    } else {
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
+        }
+    }
+    try {
+        let page = [];
+        if (db) {
             try {
-                const cached = JSON.parse(localStorage.getItem('privateQuizzes') || '[]');
-                myQuizzes = cached.filter(q => q.teacherId === (currentUser && currentUser.id));
-                if (myQuizzes.length > 0) {
-                    privateQuizzes = cached;
-                    showNotification('Məhdud rejim: testlər keşdən göstərilir.', 'warning');
-                } else {
-                    showNotification('Testlərinizi yükləyərkən xəta baş verdi.', 'error');
-                }
-            } catch (e) {
-                showNotification('Testlərinizi yükləyərkən xəta baş verdi.', 'error');
+                let q = db.collection('private_quizzes').where('teacherId', '==', currentUser.id).orderBy('createdAt', 'desc').limit(PAGE_SIZE);
+                if (state.lastDoc) q = q.startAfter(state.lastDoc);
+                const snapshot = await q.get();
+                page = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                state.lastDoc = snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : state.lastDoc;
+                if (page.length < PAGE_SIZE) state.hasMore = false;
+            } catch (queryErr) {
+                const snapshot = await db.collection('private_quizzes').where('teacherId', '==', currentUser.id).get();
+                const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                all.sort((a, b) => {
+                    const ta = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : 0;
+                    const tb = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : 0;
+                    return tb - ta;
+                });
+                state.fallbackAll = state.fallbackAll || all;
+                const start = state.pageIndex * PAGE_SIZE;
+                const end = start + PAGE_SIZE;
+                page = state.fallbackAll.slice(start, end);
+                state.pageIndex += 1;
+                if (end >= state.fallbackAll.length) state.hasMore = false;
+            }
+        } else {
+            const all = (JSON.parse(localStorage.getItem('privateQuizzes') || '[]').filter(q => q.teacherId === currentUser.id))
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            state.fallbackAll = state.fallbackAll || all;
+            const start = state.pageIndex * PAGE_SIZE;
+            const end = start + PAGE_SIZE;
+            page = state.fallbackAll.slice(start, end);
+            state.pageIndex += 1;
+            if (end >= state.fallbackAll.length) state.hasMore = false;
+        }
+        if (state.quizzes.length === 0 && page.length === 0) {
+            grid.innerHTML = '<p class="grid-cols-full text-center p-6 text-muted">Hələ heç bir özəl test yaratmamısınız.</p>';
+            if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
+            return;
+        }
+        if (initial) grid.innerHTML = '';
+        state.quizzes = state.quizzes.concat(page);
+        appendPrivateQuizzes(page);
+        if (loadMoreBtn) {
+            if (state.hasMore) {
+                loadMoreBtn.classList.remove('hidden');
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = 'Daha çox yüklə';
+            } else {
+                loadMoreBtn.classList.add('hidden');
             }
         }
-    } else {
-        myQuizzes = privateQuizzes.filter(q => q.teacherId === currentUser.id);
-        localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes));
+    } catch (e) {
+        console.error(e);
+        grid.innerHTML = '<p class="grid-cols-full text-center p-6 text-danger">Testlər yüklənə bilmədi.</p>';
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.innerHTML = 'Daha çox yüklə';
+        }
     }
-    
-    grid.innerHTML = '';
-    
-    if (myQuizzes.length === 0) {
-        grid.innerHTML = '<p class="grid-cols-full text-center p-6 text-muted">Hələ heç bir özəl test yaratmamısınız.</p>';
-        return;
-    }
-    
-    myQuizzes.forEach(quiz => {
+}
+
+function appendPrivateQuizzes(quizzes) {
+    const grid = document.getElementById('private-quizzes-grid');
+    quizzes.forEach(quiz => {
         const card = document.createElement('div');
         card.className = 'category-card';
         if (quiz.isActive === false) card.classList.add('opacity-70');
-        
         const baseUrl = window.location.origin + window.location.pathname;
         const quizLink = `${baseUrl}?quiz=${quiz.id}`;
-        
-        const isActive = quiz.isActive !== false; // Default to true if undefined
-        
+        const isActive = quiz.isActive !== false;
         card.innerHTML = `
             <div class="cat-card-header">
                 <span class="status-badge ${isActive ? 'active' : 'inactive'}">
@@ -3224,6 +3331,14 @@ window.renderPrivateQuizzes = async function() {
             </div>
         `;
         grid.appendChild(card);
+    });
+}
+
+window.loadMorePrivateQuizzes = function() {
+    if (!window.__privateQuizzesState || window.__privateQuizzesState.loading === true) return;
+    window.__privateQuizzesState.loading = true;
+    renderPrivateQuizzes(false).finally(() => {
+        window.__privateQuizzesState.loading = false;
     });
 }
 
@@ -3399,47 +3514,147 @@ window.showStudentResults = async function(quizId, quizTitle) {
             const quizData = quizDoc.exists ? quizDoc.data() : null;
             if (!quizData) throw new Error("Test məlumatı tapılmadı.");
 
-            // Previous State Restoration: No password check for viewing results
-            // Note: If data is encrypted, we try to decrypt using stored password or just fail gracefully if plain questions missing
-            
-            const snapshot = await db.collection('student_attempts')
-                .where('quizId', '==', quizId)
-                .get();
-            
-            let attempts = snapshot.docs.map(doc => doc.data());
-            attempts.sort((a, b) => b.timestamp - a.timestamp);
-            
-            renderStudentResultsTable(attempts);
-
-            if (attempts.length > 0 && quizData) {
-                if (Array.isArray(quizData.questions)) {
-                    currentQuizAnalytics = { quiz: quizData, attempts: attempts };
-                    document.getElementById('btn-show-analytics').classList.remove('hidden');
-                    schedulePrepareAnalytics();
-                } else if (quizData.questionsCipher) {
-                    try {
-                        // Try to auto-decrypt with stored password or quiz.password if available
-                        const savedPwd = localStorage.getItem('quiz_pass_' + quizId) || quizData.password;
-                        if (savedPwd) {
-                            const bytes = CryptoJS.AES.decrypt(quizData.questionsCipher, savedPwd);
-                            const decoded = bytes.toString(CryptoJS.enc.Utf8);
-                            quizData.questions = JSON.parse(decoded);
-                            currentQuizAnalytics = { quiz: quizData, attempts: attempts };
-                            document.getElementById('btn-show-analytics').classList.remove('hidden');
-                            schedulePrepareAnalytics();
-                        }
-                    } catch (e) {
-                        console.warn('Analytics decryption failed');
-                    }
-                }
+            window.__studentResultsState = { quizId: quizId, attempts: [], lastDoc: null, hasMore: true, loading: false, fallbackAll: null, pageIndex: 0, quizData: quizData, pageSize: 5 };
+            const loadBtn = document.getElementById('student-results-load-more');
+            if (loadBtn) {
+                loadBtn.classList.remove('hidden');
+                loadBtn.disabled = true;
+                loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
+            }
+            await window.loadStudentResultsPage(true);
+            if (loadBtn && window.__studentResultsState.hasMore) {
+                loadBtn.disabled = false;
+                loadBtn.innerHTML = 'Daha çox yüklə';
+            } else if (loadBtn) {
+                loadBtn.classList.add('hidden');
             }
         } catch (e) {
             console.error("ShowStudentResults Error:", e);
+            try { errorHandler.logError(e, errorHandler.ERROR_TYPES.UNKNOWN, { scope: 'student_results_load', quizId }); } catch (_) {}
             tableBody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-danger">Xəta: ${e.message}</td></tr>`;
         }
     } else {
         tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-muted">Firebase aktiv deyil.</td></tr>';
     }
+}
+
+window.loadStudentResultsPage = async function(initial = false) {
+    const state = window.__studentResultsState || {};
+    const tableBody = document.getElementById('student-results-body');
+    const loadBtn = document.getElementById('student-results-load-more');
+    if (!db || !state.quizId || !tableBody) return;
+    try {
+        let page = [];
+        let usedFallback = false;
+        try {
+            let q = db.collection('student_attempts')
+                .where('quizId', '==', state.quizId)
+                .orderBy('timestamp', 'desc')
+                .limit(state.pageSize);
+            if (state.lastDoc) {
+                q = q.startAfter(state.lastDoc);
+            }
+            const snapshot = await q.get();
+            page = snapshot.docs.map(doc => doc.data());
+            state.lastDoc = snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : state.lastDoc;
+            if (page.length < state.pageSize) {
+                state.hasMore = false;
+            }
+        } catch (queryErr) {
+            usedFallback = true;
+            const snapshot = await db.collection('student_attempts')
+                .where('quizId', '==', state.quizId)
+                .get();
+            const all = snapshot.docs.map(doc => doc.data());
+            all.sort((a, b) => b.timestamp - a.timestamp);
+            state.fallbackAll = state.fallbackAll || all;
+            const start = state.pageIndex * state.pageSize;
+            const end = start + state.pageSize;
+            page = state.fallbackAll.slice(start, end);
+            state.pageIndex += 1;
+            if (end >= (state.fallbackAll ? state.fallbackAll.length : 0)) {
+                state.hasMore = false;
+            }
+            try { errorHandler.logError(queryErr, errorHandler.ERROR_TYPES.UNKNOWN, { scope: 'student_results_pagination_fallback', quizId: state.quizId }); } catch (_) {}
+        }
+        if (initial) {
+            tableBody.innerHTML = '';
+        }
+        state.attempts = state.attempts.concat(page);
+        window.__studentResultsState = state;
+        appendStudentResultsRows(page);
+        if (state.attempts.length > 0 && state.quizData) {
+            if (Array.isArray(state.quizData.questions)) {
+                currentQuizAnalytics = { quiz: state.quizData, attempts: state.attempts };
+                document.getElementById('btn-show-analytics').classList.remove('hidden');
+                schedulePrepareAnalytics();
+            } else if (state.quizData.questionsCipher) {
+                try {
+                    const savedPwd = localStorage.getItem('quiz_pass_' + state.quizId) || state.quizData.password;
+                    if (savedPwd) {
+                        const bytes = CryptoJS.AES.decrypt(state.quizData.questionsCipher, savedPwd);
+                        const decoded = bytes.toString(CryptoJS.enc.Utf8);
+                        state.quizData.questions = JSON.parse(decoded);
+                        currentQuizAnalytics = { quiz: state.quizData, attempts: state.attempts };
+                        document.getElementById('btn-show-analytics').classList.remove('hidden');
+                        schedulePrepareAnalytics();
+                    }
+                } catch (_) {}
+            }
+        }
+        if (loadBtn) {
+            if (state.hasMore) {
+                loadBtn.classList.remove('hidden');
+                loadBtn.disabled = false;
+                loadBtn.innerHTML = 'Daha çox yüklə';
+            } else {
+                loadBtn.classList.add('hidden');
+            }
+        }
+    } catch (e) {
+        try { errorHandler.logError(e, errorHandler.ERROR_TYPES.UNKNOWN, { scope: 'student_results_page', quizId: state.quizId }); } catch (_) {}
+    }
+}
+
+window.loadMoreStudentResults = function() {
+    const state = window.__studentResultsState || {};
+    if (state.loading) return;
+    state.loading = true;
+    window.__studentResultsState = state;
+    const loadBtn = document.getElementById('student-results-load-more');
+    if (loadBtn) {
+        loadBtn.disabled = true;
+        loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
+    }
+    window.loadStudentResultsPage(false).finally(() => {
+        const s = window.__studentResultsState || {};
+        s.loading = false;
+        window.__studentResultsState = s;
+    });
+}
+
+function appendStudentResultsRows(attempts) {
+    const tableBody = document.getElementById('student-results-body');
+    if (!tableBody) return;
+    if (attempts.length === 0 && tableBody.children.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-10 text-muted">Hələ heç bir nəticə yoxdur.</td></tr>';
+        return;
+    }
+    attempts.forEach(attempt => {
+        const date = new Date(attempt.timestamp).toLocaleDateString('az-AZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const accuracy = Math.round((attempt.score / attempt.total) * 100);
+        const badgeClass = accuracy >= 80 ? 'accuracy-high' : (accuracy >= 50 ? 'accuracy-mid' : 'accuracy-low');
+        const tr = document.createElement('tr');
+        const unanswered = attempt.unanswered !== undefined ? attempt.unanswered : 0;
+        const wrong = attempt.wrong !== undefined ? attempt.wrong : (attempt.total - attempt.score - unanswered);
+        tr.innerHTML = `
+            <td>${escapeHtml(attempt.studentName || '')}</td>
+            <td><span class="accuracy-badge ${badgeClass}">${accuracy}%</span></td>
+            <td>${date}</td>
+            <td>${attempt.score} / ${wrong} / ${unanswered}</td>
+        `;
+        tableBody.appendChild(tr);
+    });
 }
 
 window.toggleAnalyticsView = function() {
@@ -3941,8 +4156,8 @@ window.showProfile = function(doPush = true) {
     document.getElementById('profile-role').textContent = roleText;
     
     renderHistory();
-    loadUserQuestions();
-    loadUserInbox();
+    loadUserQuestions(true);
+    loadUserInbox(true);
 }
 
 window.toggleUsernameBox = function() {
@@ -3989,38 +4204,74 @@ window.updateUserUsername = async function() {
     }
 }
 
-async function loadUserQuestions() {
+async function loadUserQuestions(initial = false) {
     const list = document.getElementById('user-questions-list');
     const countBadge = document.getElementById('user-questions-count');
-    list.innerHTML = '<div class="text-center p-6"><i class="fas fa-spinner fa-spin mr-2"></i> Yüklənir...</div>';
+    const loadMoreBtn = document.getElementById('user-questions-load-more');
+    const PAGE_SIZE = 5;
+    const state = window.__userQuestionsState || (window.__userQuestionsState = { questions: [], lastDoc: null, hasMore: true, loading: false, fallbackAll: null, pageIndex: 0 });
+    if (initial) {
+        list.innerHTML = '<div class="text-center p-6"><i class="fas fa-spinner fa-spin mr-2"></i> Yüklənir...</div>';
+        state.questions = [];
+        state.lastDoc = null;
+        state.hasMore = true;
+        state.fallbackAll = null;
+        state.pageIndex = 0;
+    } else {
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
+        }
+    }
 
     try {
-        let questions = [];
+        let page = [];
         if (db) {
-            const snapshot = await db.collection('public_questions')
-                .where('authorId', '==', currentUser.id)
-                .get();
-            questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            questions.sort((a, b) => {
-                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : 0;
-                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : 0;
-                return timeB - timeA;
-            });
+            try {
+                let q = db.collection('public_questions').where('authorId', '==', currentUser.id).orderBy('createdAt', 'desc').limit(PAGE_SIZE);
+                if (state.lastDoc) q = q.startAfter(state.lastDoc);
+                const snapshot = await q.get();
+                page = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                state.lastDoc = snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : state.lastDoc;
+                if (page.length < PAGE_SIZE) state.hasMore = false;
+            } catch (queryErr) {
+                const snapshot = await db.collection('public_questions').where('authorId', '==', currentUser.id).get();
+                const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                all.sort((a, b) => {
+                    const ta = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : 0;
+                    const tb = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : 0;
+                    return tb - ta;
+                });
+                state.fallbackAll = state.fallbackAll || all;
+                const start = state.pageIndex * PAGE_SIZE;
+                const end = start + PAGE_SIZE;
+                page = state.fallbackAll.slice(start, end);
+                state.pageIndex += 1;
+                if (end >= state.fallbackAll.length) state.hasMore = false;
+            }
         } else {
-            const localPQ = JSON.parse(localStorage.getItem('public_questions') || '[]');
-            questions = localPQ.filter(q => q.authorId === currentUser.id)
+            const localPQ = JSON.parse(localStorage.getItem('public_questions') || '[]')
+                .filter(q => q.authorId === currentUser.id)
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            state.fallbackAll = state.fallbackAll || localPQ;
+            const start = state.pageIndex * PAGE_SIZE;
+            const end = start + PAGE_SIZE;
+            page = state.fallbackAll.slice(start, end);
+            state.pageIndex += 1;
+            if (end >= state.fallbackAll.length) state.hasMore = false;
         }
 
-        countBadge.textContent = `${questions.length} sual`;
+        countBadge.textContent = `${state.fallbackAll ? state.fallbackAll.length : (state.questions.length + page.length)} sual`;
 
-        if (questions.length === 0) {
+        if (state.questions.length === 0 && page.length === 0) {
             list.innerHTML = '<p class="text-center text-muted p-10">Sizin tərəfinizdən əlavə edilmiş sual yoxdur.</p>';
+            if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
             return;
         }
 
-        list.innerHTML = '';
-        questions.forEach(q => {
+        if (initial) list.innerHTML = '';
+        state.questions = state.questions.concat(page);
+        page.forEach(q => {
             const cat = categories.find(c => c.id === q.categoryId);
             const div = document.createElement('div');
             div.className = 'list-item mb-4 p-4 bg-white rounded-lg shadow-sm border flex justify-between items-start gap-4';
@@ -4045,10 +4296,31 @@ async function loadUserQuestions() {
             `;
             list.appendChild(div);
         });
+        if (loadMoreBtn) {
+            if (state.hasMore) {
+                loadMoreBtn.classList.remove('hidden');
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = 'Daha çox yüklə';
+            } else {
+                loadMoreBtn.classList.add('hidden');
+            }
+        }
     } catch (e) {
         console.error(e);
         list.innerHTML = '<p class="text-center text-danger p-6">Sualları yükləmək mümkün olmadı.</p>';
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.innerHTML = 'Daha çox yüklə';
+        }
     }
+}
+
+window.loadMoreUserQuestions = function() {
+    if (!window.__userQuestionsState || window.__userQuestionsState.loading === true) return;
+    window.__userQuestionsState.loading = true;
+    loadUserQuestions(false).finally(() => {
+        window.__userQuestionsState.loading = false;
+    });
 }
 
 window.deleteUserQuestion = async function(qId) {
@@ -4062,7 +4334,7 @@ window.deleteUserQuestion = async function(qId) {
                 localStorage.setItem('public_questions', JSON.stringify(localPQ));
             }
             showNotification('Sual silindi', 'success');
-            loadUserQuestions();
+            loadUserQuestions(true);
         } catch (e) {
             console.error(e);
             showNotification('Sual silinərkən xəta baş verdi', 'error');
@@ -4126,7 +4398,7 @@ window.editUserQuestion = async function(qId) {
             }
             showNotification('Sual yeniləndi');
             closeModal('public-question-modal');
-            loadUserQuestions();
+            loadUserQuestions(true);
             
             // Restore original button
             submitBtn.textContent = originalText;
@@ -4524,7 +4796,8 @@ window.showPublicQuestions = function() {
     const addBtn = document.getElementById('add-public-q-btn');
     addBtn.classList.remove('hidden');
 
-    loadPublicQuestions();
+    window.__publicQuestionsState = { questions: [], lastDoc: null, hasMore: true, loading: false, fallbackAll: null, pageIndex: 0 };
+    loadPublicQuestions(true);
 }
 
 window.hidePublicQuestions = function() {
@@ -4639,35 +4912,142 @@ window.submitPublicQuestion = async function() {
     }
 }
 
-window.loadPublicQuestions = async function() {
+window.loadPublicQuestions = async function(initial = false) {
     const list = document.getElementById('public-questions-list');
-    list.innerHTML = '<div class="text-center p-6"><i class="fas fa-spinner fa-spin"></i> Yüklənir...</div>';
-
-    try {
-        let questions = [];
-        if (db) {
-            const snapshot = await db.collection('public_questions')
-                .where('categoryId', '==', activeCategoryId)
-                .get();
-            questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            // Client-side sort (missing index avoidance)
-            questions.sort((a, b) => {
-                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : 0;
-                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : 0;
-                return timeB - timeA;
-            });
-        } else {
-            const localPQ = JSON.parse(localStorage.getItem('public_questions') || '[]');
-            questions = localPQ.filter(q => q.categoryId === activeCategoryId)
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const loadMoreBtn = document.getElementById('public-questions-load-more');
+    const PAGE_SIZE = 5;
+    const state = window.__publicQuestionsState || (window.__publicQuestionsState = { questions: [], lastDoc: null, hasMore: true, loading: false, fallbackAll: null, pageIndex: 0 });
+    if (initial) {
+        list.innerHTML = '<div class="text-center p-6"><i class="fas fa-spinner fa-spin"></i> Yüklənir...</div>';
+        state.questions = [];
+        state.lastDoc = null;
+        state.hasMore = true;
+        state.fallbackAll = null;
+        state.pageIndex = 0;
+    } else {
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
         }
-
-        renderPublicQuestions(questions);
+    }
+    try {
+        let page = [];
+        if (db) {
+            try {
+                let q = db.collection('public_questions').where('categoryId', '==', activeCategoryId).orderBy('createdAt', 'desc').limit(PAGE_SIZE);
+                if (state.lastDoc) q = q.startAfter(state.lastDoc);
+                const snapshot = await q.get();
+                page = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                state.lastDoc = snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : state.lastDoc;
+                if (page.length < PAGE_SIZE) state.hasMore = false;
+            } catch (queryErr) {
+                const snapshot = await db.collection('public_questions').where('categoryId', '==', activeCategoryId).get();
+                const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                all.sort((a, b) => {
+                    const ta = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : 0;
+                    const tb = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : 0;
+                    return tb - ta;
+                });
+                state.fallbackAll = state.fallbackAll || all;
+                const start = state.pageIndex * PAGE_SIZE;
+                const end = start + PAGE_SIZE;
+                page = state.fallbackAll.slice(start, end);
+                state.pageIndex += 1;
+                if (end >= state.fallbackAll.length) state.hasMore = false;
+            }
+        } else {
+            const all = JSON.parse(localStorage.getItem('public_questions') || '[]')
+                .filter(q => q.categoryId === activeCategoryId)
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            state.fallbackAll = state.fallbackAll || all;
+            const start = state.pageIndex * PAGE_SIZE;
+            const end = start + PAGE_SIZE;
+            page = state.fallbackAll.slice(start, end);
+            state.pageIndex += 1;
+            if (end >= state.fallbackAll.length) state.hasMore = false;
+        }
+        if (state.questions.length === 0 && page.length === 0) {
+            list.innerHTML = '<p class="text-center text-muted p-10">Hələ heç kim sual əlavə etməyib. İlk sualı siz əlavə edin!</p>';
+            if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
+            return;
+        }
+        if (initial) list.innerHTML = '';
+        state.questions = state.questions.concat(page);
+        appendPublicQuestions(page);
+        if (loadMoreBtn) {
+            if (state.hasMore) {
+                loadMoreBtn.classList.remove('hidden');
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = 'Daha çox yüklə';
+            } else {
+                loadMoreBtn.classList.add('hidden');
+            }
+        }
     } catch (e) {
         console.error(e);
         list.innerHTML = '<p class="text-center text-danger p-4">Sualları yükləmək mümkün olmadı.</p>';
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.innerHTML = 'Daha çox yüklə';
+        }
     }
+}
+
+function appendPublicQuestions(questions) {
+    const list = document.getElementById('public-questions-list');
+    questions.forEach(q => {
+        const likes = q.likes || [];
+        const dislikes = q.dislikes || [];
+        const userLiked = currentUser && likes.includes(currentUser.id);
+        const userDisliked = currentUser && dislikes.includes(currentUser.id);
+        const div = document.createElement('div');
+        div.className = 'public-q-card';
+        const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+        div.innerHTML = `
+            <div class="public-q-header">
+                <span><i class="fas fa-user"></i> ${q.authorName || 'Anonim'}</span>
+                <div class="flex items-center gap-3">
+                    <span>${q.createdAt ? (db ? new Date(q.createdAt.toDate()).toLocaleDateString() : new Date(q.createdAt).toLocaleDateString()) : ''}</span>
+                    ${isAdmin ? `<button onclick="deletePublicQuestion('${q.id}')" class="bg-none border-none text-danger cursor-pointer text-sm" title="Sualı sil"><i class="fas fa-trash"></i></button>` : ''}
+                </div>
+            </div>
+            <div class="public-q-text">${q.text}</div>
+            <div class="public-q-options" id="pub-options-${q.id}">
+                ${q.options.map((opt, idx) => `
+                    <div class="pub-opt-item" onclick="checkPublicAnswer('${q.id}', ${idx}, ${q.correctIndex})">
+                        ${String.fromCharCode(65 + idx)}) ${opt}
+                    </div>
+                `).join('')}
+            </div>
+            <div class="public-q-actions">
+                <div class="like-dislike-group">
+                    <button onclick="likeQuestion('${q.id}')" class="action-btn like-btn ${userLiked ? 'active' : ''}" title="Bəyən">
+                        <i class="${userLiked ? 'fas' : 'far'} fa-thumbs-up"></i>
+                        <span>${likes.length}</span>
+                    </button>
+                    <button onclick="dislikeQuestion('${q.id}')" class="action-btn dislike-btn ${userDisliked ? 'active' : ''}" title="Bəyənmə">
+                        <i class="${userDisliked ? 'fas' : 'far'} fa-thumbs-down"></i>
+                        <span>${dislikes.length}</span>
+                    </button>
+                </div>
+                <button onclick="showDiscussion('${q.id}')" class="btn-outline">
+                    <i class="fas fa-comments"></i> Müzakirə Et
+                </button>
+                <button onclick="openReportModal('${q.id}', 'public', '${q.text.substring(0, 50)}...')" class="btn-report">
+                    <i class="fas fa-flag"></i> Bildir
+                </button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+window.loadMorePublicQuestions = function() {
+    if (!window.__publicQuestionsState || window.__publicQuestionsState.loading === true) return;
+    window.__publicQuestionsState.loading = true;
+    loadPublicQuestions(false).finally(() => {
+        window.__publicQuestionsState.loading = false;
+    });
 }
 
 function renderPublicQuestions(questions) {
@@ -6502,221 +6882,259 @@ window.showReports = function(doPush = true) {
 
     hideAllSections();
     document.getElementById('reports-section').classList.remove('hidden');
-    loadReports();
+    window.__adminReportsState = { reports: [], lastDoc: null, hasMore: true, loading: false, fallbackAll: null, pageIndex: 0, meta: { allQuizzes: [], allUsers: [] } };
+    loadReports(true);
 }
 
-window.loadReports = async function() {
+window.loadReports = async function(initial = false) {
     const list = document.getElementById('reports-list');
-    list.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin text-primary"></i> Yüklənir...</div>';
+    const loadMoreBtn = document.getElementById('admin-reports-load-more');
+    const PAGE_SIZE = 5;
+    const state = window.__adminReportsState || (window.__adminReportsState = { reports: [], lastDoc: null, hasMore: true, loading: false, fallbackAll: null, pageIndex: 0, meta: { allQuizzes: [], allUsers: [] } });
+    if (initial) {
+        list.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin text-primary"></i> Yüklənir...</div>';
+        state.reports = [];
+        state.lastDoc = null;
+        state.hasMore = true;
+        state.fallbackAll = null;
+        state.pageIndex = 0;
+    } else {
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
+        }
+    }
     
     try {
-        let reports = [];
-        let allQuizzes = [];
-        let allUsers = [];
+        let reportsPage = [];
 
         if (db) {
-            // Şikayətləri, bütün şəxsi testləri və kateqoriyaları yükləyək (İstifadəçiləri yükləmirik - Təhlükəsizlik)
-            const [reportSnapshot, quizSnapshot, catSnapshot] = await Promise.all([
-                db.collection('reports').orderBy('timestamp', 'desc').get(),
-                db.collection('private_quizzes').get(),
-                db.collection('categories').get()
-            ]);
-            
-            reports = reportSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            allQuizzes = quizSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const allCats = catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            // Ehtiyat variant kimi kateqoriyaları da quiz siyahısına qataq
-            allQuizzes = [...allQuizzes, ...allCats];
+            if (initial || !state.meta || state.meta.allQuizzes.length === 0) {
+                const [quizSnapshot, catSnapshot] = await Promise.all([
+                    db.collection('private_quizzes').get(),
+                    db.collection('categories').get()
+                ]);
+                const allQuizzes = quizSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const allCats = catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                state.meta = { allQuizzes: [...allQuizzes, ...allCats], allUsers: [] };
+            }
+            try {
+                let q = db.collection('reports').orderBy('timestamp', 'desc').limit(PAGE_SIZE);
+                if (state.lastDoc) q = q.startAfter(state.lastDoc);
+                const snapshot = await q.get();
+                reportsPage = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                state.lastDoc = snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : state.lastDoc;
+                if (reportsPage.length < PAGE_SIZE) state.hasMore = false;
+            } catch (queryErr) {
+                const snapshot = await db.collection('reports').get();
+                const allReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => {
+                    const ta = a.timestamp ? (a.timestamp.toDate ? a.timestamp.toDate().getTime() : new Date(a.timestamp).getTime()) : 0;
+                    const tb = b.timestamp ? (b.timestamp.toDate ? b.timestamp.toDate().getTime() : new Date(b.timestamp).getTime()) : 0;
+                    return tb - ta;
+                });
+                state.fallbackAll = state.fallbackAll || allReports;
+                const start = state.pageIndex * PAGE_SIZE;
+                const end = start + PAGE_SIZE;
+                reportsPage = state.fallbackAll.slice(start, end);
+                state.pageIndex += 1;
+                if (end >= state.fallbackAll.length) state.hasMore = false;
+            }
         } else {
-            reports = JSON.parse(localStorage.getItem('reports') || '[]').sort((a, b) => b.timestamp - a.timestamp);
+            const all = JSON.parse(localStorage.getItem('reports') || '[]').sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+            state.fallbackAll = state.fallbackAll || all;
+            const start = state.pageIndex * PAGE_SIZE;
+            const end = start + PAGE_SIZE;
+            reportsPage = state.fallbackAll.slice(start, end);
+            state.pageIndex += 1;
+            if (end >= state.fallbackAll.length) state.hasMore = false;
         }
 
-        if (reports.length === 0) {
+        if (state.reports.length === 0 && reportsPage.length === 0) {
             list.innerHTML = '<div class="text-center p-10 text-muted">Hələ heç bir şikayət və ya mesaj yoxdur.</div>';
+            if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
             return;
         }
-
-        list.innerHTML = '';
-        reports.forEach(report => {
-            const div = document.createElement('div');
-            div.className = `list-item border-l-4 ${report.status === 'pending' ? 'border-danger' : 'border-success'}`;
-            
-            const date = report.timestamp ? (report.timestamp.toDate ? report.timestamp.toDate() : new Date(report.timestamp)).toLocaleString('az-AZ') : 'Tarix yoxdur';
-            
-            // Sualın hansı testə və ya müəllimə aid olduğunu tapaq
-            let ownerInfo = '';
-            let foundQuiz = null;
-
-            // 1. Əvvəlcə categoryId ilə tapaq
-            if (report.categoryId && report.categoryId !== 'private') {
-                foundQuiz = allQuizzes.find(q => q.id == report.categoryId);
-            }
-
-            // 2. Əgər tapılmasa və ya categoryId 'private' idisə, questionId və ya mətnlə axtaraq
-            if (!foundQuiz) {
-                const searchTitle = report.questionTitle ? report.questionTitle.replace(/\.\.\.$/, '').trim() : "";
-                
-                foundQuiz = allQuizzes.find(quiz => 
-                    quiz.questions && quiz.questions.some((q, idx) => 
-                        (q.id && report.questionId && q.id == report.questionId) || 
-                        (report.questionId && (report.questionId == idx || report.questionId == `q_idx_${idx}`)) ||
-                        (searchTitle && q.text && q.text.includes(searchTitle.substring(0, 30)))
-                    )
-                );
-            }
-
-            // 3. Əgər hələ də tapılmasa və reportda teacherId varsa, müəllimin digər testlərinə baxaq (ehtimal azdır amma yenə də)
-            if (!foundQuiz && report.teacherId) {
-                foundQuiz = allQuizzes.find(q => q.teacherId == report.teacherId);
-            }
-
-            if (foundQuiz) {
-                let authorName = foundQuiz.authorName;
-                
-                // Əgər authorName yoxdursa, teacherId ilə istifadəçilər arasından tapaq
-                if (!authorName && foundQuiz.teacherId) {
-                    const teacher = allUsers.find(u => u.id == foundQuiz.teacherId);
-                    if (teacher) {
-                        authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
-                    }
-                }
-                
-                // Əgər yenə yoxdursa və reportda teacherId varsa
-                if (!authorName && report.teacherId) {
-                    const teacher = allUsers.find(u => u.id == report.teacherId);
-                    if (teacher) {
-                        authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
-                    }
-                }
-
-                const safeAuthorName = escapeHtml(authorName || '');
-                const safeQuizTitle = escapeHtml((foundQuiz.title || foundQuiz.name || 'Adsız'));
-                ownerInfo = `
-                    <div class="mt-1 flex items-center gap-2">
-                        ${authorName ? `
-                            <span class="text-[10px] bg-primary-light text-primary px-2 py-0.5 rounded-full border border-primary/20">
-                                <i class="fas fa-user-tie"></i> Müəllim: ${safeAuthorName}
-                            </span>
-                        ` : ''}
-                        <span class="text-[10px] bg-warning-light text-warning-dark px-2 py-0.5 rounded-full border border-warning/20">
-                            <i class="fas fa-file-alt"></i> Test/Kateqoriya: ${safeQuizTitle}
-                        </span>
-                    </div>
-                `;
-            } else if (report.teacherId) {
-                // Sual tapılmasa belə, əgər müəllim ID-si varsa onu göstərək
-                const teacher = allUsers.find(u => u.id == report.teacherId);
-                if (teacher) {
-                    const authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
-                    const safeAuthorName = escapeHtml(authorName || '');
-                    ownerInfo = `
-                        <div class="mt-1 flex items-center gap-2">
-                            <span class="text-[10px] bg-primary-light text-primary px-2 py-0.5 rounded-full border border-primary/20">
-                                <i class="fas fa-user-tie"></i> Müəllim: ${safeAuthorName}
-                            </span>
-                        </div>
-                    `;
-                }
-            }
-
-            let headerHtml = '';
-            if (report.type === 'contact_form') {
-                headerHtml = `
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-success">
-                            <i class="fas fa-envelope"></i> Əlaqə Mesajı
-                        </span>
-                    </div>
-                `;
+        if (initial) list.innerHTML = '';
+        state.reports = state.reports.concat(reportsPage);
+        appendAdminReports(reportsPage, list, state.meta.allQuizzes, state.meta.allUsers);
+        if (loadMoreBtn) {
+            if (state.hasMore) {
+                loadMoreBtn.classList.remove('hidden');
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = 'Daha çox yüklə';
             } else {
-                let typeLabel = 'Ümumi';
-                if (report.questionType === 'private' || report.questionType === 'quiz') typeLabel = 'Özəl Test';
-                else if (report.questionType === 'category') typeLabel = 'Kateqoriya';
-
-                headerHtml = `
-                    <div class="flex flex-col">
-                        <div class="flex items-center gap-2">
-                            <span class="font-semibold text-primary">
-                                <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${typeLabel})
-                            </span>
-                            <button onclick="goToReportedQuestion('${report.categoryId || ''}', '${report.questionId}', '${report.questionType}', \`${(report.questionTitle || '').replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`)" class="btn-primary p-1 px-2 text-xs rounded-sm">
-                                <i class="fas fa-external-link-alt"></i> Suala get
-                            </button>
-                        </div>
-                        ${ownerInfo}
-                    </div>
-                `;
+                loadMoreBtn.classList.add('hidden');
             }
-            
-            const statusBadge = report.status === 'pending' ? 
-                '<span class="inbox-status status-pending"><i class="fas fa-clock"></i> Gözləyir</span>' : 
-                '<span class="inbox-status status-replied"><i class="fas fa-check-double"></i> Cavablandı</span>';
-            
-            const safeQuestionTitle = report.questionTitle ? escapeHtml(report.questionTitle) : '';
-            const safeMessage = escapeHtml(report.message || '');
-            const safeAdminReply = escapeHtml(report.adminReply || '');
-            const safeSender = escapeHtml(report.username || report.name || report.userName || 'Qonaq');
-            const safeContact = report.contactInfo ? escapeHtml(report.contactInfo) : '';
-
-            div.innerHTML = `
-                <div class="flex-1">
-                    <div class="flex justify-between items-start mb-2">
-                        <div class="flex flex-col gap-1">
-                            <div class="flex items-center gap-2">
-                                ${headerHtml}
-                                ${statusBadge}
-                            </div>
-                            ${report.questionTitle ? `
-                                <span class="text-sm text-main font-medium">
-                                    <strong>Sual:</strong> ${safeQuestionTitle}
-                                </span>
-                            ` : ''}
-                        </div>
-                        <span class="text-xs text-muted">${date}</span>
-                    </div>
-                    <div class="mb-2 bg-bg p-3 rounded-md border-l-2 border-border text-main">
-                        <div class="text-xs text-uppercase text-muted font-semibold mb-1">Mesaj:</div>
-                        "${safeMessage}"
-                    </div>
-
-                    ${report.adminReply ? `
-                        <div class="mb-2 bg-success-light p-3 rounded-md border-l-2 border-success text-success-dark">
-                            <div class="text-xs text-uppercase text-success-dark font-semibold mb-1">Sizin Cavabınız:</div>
-                            "${safeAdminReply}"
-                        </div>
-                    ` : ''}
-
-                    <div class="text-sm text-muted flex items-center gap-2 flex-wrap">
-                        <span><i class="fas fa-user"></i> Göndərən: <strong>${safeSender}</strong></span>
-                        ${report.contactInfo ? `<span>|</span> <span><i class="fas fa-at"></i> Əlaqə: <strong>${safeContact}</strong></span>` : ''}
-                        <span>|</span>
-                        <span>ID: ${report.userId}</span>
-                    </div>
-                </div>
-                <div class="flex gap-2 items-center flex-shrink-0">
-                    <button onclick="openReplyModal('${report.id}', \`${report.message.replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`)" class="btn-reply" title="Cavab yaz">
-                        <i class="fas fa-reply"></i>
-                        <span>Cavab yaz</span>
-                    </button>
-                    ${report.status === 'pending' ? `
-                        <button onclick="markReportAsResolved('${report.id}')" class="btn-success p-2 text-xs rounded-sm" title="Həll edildi">
-                            <i class="fas fa-check"></i>
-                        </button>
-                    ` : ''}
-                    <button onclick="deleteReport('${report.id}')" class="btn-outline p-2 text-xs rounded-sm border-danger text-danger" title="Sil">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            list.appendChild(div);
-        });
+        }
     } catch (e) {
         console.error(e);
         list.innerHTML = '<div class="text-center p-5 text-danger">Şikayətləri yükləmək mümkün olmadı.</div>';
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.innerHTML = 'Daha çox yüklə';
+        }
     }
 }
 
+function appendAdminReports(reports, list, allQuizzes, allUsers) {
+    reports.forEach(report => {
+        const div = document.createElement('div');
+        div.className = `list-item border-l-4 ${report.status === 'pending' ? 'border-danger' : 'border-success'}`;
+        const dateStr = report.timestamp ? (report.timestamp.toDate ? report.timestamp.toDate() : new Date(report.timestamp)).toLocaleString('az-AZ') : 'Tarix yoxdur';
+        let ownerInfo = '';
+        let foundQuiz = null;
+        if (report.categoryId && report.categoryId !== 'private') {
+            foundQuiz = (allQuizzes || []).find(q => q.id == report.categoryId);
+        }
+        if (!foundQuiz) {
+            const searchTitle = report.questionTitle ? report.questionTitle.replace(/\.\.\.$/, '').trim() : '';
+            foundQuiz = (allQuizzes || []).find(quiz =>
+                quiz.questions && quiz.questions.some((q, idx) =>
+                    (q.id && report.questionId && q.id == report.questionId) ||
+                    (report.questionId && (report.questionId == idx || report.questionId == `q_idx_${idx}`)) ||
+                    (searchTitle && q.text && q.text.includes(searchTitle.substring(0, 30)))
+                )
+            );
+        }
+        if (!foundQuiz && report.teacherId) {
+            foundQuiz = (allQuizzes || []).find(q => q.teacherId == report.teacherId);
+        }
+        if (foundQuiz) {
+            let authorName = foundQuiz.authorName;
+            if (!authorName && foundQuiz.teacherId) {
+                const teacher = (allUsers || []).find(u => u.id == foundQuiz.teacherId);
+                if (teacher) {
+                    authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
+                }
+            }
+            if (!authorName && report.teacherId) {
+                const teacher = (allUsers || []).find(u => u.id == report.teacherId);
+                if (teacher) {
+                    authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
+                }
+            }
+            const safeAuthorName = escapeHtml(authorName || '');
+            const safeQuizTitle = escapeHtml((foundQuiz.title || foundQuiz.name || 'Adsız'));
+            ownerInfo = `
+                <div class="mt-1 flex items-center gap-2">
+                    ${authorName ? `
+                        <span class="text-[10px] bg-primary-light text-primary px-2 py-0.5 rounded-full border border-primary/20">
+                            <i class="fas fa-user-tie"></i> Müəllim: ${safeAuthorName}
+                        </span>
+                    ` : ''}
+                    <span class="text-[10px] bg-warning-light text-warning-dark px-2 py-0.5 rounded-full border border-warning/20">
+                        <i class="fas fa-file-alt"></i> Test/Kateqoriya: ${safeQuizTitle}
+                    </span>
+                </div>
+            `;
+        } else if (report.teacherId) {
+            const teacher = (allUsers || []).find(u => u.id == report.teacherId);
+            if (teacher) {
+                const authorName = `${teacher.name || ''} ${teacher.surname || ''}`.trim() || teacher.username;
+                const safeAuthorName = escapeHtml(authorName || '');
+                ownerInfo = `
+                    <div class="mt-1 flex items-center gap-2">
+                        <span class="text-[10px] bg-primary-light text-primary px-2 py-0.5 rounded-full border border-primary/20">
+                            <i class="fas fa-user-tie"></i> Müəllim: ${safeAuthorName}
+                        </span>
+                    </div>
+                `;
+            }
+        }
+        let headerHtml = '';
+        if (report.type === 'contact_form') {
+            headerHtml = `
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-success">
+                        <i class="fas fa-envelope"></i> Əlaqə Mesajı
+                    </span>
+                </div>
+            `;
+        } else {
+            let typeLabel = 'Ümumi';
+            if (report.questionType === 'private' || report.questionType === 'quiz') typeLabel = 'Özəl Test';
+            else if (report.questionType === 'category') typeLabel = 'Kateqoriya';
+            headerHtml = `
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-primary">
+                            <i class="fas fa-question-circle"></i> Sual ID: ${report.questionId} (${typeLabel})
+                        </span>
+                        <button onclick="goToReportedQuestion('${report.categoryId || ''}', '${report.questionId}', '${report.questionType}', \`${(report.questionTitle || '').replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`)" class="btn-primary p-1 px-2 text-xs rounded-sm">
+                            <i class="fas fa-external-link-alt"></i> Suala get
+                        </button>
+                    </div>
+                    ${ownerInfo}
+                </div>
+            `;
+        }
+        const statusBadge = report.status === 'pending' ?
+            '<span class="inbox-status status-pending"><i class="fas fa-clock"></i> Gözləyir</span>' :
+            '<span class="inbox-status status-replied"><i class="fas fa-check-double"></i> Cavablandı</span>';
+        const safeQuestionTitle = report.questionTitle ? escapeHtml(report.questionTitle) : '';
+        const safeMessage = escapeHtml(report.message || '');
+        const safeAdminReply = escapeHtml(report.adminReply || '');
+        const safeSender = escapeHtml(report.username || report.name || report.userName || 'Qonaq');
+        const safeContact = report.contactInfo ? escapeHtml(report.contactInfo) : '';
+        div.innerHTML = `
+            <div class="flex-1">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-center gap-2">
+                            ${headerHtml}
+                            ${statusBadge}
+                        </div>
+                        ${report.questionTitle ? `
+                            <span class="text-sm text-main font-medium">
+                                <strong>Sual:</strong> ${safeQuestionTitle}
+                            </span>
+                        ` : ''}
+                    </div>
+                    <span class="text-xs text-muted">${dateStr}</span>
+                </div>
+                <div class="mb-2 bg-bg p-3 rounded-md border-l-2 border-border text-main">
+                    <div class="text-xs text-uppercase text-muted font-semibold mb-1">Mesaj:</div>
+                    "${safeMessage}"
+                </div>
+                ${report.adminReply ? `
+                    <div class="mb-2 bg-success-light p-3 rounded-md border-l-2 border-success text-success-dark">
+                        <div class="text-xs text-uppercase text-success-dark font-semibold mb-1">Sizin Cavabınız:</div>
+                        "${safeAdminReply}"
+                    </div>
+                ` : ''}
+                <div class="text-sm text-muted flex items-center gap-2 flex-wrap">
+                    <span><i class="fas fa-user"></i> Göndərən: <strong>${safeSender}</strong></span>
+                    ${report.contactInfo ? `<span>|</span> <span><i class="fas fa-at"></i> Əlaqə: <strong>${safeContact}</strong></span>` : ''}
+                    <span>|</span>
+                    <span>ID: ${report.userId}</span>
+                </div>
+            </div>
+            <div class="flex gap-2 items-center flex-shrink-0">
+                <button onclick="openReplyModal('${report.id}', \`${(report.message || '').replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`)" class="btn-reply" title="Cavab yaz">
+                    <i class="fas fa-reply"></i>
+                    <span>Cavab yaz</span>
+                </button>
+                ${report.status === 'pending' ? `
+                    <button onclick="markReportAsResolved('${report.id}')" class="btn-success p-2 text-xs rounded-sm" title="Həll edildi">
+                        <i class="fas fa-check"></i>
+                    </button>
+                ` : ''}
+                <button onclick="deleteReport('${report.id}')" class="btn-outline p-2 text-xs rounded-sm border-danger text-danger" title="Sil">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+window.loadMoreAdminReports = function() {
+    if (!window.__adminReportsState || window.__adminReportsState.loading === true) return;
+    window.__adminReportsState.loading = true;
+    loadReports(false).finally(() => {
+        window.__adminReportsState.loading = false;
+    });
+}
 window.markReportAsResolved = async function(reportId) {
     try {
         if (db) {
@@ -6729,7 +7147,7 @@ window.markReportAsResolved = async function(reportId) {
                 localStorage.setItem('reports', JSON.stringify(reports));
             }
         }
-        loadReports();
+        loadReports(true);
     } catch (e) {
         console.error(e);
     }
@@ -6775,7 +7193,7 @@ window.submitReply = async function() {
         
         closeModal('reply-modal');
         showNotification('Cavab uğurla göndərildi', 'success');
-        loadReports();
+        loadReports(true);
     } catch (e) {
         console.error(e);
         showNotification('Xəta baş verdi', 'error');
@@ -6785,47 +7203,74 @@ window.submitReply = async function() {
     }
 }
 
-window.loadUserInbox = async function() {
+window.loadUserInbox = async function(initial = false) {
     const list = document.getElementById('user-inbox-list');
     const countBadge = document.getElementById('user-inbox-count');
-    
+    const loadMoreBtn = document.getElementById('user-inbox-load-more');
+    const PAGE_SIZE = 5;
+    const state = window.__userInboxState || (window.__userInboxState = { reports: [], lastDoc: null, hasMore: true, loading: false, fallbackAll: null, pageIndex: 0 });
     if (!list) return;
     if (!currentUser) {
         list.innerHTML = '<div class="text-center p-5">Giriş edilməyib.</div>';
         return;
     }
-    
-    list.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin text-primary"></i> Yüklənir...</div>';
-    
+    if (initial) {
+        list.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin text-primary"></i> Yüklənir...</div>';
+        state.reports = [];
+        state.lastDoc = null;
+        state.hasMore = true;
+        state.fallbackAll = null;
+        state.pageIndex = 0;
+    } else {
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
+        }
+    }
     try {
-        let reports = [];
+        let page = [];
         if (db) {
-            const snapshot = await db.collection('reports')
-                .where('userId', '==', currentUser.id)
-                .get();
-            
-            reports = snapshot.docs.map(doc => {
-                const data = doc.data();
-                // Firestore timestamp-i Date obyektinə çeviririk
-                let ts = data.timestamp;
-                if (ts && typeof ts.toDate === 'function') ts = ts.toDate().getTime();
-                else if (ts) ts = new Date(ts).getTime();
-                else ts = 0;
-
-                let rts = data.replyTimestamp;
-                if (rts && typeof rts.toDate === 'function') rts = rts.toDate().getTime();
-                else if (rts) rts = new Date(rts).getTime();
-                else rts = null;
-
-                return { 
-                    id: doc.id, 
-                    ...data, 
-                    timestamp: ts,
-                    replyTimestamp: rts
-                };
-            }).sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+            try {
+                let q = db.collection('reports').where('userId', '==', currentUser.id).orderBy('timestamp', 'desc').limit(PAGE_SIZE);
+                if (state.lastDoc) q = q.startAfter(state.lastDoc);
+                const snapshot = await q.get();
+                page = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    let ts = data.timestamp;
+                    if (ts && typeof ts.toDate === 'function') ts = ts.toDate().getTime();
+                    else if (ts) ts = new Date(ts).getTime();
+                    else ts = 0;
+                    let rts = data.replyTimestamp;
+                    if (rts && typeof rts.toDate === 'function') rts = rts.toDate().getTime();
+                    else if (rts) rts = new Date(rts).getTime();
+                    else rts = null;
+                    return { id: doc.id, ...data, timestamp: ts, replyTimestamp: rts };
+                });
+                state.lastDoc = snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : state.lastDoc;
+                if (page.length < PAGE_SIZE) state.hasMore = false;
+            } catch (queryErr) {
+                const snapshot = await db.collection('reports').where('userId', '==', currentUser.id).get();
+                const allReports = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    let ts = data.timestamp;
+                    if (ts && typeof ts.toDate === 'function') ts = ts.toDate().getTime();
+                    else if (ts) ts = new Date(ts).getTime();
+                    else ts = 0;
+                    let rts = data.replyTimestamp;
+                    if (rts && typeof rts.toDate === 'function') rts = rts.toDate().getTime();
+                    else if (rts) rts = new Date(rts).getTime();
+                    else rts = null;
+                    return { id: doc.id, ...data, timestamp: ts, replyTimestamp: rts };
+                }).sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+                state.fallbackAll = state.fallbackAll || allReports;
+                const start = state.pageIndex * PAGE_SIZE;
+                const end = start + PAGE_SIZE;
+                page = state.fallbackAll.slice(start, end);
+                state.pageIndex += 1;
+                if (end >= state.fallbackAll.length) state.hasMore = false;
+            }
         } else {
-            reports = JSON.parse(localStorage.getItem('reports') || '[]')
+            const all = JSON.parse(localStorage.getItem('reports') || '[]')
                 .filter(r => r.userId == currentUser.id)
                 .map(r => ({
                     ...r,
@@ -6833,29 +7278,32 @@ window.loadUserInbox = async function() {
                     replyTimestamp: r.replyTimestamp ? new Date(r.replyTimestamp).getTime() : null
                 }))
                 .sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+            state.fallbackAll = state.fallbackAll || all;
+            const start = state.pageIndex * PAGE_SIZE;
+            const end = start + PAGE_SIZE;
+            page = state.fallbackAll.slice(start, end);
+            state.pageIndex += 1;
+            if (end >= state.fallbackAll.length) state.hasMore = false;
         }
-
         if (countBadge) {
-            countBadge.textContent = `${reports.length} mesaj`;
+            const total = state.fallbackAll ? state.fallbackAll.length : (state.reports.length + page.length);
+            countBadge.textContent = `${total} mesaj`;
         }
-
-        if (reports.length === 0) {
+        if (state.reports.length === 0 && page.length === 0) {
             list.innerHTML = '<div class="no-messages">Hələ heç bir şikayətiniz yoxdur.</div>';
+            if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
             return;
         }
-
-        list.innerHTML = '';
-        reports.forEach(report => {
+        if (initial) list.innerHTML = '';
+        state.reports = state.reports.concat(page);
+        page.forEach(report => {
             const div = document.createElement('div');
             div.className = 'inbox-item';
-            
             const date = report.timestamp ? new Date(report.timestamp).toLocaleString('az-AZ') : 'Naməlum tarix';
             const replyDate = report.replyTimestamp ? new Date(report.replyTimestamp).toLocaleString('az-AZ') : '';
-            
             const statusBadge = report.status === 'pending' ? 
                 '<span class="inbox-status status-pending"><i class="fas fa-clock"></i> Gözləyir</span>' : 
                 '<span class="inbox-status status-replied"><i class="fas fa-check-double"></i> Cavablandı</span>';
-
             div.innerHTML = `
                 <div class="inbox-header">
                     <div class="flex items-center gap-2">
@@ -6888,14 +7336,35 @@ window.loadUserInbox = async function() {
             `;
             list.appendChild(div);
         });
+        if (loadMoreBtn) {
+            if (state.hasMore) {
+                loadMoreBtn.classList.remove('hidden');
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = 'Daha çox yüklə';
+            } else {
+                loadMoreBtn.classList.add('hidden');
+            }
+        }
     } catch (e) {
         console.error("Inbox loading error:", e);
         list.innerHTML = `<div class="text-center p-5 text-danger">
             Inboxu yükləmək mümkün olmadı.<br>
             <small class="text-xs">Xəta: ${e.message}</small>
         </div>`;
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.innerHTML = 'Daha çox yüklə';
+        }
     }
 };
+
+window.loadMoreUserInbox = function() {
+    if (!window.__userInboxState || window.__userInboxState.loading === true) return;
+    window.__userInboxState.loading = true;
+    loadUserInbox(false).finally(() => {
+        window.__userInboxState.loading = false;
+    });
+}
 
 
 window.deleteReport = async function(reportId) {
