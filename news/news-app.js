@@ -165,7 +165,13 @@ function renderNews(list) {
     if (!grid) return;
     grid.innerHTML = '';
 
-    const featured = list.find(n => n.isFeatured);
+    // If no featured news, pick the one with most views (or fallback to latest)
+    let featured = list.find(n => n.isFeatured);
+    if (!featured && list.length > 0) {
+        // Find max views
+        featured = list.reduce((prev, current) => ((prev.views || 0) > (current.views || 0)) ? prev : current);
+    }
+
     if (featured && featuredContainer) {
         // Render Featured Hero
         featuredContainer.innerHTML = `
