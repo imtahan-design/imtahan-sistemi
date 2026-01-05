@@ -490,29 +490,36 @@
       }
 
       .side-card {
-        flex-direction: row; /* Horizontal layout for better look */
-        height: 90px; /* Compact fixed height */
-        align-items: center;
+        flex-direction: row; /* Horizontal layout */
+        height: auto; /* Allow growth */
+        min-height: 110px; /* Minimum height */
+        align-items: stretch;
       }
 
       .side-image {
-        width: 110px;
-        height: 100%;
+        width: 120px;
+        min-width: 120px; /* Fixed width */
+        height: auto;
+        min-height: 100%;
         object-fit: cover;
       }
       
       .side-content {
-        padding: 0 12px;
-        justify-content: center;
+        padding: 10px 12px;
+        justify-content: flex-start;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
       }
       
       .side-title {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         margin-bottom: 4px;
         display: -webkit-box;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 3; /* Allow 3 lines */
         -webkit-box-orient: vertical;
         overflow: hidden;
+        line-height: 1.4;
       }
       
       .mini-cat, .mini-date {
@@ -539,11 +546,19 @@
         width: 100%;
         height: 36px;
         background: rgba(255,255,255,0.05);
+        display: block; /* Ensure block context */
+        white-space: nowrap; /* Prevent wrapping */
       }
       
       .ticker-item {
         font-size: 0.85rem;
         padding: 0 10px;
+        display: inline-block; /* Ensure items flow inline */
+      }
+      
+      .ticker-content {
+          display: inline-block;
+          min-width: 100%;
       }
 
       /* Newsletter Mobile */
