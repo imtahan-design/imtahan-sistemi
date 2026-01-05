@@ -256,7 +256,10 @@ async function loadAdminDashboardStats() {
         }
 
         // 1. Ümumi İstifadəçi Sayı
-        const usersSnapshot = await db.collection('users').get();
+        // Aggregation query is cheaper, but if not available, limit is meaningless for count. 
+        // We will cache this heavily or use a counter document in future.
+        // For now, we only fetch if cache is expired (handled above).
+        const usersSnapshot = await db.collection('users').select('username').get(); // Only fetch small field
         const totalUsers = usersSnapshot.size;
         const totalUsersElem = document.getElementById('total-visitors');
         if (totalUsersElem) totalUsersElem.textContent = totalUsers;
@@ -272,7 +275,8 @@ async function loadAdminDashboardStats() {
         if (todayRegElem) todayRegElem.textContent = todayReg;
 
         // 3. Tamamlanmış İmtahanlar (attempts kolleksiyasından)
-        const attemptsSnapshot = await db.collection('attempts').get();
+        // Optimization: Don't fetch all data, just select one field
+        const attemptsSnapshot = await db.collection('attempts').select('id').get();
         const totalAttempts = attemptsSnapshot.size;
         const totalAttemptsElem = document.getElementById('total-finished-quizzes');
         if (totalAttemptsElem) totalAttemptsElem.textContent = totalAttempts;
@@ -285,7 +289,8 @@ async function loadAdminDashboardStats() {
             });
         }
         
-        const publicQuestionsSnapshot = await db.collection('public_questions').get();
+        // Only get active public questions size
+        const publicQuestionsSnapshot = await db.collection('public_questions').select('id').get();
         totalQuestions += publicQuestionsSnapshot.size;
         
         const totalQuestionsElem = document.getElementById('total-active-questions');
@@ -5249,8 +5254,33 @@ window.showTopUsers = async function() {
 
     try {
         let questions = [];
+        const period = window.currentLeaderboardPeriod || 'all';
+
         if (db) {
-            const snapshot = await db.collection('public_questions').get();
+            // OPTIMIZATION: Use server-side filtering instead of fetching all questions
+            // This is complex because we need to aggregate by authorId which Firestore doesn't support natively without cloud functions
+            // However, we can at least limit the fetch if period is short, or use a better structure in future.
+            // For now, since we must calculate stats from questions, we must fetch questions. 
+            // BUT we can select only necessary fields to reduce bandwidth (though it still counts as reads)
+            
+            let q = db.collection('public_questions').select('authorId', 'authorName', 'createdAt', 'likes', 'dislikes');
+            
+            // Apply date filter on server side if possible
+            if (period !== 'all') {
+                 const now = new Date();
+                 let startDate = new Date();
+                 if (period === 'daily') startDate.setDate(now.getDate() - 1);
+                 if (period === 'weekly') startDate.setDate(now.getDate() - 7);
+                 if (period === 'monthly') startDate.setDate(now.getDate() - 30);
+                 
+                 q = q.where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(startDate));
+            }
+            
+            // Limit to recent 500 questions to avoid reading 50k docs if app grows
+            // This makes leaderboard "Recent Top Users" which is safer
+            q = q.limit(500);
+
+            const snapshot = await q.get();
             questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } else {
             questions = JSON.parse(localStorage.getItem('public_questions') || '[]');
@@ -5258,22 +5288,18 @@ window.showTopUsers = async function() {
 
         const userStats = {};
         const now = new Date();
-        const period = window.currentLeaderboardPeriod || 'all';
 
         questions.forEach(q => {
             if (!q.authorId) return;
 
-            // Time filter
-            if (q.createdAt) {
-                const qDate = db ? q.createdAt.toDate() : new Date(q.createdAt);
-                const diffTime = Math.abs(now - qDate);
-                const diffDays = diffTime / (1000 * 60 * 60 * 24);
-
-                if (period === 'daily' && diffDays > 1) return;
-                if (period === 'weekly' && diffDays > 7) return;
-                if (period === 'monthly' && diffDays > 30) return;
-            } else if (period !== 'all') {
-                return; // No date, skip if period is specific
+            // Date filtering is now mostly handled by server, but kept for local storage fallback
+            if (!db && q.createdAt) {
+                 const qDate = new Date(q.createdAt);
+                 const diffTime = Math.abs(now - qDate);
+                 const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                 if (period === 'daily' && diffDays > 1) return;
+                 if (period === 'weekly' && diffDays > 7) return;
+                 if (period === 'monthly' && diffDays > 30) return;
             }
 
             if (!userStats[q.authorId]) {
@@ -5289,6 +5315,7 @@ window.showTopUsers = async function() {
             userStats[q.authorId].likes += (q.likes ? q.likes.length : 0);
             userStats[q.authorId].dislikes += (q.dislikes ? q.dislikes.length : 0);
         });
+
 
         const sortedUsers = Object.values(userStats).sort((a, b) => {
             const scoreA = (a.questions * 5) + a.likes - (a.dislikes * 0.5);
@@ -5373,25 +5400,34 @@ function startDiscussionListener() {
         // Real-time Firestore listener
         discussionUnsubscribe = db.collection('discussions')
             .where('questionId', '==', currentDiscussionQuestionId)
+            .orderBy('createdAt', 'asc') // Server-side sort if index exists
             .onSnapshot((snapshot) => {
-                let comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                
-                // Client-side sort
-                comments.sort((a, b) => {
-                    const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : 0;
-                    const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : 0;
-                    return timeA - timeB;
-                });
+                const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Client-side sort fallback handled in render if needed, but simple map is safer here
                 renderComments(comments);
             }, (error) => {
-                console.error("Listener error:", error);
-                list.innerHTML = '<p class="text-xs text-danger text-center">Şərhləri yükləmək mümkün olmadı.</p>';
+                // If index is missing, it might fail. Fallback to client-side sort without ordering in query
+                if (error.code === 'failed-precondition') {
+                     console.warn("Index missing, falling back to client-side sort");
+                     discussionUnsubscribe = db.collection('discussions')
+                        .where('questionId', '==', currentDiscussionQuestionId)
+                        .onSnapshot((snap) => {
+                            const comments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            comments.sort((a, b) => {
+                                const timeA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : 0;
+                                const timeB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : 0;
+                                return timeA - timeB;
+                            });
+                            renderComments(comments);
+                        });
+                } else {
+                    console.error("Listener error:", error);
+                    list.innerHTML = '<p class="text-xs text-danger text-center">Şərhləri yükləmək mümkün olmadı.</p>';
+                }
             });
     } else {
-        // Fallback for LocalStorage (polling or manual reload)
+        // LocalStorage fallback only - NO INTERVAL POLLING
         loadComments();
-        // Set a small interval as fallback for local testing without Firebase
-        discussionUnsubscribe = setInterval(loadComments, 3000);
     }
 }
 
