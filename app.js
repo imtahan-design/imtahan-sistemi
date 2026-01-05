@@ -237,8 +237,6 @@ async function loadAdminDashboardStats() {
         const cachedStats = sessionStorage.getItem('adminStatsCache');
         if (cachedStats) {
             const cacheData = JSON.parse(cachedStats);
-            // Cache valid if < 5 mins AND not all zeros (unless genuine)
-            // Force refresh if stats seem empty but we expect data
             const isZero = (cacheData.data.totalUsers === 0 && cacheData.data.totalQuestions === 0);
             
             if (Date.now() - cacheData.timestamp < 300000 && !isZero) { 
@@ -259,34 +257,39 @@ async function loadAdminDashboardStats() {
             }
         }
 
-        // 1. Ümumi İstifadəçi Sayı
+        // 1. Ümumi İstifadəçi Sayı və Bugünkü Qeydiyyatlar
         let totalUsers = 0;
+        let todayReg = 0;
         try {
-            const usersSnapshot = await db.collection('users').select('username').get();
+            const usersSnapshot = await db.collection('users').get();
             totalUsers = usersSnapshot.size;
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+            const startTs = firebase && firebase.firestore && firebase.firestore.Timestamp ? firebase.firestore.Timestamp.fromDate(startOfDay) : null;
+            todayReg = usersSnapshot.docs.filter(doc => {
+                const d = doc.data();
+                const ts = d.createdAt || d.created_at || d.createdOn;
+                if (!ts) return false;
+                if (ts.seconds) return ts.seconds >= (startTs ? startTs.seconds : Math.floor(startOfDay.getTime()/1000));
+                if (typeof ts === 'number') return ts >= startOfDay.getTime();
+                if (typeof ts === 'string') {
+                    const t = Date.parse(ts);
+                    return !isNaN(t) && t >= startOfDay.getTime();
+                }
+                return false;
+            }).length;
         } catch(e) { console.warn("Users stats error:", e); }
         
         const totalUsersElem = document.getElementById('total-visitors');
         if (totalUsersElem) totalUsersElem.textContent = totalUsers;
 
-        // 2. Bugünkü Qeydiyyatlar
-        let todayReg = 0;
-        try {
-            const startOfDay = new Date();
-            startOfDay.setHours(0, 0, 0, 0);
-            const todayRegSnapshot = await db.collection('users')
-                .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
-                .get();
-            todayReg = todayRegSnapshot.size;
-        } catch(e) { console.warn("TodayReg stats error:", e); }
-        
         const todayRegElem = document.getElementById('today-registrations');
         if (todayRegElem) todayRegElem.textContent = todayReg;
 
         // 3. Tamamlanmış İmtahanlar
         let totalAttempts = 0;
         try {
-            const attemptsSnapshot = await db.collection('attempts').select('id').get();
+            const attemptsSnapshot = await db.collection('student_attempts').get();
             totalAttempts = attemptsSnapshot.size;
         } catch(e) { console.warn("Attempts stats error:", e); }
         
@@ -2024,51 +2027,31 @@ window.loadTeacherReports = async function(initial = false) {
     }
     
     try {
-        if (!currentUser) return;
+        if (!currentUser) {
+            listContainer.innerHTML = '<div class="text-center py-12 bg-white/5 rounded-xl border border-dashed border-white/10"><i class="fas fa-user text-4xl text-primary/50 mb-3"></i><p class="text-white/60">Giriş tələb olunur.</p></div>';
+            return;
+        }
         if (!db) {
             listContainer.innerHTML = '<div class="text-center py-12 bg-white/5 rounded-xl border border-dashed border-white/10"><i class="fas fa-database text-4xl text-primary/50 mb-3"></i><p class="text-white/60">Hazırda məlumat yoxdur.</p></div>';
             return;
         }
         let reportsPage = [];
-        let usedFallback = false;
-        try {
-            let q = db.collection('reports')
-                .where('teacherId', '==', currentUser.id)
-                .orderBy('timestamp', 'desc')
-                .limit(PAGE_SIZE);
-            if (state.lastDoc) {
-                q = q.startAfter(state.lastDoc);
-            }
-            const snapshot = await q.get();
-            
-            if (snapshot.empty && state.reports.length === 0) {
-                listContainer.innerHTML = '<div class="text-center py-12 bg-white/5 rounded-xl border border-dashed border-white/10"><i class="fas fa-check-circle text-4xl text-green-500/50 mb-3"></i><p class="text-white/60">Hələ ki, heç bir şikayət yoxdur.</p></div>';
-                if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
-                return;
-            }
-            
-            reportsPage = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            state.lastDoc = snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : state.lastDoc;
-            if (reportsPage.length < PAGE_SIZE) {
-                state.hasMore = false;
-            }
-        } catch (queryErr) {
-            // Fallback: tam siyahını bir dəfə oxu və client-side səhifələ
-            usedFallback = true;
-            const snapshot = await db.collection('reports')
-                .where('teacherId', '==', currentUser.id)
-                .get();
-            const allReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            allReports.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-            state.fallbackAll = state.fallbackAll || allReports;
-            const start = state.pageIndex * PAGE_SIZE;
-            const end = start + PAGE_SIZE;
-            reportsPage = state.fallbackAll.slice(start, end);
-            state.pageIndex += 1;
-            if (end >= state.fallbackAll.length) {
-                state.hasMore = false;
-            }
-            errorHandler.logError(queryErr, errorHandler.ERROR_TYPES.UNKNOWN, { scope: 'teacher_reports_pagination_fallback' });
+        const snapshot = await db.collection('reports')
+            .where('teacherId', '==', currentUser.id)
+            .get();
+        const allReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        allReports.sort((a, b) => {
+            const at = typeof a.timestamp === 'number' ? a.timestamp : (a.timestamp && a.timestamp.seconds ? a.timestamp.seconds * 1000 : 0);
+            const bt = typeof b.timestamp === 'number' ? b.timestamp : (b.timestamp && b.timestamp.seconds ? b.timestamp.seconds * 1000 : 0);
+            return bt - at;
+        });
+        state.fallbackAll = state.fallbackAll || allReports;
+        const start = state.pageIndex * PAGE_SIZE;
+        const end = start + PAGE_SIZE;
+        reportsPage = state.fallbackAll.slice(start, end);
+        state.pageIndex += 1;
+        if (end >= state.fallbackAll.length) {
+            state.hasMore = false;
         }
         
         if (initial) {
@@ -2089,7 +2072,7 @@ window.loadTeacherReports = async function(initial = false) {
         
     } catch (error) {
         console.error("Error loading teacher reports:", error);
-        errorHandler.logError(error, errorHandler.ERROR_TYPES.UNKNOWN, { scope: 'teacher_reports_load' });
+        try { errorHandler.logError(error, errorHandler.ERROR_TYPES.UNKNOWN, { scope: 'teacher_reports_load' }); } catch (_) {}
         listContainer.innerHTML = '<div class="text-center py-8 text-red-400">Şikayətləri yükləyərkən xəta baş verdi.</div>';
         const loadMoreBtn2 = document.getElementById('teacher-reports-load-more');
         if (loadMoreBtn2) {
@@ -5739,18 +5722,24 @@ window.generateAdminAIQuestions = async function() {
                 if (apiVer === "v1beta") {
                     generationConfig.response_mime_type = "application/json";
                 }
-                const response = await fetch(`${BACKEND_URL}/api/ai/generate`, {
+                const apiUrl = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        apiVer,
-                        modelName,
                         contents: [{ parts: [{ text: prompt }] }],
                         generationConfig
                     })
                 });
 
-                const data = await response.json();
+                let data;
+                const ct = response.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    throw new Error('Non-JSON response: ' + text.slice(0, 200));
+                }
                 if (data.error) {
                     lastError = data.error.message;
                     console.warn(`API Xətası (${modelName}, ${apiVer}):`, lastError);
@@ -7949,18 +7938,24 @@ window.generateAIQuestions = async function() {
                 if (apiVer === "v1beta") {
                     generationConfig.response_mime_type = "application/json";
                 }
-                const response = await fetch(`${BACKEND_URL}/api/ai/generate`, {
+                const apiUrl = `https://generativelanguage.googleapis.com/${apiVer}/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        apiVer,
-                        modelName,
                         contents: contents,
                         generationConfig: generationConfig
                     })
                 });
 
-                const data = await response.json();
+                let data;
+                const ct = response.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    throw new Error('Non-JSON response: ' + text.slice(0, 200));
+                }
                 
                 if (data.error) {
                     lastError = data.error.message;
