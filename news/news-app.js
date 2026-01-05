@@ -387,15 +387,7 @@ async function loadNews() {
             renderNews(allNews);
         }
     } catch (error) {
-        console.error("Error loading news:", error);
-        
-        const container = document.getElementById('newsGrid');
-        const errDiv = document.createElement('div');
-        errDiv.style.textAlign = 'center';
-        errDiv.style.color = 'orange';
-        errDiv.style.gridColumn = '1/-1';
-        errDiv.innerHTML = `<small>Oflayn rejimdəsiniz və ya baza xətası: ${error.message}. Nümunə məlumatlar göstərilir.</small>`;
-        container.insertBefore(errDiv, container.firstChild);
+        console.warn("Error loading news:", error);
     }
 }
 
