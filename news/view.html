@@ -186,13 +186,58 @@
     .mini-date { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; display: block; }
 
     /* Related News */
-    .related-section { margin-top: 40px; padding: 0 40px 40px; }
+    .related-section { 
+        margin-top: 40px; 
+        padding: 0 40px 40px; 
+    }
+    
+    .related-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Responsive columns */
+        gap: 20px;
+    }
+    
+    .related-card {
+        display: block;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        transition: transform 0.2s;
+        height: 100%;
+    }
+    .related-card:hover { transform: translateY(-5px); }
+    
+    .related-img {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+    }
+    
+    .related-content { padding: 16px; }
+    .related-cat { color: var(--primary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 6px; }
+    .related-head { font-size: 1rem; font-weight: 700; color: var(--text-main); line-height: 1.4; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .related-date { color: var(--text-muted); font-size: 0.8rem; }
 
     @media (max-width: 1024px) {
         .page-layout { grid-template-columns: 1fr; }
         .sidebar { position: static; margin-top: 40px; }
         .article-content { padding: 0 24px; }
         .related-section { padding: 0 24px 40px; }
+        /* Fix overflow on mobile */
+        .related-grid {
+             grid-template-columns: 1fr; /* Single column on mobile */
+        }
+        .related-card {
+            display: flex; /* Horizontal card on mobile for better space usage */
+            height: auto;
+            align-items: center;
+        }
+        .related-img {
+            width: 100px;
+            height: 100px;
+            min-width: 100px;
+        }
     }
 
     .article-content p { margin-bottom: 1.5em; }

@@ -277,8 +277,27 @@ function updateTicker(list) {
         container.innerHTML = '<span style="padding:0 20px;">Xəbər yoxdur.</span>';
         return;
     }
-    const html = list.slice(0, 5).map(n => `<a href="view.html?id=${n.id}" class="ticker-item">${n.title}</a>`).join('');
-    container.innerHTML = html + html; // Duplicate for seamless loop
+    const html = list.slice(0, 10).map(n => `<a href="view.html?id=${n.id}" class="ticker-item">${n.title}</a>`).join('');
+    container.innerHTML = html; 
+    
+    // JS Animation Fallback
+    let pos = container.offsetWidth;
+    const animate = () => {
+        pos--;
+        if (pos < -container.scrollWidth) {
+            pos = container.parentElement.offsetWidth;
+        }
+        container.style.transform = `translateX(${pos}px)`;
+        requestAnimationFrame(animate);
+    };
+    // Clear previous animation loop if any (not implemented here but good practice)
+    // For now just start
+    // Small delay to ensure layout
+    setTimeout(() => {
+        container.style.paddingLeft = '0'; // Reset CSS padding
+        pos = container.parentElement.offsetWidth;
+        animate();
+    }, 100);
 }
 
 function formatDate(dateStr) {

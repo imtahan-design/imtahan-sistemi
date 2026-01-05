@@ -558,9 +558,9 @@
       
       .ticker-content {
           display: inline-block;
-          min-width: 100%;
-          animation: ticker 30s linear infinite; /* Force animation */
+          white-space: nowrap;
           padding-left: 100%; /* Start from far right */
+          /* Animation will be handled by JS to ensure reliability */
       }
 
       .ticker-item {
