@@ -237,7 +237,11 @@ async function loadAdminDashboardStats() {
         const cachedStats = sessionStorage.getItem('adminStatsCache');
         if (cachedStats) {
             const cacheData = JSON.parse(cachedStats);
-            if (Date.now() - cacheData.timestamp < 300000) { // 5 dəqiqə
+            // Cache valid if < 5 mins AND not all zeros (unless genuine)
+            // Force refresh if stats seem empty but we expect data
+            const isZero = (cacheData.data.totalUsers === 0 && cacheData.data.totalQuestions === 0);
+            
+            if (Date.now() - cacheData.timestamp < 300000 && !isZero) { 
                 const stats = cacheData.data;
                 const totalUsersElem = document.getElementById('total-visitors');
                 if (totalUsersElem) totalUsersElem.textContent = stats.totalUsers;
@@ -251,47 +255,55 @@ async function loadAdminDashboardStats() {
                 const totalQuestionsElem = document.getElementById('total-active-questions');
                 if (totalQuestionsElem) totalQuestionsElem.textContent = stats.totalQuestions;
                 
-                return; // Cache-dən yükləndi, sorğuya ehtiyac yoxdur
+                return; 
             }
         }
 
         // 1. Ümumi İstifadəçi Sayı
-        // Aggregation query is cheaper, but if not available, limit is meaningless for count. 
-        // We will cache this heavily or use a counter document in future.
-        // For now, we only fetch if cache is expired (handled above).
-        const usersSnapshot = await db.collection('users').select('username').get(); // Only fetch small field
-        const totalUsers = usersSnapshot.size;
+        let totalUsers = 0;
+        try {
+            const usersSnapshot = await db.collection('users').select('username').get();
+            totalUsers = usersSnapshot.size;
+        } catch(e) { console.warn("Users stats error:", e); }
+        
         const totalUsersElem = document.getElementById('total-visitors');
         if (totalUsersElem) totalUsersElem.textContent = totalUsers;
 
         // 2. Bugünkü Qeydiyyatlar
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-        const todayRegSnapshot = await db.collection('users')
-            .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
-            .get();
-        const todayReg = todayRegSnapshot.size;
+        let todayReg = 0;
+        try {
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+            const todayRegSnapshot = await db.collection('users')
+                .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(startOfDay))
+                .get();
+            todayReg = todayRegSnapshot.size;
+        } catch(e) { console.warn("TodayReg stats error:", e); }
+        
         const todayRegElem = document.getElementById('today-registrations');
         if (todayRegElem) todayRegElem.textContent = todayReg;
 
-        // 3. Tamamlanmış İmtahanlar (attempts kolleksiyasından)
-        // Optimization: Don't fetch all data, just select one field
-        const attemptsSnapshot = await db.collection('attempts').select('id').get();
-        const totalAttempts = attemptsSnapshot.size;
+        // 3. Tamamlanmış İmtahanlar
+        let totalAttempts = 0;
+        try {
+            const attemptsSnapshot = await db.collection('attempts').select('id').get();
+            totalAttempts = attemptsSnapshot.size;
+        } catch(e) { console.warn("Attempts stats error:", e); }
+        
         const totalAttemptsElem = document.getElementById('total-finished-quizzes');
         if (totalAttemptsElem) totalAttemptsElem.textContent = totalAttempts;
 
         // 4. Aktiv Suallar
         let totalQuestions = 0;
-        if (typeof categories !== 'undefined') {
-            categories.forEach(cat => {
-                if (cat.questions) totalQuestions += cat.questions.length;
-            });
-        }
-        
-        // Only get active public questions size
-        const publicQuestionsSnapshot = await db.collection('public_questions').select('id').get();
-        totalQuestions += publicQuestionsSnapshot.size;
+        try {
+            if (typeof categories !== 'undefined') {
+                categories.forEach(cat => {
+                    if (cat.questions) totalQuestions += cat.questions.length;
+                });
+            }
+            const publicQuestionsSnapshot = await db.collection('public_questions').select('id').get();
+            totalQuestions += publicQuestionsSnapshot.size;
+        } catch(e) { console.warn("Questions stats error:", e); }
         
         const totalQuestionsElem = document.getElementById('total-active-questions');
         if (totalQuestionsElem) totalQuestionsElem.textContent = totalQuestions;
@@ -2095,7 +2107,7 @@ window.loadMoreTeacherReports = function() {
     });
 }
 
-function renderTeacherReports(reports, listContainer) {
+function appendTeacherReports(reports, listContainer) {
     let html = '';
     reports.forEach(report => {
         let date = 'Naməlum';
@@ -2136,56 +2148,15 @@ function renderTeacherReports(reports, listContainer) {
             </div>
         `;
     });
-    listContainer.innerHTML = html;
-}
-
-function appendTeacherReports(reports, listContainer) {
-    let html = '';
-    reports.forEach(report => {
-        let date = 'Naməlum';
-        if (report.timestamp) {
-            const ts = typeof report.timestamp === 'number' ? report.timestamp : 
-                      (report.timestamp.seconds ? report.timestamp.seconds * 1000 : report.timestamp);
-            date = new Date(ts).toLocaleString('az-AZ');
-        }
-        const isRead = report.status === 'resolved';
-        
-        html += `
-            <div class="report-card ${isRead ? 'opacity-70' : 'border-l-4 border-warning'}" style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); position: relative;">
-                <div class="flex justify-between items-start mb-3">
-                    <span class="text-xs font-medium px-2 py-1 rounded bg-warning/20 text-warning">
-                        ${escapeHtml(report.categoryName || 'Özəl Test')}
-                    </span>
-                    <span class="text-xs text-white/40">${date}</span>
-                </div>
-                <p class="text-white/90 mb-4" style="font-size: 0.95rem; line-height: 1.5;">
-                    <i class="fas fa-quote-left text-primary/40 mr-2"></i>
-                    ${escapeHtml(report.message || report.reason || '')}
-                </p>
-                <div class="flex justify-between items-center pt-4 border-t border-white/5">
-                    <div class="text-xs text-white/50">
-                        <i class="fas fa-user mr-1"></i> Göndərən: ${escapeHtml(report.username || report.name || report.userName || 'Anonim')}
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="goToReportedQuestion('${report.categoryId}', '${report.questionId}', 'private', \`${(report.questionTitle || report.questionText || '').replace(/\"/g, '&quot;')}\`)" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                            <i class="fas fa-eye mr-1"></i> Suala Bax
-                        </button>
-                        ${!isRead ? `
-                            <button onclick="markReportAsResolvedByTeacher('${report.id}')" class="btn-primary" style="background: var(--success-color); border-color: var(--success-hover); padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                                <i class="fas fa-check mr-1"></i> Həll Edildi
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = html;
-    while (wrapper.firstElementChild) {
-        listContainer.appendChild(wrapper.firstElementChild);
+    // Append instead of overwrite to support pagination
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    while (tempDiv.firstChild) {
+        listContainer.appendChild(tempDiv.firstChild);
     }
 }
+
+
 
 window.markReportAsResolvedByTeacher = async function(reportId) {
     if (!confirm('Bu şikayəti həll edilmiş kimi qeyd etmək istəyirsiniz?')) return;
@@ -5257,15 +5228,10 @@ window.showTopUsers = async function() {
         const period = window.currentLeaderboardPeriod || 'all';
 
         if (db) {
-            // OPTIMIZATION: Use server-side filtering instead of fetching all questions
-            // This is complex because we need to aggregate by authorId which Firestore doesn't support natively without cloud functions
-            // However, we can at least limit the fetch if period is short, or use a better structure in future.
-            // For now, since we must calculate stats from questions, we must fetch questions. 
-            // BUT we can select only necessary fields to reduce bandwidth (though it still counts as reads)
+            // Simple query to avoid index errors while maintaining limit optimization
+            let q = db.collection('public_questions');
             
-            let q = db.collection('public_questions').select('authorId', 'authorName', 'createdAt', 'likes', 'dislikes');
-            
-            // Apply date filter on server side if possible
+            // Apply date filter if needed
             if (period !== 'all') {
                  const now = new Date();
                  let startDate = new Date();
@@ -5273,12 +5239,13 @@ window.showTopUsers = async function() {
                  if (period === 'weekly') startDate.setDate(now.getDate() - 7);
                  if (period === 'monthly') startDate.setDate(now.getDate() - 30);
                  
+                 // Note: This requires an index on 'createdAt'. If it fails, we catch error below.
+                 // If you see error, remove this where clause or create index in Firebase Console.
                  q = q.where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(startDate));
             }
             
-            // Limit to recent 500 questions to avoid reading 50k docs if app grows
-            // This makes leaderboard "Recent Top Users" which is safer
-            q = q.limit(500);
+            // Limit is crucial for cost
+            q = q.orderBy('createdAt', 'desc').limit(100); 
 
             const snapshot = await q.get();
             questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
