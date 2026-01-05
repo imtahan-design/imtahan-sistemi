@@ -192,7 +192,18 @@ window.updateImagePreview = function() {
     }
 
     if (url) {
-        preview.innerHTML = `<img src="${url}" onerror="this.src='https://via.placeholder.com/300?text=Xəta'">`;
+        preview.innerHTML = `<img src="${url}" style="object-fit: cover;">`;
+        const imgEl = preview.querySelector('img');
+        if (imgEl) {
+            imgEl.onerror = function() {
+                preview.innerHTML = `
+                    <div class="image-preview-placeholder">
+                        <i class="fas fa-image" style="font-size: 2rem;"></i>
+                        <span>Şəkil yoxdur</span>
+                    </div>
+                `;
+            };
+        }
     } else {
         preview.innerHTML = `
             <div class="image-preview-placeholder">
@@ -550,7 +561,7 @@ function renderFeaturedSection(items) {
     sides.forEach(item => {
         sideHtml += `
             <div class="side-card" style="cursor: pointer;" onclick="window.location.href='view.html?id=${item.id}'">
-                <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" class="side-image" onerror="this.src='https://via.placeholder.com/150'">
+                ${item.imageUrl ? `<img src="${item.imageUrl}" class="side-image" onerror="this.insertAdjacentHTML('beforebegin','<div class=&quot;side-image&quot; style=&quot;background: var(--gradient-1)&quot;></div>'); this.remove();">` : `<div class="side-image" style="background: var(--gradient-1)"></div>`}
                 <div class="side-content">
                     <span style="font-size: 0.75rem; color: var(--primary); font-weight: 600; text-transform: uppercase;">${item.category}</span>
                     <h4 class="side-title">${escapeHtml(item.title)}</h4>
@@ -560,12 +571,12 @@ function renderFeaturedSection(items) {
         `;
     });
 
-    const mainImage = main.imageUrl || 'https://via.placeholder.com/800x500';
+    const mainImage = main.imageUrl;
     
     featuredContainer.innerHTML = `
         <div class="featured-grid">
             <div class="featured-main" style="cursor: pointer;" onclick="window.location.href='view.html?id=${main.id}'">
-                <img src="${mainImage}" onerror="this.parentElement.style.background = 'var(--gradient-1)'">
+                ${mainImage ? `<img src="${mainImage}" onerror="this.insertAdjacentHTML('beforebegin','<div style=&quot;width:100%;height:100%;background: var(--gradient-1)&quot;></div>'); this.remove();">` : `<div style="width:100%;height:100%;background: var(--gradient-1)"></div>`}
                 <div class="featured-overlay">
                     <span class="featured-badge">${capitalize(main.category)}</span>
                     <h2 class="featured-title">${escapeHtml(main.title)}</h2>

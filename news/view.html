@@ -403,7 +403,7 @@
                 related.forEach(item => {
                     grid.innerHTML += `
                         <a href="view.html?id=${item.id}" class="related-card" style="text-decoration: none;">
-                            <img src="${item.imageUrl || 'https://via.placeholder.com/300'}" class="related-img" onerror="this.src='https://via.placeholder.com/300'">
+                            ${item.imageUrl ? `<img src="${item.imageUrl}" class="related-img" onerror="this.insertAdjacentHTML('beforebegin','<div class=&quot;related-img&quot; style=&quot;background: var(--gradient-1)&quot;></div>'); this.remove();">` : `<div class="related-img" style="background: var(--gradient-1)"></div>`}
                             <div class="related-content">
                                 <span class="related-cat">${item.category}</span>
                                 <h4 class="related-head">${item.title}</h4>
@@ -456,7 +456,7 @@
                     trends.forEach(item => {
                         grid.innerHTML += `
                             <a href="view.html?id=${item.id}" class="related-card" style="text-decoration: none;">
-                                <img src="${item.imageUrl || 'https://via.placeholder.com/300'}" class="related-img" onerror="this.src='https://via.placeholder.com/300'">
+                                ${item.imageUrl ? `<img src="${item.imageUrl}" class="related-img" onerror="this.insertAdjacentHTML('beforebegin','<div class=&quot;related-img&quot; style=&quot;background: var(--gradient-1)&quot;></div>'); this.remove();">` : `<div class="related-img" style="background: var(--gradient-1)"></div>`}
                                 <div class="related-content">
                                     <span class="related-cat" style="color: var(--secondary);">${item.category}</span>
                                     <h4 class="related-head">${item.title}</h4>
@@ -481,7 +481,7 @@
                 trends.forEach(item => {
                     grid.innerHTML += `
                          <a href="view.html?id=${item.id}" class="related-card" style="text-decoration: none;">
-                            <img src="${item.imageUrl || 'https://via.placeholder.com/300'}" class="related-img" onerror="this.src='https://via.placeholder.com/300'">
+                            ${item.imageUrl ? `<img src="${item.imageUrl}" class="related-img" onerror="this.insertAdjacentHTML('beforebegin','<div class=&quot;related-img&quot; style=&quot;background: var(--gradient-1)&quot;></div>'); this.remove();">` : `<div class="related-img" style="background: var(--gradient-1)"></div>`}
                             <div class="related-content">
                                 <span class="related-cat" style="color: var(--secondary);">${item.category}</span>
                                 <h4 class="related-head">${item.title}</h4>
