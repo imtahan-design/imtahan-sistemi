@@ -95,6 +95,8 @@
     }
     .nav-btn-secondary { color: var(--text-muted); background: transparent; }
     .nav-btn-secondary:hover { color: var(--primary); background: var(--primary-light); }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-links a { text-decoration: none; }
 
     /* Layout Grid */
     .page-layout {
@@ -198,26 +200,27 @@
     }
     
     .related-card {
-        display: block;
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid var(--border);
-        transition: transform 0.2s;
-        height: 100%;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      transition: transform 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
-    .related-card:hover { transform: translateY(-5px); }
-    
     .related-img {
         width: 100%;
-        height: 160px;
+        height: 180px;
         object-fit: cover;
+        background: #eee;
     }
-    
-    .related-content { padding: 16px; }
-    .related-cat { color: var(--primary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 6px; }
-    .related-head { font-size: 1rem; font-weight: 700; color: var(--text-main); line-height: 1.4; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-    .related-date { color: var(--text-muted); font-size: 0.8rem; }
+    .related-content { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+    .related-cat { color: var(--primary); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; display: block; }
+    .related-head { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; line-height: 1.4; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .related-date { color: var(--text-muted); font-size: 0.85rem; margin-top: auto; }
 
     @media (max-width: 1024px) {
         .page-layout { grid-template-columns: 1fr; }
@@ -261,22 +264,6 @@
         font-size: 1.1rem;
     }
     .share-btn:hover { transform: translateY(-3px); color: var(--primary); border-color: var(--primary); }
-
-    /* Related News */
-    .related-section { 
-        max-width: 1200px; 
-        margin: 60px auto 0; 
-        padding: 0 24px 80px; /* Increased bottom padding to fix stuck issue */
-    }
-    .related-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; border-left: 4px solid var(--primary); padding-left: 16px; }
-    .related-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
-    .related-card { background: white; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); transition: transform 0.2s; }
-    .related-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
-    .related-img { width: 100%; height: 180px; object-fit: cover; }
-    .related-content { padding: 16px; }
-    .related-cat { font-size: 0.75rem; color: var(--primary); font-weight: 600; text-transform: uppercase; margin-bottom: 8px; display: block; }
-    .related-head { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; line-height: 1.4; color: var(--text-main); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .related-date { font-size: 0.8rem; color: var(--text-muted); }
 
     /* Footer */
     .news-footer { background: #1f2937; color: var(--text-muted); text-align: center; padding: 40px 24px; margin-top: 80px; }
@@ -364,9 +351,9 @@
         animation-play-state: paused;
     }
 
-    @keyframes ticker {
+    @keyframes ticker-scroll {
         0% { transform: translate3d(0, 0, 0); }
-        100% { transform: translate3d(-100%, 0, 0); }
+        100% { transform: translate3d(-50%, 0, 0); }
     }
   </style>
 </head>
@@ -384,10 +371,10 @@
           <span>Təhsil Platforması</span>
         </div>
       </a>
-      <a href="index.html" class="nav-btn nav-btn-secondary">
-        <i class="fas fa-arrow-left"></i>
-        Xəbərlərə Qayıt
-      </a>
+      
+      <div class="nav-links">
+        <a href="index.html" class="nav-btn nav-btn-secondary">Ana Səhifə</a>
+      </div>
     </div>
   </nav>
 

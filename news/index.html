@@ -5,18 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Xəbərlər – İmtahan Platforması</title>
   <link rel="shortcut icon" href="logo.png" type="image/png">
-  <link rel="icon" href="/assets/logo.png" type="image/png" sizes="32x32">
-  <link rel="icon" href="/assets/logo.png" type="image/png" sizes="16x16">
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
   
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-  
+
   <style>
     :root {
       --primary: #6366f1;
@@ -33,17 +29,9 @@
       --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
       --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-      --gradient-2: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
-      --gradient-3: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-      --gradient-4: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', sans-serif;
       background-color: var(--bg-body);
@@ -57,11 +45,11 @@
       background: rgba(255, 255, 255, 0.8);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      position: relative;
-      z-index: 1000;
+      position: sticky;
+      top: 0;
+      z-index: 100;
       padding: 1rem 0;
     }
-
     .nav-container {
       max-width: 1200px;
       margin: 0 auto;
@@ -70,7 +58,6 @@
       justify-content: space-between;
       align-items: center;
     }
-
     .nav-logo {
       display: flex;
       align-items: center;
@@ -78,7 +65,6 @@
       text-decoration: none;
       color: var(--text-main);
     }
-
     .nav-logo-icon {
       width: 40px;
       height: 40px;
@@ -90,19 +76,8 @@
       color: white;
       font-size: 1.2rem;
     }
-
-    .nav-logo-text h1 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-
-    .nav-logo-text span {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
+    .nav-logo-text h1 { font-size: 1.25rem; font-weight: 700; line-height: 1.2; }
+    .nav-logo-text span { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
     .nav-btn {
       padding: 10px 20px;
       border-radius: 12px;
@@ -110,1067 +85,362 @@
       font-size: 0.95rem;
       transition: all 0.2s;
       cursor: pointer;
-      text-decoration: none;
+      border: none;
       display: inline-flex;
       align-items: center;
       gap: 8px;
     }
-
-    .nav-btn-secondary {
-      color: var(--text-muted);
-      background: transparent;
-    }
-
-    .nav-btn-secondary:hover {
-      color: var(--primary);
-      background: var(--primary-light);
-    }
-
-    /* Hero Section */
-    .hero {
-      padding: 80px 0 60px;
-      text-align: center;
-      background: linear-gradient(to bottom, #ffffff, var(--bg-body));
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -100px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 800px;
-      height: 800px;
-      background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 0 24px;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 16px;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      font-size: 0.875rem;
-      color: var(--primary);
-      font-weight: 600;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .hero-title {
-      font-size: 3.5rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      margin-bottom: 24px;
-      background: var(--gradient-1);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .hero-desc {
-      font-size: 1.25rem;
-      color: var(--text-muted);
-      margin-bottom: 40px;
-      line-height: 1.6;
-    }
-
-    /* Search & Filters */
-    .filters-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 24px;
-      transform: translateY(-30px);
-      position: relative;
-      z-index: 10;
-    }
-
-    .filters-card {
-      background: white;
-      padding: 16px;
-      border-radius: 20px;
-      box-shadow: var(--shadow-lg);
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      flex-wrap: wrap;
-      border: 1px solid var(--border);
-    }
-
-    .search-wrapper {
-      flex: 1;
-      position: relative;
-      min-width: 300px;
-    }
-
-    .search-wrapper i {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-    }
-
-    .search-input {
-      width: 100%;
-      padding: 14px 16px 14px 48px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 1rem;
-      background: #f9fafb;
-      transition: all 0.2s;
-    }
-
-    .search-input:focus {
-      outline: none;
-      border-color: var(--primary);
-      background: white;
-      box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
-    }
-
-    .filter-select {
-      padding: 14px 24px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 0.95rem;
-      background: #f9fafb;
-      cursor: pointer;
-      min-width: 180px;
-      color: var(--text-main);
-      font-weight: 500;
-    }
-
-    .filter-select:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-
-    /* News Grid */
-    .news-section {
-      padding: 40px 24px 80px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .news-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-      gap: 32px;
-    }
-
-    .news-card {
-      background: white;
-      border-radius: 24px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      position: relative;
-    }
-
-    .news-card:hover {
-      transform: translateY(-8px);
-      box-shadow: var(--shadow-lg);
-      border-color: rgba(99,102,241,0.3);
-    }
-
-    .card-image-wrapper {
-      height: 220px;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Abstract Gradients for Placeholders */
-    .bg-gradient-1 { background: var(--gradient-1); }
-    .bg-gradient-2 { background: var(--gradient-2); }
-    .bg-gradient-3 { background: var(--gradient-3); }
-    .bg-gradient-4 { background: var(--gradient-4); }
-
-    .card-icon {
-      font-size: 4rem;
-      color: rgba(255, 255, 255, 0.9);
-      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-      transform: scale(1);
-      transition: transform 0.5s ease;
-    }
-
-    .news-card:hover .card-icon {
-      transform: scale(1.1) rotate(5deg);
-    }
-
-    .card-badge {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      padding: 6px 12px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(4px);
-      border-radius: 100px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--text-main);
-      box-shadow: var(--shadow-sm);
-      z-index: 2;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .card-content {
-      padding: 24px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .card-meta {
-      display: flex;
-      gap: 16px;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      margin-bottom: 12px;
-    }
-
-    .meta-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .card-title {
-      font-size: 1.35rem;
-      font-weight: 700;
-      line-height: 1.4;
-      margin-bottom: 12px;
-      color: var(--text-main);
-    }
-
-    .card-excerpt {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-bottom: 24px;
-      flex: 1;
-    }
-
-    .card-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-    }
-
-    .read-more {
-      color: var(--primary);
-      font-weight: 600;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: gap 0.2s;
-    }
-
-    .read-more:hover {
-      gap: 10px;
-    }
-
-    .card-actions button {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 1.1rem;
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 50%;
-      transition: all 0.2s;
-    }
-
-    .card-actions button:hover {
-      background: #f3f4f6;
-      color: var(--secondary);
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      /* Navbar Mobile Optimizations */
-      .nav-container {
-        padding: 0 16px;
-      }
-      
-      .nav-logo-text h1 {
-        font-size: 1rem;
-      }
-      
-      .nav-logo-text span {
-        display: none; /* Hide subtitle on mobile to save space */
-      }
-      
-      .nav-logo-icon {
-        width: 32px;
-        height: 32px;
-        font-size: 1rem;
-      }
-
-      /* Hide user email on mobile, keep only buttons/icons */
-      #user-name {
-        display: none !important;
-      }
-
-      .nav-btn {
-        padding: 6px 12px;
-        font-size: 0.85rem;
-      }
-
-      /* Hero Title & Layout */
-      .hero-title {
-        font-size: 2rem;
-      }
-      
-      .filters-card {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 12px;
-      }
-
-      .search-wrapper, .filter-select {
-        width: 100%;
-        min-width: auto;
-      }
-
-      /* News Grid Mobile */
-      .news-section {
-        padding: 20px 16px 40px;
-      }
-
-      .news-grid {
-        grid-template-columns: 1fr; /* Force single column */
-        gap: 20px;
-      }
-
-      /* Featured Section Mobile */
-      .featured-main {
-        height: 250px; /* Reduce height */
-      }
-      
-      .featured-title {
-        font-size: 1.3rem;
-        line-height: 1.3;
-      }
-      
-      .featured-overlay {
-        padding: 16px;
-      }
-      
-      .featured-meta {
-        font-size: 0.75rem;
-        gap: 10px;
-      }
-
-      .featured-side {
-        height: auto;
-        gap: 12px;
-      }
-
-      .side-card {
-        flex-direction: row; /* Horizontal layout */
-        height: auto; /* Allow growth */
-        min-height: 120px; /* Increased height */
-        align-items: flex-start; /* Align to top */
-      }
-
-      .side-image {
-        width: 100px; /* Reduced width to give more space to text */
-        min-width: 100px;
-        height: 100%; /* Cover full height */
-        min-height: 120px;
-        object-fit: cover;
-      }
-      
-      .side-content {
-        padding: 10px 12px;
-        justify-content: flex-start;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        flex: 1; /* Take remaining space */
-      }
-      
-      .side-title {
-        font-size: 0.95rem;
-        margin-bottom: 4px;
-        display: -webkit-box;
-        -webkit-line-clamp: 4; /* Allow 4 lines */
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        line-height: 1.4;
-        white-space: normal; /* Ensure wrapping */
-      }
-      
-      .mini-cat, .mini-date {
-          font-size: 0.7rem;
-      }
-
-      /* Ticker Mobile */
-      .news-ticker-container {
-        height: auto;
-        flex-direction: column;
-        padding-bottom: 0;
-        overflow: hidden; /* Ensure container hides overflow */
-      }
-      
-      .ticker-label {
-        width: 100%;
-        justify-content: center;
-        padding: 8px;
-        font-size: 0.85rem;
-        box-shadow: none;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-        z-index: 5; /* Keep on top */
-      }
-      
-      .ticker-wrapper {
-        width: 100%;
-        height: 40px;
-        background: rgba(255,255,255,0.05);
-        overflow: hidden; /* Mask content */
-        position: relative;
-        display: flex;
-        align-items: center;
-      }
-      
-      .ticker-content {
-          display: flex;
-          white-space: nowrap;
-          /* Animation is set in JS/CSS class */
-      }
-
-      @keyframes ticker-scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-      }
-
-      .ticker-item {
-        font-size: 0.95rem;
-        padding: 0 20px;
-        color: white;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        height: 100%;
-      }
-
-      /* Newsletter Mobile */
-      .newsletter-form {
-        flex-direction: column;
-      }
-      
-      .newsletter-form input,
-      .newsletter-form button {
-        width: 100%;
-        min-width: auto;
-        max-width: none;
-      }
-      
-      .newsletter-section {
-        padding: 40px 20px;
-      }
-      
-      .newsletter-content h2 {
-        font-size: 1.8rem;
-      }
-    }
-
-    /* Newsletter */
-    .newsletter-section {
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-      padding: 80px 24px;
-      text-align: center;
-      color: white;
-      margin-top: 60px;
-    }
-
-    .newsletter-content {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    .newsletter-content h2 {
-      font-size: 2.5rem;
-      margin-bottom: 16px;
-      color: white;
-    }
-
-    .newsletter-content p {
-        color: rgba(255, 255, 255, 0.9);
-    }
-
-    .newsletter-form {
-      display: flex;
-      gap: 12px;
-      margin-top: 32px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .newsletter-form input {
-      flex: 1;
-      padding: 16px 24px;
-      border-radius: 12px;
-      border: none;
-      font-size: 1rem;
-      min-width: 250px;
-      max-width: 400px;
-    }
-
-    .newsletter-form input:focus {
-        outline: none;
-        box-shadow: 0 0 0 4px rgba(255,255,255,0.3);
-    }
-
-    .newsletter-form button {
-      padding: 16px 32px;
-      background: #1f2937;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    .newsletter-form button:hover {
-      transform: scale(1.05);
-      background: #111827;
-    }
-
-    /* Footer */
-    .news-footer {
-      background: #1f2937;
-      color: var(--text-muted);
-      text-align: center;
-      padding: 40px 24px;
-      border-top: 1px solid rgba(255,255,255,0.1);
-    }
-    .news-footer p {
-        color: #9ca3af;
-    }
-
-    /* Modal Styles */
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s;
-    }
-
-    .modal.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .modal-content {
-      background: white;
-      padding: 30px;
-      border-radius: 24px;
-      width: 90%;
-      max-width: 600px;
-      box-shadow: var(--shadow-lg);
-      transform: translateY(20px);
-      transition: all 0.3s;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    .modal.active .modal-content {
-      transform: translateY(0);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-
-    .modal-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
-    .close-modal {
-      background: transparent;
-      border: none;
-      font-size: 1.5rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-
-    .close-modal:hover {
-      color: var(--text-main);
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: var(--text-main);
-    }
-
-    .form-input, .form-textarea, .form-select {
-      width: 100%;
-      padding: 12px 16px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 1rem;
-      font-family: inherit;
-      transition: border-color 0.2s;
-    }
-
-    .form-input:focus, .form-textarea:focus, .form-select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
-    }
-
-    .form-textarea {
-      min-height: 120px;
-      resize: vertical;
-    }
-
-    .btn-submit {
-      width: 100%;
-      padding: 14px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .btn-submit:hover {
-      background: var(--primary-dark);
-    }
-
-    .admin-controls {
-      display: none; /* Hidden by default */
-      margin-bottom: 20px;
-      text-align: right;
-    }
-
-    .btn-add {
-      background: var(--primary);
-      color: white;
-      padding: 12px 24px;
-      border-radius: 12px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: transform 0.2s;
-    }
-
-    .btn-add:hover {
-      transform: translateY(-2px);
-    }
-    
-    .desktop-only {
-        display: inline;
-    }
-    @media (max-width: 600px) {
-        .desktop-only {
-            display: none;
-        }
-    }
-
-    /* CMS Editor Styles */
-    .cms-container {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 24px;
-        height: 100%;
-    }
-    @media (max-width: 768px) {
-        .cms-container {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .editor-toolbar {
-        background: #f3f4f6;
-        padding: 10px;
-        border: 1px solid var(--border);
-        border-bottom: none;
-        border-radius: 12px 12px 0 0;
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .toolbar-btn {
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 6px 10px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        color: var(--text-main);
-        transition: all 0.2s;
-    }
-    .toolbar-btn:hover { background: var(--primary-light); color: var(--primary); }
-    .toolbar-btn.active { background: var(--primary); color: white; }
-
-    .rich-editor {
-        width: 100%;
-        min-height: 300px;
-        padding: 16px;
-        border: 1px solid var(--border);
-        border-radius: 0 0 12px 12px;
-        font-size: 1rem;
-        line-height: 1.6;
-        outline: none;
-        overflow-y: auto;
-        background: white;
-    }
-    .rich-editor:focus { border-color: var(--primary); }
-    .rich-editor blockquote { border-left: 4px solid var(--primary); padding-left: 16px; color: var(--text-muted); font-style: italic; }
-    .rich-editor img { max-width: 100%; border-radius: 8px; }
-
-    .tag-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 8px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: white;
-        min-height: 48px;
-    }
-    .tag-chip {
-        background: var(--primary-light);
-        color: var(--primary);
-        padding: 4px 10px;
-        border-radius: 100px;
-        font-size: 0.85rem;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .tag-chip i { cursor: pointer; font-size: 0.8rem; }
-    .tag-input { border: none; outline: none; flex: 1; min-width: 80px; padding: 4px; }
-
-    .image-preview {
-        width: 100%;
-        height: 160px;
-        background: #f9fafb;
-        border: 2px dashed var(--border);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        margin-top: 8px;
-        position: relative;
-    }
-    .image-preview img { width: 100%; height: 100%; object-fit: cover; }
-    .image-preview-placeholder { color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 8px; }
-    
-    .status-toggle {
-        display: flex;
-        background: #f3f4f6;
-        padding: 4px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-    }
-    .status-btn {
-        flex: 1;
-        padding: 8px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 0.9rem;
-        background: transparent;
-        color: var(--text-muted);
-        transition: all 0.2s;
-    }
-    .status-btn.active-published { background: #10b981; color: white; }
-    .status-btn.active-draft { background: #6b7280; color: white; }
-
-    /* Featured News Layout */
+    .nav-btn-secondary { color: var(--text-muted); background: transparent; }
+    .nav-btn-secondary:hover { color: var(--primary); background: var(--primary-light); }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-links a { text-decoration: none; }
+
+    /* Hero Section Removed */
+
+    /* Filters */
+    .filters-container { width: 100%; margin: 0 0 40px; padding: 0; position: relative; z-index: 10; }
+    .filters-card { background: white; border-radius: 20px; padding: 20px; box-shadow: var(--shadow-lg); display: flex; gap: 16px; align-items: center; flex-wrap: wrap; border: 1px solid var(--border); }
+    .search-wrapper { flex: 1; min-width: 250px; position: relative; }
+    .search-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .search-input { width: 100%; padding: 12px 16px 12px 44px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.95rem; transition: all 0.2s; outline: none; }
+    .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); }
+    .filter-select { padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.95rem; outline: none; cursor: pointer; background: white; min-width: 180px; }
+    .filter-select:focus { border-color: var(--primary); }
+    .admin-controls { display: none; margin-left: auto; }
+    .admin-controls.active { display: flex; }
+    .btn-add { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+    .btn-add:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+    /* Featured Grid (Desktop) */
     .featured-grid {
         display: grid;
         grid-template-columns: 2fr 1fr;
-        gap: 24px;
+        gap: 30px;
         margin-bottom: 40px;
+        height: 500px;
     }
-    @media (max-width: 900px) { .featured-grid { grid-template-columns: 1fr; } }
-
     .featured-main {
         position: relative;
         border-radius: 24px;
         overflow: hidden;
-        height: 500px;
+        height: 100%;
         box-shadow: var(--shadow-lg);
+        cursor: pointer;
     }
-    .featured-main img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
-    .featured-main:hover img { transform: scale(1.05); }
+    .featured-main img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s;
+    }
+    .featured-main:hover img {
+        transform: scale(1.05);
+    }
     .featured-overlay {
         position: absolute;
-        bottom: 0; left: 0; right: 0;
-        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
         padding: 40px;
         color: white;
     }
     .featured-badge {
-        background: var(--primary); color: white; padding: 4px 12px; border-radius: 100px; 
-        font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 12px; display: inline-block;
-    }
-    .featured-title { font-size: 2.5rem; font-weight: 800; line-height: 1.2; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-    .featured-meta { display: flex; gap: 16px; font-size: 0.9rem; opacity: 0.9; }
-
-    .featured-side { display: flex; flex-direction: column; gap: 24px; height: 500px; }
-    .side-card {
-        flex: 1; background: white; border-radius: 20px; display: flex;
-        border: 1px solid var(--border); transition: all 0.3s; overflow: hidden;
-    }
-    .side-card:hover { transform: translateX(5px); border-color: var(--primary); }
-    .side-image { width: 180px; height: 100%; object-fit: cover; border-radius: 0; }
-    .side-content { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 20px; }
-    .side-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; line-height: 1.4; color: var(--text-main); }
-    
-    /* Category Manager Styles */
-    .cat-list { display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; margin-top: 20px; }
-    .cat-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 12px; border: 1px solid var(--border); }
-    .cat-actions button { background: none; border: none; cursor: pointer; padding: 4px; transition: color 0.2s; }
-    .cat-actions button.delete { color: #ef4444; }
-    .cat-actions button.delete:hover { background: #fee2e2; border-radius: 4px; }
-
-    /* Custom Editor Toolbar Styles */
-    .toolbar-dropdown-wrapper {
-        position: relative;
-        display: inline-block;
-    }
-    .color-palette-popup {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        background: white;
-        border: 1px solid var(--border);
+        background: var(--primary);
+        color: white;
+        padding: 6px 14px;
         border-radius: 8px;
-        padding: 10px;
-        box-shadow: var(--shadow-lg);
-        z-index: 100;
-        display: none;
-        width: 170px;
-        margin-top: 4px;
-    }
-    .color-palette-popup.active {
-        display: block;
-    }
-    .color-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 6px;
-    }
-    .color-swatch {
-        width: 24px;
-        height: 24px;
-        border-radius: 4px;
-        cursor: pointer;
-        border: 1px solid rgba(0,0,0,0.1);
-        transition: transform 0.2s;
-    }
-    .color-swatch:hover {
-        transform: scale(1.2);
-        z-index: 2;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-
-    /* News Ticker */
-    .news-ticker-container {
-        background: #1f2937;
-        color: white;
-        display: flex;
-        align-items: center;
-        overflow: hidden;
-        height: 40px;
-        position: relative;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .ticker-label {
-        background: #ef4444; /* Red color like oxu.az or just primary */
-        color: white;
-        padding: 0 16px;
-        height: 100%;
-        display: flex;
-        align-items: center;
         font-weight: 700;
         font-size: 0.85rem;
-        z-index: 2;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
-        white-space: nowrap;
+        display: inline-block;
+        margin-bottom: 12px;
         text-transform: uppercase;
     }
-
-    .ticker-wrapper {
-        flex: 1;
-        overflow: hidden;
-        position: relative;
-        height: 100%;
+    .featured-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-bottom: 12px;
+    }
+    .featured-meta {
         display: flex;
-        align-items: center;
-    }
-
-    .ticker-content {
-        display: inline-block;
-        white-space: nowrap;
-        animation: ticker 40s linear infinite;
-        padding-left: 20px;
-    }
-
-    .ticker-item {
-        display: inline-block;
-        padding: 0 20px;
+        gap: 16px;
         font-size: 0.9rem;
-        color: #e5e7eb;
-        text-decoration: none;
-        transition: color 0.2s;
-        border-right: 1px solid rgba(255,255,255,0.1);
+        opacity: 0.9;
+    }
+    
+    /* Side Cards */
+    .featured-side {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        height: 100%;
+    }
+    .side-card {
+        background: white;
+        border-radius: 16px;
+        padding: 0;
+        display: flex;
+        gap: 0;
+        align-items: stretch;
+        border: 1px solid var(--border);
+        transition: all 0.3s;
+        flex: 1;
+        cursor: pointer;
+        overflow: hidden;
+    }
+    .side-card:hover {
+        transform: translateX(-5px);
+        border-color: var(--primary-light);
+        box-shadow: var(--shadow-md);
+    }
+    .side-image {
+        width: 45%;
+        height: 100%;
+        min-height: 100%;
+        border-radius: 0;
+        object-fit: cover;
+    }
+    .side-content { 
+        flex: 1; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center; 
+        padding: 24px; 
+    }
+    .side-cat {
+        font-size: 0.75rem;
+        color: var(--primary);
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .side-title {
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1.4;
+        margin-bottom: 8px;
+        color: var(--text-main);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .side-date {
+        font-size: 0.8rem;
+        color: var(--text-muted);
     }
 
-    .ticker-item:hover {
-        color: #ef4444;
+    /* News Grid & Layout */
+    .news-section { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
+    .news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; }
+    
+    /* News Card */
+    .news-card { 
+        background: white; 
+        border-radius: 20px; 
+        overflow: hidden; 
+        border: 1px solid var(--border); 
+        transition: all 0.3s; 
+        height: 100%; 
+        display: flex; 
+        flex-direction: column; 
+        position: relative; 
     }
-
-    .ticker-wrapper:hover .ticker-content {
-        animation-play-state: paused;
+    .news-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-lg); border-color: var(--primary-light); }
+    .card-image-wrapper { 
+        position: relative; 
+        height: 220px; 
+        overflow: hidden; 
+        width: 100%;
     }
+    .card-image-wrapper img { 
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover; 
+        transition: transform 0.5s; 
+    }
+    .news-card:hover .card-image-wrapper img { transform: scale(1.05); }
+    .card-badge { 
+        position: absolute; 
+        top: 16px; 
+        left: 16px; 
+        background: rgba(255,255,255,0.95); 
+        backdrop-filter: blur(4px); 
+        padding: 6px 12px; 
+        border-radius: 8px; 
+        font-size: 0.75rem; 
+        font-weight: 700; 
+        color: var(--primary); 
+        text-transform: uppercase; 
+        letter-spacing: 0.5px; 
+        z-index: 2;
+    }
+    .card-content { padding: 24px; flex: 1; display: flex; flex-direction: column; }
+    .card-meta { display: flex; gap: 12px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; align-items: center; }
+    .meta-item { display: flex; align-items: center; gap: 6px; }
+    .meta-item i { color: var(--primary); font-size: 0.9rem; }
+    .card-title { 
+        font-size: 1.25rem; 
+        font-weight: 700; 
+        line-height: 1.4; 
+        margin-bottom: 12px; 
+        color: var(--text-main); 
+        display: -webkit-box; 
+        -webkit-line-clamp: 2; 
+        -webkit-box-orient: vertical; 
+        overflow: hidden; 
+    }
+    .card-excerpt { 
+        font-size: 0.95rem; 
+        color: var(--text-muted); 
+        line-height: 1.6; 
+        margin-bottom: 20px; 
+        display: -webkit-box; 
+        -webkit-line-clamp: 3; 
+        -webkit-box-orient: vertical; 
+        overflow: hidden; 
+        flex: 1; 
+    }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }
+    .read-more { color: var(--primary); font-weight: 600; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+    .read-more:hover { gap: 8px; }
+    .news-actions { display: flex; gap: 8px; }
+    .action-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: white; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .action-btn:hover { background: var(--primary-light); color: var(--primary); border-color: transparent; }
 
-    @keyframes ticker {
+    /* Ticker (Restored) */
+    .news-ticker-container {
+        background: #1f2937; color: white; display: flex; align-items: center; overflow: hidden; height: 40px; position: relative; border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .ticker-label {
+        background: #ef4444; color: white; padding: 0 16px; height: 100%; display: flex; align-items: center; font-weight: 700; font-size: 0.85rem; z-index: 2; box-shadow: 2px 0 10px rgba(0,0,0,0.2); white-space: nowrap; text-transform: uppercase;
+    }
+    .ticker-wrapper { flex: 1; overflow: hidden; position: relative; height: 100%; display: flex; align-items: center; }
+    .ticker-content { display: flex; white-space: nowrap; animation: ticker-scroll 40s linear infinite; padding-left: 0; }
+    .ticker-item { display: inline-block; padding: 0 20px; font-size: 0.9rem; color: #e5e7eb; text-decoration: none; transition: color 0.2s; border-right: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+    .ticker-item:hover { color: #ef4444; }
+    .ticker-wrapper:hover .ticker-content { animation-play-state: paused; }
+    @keyframes ticker-scroll {
         0% { transform: translate3d(0, 0, 0); }
-        100% { transform: translate3d(-100%, 0, 0); }
+        100% { transform: translate3d(-50%, 0, 0); }
     }
 
-    .access-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(17, 24, 39, 0.65);
-      backdrop-filter: blur(6px);
-      z-index: 1000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
+    /* Modal Styles */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .modal.active { display: flex; opacity: 1; pointer-events: auto; }
+    .modal-content { background: white; width: 90%; max-width: 600px; border-radius: 24px; padding: 30px; position: relative; transform: translateY(20px); transition: transform 0.3s; max-height: 90vh; overflow-y: auto; }
+    .modal.active .modal-content { transform: translateY(0); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .modal-title { font-size: 1.5rem; font-weight: 700; }
+    .close-modal { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; }
+    
+    /* Form Styles */
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; }
+    .form-input, .form-textarea, .form-select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; font-family: inherit; }
+    .form-input:focus, .form-textarea:focus { border-color: var(--primary); }
+    .btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn-submit:hover { background: var(--primary-dark); }
 
-    .access-overlay .overlay-card {
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 24px;
-      max-width: 560px;
-      width: 100%;
-      text-align: center;
-      box-shadow: var(--shadow-lg);
-    }
+    /* CMS Editor Styles */
+    .cms-container { display: grid; grid-template-columns: 1fr 300px; gap: 24px; }
+    .editor-toolbar { display: flex; gap: 8px; padding: 8px; background: #f9fafb; border: 1px solid var(--border); border-bottom: none; border-radius: 12px 12px 0 0; flex-wrap: wrap; }
+    .toolbar-btn { background: white; border: 1px solid var(--border); border-radius: 6px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); }
+    .toolbar-btn:hover { color: var(--primary); border-color: var(--primary); }
+    .rich-editor { min-height: 300px; border: 1px solid var(--border); border-radius: 0 0 12px 12px; padding: 20px; outline: none; overflow-y: auto; }
+    .rich-editor img { max-width: 100%; border-radius: 8px; }
 
-    .access-overlay .overlay-icon {
-      font-size: 2rem;
-      color: var(--primary);
-      margin-bottom: 12px;
-    }
+    /* Footer */
+    .news-footer { background: #1f2937; color: var(--text-muted); text-align: center; padding: 40px 24px; margin-top: 80px; }
+    .news-footer p { color: #9ca3af; }
 
-    .access-overlay h2 {
-      margin: 8px 0 12px;
-      font-size: 1.5rem;
-    }
+    /* Newsletter */
+    .newsletter-section { background: var(--gradient-1); color: white; padding: 60px 24px; margin: 60px 0; text-align: center; border-radius: 24px; }
+    .newsletter-content { max-width: 600px; margin: 0 auto; }
+    .newsletter-content h2 { font-size: 2rem; margin-bottom: 16px; }
+    .newsletter-form { display: flex; gap: 10px; margin-top: 30px; flex-wrap: wrap; justify-content: center; }
+    .newsletter-form input { padding: 12px 20px; border-radius: 12px; border: none; min-width: 250px; outline: none; }
+    .newsletter-form button { background: #1f2937; color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 600; cursor: pointer; }
 
-    .access-overlay p {
-      color: var(--text-muted);
-      margin-bottom: 16px;
-    }
+    /* Tag Styles */
+    .tag-container { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: white; min-height: 48px; }
+    .tag-chip { background: var(--primary-light); color: var(--primary); padding: 4px 10px; border-radius: 100px; font-size: 0.8rem; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    .tag-remove { cursor: pointer; font-size: 1rem; opacity: 0.6; }
+    .tag-remove:hover { opacity: 1; }
 
-    .access-overlay .overlay-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
+    /* Mobile */
+    @media (max-width: 768px) {
+        .nav-container { padding: 0 16px; }
+        .news-section { padding: 0 16px; margin: 20px auto; }
+        .news-grid { grid-template-columns: 1fr; gap: 20px; }
+        
+        .nav-logo-text h1 { font-size: 1rem; }
+        .nav-logo-text span { display: none; }
+        .hero-title { font-size: 2rem; }
+        .filters-card { flex-direction: column; align-items: stretch; gap: 12px; }
+        .filter-select { width: 100%; }
+        .cms-container { grid-template-columns: 1fr; }
+        
+        /* Mobile Featured */
+        .featured-grid { grid-template-columns: 1fr; height: auto; gap: 20px; }
+        .featured-main { height: 250px; }
+        .featured-title { font-size: 1.25rem; }
+        .featured-overlay { padding: 16px; }
+        
+        /* Mobile Side Cards (Horizontal) */
+        .featured-side { gap: 12px; }
+        .side-card { padding: 10px; gap: 12px; height: auto; align-items: center; }
+        .side-image { width: 80px; height: 80px; min-height: 80px; border-radius: 12px; }
+        .side-content { padding: 0; }
+        .side-title { font-size: 0.9rem; margin-bottom: 4px; -webkit-line-clamp: 2; }
+        .side-cat { font-size: 0.7rem; margin-bottom: 2px; }
+        .side-date { font-size: 0.75rem; }
+        
+        .news-ticker-container { height: auto; flex-direction: column; }
+        .ticker-label { width: 100%; justify-content: center; padding: 6px; font-size: 0.9rem; }
+        .ticker-wrapper { height: 32px; background: rgba(255,255,255,0.05); }
+
+        /* Fix for Side Title line clamp */
+        .side-title {
+          font-size: 0.9rem;
+          margin-bottom: 4px;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          line-height: 1.4;
+          white-space: normal;
+        }
     }
   </style>
 </head>
 <body>
-
   <!-- Navbar -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="/news/index.html" class="nav-logo">
-        <div class="nav-logo-icon">
-          <i class="fas fa-graduation-cap"></i>
-        </div>
-        <div class="nav-logo-text">
-          <h1>İmtahan Xəbər</h1>
-          <span>Təhsil Platforması</span>
-        </div>
+      <a href="index.html" class="nav-logo">
+        <div class="nav-logo-icon"><i class="fas fa-graduation-cap"></i></div>
+        <div class="nav-logo-text"><h1>İmtahan Xəbər</h1><span>Təhsil Platforması</span></div>
       </a>
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <div id="auth-buttons">
-          <button onclick="openLoginModal()" class="nav-btn" style="background: var(--primary); color: white; border: none;">
-            <i class="fas fa-sign-in-alt"></i> Giriş
-          </button>
-        </div>
-        <div id="user-info" style="display: none; align-items: center; gap: 10px;">
-          <span id="user-name" style="font-weight: 600; color: var(--text-main);"></span>
-          <button onclick="logout()" class="nav-btn nav-btn-secondary" title="Çıxış">
-            <i class="fas fa-sign-out-alt"></i>
-          </button>
-        </div>
-        <a href="https://imtahan.site/" class="nav-btn nav-btn-secondary">
-          <i class="fas fa-arrow-left"></i>
-          <span class="desktop-only">Ana Səhifə</span>
-        </a>
+      
+      <div style="display: flex; align-items: center; gap: 8px;">
+          <div id="auth-buttons">
+              <button class="nav-btn nav-btn-secondary" onclick="document.getElementById('loginModal').classList.add('active')">Daxil ol</button>
+          </div>
+          <div id="user-info" style="display:none; align-items:center; gap:5px;">
+              <span id="user-name" style="font-weight:600;">User</span>
+              <button class="nav-btn nav-btn-secondary" style="padding: 8px 12px;" onclick="firebase.auth().signOut()"><i class="fas fa-sign-out-alt"></i></button>
+          </div>
+          <a href="../index.html" class="nav-btn nav-btn-secondary" style="margin-left: 0; padding: 8px 12px;">
+            <i class="fas fa-arrow-left" style="margin-right: 5px;"></i> Ana Səhifə
+          </a>
       </div>
     </div>
   </nav>
 
-  <!-- News Ticker -->
+  <!-- Ticker -->
   <div class="news-ticker-container">
       <div class="ticker-label"><i class="fas fa-bolt" style="margin-right:8px;"></i> Son Xəbərlər</div>
       <div class="ticker-wrapper">
@@ -1180,299 +450,132 @@
       </div>
   </div>
 
-    <!-- Hero Section (Dynamic) -->
-  <section class="news-section" style="padding-bottom: 20px;">
-      <div id="featuredContainer">
-          <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-             <i class="fas fa-spinner fa-spin"></i> Yüklənir...
+  <!-- Featured & Grid -->
+  <main class="news-section">
+      <div id="featuredContainer" style="margin-bottom: 60px;"></div>
+
+      <!-- Filters -->
+      <div class="filters-container">
+          <div class="filters-card">
+              <div class="search-wrapper">
+                  <i class="fas fa-search"></i>
+                  <input type="text" id="newsSearch" class="search-input" placeholder="Xəbər axtar...">
+              </div>
+              <select id="categoryFilter" class="filter-select">
+                  <option value="all">Bütün kateqoriyalar</option>
+              </select>
+              <select id="sortFilter" class="filter-select">
+                  <option value="newest">Ən yeni</option>
+                  <option value="oldest">Ən köhnə</option>
+              </select>
+              <div id="adminControls" class="admin-controls">
+                  <button class="btn-add" onclick="openAddNewsModal()"><i class="fas fa-plus"></i> <span class="desktop-only">Yeni Xəbər</span></button>
+              </div>
           </div>
       </div>
-  </section>
 
-  <!-- Filters -->
-  <div class="filters-container">
-    <div class="filters-card">
-      <div class="search-wrapper">
-        <i class="fas fa-search"></i>
-        <input type="text" id="newsSearch" class="search-input" placeholder="Xəbərlərdə axtar...">
-      </div>
-      <select id="categoryFilter" class="filter-select">
-        <option value="all">Bütün kateqoriyalar</option>
-        <!-- Dynamic options will go here -->
-      </select>
-      <select id="sortFilter" class="filter-select">
-        <option value="newest">Ən yeni</option>
-        <option value="oldest">Ən köhnə</option>
-      </select>
-    </div>
-  </div>
+      <div class="news-grid" id="newsGrid"></div>
+  </main>
 
-  <!-- News Grid -->
-  <section class="news-section">
-    <!-- Admin Controls -->
-    <div class="admin-controls" id="adminControls">
-      <button class="btn-add" onclick="openCategoryModal()" style="background: var(--secondary); margin-right: 10px;">
-        <i class="fas fa-tags"></i> Kateqoriyalar
-      </button>
-      <button class="btn-add" onclick="openAddNewsModal()">
-        <i class="fas fa-plus"></i> Yeni Xəbər
-      </button>
-    </div>
-
-    <div class="news-grid" id="newsGrid">
-      <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
-        <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
-        <p style="margin-top: 10px; color: var(--text-muted);">Xəbərlər yüklənir...</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Newsletter Section -->
+  <!-- Newsletter -->
   <section class="newsletter-section">
-    <div class="newsletter-content">
-      <h2>Yeniliklərdən xəbərdar olun</h2>
-      <p>Ən son təhsil xəbərlərini və yenilikləri email ünvanınıza göndərək.</p>
-      <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Abunə olduğunuz üçün təşəkkür edirik!');">
-        <input type="email" placeholder="Email ünvanınızı daxil edin" required>
-        <button type="submit">Abunə ol</button>
-      </form>
-    </div>
+      <div class="newsletter-content">
+          <h2>Xəbərləri Qaçırmayın</h2>
+          <p>Həftəlik ən vacib xəbərləri email ünvanınıza göndərək.</p>
+          <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Abunə olduğunuz üçün təşəkkürlər!');">
+              <input type="email" placeholder="Email ünvanınız" required>
+              <button type="submit">Abunə Ol</button>
+          </form>
+      </div>
   </section>
 
   <!-- Footer -->
   <footer class="news-footer">
-    <div class="nav-container" style="flex-direction: column;">
-      <div class="nav-logo" style="justify-content: center; margin-bottom: 20px;">
-        <div class="nav-logo-icon">
-          <i class="fas fa-graduation-cap"></i>
-        </div>
-        <div class="nav-logo-text" style="text-align: left;">
-          <h1 style="color: white;">İmtahan</h1>
-          <span style="color: #9ca3af;">Təhsil Platforması</span>
-        </div>
-      </div>
-      <p>&copy; 2026 İmtahan. Bütün hüquqlar qorunur.</p>
-    </div>
+    <p>&copy; 2026 İmtahan. Bütün hüquqlar qorunur.</p>
   </footer>
 
-  <!-- Add/Edit News Modal (CMS Style) -->
+  <!-- Add/Edit News Modal -->
   <div class="modal" id="newsModal">
-    <div class="modal-content" style="max-width: 1000px; height: 90vh; display: flex; flex-direction: column;">
-      <div class="modal-header">
-        <h2 class="modal-title" id="modalTitle">Xəbər Redaktoru</h2>
-        <button class="close-modal" onclick="closeNewsModal()">&times;</button>
+      <div class="modal-content" style="max-width: 900px;">
+          <div class="modal-header">
+              <h3 class="modal-title" id="modalTitle">Yeni Xəbər</h3>
+              <button class="close-modal" onclick="closeNewsModal()"><i class="fas fa-times"></i></button>
+          </div>
+          <form id="newsForm" onsubmit="handleNewsSubmit(event)">
+              <input type="hidden" id="newsId">
+              <div class="form-group">
+                  <label class="form-label">Başlıq</label>
+                  <input type="text" id="newsTitle" class="form-input" required>
+              </div>
+              
+              <div class="cms-container">
+                  <div class="cms-main">
+                      <div class="form-group">
+                          <label class="form-label">Məzmun</label>
+                          <div class="editor-toolbar">
+                              <button type="button" class="toolbar-btn" onclick="execCmd('bold')"><i class="fas fa-bold"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('italic')"><i class="fas fa-italic"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('underline')"><i class="fas fa-underline"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('justifyLeft')"><i class="fas fa-align-left"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('justifyCenter')"><i class="fas fa-align-center"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', 'H3')">H3</button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('createLink', prompt('URL daxil edin:'))"><i class="fas fa-link"></i></button>
+                              <label class="toolbar-btn" style="margin-bottom:0;">
+                                  <i class="fas fa-image"></i>
+                                  <input type="file" style="display:none;" accept="image/*" onchange="handleEditorImageUpload(event)">
+                              </label>
+                          </div>
+                          <div id="richEditor" class="rich-editor" contenteditable="true"></div>
+                      </div>
+                  </div>
+                  <div class="cms-sidebar">
+                      <div class="form-group">
+                          <label class="form-label">Qısa Məlumat (Excerpt)</label>
+                          <textarea id="newsExcerpt" class="form-textarea" style="min-height:80px;"></textarea>
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label">Kateqoriya</label>
+                          <select id="newsCategory" class="form-select"></select>
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label">Oxuma Vaxtı (dəq)</label>
+                          <input type="number" id="newsReadTime" class="form-input" value="3" min="1">
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label">Əsas Şəkil</label>
+                          <div id="imagePreview" style="width:100%; height:150px; background:#f3f4f6; border-radius:12px; position:relative; overflow:hidden; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="document.getElementById('fileInput').click()">
+                              <div class="image-preview-placeholder" style="text-align:center; color:var(--text-muted);">
+                                  <i class="fas fa-cloud-upload-alt fa-2x"></i>
+                                  <span style="display:block; font-size:0.8rem; margin-top:5px;">Şəkil seçin</span>
+                              </div>
+                              <button type="button" id="removeImageBtn" onclick="event.stopPropagation(); removeCoverImage()" style="display:none; position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.5); color:white; border:none; border-radius:50%; width:24px; height:24px; align-items:center; justify-content:center; cursor:pointer;"><i class="fas fa-times"></i></button>
+                          </div>
+                          <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
+                          <input type="hidden" id="newsImage">
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label">Teqlər</label>
+                          <input type="text" id="tagInput" class="form-input" placeholder="Enter ilə əlavə et...">
+                          <div id="tagList" class="tag-container" style="margin-top:8px;"></div>
+                      </div>
+                  </div>
+              </div>
+
+              <div style="margin-top:24px;">
+                  <button type="submit" class="btn-submit">Yadda Saxla</button>
+              </div>
+          </form>
       </div>
-      
-      <form id="newsForm" onsubmit="handleNewsSubmit(event)" style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
-        <input type="hidden" id="newsId">
-        
-        <div class="cms-container" style="flex: 1; overflow-y: auto; padding: 4px;">
-            <!-- Left Column: Main Content -->
-            <div style="display: flex; flex-direction: column; gap: 20px;">
-                <div class="form-group">
-                    <input type="text" id="newsTitle" class="form-input" required placeholder="Xəbər Başlığı" style="font-size: 1.5rem; font-weight: 700; padding: 16px;">
-                </div>
-                
-                <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
-                    <label class="form-label">Məzmun</label>
-                    <div class="editor-toolbar">
-                        <button type="button" class="toolbar-btn" onclick="execCmd('bold')" title="Qalın"><i class="fas fa-bold"></i></button>
-                        <button type="button" class="toolbar-btn" onclick="execCmd('italic')" title="Kursiv"><i class="fas fa-italic"></i></button>
-                        <button type="button" class="toolbar-btn" onclick="execCmd('underline')" title="Altıxətli"><i class="fas fa-underline"></i></button>
-                        <div style="width: 1px; background: #e5e7eb; margin: 0 4px;"></div>
-                        <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', 'H2')" title="Başlıq 2">H2</button>
-                        <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', 'H3')" title="Başlıq 3">H3</button>
-                        <div style="width: 1px; background: #e5e7eb; margin: 0 4px;"></div>
-                        
-                        <!-- Font Family -->
-                        <select onchange="execCmd('fontName', this.value); this.selectedIndex=0;" class="toolbar-btn" style="width: auto; padding-right: 20px; max-width: 100px;" title="Şrift Növü">
-                            <option value="">Şrift</option>
-                            <option value="Arial">Arial</option>
-                            <option value="Times New Roman">Times New Roman</option>
-                            <option value="Verdana">Verdana</option>
-                            <option value="Helvetica">Helvetica</option>
-                            <option value="Inter">Inter</option>
-                            <option value="Georgia">Georgia</option>
-                            <option value="Courier New">Courier New</option>
-                            <option value="Trebuchet MS">Trebuchet MS</option>
-                            <option value="Impact">Impact</option>
-                            <option value="Comic Sans MS">Comic Sans MS</option>
-                            <option value="Tahoma">Tahoma</option>
-                        </select>
-
-                        <!-- Font Size -->
-                        <select onchange="execCmd('fontSize', this.value); this.selectedIndex=0;" class="toolbar-btn" style="width: auto; padding-right: 20px;" title="Ölçü">
-                            <option value="">Ölçü</option>
-                            <option value="1">8</option>
-                            <option value="2">10</option>
-                            <option value="3">12</option>
-                            <option value="4">14</option>
-                            <option value="5">18</option>
-                            <option value="6">24</option>
-                            <option value="7">36</option>
-                        </select>
-                        
-                        <!-- Text Color -->
-                        <div class="toolbar-dropdown-wrapper">
-                            <button type="button" class="toolbar-btn" onclick="toggleColorPalette()" title="Yazı Rəngi">
-                                <i class="fas fa-palette" style="color: var(--primary);"></i>
-                            </button>
-                            <div class="color-palette-popup" id="colorPalette">
-                                <div class="color-grid">
-                                    <div class="color-swatch" style="background: #000000" onclick="execCmd('foreColor', '#000000'); toggleColorPalette()" title="Qara"></div>
-                                    <div class="color-swatch" style="background: #4b5563" onclick="execCmd('foreColor', '#4b5563'); toggleColorPalette()" title="Boz"></div>
-                                    <div class="color-swatch" style="background: #ffffff; border: 1px solid #ddd;" onclick="execCmd('foreColor', '#ffffff'); toggleColorPalette()" title="Ağ"></div>
-                                    <div class="color-swatch" style="background: #ef4444" onclick="execCmd('foreColor', '#ef4444'); toggleColorPalette()" title="Qırmızı"></div>
-                                    <div class="color-swatch" style="background: #f97316" onclick="execCmd('foreColor', '#f97316'); toggleColorPalette()" title="Narıncı"></div>
-                                    <div class="color-swatch" style="background: #f59e0b" onclick="execCmd('foreColor', '#f59e0b'); toggleColorPalette()" title="Sarı"></div>
-                                    <div class="color-swatch" style="background: #84cc16" onclick="execCmd('foreColor', '#84cc16'); toggleColorPalette()" title="Açıq Yaşıl"></div>
-                                    <div class="color-swatch" style="background: #10b981" onclick="execCmd('foreColor', '#10b981'); toggleColorPalette()" title="Yaşıl"></div>
-                                    <div class="color-swatch" style="background: #06b6d4" onclick="execCmd('foreColor', '#06b6d4'); toggleColorPalette()" title="Firuzəyi"></div>
-                                    <div class="color-swatch" style="background: #3b82f6" onclick="execCmd('foreColor', '#3b82f6'); toggleColorPalette()" title="Mavi"></div>
-                                    <div class="color-swatch" style="background: #6366f1" onclick="execCmd('foreColor', '#6366f1'); toggleColorPalette()" title="İndigo"></div>
-                                    <div class="color-swatch" style="background: #8b5cf6" onclick="execCmd('foreColor', '#8b5cf6'); toggleColorPalette()" title="Bənövşəyi"></div>
-                                    <div class="color-swatch" style="background: #d946ef" onclick="execCmd('foreColor', '#d946ef'); toggleColorPalette()" title="Çəhrayı"></div>
-                                    <div class="color-swatch" style="background: #ec4899" onclick="execCmd('foreColor', '#ec4899'); toggleColorPalette()" title="Tünd Çəhrayı"></div>
-                                    <div class="color-swatch" style="background: #f43f5e" onclick="execCmd('foreColor', '#f43f5e'); toggleColorPalette()" title="Qızılgül"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style="width: 1px; background: #e5e7eb; margin: 0 4px;"></div>
-                        <button type="button" class="toolbar-btn" onclick="execCmd('insertUnorderedList')" title="Siyahı"><i class="fas fa-list-ul"></i></button>
-                        <button type="button" class="toolbar-btn" onclick="execCmd('insertOrderedList')" title="Nömrəli Siyahı"><i class="fas fa-list-ol"></i></button>
-                        <button type="button" class="toolbar-btn" onclick="execCmd('createLink')" title="Link"><i class="fas fa-link"></i></button>
-                        <button type="button" class="toolbar-btn" onclick="document.getElementById('editorFileInput').click()" title="Şəkil Yüklə"><i class="fas fa-image"></i></button>
-                        <input type="file" id="editorFileInput" hidden accept="image/*" onchange="handleEditorImageUpload(event)">
-                        <button type="button" class="toolbar-btn" onclick="execCmd('removeFormat')" title="Formatı təmizlə"><i class="fas fa-eraser"></i></button>
-                    </div>
-                    <div id="richEditor" class="rich-editor" contenteditable="true" placeholder="Xəbərin məzmununu bura yazın..."></div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Qısa Məzmun (Excerpt)</label>
-                    <textarea id="newsExcerpt" class="form-textarea" required placeholder="Kartda görünəcək qısa məlumat" style="min-height: 80px;"></textarea>
-                </div>
-            </div>
-
-            <!-- Right Column: Settings -->
-            <div style="background: #f9fafb; padding: 20px; border-radius: 16px; height: fit-content;">
-                <div class="status-toggle">
-                    <button type="button" class="status-btn active-published" id="btnPublish" onclick="setStatus('published')">Dərc Et</button>
-                    <button type="button" class="status-btn" id="btnDraft" onclick="setStatus('draft')">Qaralama</button>
-                </div>
-                <input type="hidden" id="newsStatus" value="published">
-
-                <div class="form-group">
-                    <label class="form-label">Kateqoriya</label>
-                    <select id="newsCategory" class="form-select" required>
-                        <option value="rəsmi">Rəsmi Xəbərlər</option>
-                        <option value="təlim">Təlimlər</option>
-                        <option value="müsabiqə">Müsabiqələr</option>
-                        <option value="yenilik">Texnoloji Yeniliklər</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Kapak Şəkli</label>
-                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                        <button type="button" class="toolbar-btn" onclick="document.getElementById('fileInput').click()" style="flex: 1; text-align: center;">
-                            <i class="fas fa-upload"></i> Cihazdan yüklə
-                        </button>
-                        <input type="file" id="fileInput" hidden accept="image/*" onchange="handleFileSelect(event)">
-                    </div>
-                    <div style="position: relative; margin-bottom: 8px;">
-                        <span style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 100%; text-align: center; color: #9ca3af; font-size: 0.8rem; pointer-events: none;">və ya</span>
-                        <hr style="border: 0; border-top: 1px solid var(--border);">
-                    </div>
-                    <input type="url" id="newsImage" class="form-input" placeholder="URL daxil edin (https://...)" oninput="updateImagePreview()">
-                    <div class="image-preview" id="imagePreview">
-                        <button type="button" id="removeImageBtn" onclick="removeCoverImage()" style="position: absolute; top: 8px; right: 8px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 10; transition: transform 0.2s;" title="Şəkli sil">
-                            <i class="fas fa-times"></i>
-                        </button>
-                        <div class="image-preview-placeholder">
-                            <i class="fas fa-image" style="font-size: 2rem;"></i>
-                            <span>Şəkil yoxdur</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Teqlər (Enter ilə əlavə et)</label>
-                    <div class="tag-container" id="tagContainer" onclick="document.getElementById('tagInput').focus()">
-                        <input type="text" id="tagInput" class="tag-input" placeholder="Teq yazın..." onkeydown="handleTagInput(event)">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Oxuma müddəti (dəq)</label>
-                    <input type="number" id="newsReadTime" class="form-input" required min="1" value="3">
-                </div>
-
-                <button type="submit" class="btn-submit" style="margin-top: 20px;">
-                    <i class="fas fa-save"></i> Yadda Saxla
-                </button>
-            </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Read News Modal -->
-  <div class="modal" id="readModal">
-    <div class="modal-content" style="max-width: 800px;">
-      <div class="modal-header">
-        <h2 class="modal-title" id="readTitle"></h2>
-        <button class="close-modal" onclick="closeReadModal()">&times;</button>
-      </div>
-      <div style="margin-bottom: 20px; color: var(--text-muted); font-size: 0.9rem;" id="readMeta"></div>
-      <div class="modal-body" id="readContent" style="line-height: 1.8; color: var(--text-main);"></div>
-    </div>
   </div>
 
   <!-- Login Modal -->
   <div class="modal" id="loginModal">
-    <div class="modal-content" style="max-width: 400px;">
-      <div class="modal-header">
-        <h2 class="modal-title">Giriş</h2>
-        <button class="close-modal" onclick="closeLoginModal()">&times;</button>
-      </div>
-      <form id="loginForm" onsubmit="handleLogin(event)">
-        <div class="form-group">
-          <label class="form-label">Email və ya istifadəçi adı</label>
-          <input type="text" id="loginEmail" class="form-input" required placeholder="Email və ya istifadəçi adınız">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Şifrə</label>
-          <input type="password" id="loginPassword" class="form-input" required placeholder="Şifrəniz">
-        </div>
-        <button type="submit" class="btn-submit">Daxil ol</button>
-        <p style="text-align: center; margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">
-          Hesabınız yoxdur? <a href="/" style="color: var(--primary);">Qeydiyyatdan keçin</a>
-        </p>
-      </form>
-    </div>
-  </div>
-
-  <!-- Category Manager Modal -->
-  <div class="modal" id="categoryManagerModal">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-header">
-        <h2 class="modal-title">Kateqoriyalar</h2>
-        <button class="close-modal" onclick="closeCategoryModal()">&times;</button>
-      </div>
-      
-      <div class="form-group" style="display: flex; gap: 8px;">
-        <input type="text" id="newCategoryInput" class="form-input" placeholder="Yeni kateqoriya adı...">
-        <button onclick="addCategory()" class="btn-submit" style="width: auto; padding: 0 20px;">
-          <i class="fas fa-plus"></i>
-        </button>
-      </div>
-
-      <div class="cat-list" id="categoryList">
-        <!-- Dynamic list -->
-      </div>
-    </div>
+       <div class="modal-content" style="max-width: 400px; text-align: center;">
+           <h3>Daxil Ol</h3>
+           <p style="margin-bottom: 20px;">Admin paneli üçün giriş</p>
+           <button class="btn-submit" onclick="firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => document.getElementById('loginModal').classList.remove('active'))"><i class="fab fa-google"></i> Google ilə</button>
+           <button style="margin-top:10px; background:transparent; border:none; color:var(--text-muted); cursor:pointer;" onclick="document.getElementById('loginModal').classList.remove('active')">Bağla</button>
+       </div>
   </div>
 
   <script src="news-app.js"></script>

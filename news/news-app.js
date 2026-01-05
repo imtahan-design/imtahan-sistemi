@@ -19,6 +19,8 @@ const storage = firebase.storage();
 // State
 let currentUser = null;
 let allNews = [];
+let lastVisibleDoc = null; // For pagination
+let isAllNewsPage = false;
 let categories = ['Rəsmi Xəbərlər', 'Təlimlər', 'Müsabiqələr', 'Texnoloji Yeniliklər'];
 let currentEditingId = null;
 
@@ -279,7 +281,12 @@ function updateTicker(list) {
     }
 
     // 1. Prepare items HTML
-    const itemsHtml = list.slice(0, 10).map(n => `<a href="view.html?id=${n.id}" class="ticker-item">${n.title}</a>`).join('');
+    const itemsHtml = list.slice(0, 10).map(n => `
+        <a href="view.html?id=${n.id}" class="ticker-item">
+            ${n.category ? `<span style="color:#f87171; font-weight:bold; margin-right:5px; font-size:0.85em;">[${n.category.toUpperCase()}]</span>` : ''}
+            ${n.title}
+        </a>
+    `).join('');
     
     // 2. Double the content for seamless looping
     container.innerHTML = itemsHtml + itemsHtml; 
@@ -646,6 +653,95 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+// All News Page Logic
+window.initializeAllNewsPage = function() {
+    isAllNewsPage = true;
+    lastVisibleDoc = null;
+    const grid = document.getElementById('all-news-grid');
+    if (grid) grid.innerHTML = '';
+    loadMoreNews();
+}
+
+window.loadMoreNews = async function() {
+    const btn = document.getElementById('load-more-btn');
+    if (btn) {
+        btn.textContent = 'Yüklənir...';
+        btn.disabled = true;
+    }
+
+    try {
+        let query = db.collection('news').orderBy('date', 'desc').limit(12);
+
+        if (lastVisibleDoc) {
+            query = query.startAfter(lastVisibleDoc);
+        }
+
+        const snapshot = await query.get();
+        
+        if (snapshot.empty) {
+            if (btn) {
+                btn.textContent = 'Başqa xəbər yoxdur';
+                btn.disabled = true;
+                // If it's the first load and empty
+                if (!lastVisibleDoc) {
+                     document.getElementById('all-news-grid').innerHTML = '<p style="text-align:center; grid-column:1/-1;">Hələ ki xəbər yoxdur.</p>';
+                }
+            }
+            return;
+        }
+
+        lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+        const newItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        renderAllNewsGrid(newItems);
+
+        if (snapshot.docs.length < 12) {
+            if (btn) {
+                btn.textContent = 'Son';
+                btn.disabled = true;
+            }
+        } else {
+            if (btn) {
+                btn.textContent = 'Daha çox göstər';
+                btn.disabled = false;
+            }
+        }
+
+    } catch (error) {
+        console.error("Error loading more news:", error);
+        if (btn) btn.textContent = 'Xəta baş verdi';
+    }
+}
+
+function renderAllNewsGrid(list) {
+    const grid = document.getElementById('all-news-grid');
+    if (!grid) return;
+
+    list.forEach(item => {
+        const isAdminOrMod = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+        const card = document.createElement('div');
+        card.className = 'news-card';
+        card.innerHTML = `
+            <div class="card-image-wrapper bg-gradient-${Math.floor(Math.random()*4)+1}">
+                ${item.imageUrl ? `<img src="${item.imageUrl}" class="news-image">` : `<div style="height:200px; display:flex; align-items:center; justify-content:center; background:#eee;"><i class="fas fa-newspaper fa-3x" style="color:#ccc;"></i></div>`}
+                <span class="card-badge" style="position:absolute; top:10px; left:10px; background:var(--primary); color:white; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600;">${item.category}</span>
+            </div>
+            <div class="news-content">
+                <div class="news-meta">
+                    <span><i class="far fa-calendar"></i> ${formatDate(item.date)}</span>
+                    <span><i class="far fa-clock"></i> ${item.readTime || 3} dəq</span>
+                </div>
+                <h3 class="news-title">${item.title}</h3>
+                <p class="news-excerpt">${item.excerpt || ''}</p>
+                <div class="news-footer">
+                    <a href="view.html?id=${item.id}" class="read-more" style="color:var(--primary); text-decoration:none; font-weight:600;">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
 
 function clearAllNewsCaches() {
     sessionStorage.removeItem('news_list_cache');
