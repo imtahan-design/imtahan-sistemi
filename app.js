@@ -2144,8 +2144,6 @@ function appendTeacherReports(reports, listContainer) {
     }
 }
 
-
-
 window.markReportAsResolvedByTeacher = async function(reportId) {
     if (!confirm('Bu şikayəti həll edilmiş kimi qeyd etmək istəyirsiniz?')) return;
     
@@ -5834,14 +5832,15 @@ window.generateAdminAIQuestions = async function() {
 
     if (!success) {
         console.error("AI Generation failed:", lastError);
-        let msg = 'Suallar yaradılarkən xəta baş verdi.';
+        let msg = 'Xəta baş verdi.';
         if (lastError.includes('quota') || lastError.includes('429') || lastError.includes('limit')) {
-            msg = 'API limiti (kvota) bitib və ya bu model üçün icazəniz yoxdur. Zəhmət olmasa bir az gözləyin və ya AI Studio-dan limitləri yoxlayın.';
+            msg = '⚠️ AI limiti bitdi. Zəhmət olmasa biraz gözləyin.';
         } else if (lastError.includes('Safety')) {
-            msg = 'Məzmun təhlükəsizlik filtri tərəfindən bloklandı.';
+            msg = '⚠️ Məzmun uyğunsuz olduğu üçün bloklandı.';
+        } else {
+            msg = 'Xəta: ' + (lastError.length > 50 ? lastError.substring(0, 50) + '...' : lastError);
         }
         showNotification(msg, 'error');
-        alert("Xəta təfərrüatı: " + lastError);
     }
     
     loading.classList.add('hidden');
@@ -8072,14 +8071,15 @@ window.generateAIQuestions = async function() {
 
     if (!success) {
         console.error("AI Generation failed:", lastError);
-        let msg = 'Suallar yaradılarkən xəta baş verdi.';
+        let msg = 'Xəta baş verdi.';
         if (lastError.includes('quota') || lastError.includes('429') || lastError.includes('limit')) {
-            msg = 'API limiti (kvota) bitib və ya bu model üçün icazəniz yoxdur. Zəhmət olmasa bir az gözləyin və ya AI Studio-dan limitləri yoxlayın.';
+            msg = '⚠️ AI limiti bitdi. Zəhmət olmasa biraz gözləyin.';
         } else if (lastError.includes('Safety')) {
-            msg = 'Məzmun təhlükəsizlik filtri tərəfindən bloklandı.';
+            msg = '⚠️ Məzmun uyğunsuz olduğu üçün bloklandı.';
+        } else {
+            msg = 'Xəta: ' + (lastError.length > 50 ? lastError.substring(0, 50) + '...' : lastError);
         }
         showNotification(msg, 'error');
-        alert("Xəta təfərrüatı: " + lastError);
     }
 };
 
