@@ -79,7 +79,6 @@ function updateUIForUser() {
     const authButtons = document.getElementById('auth-buttons');
     const userInfo = document.getElementById('user-info');
     const adminControls = document.getElementById('adminControls');
-    const accessOverlay = document.getElementById('newsAccessOverlay');
 
     if (currentUser) {
         if (authButtons) authButtons.style.display = 'none';
@@ -91,7 +90,6 @@ function updateUIForUser() {
         const isAdminOrMod = currentUser.role === 'admin' || currentUser.role === 'moderator';
         if (isAdminOrMod) {
             if (adminControls) adminControls.style.display = 'block';
-            if (accessOverlay) accessOverlay.style.display = 'none';
         } else {
             if (adminControls) adminControls.style.display = 'none';
         }
@@ -114,7 +112,16 @@ async function loadNews() {
         updateTicker(allNews);
     } catch (error) {
         console.error("Error loading news:", error);
-        // Fallback to local storage or dummy data if offline
+        if (error.code === 'permission-denied') {
+            document.getElementById('newsGrid').innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                    <i class="fas fa-lock fa-2x" style="color: var(--text-muted);"></i>
+                    <p style="margin-top: 10px; color: var(--text-muted);">Xəbərləri görmək üçün giriş etməlisiniz və ya sistem icazələri məhdudlaşdırılıb.</p>
+                    <button onclick="openLoginModal()" class="btn-submit" style="width: auto; margin-top: 10px; padding: 10px 20px;">Giriş et</button>
+                </div>
+            `;
+            document.getElementById('featuredContainer').innerHTML = ''; // Clear featured
+        }
     }
 }
 
@@ -502,12 +509,14 @@ window.handleLogin = async (e) => {
             const userSnapshot = await db.collection('users').where('username', '==', loginInput).limit(1).get();
             if (!userSnapshot.empty) {
                 email = userSnapshot.docs[0].data().email;
-            } else {
-                // If no user found with that username, proceed as if it might be an email (or fail later)
-                // But better to show error or let firebase handle it if it's not email format
             }
         } catch (error) {
             console.error("Error fetching user by username:", error);
+            // If permission denied, we can't lookup username. Warn user.
+            if (error.code === 'permission-denied') {
+                alert("İstifadəçi adı ilə giriş üçün sistem icazəsi yoxdur. Zəhmət olmasa email ünvanınızla daxil olun.");
+                return;
+            }
         }
     }
 
