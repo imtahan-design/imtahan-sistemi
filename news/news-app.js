@@ -280,8 +280,17 @@ function updateTicker(list) {
     const html = list.slice(0, 10).map(n => `<a href="view.html?id=${n.id}" class="ticker-item">${n.title}</a>`).join('');
     container.innerHTML = html; 
     
-    // JS Animation Fallback
-    let pos = container.offsetWidth;
+    // JS Animation Fallback (Robust)
+    container.style.animation = 'none'; // Disable CSS animation
+    container.style.paddingLeft = '0';
+    container.style.display = 'inline-block';
+    
+    let parentWidth = container.parentElement.offsetWidth;
+    let pos = parentWidth;
+    
+    // Clear any previous animation loop if we were to store the ID
+    // Since we reload page mostly, it's fine.
+    
     const animate = () => {
         pos--;
         if (pos < -container.scrollWidth) {
@@ -290,12 +299,11 @@ function updateTicker(list) {
         container.style.transform = `translateX(${pos}px)`;
         requestAnimationFrame(animate);
     };
-    // Clear previous animation loop if any (not implemented here but good practice)
-    // For now just start
-    // Small delay to ensure layout
+
+    // Small delay to ensure layout is calculated
     setTimeout(() => {
-        container.style.paddingLeft = '0'; // Reset CSS padding
-        pos = container.parentElement.offsetWidth;
+        parentWidth = container.parentElement.offsetWidth;
+        pos = parentWidth;
         animate();
     }, 100);
 }

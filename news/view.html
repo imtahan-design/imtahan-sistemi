@@ -263,7 +263,11 @@
     .share-btn:hover { transform: translateY(-3px); color: var(--primary); border-color: var(--primary); }
 
     /* Related News */
-    .related-section { max-width: 1200px; margin: 60px auto 0; padding: 0 24px; }
+    .related-section { 
+        max-width: 1200px; 
+        margin: 60px auto 0; 
+        padding: 0 24px 80px; /* Increased bottom padding to fix stuck issue */
+    }
     .related-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; border-left: 4px solid var(--primary); padding-left: 16px; }
     .related-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
     .related-card { background: white; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); transition: transform 0.2s; }
