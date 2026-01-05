@@ -32,12 +32,15 @@ function send(res, status, content, type = 'text/plain; charset=utf-8') {
 }
 
 const server = http.createServer((req, res) => {
+   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   if (req.method === 'OPTIONS') {
     return send(res, 200, '');
   }
 
   let pathname = decodeURI(url.parse(req.url).pathname);
   if (pathname.endsWith('/')) pathname += 'index.html';
+  if (pathname === '/news' || pathname === '/news/') pathname = '/index.html';
+  if (pathname.startsWith('/news/')) pathname = pathname.replace(/^\/news\//, '/');
 
   const filePath = path.normalize(path.join(root, pathname));
   if (!filePath.startsWith(root)) {
@@ -64,4 +67,3 @@ const server = http.createServer((req, res) => {
 server.listen(port, () => {
   console.log(`Local server running at http://localhost:${port}/`);
 });
-
