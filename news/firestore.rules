@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is admin or moderator
+    function isAdmin() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator'];
+    }
+
+    // News Collection Rules
+    match /news/{newsId} {
+      // Public users can ONLY read published news
+      allow read: if resource.data.status == 'published';
+      
+      // Admins/Moderators can read ALL news (including drafts)
+      allow read: if isAdmin();
+      
+      // Only Admins/Moderators can create, update, or delete news
+      allow write: if isAdmin();
+    }
+
+    // Settings/Categories Rules
+    match /settings/{docId} {
+      // Everyone can read categories
+      allow read: if true;
+      // Only admins can change settings
+      allow write: if isAdmin();
+    }
+
+    // User Profiles Rules
+    match /users/{userId} {
+      // Users can read their own profile
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Admins can read/write any profile
+      allow read, write: if isAdmin();
+      // Allow users to create their own initial profile
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

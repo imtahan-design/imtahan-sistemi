@@ -355,24 +355,28 @@ function checkAdmin() {
 function gateNewsAccess() {
     const overlay = document.getElementById('newsAccessOverlay');
     if (!overlay) return;
-    const allowed = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
-    overlay.style.display = allowed ? 'none' : 'flex';
+    overlay.style.display = 'none';
 }
 
 // Load News
 async function loadNews() {
     // Show initial data immediately (Optimistic UI)
     allNews = getInitialData();
+    allNews = mergeLocalNewsIntoAll(allNews);
     renderNews(allNews);
 
     try {
+        const isPrivileged = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+        let query = db.collection('news');
+        if (!isPrivileged) {
+            query = query.where('status', '==', 'published');
+        }
         let snapshot;
         try {
-            // Try to get sorted data
-            snapshot = await db.collection('news').orderBy('date', 'desc').get();
+            snapshot = await query.orderBy('date', 'desc').get();
         } catch (e) {
-            console.warn("Sorting failed (likely missing index), fetching unsorted:", e);
-            snapshot = await db.collection('news').get();
+            console.warn("Index missing for query; falling back without orderBy:", e);
+            snapshot = await query.get();
         }
         
         if (snapshot.empty) {
@@ -383,7 +387,7 @@ async function loadNews() {
             const dbNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             // Client-side sort just in case the db sort failed
             dbNews.sort((a, b) => new Date(b.date) - new Date(a.date));
-            allNews = dbNews;
+            allNews = mergeLocalNewsIntoAll(dbNews);
             renderNews(allNews);
         }
     } catch (error) {
@@ -420,6 +424,7 @@ function getInitialData() {
             category: 'rəsmi',
             date: '2026-01-05',
             readTime: 3,
+            status: 'published',
             gradient: 'bg-gradient-1',
             icon: 'fa-file-signature'
         },
@@ -431,6 +436,7 @@ function getInitialData() {
             category: 'təlim',
             date: '2026-01-03',
             readTime: 5,
+            status: 'published',
             gradient: 'bg-gradient-2',
             icon: 'fa-chalkboard-teacher'
         },
@@ -442,6 +448,7 @@ function getInitialData() {
             category: 'müsabiqə',
             date: '2025-12-29',
             readTime: 4,
+            status: 'published',
             gradient: 'bg-gradient-3',
             icon: 'fa-trophy'
         },
@@ -453,6 +460,7 @@ function getInitialData() {
             category: 'yenilik',
             date: '2026-01-01',
             readTime: 6,
+            status: 'published',
             gradient: 'bg-gradient-4',
             icon: 'fa-robot'
         }
@@ -725,24 +733,32 @@ async function handleNewsSubmit(e) {
             imageUrl,
             tags: currentTags,
             date: new Date().toISOString().split('T')[0],
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            ownerId: currentUser.id,
+            ownerEmail: currentUser.email || ''
         };
+
+        const tempId = id || ('local-' + Date.now());
+        const localItem = { id: tempId, synced: false, ...newsData };
+        allNews = [localItem, ...allNews.filter(n => n.id !== tempId)];
+        renderNews(allNews);
+        closeNewsModal();
+        addLocalNewsItem(localItem);
 
         try {
             if (id) {
                 await db.collection('news').doc(id).update(newsData);
             } else {
                 newsData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                await db.collection('news').add(newsData);
+                const docRef = await db.collection('news').add(newsData);
+                const idx = allNews.findIndex(n => n.id === tempId);
+                if (idx !== -1) {
+                    allNews[idx].id = docRef.id;
+                    updateLocalNewsId(tempId, docRef.id);
+                    renderNews(allNews);
+                }
             }
-            closeNewsModal();
-            loadNews();
         } catch (err) {
-            const tempId = 'local-' + Date.now();
-            const localItem = { id: tempId, ...newsData };
-            allNews = [localItem, ...allNews];
-            closeNewsModal();
-            renderNews(allNews);
             alert('Ofllayn rejim: Xəbər yerli olaraq əlavə olundu');
         }
     } catch (error) {
@@ -972,4 +988,36 @@ function addStyles() {
         }
     `;
     document.head.appendChild(styleSheet);
+}
+
+const LOCAL_NEWS_KEY = 'imtahan_news_local';
+function readLocalNews() {
+    try { return JSON.parse(localStorage.getItem(LOCAL_NEWS_KEY) || '[]'); } catch { return []; }
+}
+function writeLocalNews(items) {
+    try { localStorage.setItem(LOCAL_NEWS_KEY, JSON.stringify(items)); } catch {}
+}
+function addLocalNewsItem(item) {
+    const items = readLocalNews().filter(n => n.id !== item.id);
+    writeLocalNews([item, ...items]);
+}
+function updateLocalNewsId(tempId, newId) {
+    const items = readLocalNews();
+    const idx = items.findIndex(n => n.id === tempId);
+    if (idx !== -1) {
+        items[idx].id = newId;
+        items[idx].synced = true;
+        writeLocalNews(items);
+    }
+}
+function getLocalNewsForCurrentUser() {
+    if (!currentUser || !currentUser.id) return [];
+    return readLocalNews().filter(n => n.ownerId === currentUser.id);
+}
+function mergeLocalNewsIntoAll(list) {
+    const local = getLocalNewsForCurrentUser();
+    if (!local.length) return list;
+    const existingIds = new Set(list.map(n => n.id));
+    const mergedLocal = local.filter(n => !existingIds.has(n.id));
+    return [...mergedLocal, ...list];
 }

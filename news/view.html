@@ -263,6 +263,10 @@
     const db = firebase.firestore();
 
     // Helper functions (copied from news-app.js for standalone view)
+    const LOCAL_NEWS_KEY = 'imtahan_news_local';
+    function readLocalNews() {
+        try { return JSON.parse(localStorage.getItem(LOCAL_NEWS_KEY) || '[]'); } catch { return []; }
+    }
     function formatDate(dateStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr);
@@ -279,13 +283,21 @@
             return;
         }
 
+        const localItem = readLocalNews().find(n => n.id === id);
+        if (localItem) {
+            renderArticle(localItem);
+            loadRelatedNews(localItem.category, localItem.id);
+            loadTrendNews(localItem.id);
+            return;
+        }
+
         try {
             const doc = await db.collection('news').doc(id).get();
             let articleData = null;
 
             if (!doc.exists) {
                 // Check initial data fallback
-                const initialData = getInitialData().find(n => n.id === id);
+                const initialData = readLocalNews().find(n => n.id === id) || getInitialData().find(n => n.id === id);
                 if (initialData) {
                     articleData = initialData;
                 } else {
@@ -358,11 +370,16 @@
 
     async function loadRelatedNews(category, currentId) {
         try {
-            const snapshot = await db.collection('news')
-                .where('category', '==', category)
-                .orderBy('date', 'desc')
-                .limit(4) // Fetch 4 to have enough if we filter out current
-                .get();
+            let query = db.collection('news')
+                .where('status', '==', 'published')
+                .where('category', '==', category);
+            let snapshot;
+            try {
+                snapshot = await query.orderBy('date', 'desc').limit(4).get();
+            } catch (e) {
+                console.warn("Index missing for related query; falling back without orderBy:", e);
+                snapshot = await query.limit(4).get();
+            }
 
             const related = [];
             snapshot.forEach(doc => {
@@ -395,21 +412,29 @@
 
     async function loadTrendNews(currentId) {
         try {
-            const snapshot = await db.collection('news')
-                .orderBy('date', 'desc')
-                .limit(10) 
-                .get();
+            let query = db.collection('news').where('status', '==', 'published');
+            let snapshot;
+            try {
+                snapshot = await query.orderBy('date', 'desc').limit(10).get();
+            } catch (e) {
+                console.warn("Index missing for trend query; falling back without orderBy:", e);
+                snapshot = await query.limit(10).get();
+            }
 
             let all = [];
             snapshot.forEach(doc => {
                 all.push({ id: doc.id, ...doc.data() });
             });
 
+            const local = readLocalNews();
+            const existing = new Set(all.map(n => n.id));
+            const merged = [...local.filter(n => !existing.has(n.id)), ...all];
+
             // Render Ticker with all latest news
-            renderTicker(all);
+            renderTicker(merged);
 
             // Filter for trends (exclude current)
-            const trendItems = all.filter(item => item.id !== currentId);
+            const trendItems = merged.filter(item => item.id !== currentId);
 
             // Shuffle and pick 3
             trendItems.sort(() => 0.5 - Math.random());
