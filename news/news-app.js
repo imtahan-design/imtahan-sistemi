@@ -489,10 +489,28 @@ async function saveCategories() {
 window.openLoginModal = () => document.getElementById('loginModal').classList.add('active');
 window.closeLoginModal = () => document.getElementById('loginModal').classList.remove('active');
 window.logout = () => auth.signOut().then(() => window.location.reload());
-window.handleLogin = (e) => {
+window.handleLogin = async (e) => {
     e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
+    const loginInput = document.getElementById('loginEmail').value;
     const pass = document.getElementById('loginPassword').value;
+    
+    // Check if input is username or email
+    let email = loginInput;
+    if (!loginInput.includes('@')) {
+        // Assume username, fetch email from Firestore users collection
+        try {
+            const userSnapshot = await db.collection('users').where('username', '==', loginInput).limit(1).get();
+            if (!userSnapshot.empty) {
+                email = userSnapshot.docs[0].data().email;
+            } else {
+                // If no user found with that username, proceed as if it might be an email (or fail later)
+                // But better to show error or let firebase handle it if it's not email format
+            }
+        } catch (error) {
+            console.error("Error fetching user by username:", error);
+        }
+    }
+
     auth.signInWithEmailAndPassword(email, pass).then(() => {
         closeLoginModal();
         // UI updates automatically via auth listener
