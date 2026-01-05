@@ -467,12 +467,12 @@
 
       /* Featured Section Mobile */
       .featured-main {
-        height: 300px; /* Reduce height */
+        height: 250px; /* Reduce height */
       }
       
       .featured-title {
-        font-size: 1.5rem;
-        line-height: 1.2;
+        font-size: 1.3rem;
+        line-height: 1.3;
       }
       
       .featured-overlay {
@@ -480,40 +480,64 @@
       }
       
       .featured-meta {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         gap: 10px;
       }
 
       .featured-side {
         height: auto;
-        gap: 16px;
+        gap: 12px;
       }
 
       .side-card {
-        flex-direction: column; /* Stack image and text */
-        height: auto;
+        flex-direction: row; /* Horizontal layout for better look */
+        height: 90px; /* Compact fixed height */
+        align-items: center;
       }
 
       .side-image {
-        width: 100%;
-        height: 160px;
+        width: 110px;
+        height: 100%;
+        object-fit: cover;
+      }
+      
+      .side-content {
+        padding: 0 12px;
+        justify-content: center;
+      }
+      
+      .side-title {
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      
+      .mini-cat, .mini-date {
+          font-size: 0.7rem;
       }
 
       /* Ticker Mobile */
       .news-ticker-container {
         height: auto;
         flex-direction: column;
+        padding-bottom: 0;
       }
       
       .ticker-label {
         width: 100%;
         justify-content: center;
-        padding: 6px;
-        font-size: 0.8rem;
+        padding: 8px;
+        font-size: 0.85rem;
+        box-shadow: none;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
       }
       
       .ticker-wrapper {
-        height: 32px;
+        width: 100%;
+        height: 36px;
         background: rgba(255,255,255,0.05);
       }
       

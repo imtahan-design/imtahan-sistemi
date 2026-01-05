@@ -106,8 +106,35 @@ function updateUIForUser() {
 // Data Loading
 async function loadNews() {
     try {
-        const snapshot = await db.collection('news').orderBy('date', 'desc').get();
+        // CACHE: 5 dəqiqəlik yaddaş (Read sayını azaltmaq üçün)
+        const CACHE_KEY = 'news_list_cache';
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        
+        // Əgər cache varsa və 5 dəqiqə keçməyibsə, onu istifadə et
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Date.now() - parsed.timestamp < 5 * 60 * 1000) {
+                console.log("Xəbərlər cache-dən yükləndi");
+                allNews = parsed.data;
+                renderNews(allNews);
+                updateTicker(allNews);
+                return; // Serverə sorğu göndərmə
+            }
+        }
+
+        // OPTIMIZATION: Limit to latest 50 items to save Firestore reads
+        // Previously it was loading ALL news (e.g. 1000 items = 1000 reads per page load)
+        const snapshot = await db.collection('news').orderBy('date', 'desc').limit(50).get();
         allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Cache-ə yaz
+        if (allNews.length > 0) {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+                timestamp: Date.now(),
+                data: allNews
+            }));
+        }
+
         renderNews(allNews);
         updateTicker(allNews);
     } catch (error) {
@@ -231,7 +258,6 @@ function renderNews(list) {
                 <div class="card-meta">
                     <div class="meta-item"><i class="far fa-calendar"></i> ${formatDate(item.date)}</div>
                     <div class="meta-item"><i class="far fa-clock"></i> ${item.readTime || 3} dəq</div>
-                    <div class="meta-item"><i class="far fa-eye"></i> ${item.views || 0}</div>
                 </div>
                 <h3 class="card-title">${item.title}</h3>
                 <p class="card-excerpt">${item.excerpt || ''}</p>
@@ -303,6 +329,9 @@ window.deleteNews = async function(id) {
     if (!confirm('Bu xəbəri silmək istədiyinizə əminsiniz?')) return;
     try {
         await db.collection('news').doc(id).delete();
+        // Cache təmizlə
+        sessionStorage.removeItem('news_list_cache');
+        sessionStorage.removeItem('trend_news_cache');
         loadNews(); // Reload
     } catch (e) {
         alert('Xəta: ' + e.message);
@@ -332,6 +361,10 @@ window.toggleFeatured = async function(id, currentStatus) {
         await db.collection('news').doc(id).update({
             isFeatured: !currentStatus
         });
+        
+        // Cache təmizlə
+        clearAllNewsCaches();
+        
         loadNews();
     } catch (error) {
         alert('Xəta: ' + error.message);
@@ -474,6 +507,11 @@ window.handleNewsSubmit = async function(event) {
         } else {
             await db.collection('news').add(newsData);
         }
+        
+        // Cache təmizlə ki, yeni məlumat yüklənsin
+        sessionStorage.removeItem('news_list_cache');
+        sessionStorage.removeItem('trend_news_cache');
+
         closeNewsModal();
         loadNews();
     } catch (e) {
@@ -594,3 +632,13 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+function clearAllNewsCaches() {
+    sessionStorage.removeItem('news_list_cache');
+    sessionStorage.removeItem('trend_news_cache');
+    Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('related_news_')) {
+            sessionStorage.removeItem(key);
+        }
+    });
+}

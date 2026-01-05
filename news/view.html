@@ -468,12 +468,26 @@
             console.log("View increment failed or doc not found yet");
         }
 
-        const localItem = readLocalNews().find(n => n.id === id);
+        // 1. Try Local Storage (Legacy/Fallback)
+        let localItem = readLocalNews().find(n => n.id === id);
+
+        // 2. Try Session Storage (Shared with Index)
+        if (!localItem) {
+            try {
+                const sessionCache = sessionStorage.getItem('news_list_cache');
+                if (sessionCache) {
+                    const parsed = JSON.parse(sessionCache);
+                    // Check timestamp if needed, but for single article view, stale data is better than read
+                    localItem = parsed.data.find(n => n.id === id);
+                }
+            } catch (e) { console.warn("Session cache read error", e); }
+        }
+
         if (localItem) {
             renderArticle(localItem);
             loadRelatedNews(localItem.category, localItem.id);
             loadTrendNews(localItem.id);
-            return;
+            // Cache tapılsa belə, serverdən yenilənmiş məlumatı (baxış sayını) gətirmək üçün davam edirik.
         }
 
         try {
@@ -520,6 +534,7 @@
         document.getElementById('newsMeta').innerHTML = `
             <span><i class="far fa-calendar"></i> ${formatDate(item.date)}</span>
             <span><i class="far fa-clock"></i> ${item.readTime} dəq</span>
+            <span><i class="far fa-eye"></i> ${item.views || 0}</span>
         `;
 
         if (item.imageUrl) {
@@ -555,28 +570,51 @@
 
     async function loadRelatedNews(category, currentId) {
         try {
-            let query = db.collection('news')
-                .where('status', '==', 'published')
-                .where('category', '==', category);
-            let snapshot;
-            try {
-                snapshot = await query.orderBy('date', 'desc').limit(4).get();
-            } catch (e) {
-                console.warn("Index missing for related query; falling back without orderBy:", e);
-                snapshot = await query.limit(4).get();
+            // CACHE: Oxşar xəbərləri cache-dən oxuyaq
+            const CACHE_KEY = `related_news_${category}`;
+            const cached = sessionStorage.getItem(CACHE_KEY);
+            let related = [];
+
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                // 30 dəqiqəlik cache
+                if (Date.now() - parsed.timestamp < 30 * 60 * 1000) {
+                    related = parsed.data;
+                }
             }
 
-            const related = [];
-            snapshot.forEach(doc => {
-                if (doc.id !== currentId && related.length < 3) {
-                    related.push({ id: doc.id, ...doc.data() });
+            if (related.length === 0) {
+                let query = db.collection('news')
+                    .where('status', '==', 'published')
+                    .where('category', '==', category);
+                let snapshot;
+                try {
+                    snapshot = await query.orderBy('date', 'desc').limit(4).get();
+                } catch (e) {
+                    console.warn("Index missing for related query; falling back without orderBy:", e);
+                    snapshot = await query.limit(4).get();
                 }
-            });
 
-            if (related.length > 0) {
+                snapshot.forEach(doc => {
+                    related.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Save to cache
+                if (related.length > 0) {
+                    sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+                        timestamp: Date.now(),
+                        data: related
+                    }));
+                }
+            }
+
+            // Filter out current article
+            const filteredRelated = related.filter(item => item.id !== currentId).slice(0, 3);
+
+            if (filteredRelated.length > 0) {
                 const grid = document.getElementById('relatedGrid');
                 grid.innerHTML = '';
-                related.forEach(item => {
+                filteredRelated.forEach(item => {
                     grid.innerHTML += `
                         <a href="view.html?id=${item.id}" class="related-card" style="text-decoration: none;">
                             ${item.imageUrl ? `<img src="${item.imageUrl}" class="related-img" onerror="this.insertAdjacentHTML('beforebegin','<div class=&quot;related-img&quot; style=&quot;background: var(--gradient-1)&quot;></div>'); this.remove();">` : `<div class="related-img" style="background: var(--gradient-1)"></div>`}
@@ -597,19 +635,42 @@
 
     async function loadTrendNews(currentId) {
         try {
-            let query = db.collection('news').where('status', '==', 'published');
-            let snapshot;
-            try {
-                snapshot = await query.orderBy('date', 'desc').limit(10).get();
-            } catch (e) {
-                console.warn("Index missing for trend query; falling back without orderBy:", e);
-                snapshot = await query.limit(10).get();
+            // CACHE: Trend xəbərləri sessiya yaddaşından oxuyaq ki, hər səhifədə sorğu getməsin
+            const CACHE_KEY = 'trend_news_cache';
+            const cached = sessionStorage.getItem(CACHE_KEY);
+            let all = [];
+
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                // 15 dəqiqəlik cache
+                if (Date.now() - parsed.timestamp < 15 * 60 * 1000) {
+                    all = parsed.data;
+                }
             }
 
-            let all = [];
-            snapshot.forEach(doc => {
-                all.push({ id: doc.id, ...doc.data() });
-            });
+            if (all.length === 0) {
+                let query = db.collection('news').where('status', '==', 'published');
+                let snapshot;
+                try {
+                    // Limit 10 to reduce reads
+                    snapshot = await query.orderBy('date', 'desc').limit(10).get();
+                } catch (e) {
+                    console.warn("Index missing for trend query; falling back without orderBy:", e);
+                    snapshot = await query.limit(10).get();
+                }
+
+                snapshot.forEach(doc => {
+                    all.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Save to cache
+                if (all.length > 0) {
+                    sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+                        timestamp: Date.now(),
+                        data: all
+                    }));
+                }
+            }
 
             const local = readLocalNews();
             const existing = new Set(all.map(n => n.id));
