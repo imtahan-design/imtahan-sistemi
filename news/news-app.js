@@ -115,9 +115,9 @@ async function loadNews() {
         if (error.code === 'permission-denied') {
             document.getElementById('newsGrid').innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
-                    <i class="fas fa-lock fa-2x" style="color: var(--text-muted);"></i>
-                    <p style="margin-top: 10px; color: var(--text-muted);">Xəbərləri görmək üçün giriş etməlisiniz və ya sistem icazələri məhdudlaşdırılıb.</p>
-                    <button onclick="openLoginModal()" class="btn-submit" style="width: auto; margin-top: 10px; padding: 10px 20px;">Giriş et</button>
+                    <i class="fas fa-database fa-2x" style="color: var(--text-muted);"></i>
+                    <p style="margin-top: 10px; color: var(--text-muted);">Xəbərləri yükləmək mümkün olmadı. (Database Permission Error)</p>
+                    <p style="font-size: 0.9em; color: #666; margin-top:5px;">Firebase Qaydaları (Firestore Rules) oxumağa icazə vermir.</p>
                 </div>
             `;
             document.getElementById('featuredContainer').innerHTML = ''; // Clear featured
