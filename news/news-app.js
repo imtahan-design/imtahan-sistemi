@@ -698,28 +698,57 @@ async function handleNewsSubmit(e) {
             const fileName = `news_images/${Date.now()}_${selectedFile.name}`;
             const fileRef = storageRef.child(fileName);
             const uploadTask = fileRef.put(selectedFile);
-            let fallbackUsed = false;
-            const timeoutId = setTimeout(async () => {
-                if (!fallbackUsed) {
-                    const dataUrl = await fileToDataUrl(selectedFile);
-                    imageUrl = dataUrl;
-                    fallbackUsed = true;
-                    submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Ofllayn rejim';
-                }
-            }, 8000);
+            
+            // Progress listener
             uploadTask.on('state_changed', (snapshot) => {
                 const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                 submitBtn.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> Şəkil yüklənir... ${Math.round(progress)}%`;
             });
+
+            // Create a timeout promise that resolves with fallback data
+            const timeoutPromise = new Promise((resolve) => {
+                setTimeout(async () => {
+                    console.log("Upload timed out, switching to offline mode");
+                    // Compress image for offline storage (Firestore limit 1MB)
+                    try {
+                        const dataUrl = await resizeImage(selectedFile, 800, 0.6);
+                        resolve({ fallback: true, url: dataUrl });
+                    } catch (e) {
+                        const dataUrl = await fileToDataUrl(selectedFile);
+                        resolve({ fallback: true, url: dataUrl });
+                    }
+                }, 45000); // Increased to 45 seconds
+            });
+
+            // Wrap upload task in a promise that resolves with snapshot
+            const uploadPromise = new Promise((resolve, reject) => {
+                uploadTask.then(resolve).catch(reject);
+            });
+
             try {
-                const snapshot = await uploadTask;
-                if (!fallbackUsed) {
-                    clearTimeout(timeoutId);
-                    imageUrl = await snapshot.ref.getDownloadURL();
+                // Race them
+                const result = await Promise.race([uploadPromise, timeoutPromise]);
+
+                if (result.fallback) {
+                    // Timeout won
+                    imageUrl = result.url;
+                    try {
+                        uploadTask.cancel(); // Cancel the background upload
+                    } catch(e) { console.log("Upload cancel ignored"); }
+                    
+                    submitBtn.innerHTML = '<i class="fas fa-wifi"></i> Oflayn rejim...';
+                } else {
+                    // Upload won
+                    imageUrl = await result.ref.getDownloadURL();
                 }
             } catch (err) {
-                const dataUrl = await fileToDataUrl(selectedFile);
-                imageUrl = dataUrl;
+                console.warn("Upload failed, using fallback:", err);
+                try {
+                    const dataUrl = await resizeImage(selectedFile, 800, 0.6);
+                    imageUrl = dataUrl;
+                } catch (e) {
+                    imageUrl = await fileToDataUrl(selectedFile);
+                }
             }
         }
 
@@ -982,12 +1011,49 @@ function escapeHtml(text) {
 function addStyles() {
     const styleSheet = document.createElement("style");
     styleSheet.textContent = `
+        .news-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .news-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .ticker-item:hover { text-decoration: underline; }
+        .cat-item { display: flex; justify-content: space-between; padding: 10px; background: #f9fafb; margin-bottom: 5px; border-radius: 6px; }
+        .active-published { background-color: #10b981 !important; color: white !important; }
+        .active-draft { background-color: #6b7280 !important; color: white !important; }
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
     `;
     document.head.appendChild(styleSheet);
+}
+
+function resizeImage(file, maxWidth, quality) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > maxWidth) {
+                    height = Math.round(height * (maxWidth / width));
+                    width = maxWidth;
+                }
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                resolve(canvas.toDataURL(file.type, quality));
+            };
+            img.onerror = reject;
+            img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 const LOCAL_NEWS_KEY = 'imtahan_news_local';
