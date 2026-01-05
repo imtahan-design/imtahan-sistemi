@@ -4079,8 +4079,22 @@ window.showAdminDashboard = function(doPush = true) {
     currentAdminParentId = null; // Reset to top level
     hideAllSections();
     document.getElementById('admin-dashboard-section').classList.remove('hidden');
+    const statsBox = document.getElementById('visitor-stats-display');
+    if (statsBox) statsBox.classList.add('hidden'); // Default gizli
     renderAdminCategories();
-    loadAdminDashboardStats(); // Statistikanı yüklə
+}
+
+// Admin statistikası toggle
+window.toggleAdminStats = function() {
+    const box = document.getElementById('visitor-stats-display');
+    if (!box) return;
+    const willShow = box.classList.contains('hidden');
+    if (willShow) {
+        box.classList.remove('hidden');
+        loadAdminDashboardStats();
+    } else {
+        box.classList.add('hidden');
+    }
 }
 
 window.showProfile = function(doPush = true) {

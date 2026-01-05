@@ -864,7 +864,7 @@
         <section id="admin-dashboard-section" class="hidden">
             <div class="container">
                 <!-- Ziyarətçi Statistikası -->
-                <div id="visitor-stats-display" class="mb-6 stats-grid animate-up">
+                <div id="visitor-stats-display" class="mb-6 stats-grid animate-up hidden">
                     <div class="stat-card">
                         <div class="stat-icon">
                             <i class="fas fa-users"></i>
@@ -907,6 +907,7 @@
                     <h2 id="admin-dashboard-title">Admin Paneli - Kateqoriyalar</h2>
                     <div class="admin-top-actions flex flex-wrap gap-2 justify-end">
                         <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()"><i class="fas fa-arrow-left"></i> Geri</button>
+                        <button class="btn-outline" onclick="toggleAdminStats()"><i class="fas fa-chart-line"></i> Statistika</button>
                         <button id="restore-btn-global" class="btn-danger px-5 py-2 rounded-lg font-bold shadow-md" onclick="restoreMissingQuestions()"><i class="fas fa-undo"></i> Sualları Bərpa Et</button>
                         <button class="btn-success" onclick="exportData()">💾 Export</button>
                         <button class="btn-outline" onclick="showReports()"><i class="fas fa-flag"></i> Şikayətlər</button>
