@@ -693,16 +693,37 @@ async function handleNewsSubmit(e) {
 
     try {
         if (selectedFile) {
-            submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Şəkil yüklənir... 0%';
+            submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Şəkil optimallaşdırılır...';
+            
+            // 1. Compress image BEFORE upload (Speed optimization)
+            // Max width 1600px, 0.8 quality -> Reduces 1.4MB to ~200-300KB
+            let uploadData = selectedFile;
+            let isDataUrl = false;
+            
+            try {
+                // Try to compress
+                const compressedDataUrl = await resizeImage(selectedFile, 1600, 0.8);
+                uploadData = compressedDataUrl;
+                isDataUrl = true;
+                console.log("Image compressed successfully for upload");
+            } catch (e) {
+                console.warn("Compression failed, uploading original:", e);
+            }
+
+            submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Şəkil serverə göndərilir... 0%';
             const storageRef = storage.ref();
             const fileName = `news_images/${Date.now()}_${selectedFile.name}`;
             const fileRef = storageRef.child(fileName);
-            const uploadTask = fileRef.put(selectedFile);
+            
+            // Use putString if compressed (DataURL), otherwise put (File)
+            const uploadTask = isDataUrl 
+                ? fileRef.putString(uploadData, 'data_url')
+                : fileRef.put(uploadData);
             
             // Progress listener
             uploadTask.on('state_changed', (snapshot) => {
                 const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                submitBtn.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> Şəkil yüklənir... ${Math.round(progress)}%`;
+                submitBtn.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> Şəkil serverə göndərilir... ${Math.round(progress)}%`;
             });
 
             // Create a timeout promise that resolves with fallback data
