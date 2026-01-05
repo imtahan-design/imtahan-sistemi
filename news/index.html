@@ -410,13 +410,44 @@
 
     /* Responsive */
     @media (max-width: 768px) {
+      /* Navbar Mobile Optimizations */
+      .nav-container {
+        padding: 0 16px;
+      }
+      
+      .nav-logo-text h1 {
+        font-size: 1rem;
+      }
+      
+      .nav-logo-text span {
+        display: none; /* Hide subtitle on mobile to save space */
+      }
+      
+      .nav-logo-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+      }
+
+      /* Hide user email on mobile, keep only buttons/icons */
+      #user-name {
+        display: none !important;
+      }
+
+      .nav-btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+      }
+
+      /* Hero Title & Layout */
       .hero-title {
-        font-size: 2.5rem;
+        font-size: 2rem;
       }
       
       .filters-card {
         flex-direction: column;
         align-items: stretch;
+        padding: 12px;
       }
 
       .search-wrapper, .filter-select {
@@ -424,16 +455,91 @@
         min-width: auto;
       }
 
+      /* News Grid Mobile */
+      .news-section {
+        padding: 20px 16px 40px;
+      }
+
+      .news-grid {
+        grid-template-columns: 1fr; /* Force single column */
+        gap: 20px;
+      }
+
+      /* Featured Section Mobile */
+      .featured-main {
+        height: 300px; /* Reduce height */
+      }
+      
+      .featured-title {
+        font-size: 1.5rem;
+        line-height: 1.2;
+      }
+      
+      .featured-overlay {
+        padding: 16px;
+      }
+      
+      .featured-meta {
+        font-size: 0.8rem;
+        gap: 10px;
+      }
+
+      .featured-side {
+        height: auto;
+        gap: 16px;
+      }
+
+      .side-card {
+        flex-direction: column; /* Stack image and text */
+        height: auto;
+      }
+
+      .side-image {
+        width: 100%;
+        height: 160px;
+      }
+
+      /* Ticker Mobile */
+      .news-ticker-container {
+        height: auto;
+        flex-direction: column;
+      }
+      
+      .ticker-label {
+        width: 100%;
+        justify-content: center;
+        padding: 6px;
+        font-size: 0.8rem;
+      }
+      
+      .ticker-wrapper {
+        height: 32px;
+        background: rgba(255,255,255,0.05);
+      }
+      
+      .ticker-item {
+        font-size: 0.85rem;
+        padding: 0 10px;
+      }
+
+      /* Newsletter Mobile */
       .newsletter-form {
         flex-direction: column;
       }
       
-      .newsletter-form input {
-        width: 100%;
-      }
-      
+      .newsletter-form input,
       .newsletter-form button {
         width: 100%;
+        min-width: auto;
+        max-width: none;
+      }
+      
+      .newsletter-section {
+        padding: 40px 20px;
+      }
+      
+      .newsletter-content h2 {
+        font-size: 1.8rem;
       }
     }
 
