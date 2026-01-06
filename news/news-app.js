@@ -46,6 +46,8 @@ auth.onAuthStateChanged(user => {
     }
 });
 
+let currentTags = [];
+
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
     loadNews();
@@ -54,8 +56,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // Search Filter
     document.getElementById('newsSearch').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
-        const filtered = allNews.filter(n => n.title.toLowerCase().includes(term) || n.excerpt.toLowerCase().includes(term));
+        const filtered = allNews.filter(n => 
+            n.title.toLowerCase().includes(term) || 
+            n.excerpt.toLowerCase().includes(term) ||
+            (n.tags && n.tags.some(tag => tag.toLowerCase().includes(term)))
+        );
         renderNews(filtered);
+    });
+    
+    // Tag Input Handler
+    document.getElementById('tagInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const val = this.value.trim();
+            if (val && !currentTags.includes(val)) {
+                currentTags.push(val);
+                renderTags();
+                this.value = '';
+            }
+        }
     });
     
     // Category Filter
@@ -317,6 +336,8 @@ window.openAddNewsModal = function() {
     document.getElementById('newsForm').reset();
     document.getElementById('richEditor').innerHTML = '';
     document.getElementById('newsId').value = '';
+    currentTags = [];
+    renderTags();
     updateImagePreview(); // Clear preview
     document.getElementById('newsModal').classList.add('active');
 }
@@ -338,13 +359,31 @@ window.editNews = function(id) {
     document.getElementById('newsCategory').value = item.category;
     document.getElementById('newsReadTime').value = item.readTime || 3;
     document.getElementById('newsImage').value = item.imageUrl || '';
-    document.getElementById('tagInput').value = ''; // Clear input
     
     // Tags
-    // Not implemented fully in this reconstruction but structure is there
+    currentTags = item.tags || [];
+    renderTags();
     
     updateImagePreview();
     document.getElementById('newsModal').classList.add('active');
+}
+
+function renderTags() {
+    const container = document.getElementById('tagList');
+    container.innerHTML = '';
+    currentTags.forEach((tag, index) => {
+        container.innerHTML += `
+            <span class="tag-chip">
+                ${tag}
+                <span class="tag-remove" onclick="removeTag(${index})">&times;</span>
+            </span>
+        `;
+    });
+}
+
+window.removeTag = function(index) {
+    currentTags.splice(index, 1);
+    renderTags();
 }
 
 window.deleteNews = async function(id) {
@@ -395,7 +434,14 @@ window.toggleFeatured = async function(id, currentStatus) {
 
 // Editor Functions
 window.execCmd = function(command, value = null) {
-    document.execCommand(command, false, value);
+    if (command === 'createLink') {
+        const url = prompt('Linkin URL-ni daxil edin:', 'https://');
+        if (url) {
+            document.execCommand(command, false, url);
+        }
+    } else {
+        document.execCommand(command, false, value);
+    }
     document.getElementById('richEditor').focus();
 }
 
@@ -541,6 +587,7 @@ window.handleNewsSubmit = async function(event) {
         category,
         readTime,
         imageUrl,
+        tags: currentTags,
         date: new Date().toISOString(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         status: 'published', // default
