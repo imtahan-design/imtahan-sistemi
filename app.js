@@ -3793,6 +3793,9 @@ function handleUrlParams() {
     const catId = urlParams.get('cat');
     const page = urlParams.get('page');
     const mode = urlParams.get('mode');
+    const yt = urlParams.get('yt');
+    if (yt === '1') enableYouTubeReview();
+    else if (yt === '0') disableYouTubeReview();
 
     // Şifrə bərpa və ya digər auth rejimləri varsa
     if (mode && urlParams.get('oobCode')) {
@@ -6753,6 +6756,23 @@ window.closeModal = function(id) {
     document.getElementById(id).classList.add('hidden');
 }
 
+// --- YouTube Review Toggle ---
+window.__YT_REVIEW_ENABLED = (function() {
+    try {
+        const val = sessionStorage.getItem('yt_review_enabled');
+        if (val === null) return true; // default: enabled for recording
+        return val !== 'false';
+    } catch (_) { return true; }
+})();
+window.enableYouTubeReview = function() {
+    window.__YT_REVIEW_ENABLED = true;
+    try { sessionStorage.setItem('yt_review_enabled', 'true'); } catch (_) {}
+};
+window.disableYouTubeReview = function() {
+    window.__YT_REVIEW_ENABLED = false;
+    try { sessionStorage.setItem('yt_review_enabled', 'false'); } catch (_) {}
+};
+
 window.showQuizReview = function() {
     hideAllSections();
     const reviewSection = document.getElementById('review-section');
@@ -6788,13 +6808,14 @@ window.showQuizReview = function() {
             ${q.image ? `<img src="${q.image}" class="max-w-full rounded-md mb-2">` : ''}
             ${q.videoId && q.videoType ? `
                 <div class="question-video-container mb-3">
-                    ${q.videoType === 'youtube' ? 
-                        `
-                        <div class="plyr__video-embed" id="review_player_${idx}">
-                            <iframe src="https://www.youtube.com/embed/${q.videoId}?origin=${window.location.origin}&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe>
-                        </div>
-                        ` : 
-                        `<div class="video-placeholder"><i class="fas fa-play-circle"></i> <span>Video İzah Yüklənib</span></div>`
+                    ${
+                        (q.videoType === 'youtube' && window.__YT_REVIEW_ENABLED)
+                        ? `
+                            <div class="plyr__video-embed" id="review_player_${idx}">
+                                <iframe src="https://www.youtube.com/embed/${q.videoId}?origin=${window.location.origin}&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe>
+                            </div>
+                          `
+                        : `<div class="video-placeholder"><i class="fas fa-play-circle"></i> <span>Video İzah Yüklənib</span></div>`
                     }
                 </div>
             ` : ''}
@@ -6814,7 +6835,7 @@ window.showQuizReview = function() {
         `;
         reviewList.appendChild(reviewItem);
 
-        if (q.videoId && q.videoType === 'youtube') {
+        if (q.videoId && q.videoType === 'youtube' && window.__YT_REVIEW_ENABLED) {
             new Plyr(`#review_player_${idx}`, {
                 youtube: { noCookie: true, rel: 0, showinfo: 0, iv_load_policy: 3, modestbranding: 1 }
             });
