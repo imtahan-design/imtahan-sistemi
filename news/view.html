@@ -604,18 +604,6 @@
         }
 
         document.getElementById('loading').style.display = 'none';
-        document.getElementById('articleContainer').style.display = 'block';
-    }
-            item.tags.forEach(tag => {
-                const a = document.createElement('a');
-                a.className = 'tag';
-                a.href = `index.html?search=${tag}`; // Simple link back to search
-                a.textContent = '#' + tag;
-                tagsContainer.appendChild(a);
-            });
-        }
-
-        document.getElementById('loading').style.display = 'none';
         document.getElementById('articleBody').style.display = 'block';
     }
 
