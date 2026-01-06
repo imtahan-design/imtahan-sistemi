@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logonu Yüklə</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 1.5rem;
+        }
+        .preview {
+            margin-bottom: 2rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        button {
+            background-color: #00a8e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0096d1;
+        }
+        .note {
+            margin-top: 1rem;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>iXEBERLER Logo</h1>
+        <div class="preview">
+            <!-- SVG Container -->
+            <div id="svg-container" style="width: 300px; height: 300px;">
+                <svg width="100%" height="100%" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" id="logo-svg">
+                    <defs>
+                        <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00a8e8;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#004e92;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#ff416c;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#ff4b2b;stop-opacity:1" />
+                        </linearGradient>
+                        <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                            <stop offset="0%" style="stop-color:#2a2a2a;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#111111;stop-opacity:1" />
+                        </radialGradient>
+                        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.4"/>
+                        </filter>
+                    </defs>
+                    <rect width="512" height="512" fill="url(#bgGrad)" />
+                    <g transform="translate(256, 220) scale(0.65) translate(-256, -256)" filter="url(#shadow)">
+                        <path d="M256 20 L480 140 L480 372 L256 492 L32 372 L32 140 Z" fill="#0a0a0a" stroke="#333" stroke-width="4"/>
+                        <g>
+                            <rect x="196" y="120" width="120" height="45" rx="4" fill="white" />
+                            <rect x="226" y="175" width="60" height="180" fill="white" />
+                            <path d="M130 140 L180 140 L180 340 L130 380 Z" fill="url(#blueGrad)" />
+                            <path d="M382 140 L332 140 L332 340 L382 380 Z" fill="url(#blueGrad)" />
+                            <line x1="180" y1="200" x2="226" y2="200" stroke="#555" stroke-width="3" />
+                            <line x1="180" y1="300" x2="226" y2="300" stroke="#555" stroke-width="3" />
+                            <line x1="332" y1="200" x2="286" y2="200" stroke="#555" stroke-width="3" />
+                            <line x1="332" y1="300" x2="286" y2="300" stroke="#555" stroke-width="3" />
+                        </g>
+                    </g>
+                    <g transform="translate(256, 420)">
+                        <text x="-130" y="0" font-family="'Segoe UI', 'Roboto', 'Helvetica', sans-serif" font-weight="700" font-size="56" fill="url(#redGrad)" text-anchor="end">i</text>
+                        <text x="-125" y="0" font-family="'Segoe UI', 'Roboto', 'Helvetica', sans-serif" font-weight="800" font-size="56" fill="white" text-anchor="start" letter-spacing="2">XEBERLER</text>
+                        <rect x="-120" y="15" width="240" height="4" rx="2" fill="url(#blueGrad)" />
+                    </g>
+                </svg>
+            </div>
+        </div>
+        <button onclick="downloadLogo()">Yüksək Keyfiyyətlə Yüklə (PNG)</button>
+        <p class="note">Ölçü: 1080x1080 (Instagram üçün idealdır)</p>
+    </div>
+
+    <script>
+        function downloadLogo() {
+            const svg = document.getElementById('logo-svg');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            // Set high resolution
+            canvas.width = 1080;
+            canvas.height = 1080;
+
+            // Serialize SVG
+            const serializer = new XMLSerializer();
+            let svgStr = serializer.serializeToString(svg);
+            
+            // Fix for some browsers not handling external fonts or references well in data URI
+            // Here we are using standard fonts and internal defs, so it should be fine.
+            
+            const svgBlob = new Blob([svgStr], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, 1080, 1080);
+                
+                const pngUrl = canvas.toDataURL('image/png');
+                const downloadLink = document.createElement('a');
+                downloadLink.href = pngUrl;
+                downloadLink.download = 'ixeberler_logo.png';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(url);
+            };
+
+            img.src = url;
+        }
+    </script>
+</body>
+</html>
