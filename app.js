@@ -3794,8 +3794,14 @@ function handleUrlParams() {
     const page = urlParams.get('page');
     const mode = urlParams.get('mode');
     const yt = urlParams.get('yt');
-    if (yt === '1') enableYouTubeReview();
-    else disableYouTubeReview();
+    if (yt === '1') {
+        enableYouTubeReview();
+    } else if (yt === '0') {
+        disableYouTubeReview();
+    } else {
+        // No param provided: ensure default ON for reliability
+        enableYouTubeReview();
+    }
 
     // Şifrə bərpa və ya digər auth rejimləri varsa
     if (mode && urlParams.get('oobCode')) {
@@ -6414,6 +6420,17 @@ function loadQuestion() {
     if (videoContainer) {
         videoContainer.classList.add('hidden');
         videoContainer.innerHTML = '';
+        if (q.videoId && q.videoType) {
+            videoContainer.innerHTML = `
+                <div class="video-actions-container">
+                    <button class="btn-video-action" onclick="openQuestionVideo('${q.videoId}', '${q.videoType}')">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Video İzaha Bax</span>
+                    </button>
+                </div>
+            `;
+            videoContainer.classList.remove('hidden');
+        }
     }
 
     const optionsArea = document.getElementById('options-area');
@@ -6760,9 +6777,9 @@ window.closeModal = function(id) {
 window.__YT_REVIEW_ENABLED = (function() {
     try {
         const val = sessionStorage.getItem('yt_review_enabled');
-        if (val === null) return false;
+        if (val === null) return true; // default: visible
         return val === 'true';
-    } catch (_) { return false; }
+    } catch (_) { return true; }
 })();
 window.enableYouTubeReview = function() {
     window.__YT_REVIEW_ENABLED = true;
@@ -6771,6 +6788,39 @@ window.enableYouTubeReview = function() {
 window.disableYouTubeReview = function() {
     window.__YT_REVIEW_ENABLED = false;
     try { sessionStorage.setItem('yt_review_enabled', 'false'); } catch (_) {}
+};
+
+window.openQuestionVideo = function(videoId, type) {
+    const modal = document.getElementById('video-view-modal');
+    const container = document.getElementById('video-player-container');
+    if (!modal || !container) return;
+    container.innerHTML = '';
+    if (type === 'youtube') {
+        const uniqueId = `vp_${Date.now()}`;
+        container.innerHTML = `
+            <div class="plyr__video-embed" id="${uniqueId}">
+                <iframe src="https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe>
+            </div>
+        `;
+        new Plyr(`#${uniqueId}`, {
+            youtube: { noCookie: true, rel: 0, showinfo: 0, iv_load_policy: 3, modestbranding: 1 }
+        });
+    } else {
+        container.innerHTML = `
+            <div class="video-placeholder">
+                <i class="fas fa-play-circle"></i>
+                <span>Video İzah Yüklənib</span>
+            </div>
+        `;
+    }
+    modal.classList.remove('hidden');
+};
+
+window.closeQuestionVideo = function() {
+    const modal = document.getElementById('video-view-modal');
+    const container = document.getElementById('video-player-container');
+    if (container) container.innerHTML = '';
+    if (modal) modal.classList.add('hidden');
 };
 
 window.showQuizReview = function() {
@@ -6808,11 +6858,12 @@ window.showQuizReview = function() {
             ${q.image ? `<img src="${q.image}" class="max-w-full rounded-md mb-2">` : ''}
             ${q.videoId && q.videoType ? `
                 <div class="question-video-container mb-3">
-                    ${
-                        (q.videoType === 'youtube' && window.__YT_REVIEW_ENABLED)
-                        ? `<iframe src="https://www.youtube.com/embed/${q.videoId}?rel=1&modestbranding=0&playsinline=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="width:100%; height:360px; border:0; border-radius:8px;"></iframe>`
-                        : `<div class="video-placeholder"><i class="fas fa-play-circle"></i> <span>Video İzah Yüklənib</span></div>`
-                    }
+                    <div class="video-actions-container">
+                        <button class="btn-video-action" onclick="openQuestionVideo('${q.videoId}', '${q.videoType}')">
+                            <i class="fas fa-play-circle"></i>
+                            <span>Video İzaha Bax</span>
+                        </button>
+                    </div>
                 </div>
             ` : ''}
             <div class="review-options">
@@ -6831,9 +6882,7 @@ window.showQuizReview = function() {
         `;
         reviewList.appendChild(reviewItem);
 
-        if (q.videoId && q.videoType === 'youtube' && !window.__YT_REVIEW_ENABLED) {
-            const placeholder = reviewItem.querySelector('.video-placeholder');
-        }
+        if (q.videoId && q.videoType === 'youtube' && !window.__YT_REVIEW_ENABLED) {}
     });
 }
 
