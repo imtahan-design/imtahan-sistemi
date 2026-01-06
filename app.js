@@ -3795,7 +3795,7 @@ function handleUrlParams() {
     const mode = urlParams.get('mode');
     const yt = urlParams.get('yt');
     if (yt === '1') enableYouTubeReview();
-    else if (yt === '0') disableYouTubeReview();
+    else disableYouTubeReview();
 
     // Şifrə bərpa və ya digər auth rejimləri varsa
     if (mode && urlParams.get('oobCode')) {
@@ -6760,9 +6760,9 @@ window.closeModal = function(id) {
 window.__YT_REVIEW_ENABLED = (function() {
     try {
         const val = sessionStorage.getItem('yt_review_enabled');
-        if (val === null) return true;
-        return val !== 'false';
-    } catch (_) { return true; }
+        if (val === null) return false;
+        return val === 'true';
+    } catch (_) { return false; }
 })();
 window.enableYouTubeReview = function() {
     window.__YT_REVIEW_ENABLED = true;
