@@ -6420,17 +6420,6 @@ function loadQuestion() {
     if (videoContainer) {
         videoContainer.classList.add('hidden');
         videoContainer.innerHTML = '';
-        if (q.videoId && q.videoType) {
-            videoContainer.innerHTML = `
-                <div class="video-actions-container">
-                    <button class="btn-video-action" onclick="openQuestionVideo('${q.videoId}', '${q.videoType}')">
-                        <i class="fas fa-play-circle"></i>
-                        <span>Video İzaha Bax</span>
-                    </button>
-                </div>
-            `;
-            videoContainer.classList.remove('hidden');
-        }
     }
 
     const optionsArea = document.getElementById('options-area');

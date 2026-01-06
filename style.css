@@ -797,26 +797,42 @@ h1, h2, h3, .logo-main {
 .btn-video-action {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: var(--radius-md);
-    font-size: 0.9rem;
-    font-weight: 500;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
-    border: 1px solid var(--border-color);
-    background: var(--card-bg);
-    color: var(--text-main);
+    border: none;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    color: white;
+    width: 100%;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
 }
 
 .btn-video-action:hover {
-    background: var(--bg-color);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--primary-glow);
+    filter: brightness(1.1);
+}
+
+.btn-video-action:active {
+    transform: translateY(0);
 }
 
 .btn-video-action i {
-    font-size: 1rem;
+    font-size: 1.2rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
 
 
