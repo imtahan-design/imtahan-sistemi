@@ -594,9 +594,18 @@
              document.getElementById('newsContent').innerHTML = content;
         }
 
+        // Tags rendering
+        const tagsContainer = document.getElementById('newsTags');
         if (item.tags && item.tags.length > 0) {
-            const tagsContainer = document.getElementById('newsTags');
-            tagsContainer.innerHTML = '';
+            tagsContainer.innerHTML = item.tags.map(tag => `<span class="tag">#${tag}</span>`).join('');
+            tagsContainer.style.display = 'flex';
+        } else {
+            tagsContainer.style.display = 'none';
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('articleContainer').style.display = 'block';
+    }
             item.tags.forEach(tag => {
                 const a = document.createElement('a');
                 a.className = 'tag';
