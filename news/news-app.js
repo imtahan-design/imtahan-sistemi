@@ -23,6 +23,7 @@ let lastVisibleDoc = null; // For pagination
 let isAllNewsPage = false;
 let categories = ['Rəsmi Xəbərlər', 'Təlimlər', 'Müsabiqələr', 'Texnoloji Yeniliklər'];
 let currentEditingId = null;
+let savedSelectionRange = null;
 
 // Auth Listener
 auth.onAuthStateChanged(user => {
@@ -488,9 +489,37 @@ window.handleEditorImageUpload = function(event) {
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
+            restoreSelection();
             document.execCommand('insertImage', false, e.target.result);
+            saveSelection();
         };
         reader.readAsDataURL(file);
+    }
+    event.target.value = '';
+}
+
+window.saveSelection = function() {
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+        savedSelectionRange = sel.getRangeAt(0);
+    }
+}
+
+window.restoreSelection = function() {
+    const editor = document.getElementById('richEditor');
+    editor.focus();
+    if (savedSelectionRange) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedSelectionRange);
+    } else {
+        // If no selection, move to end
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
     }
 }
 

@@ -514,14 +514,46 @@
                       <div class="form-group">
                           <label class="form-label">Məzmun</label>
                           <div class="editor-toolbar">
+                              <!-- Font Controls -->
+                              <select class="toolbar-btn" onchange="execCmd('fontName', this.value); this.value='';" title="Şrift Növü" style="width: auto; min-width: 120px;">
+                                  <option value="" disabled selected>Şrift Seçin</option>
+                                  <option value="Arial">Arial</option>
+                                  <option value="Arial Black">Arial Black</option>
+                                  <option value="Comic Sans MS">Comic Sans MS</option>
+                                  <option value="Courier New">Courier New</option>
+                                  <option value="Georgia">Georgia</option>
+                                  <option value="Helvetica">Helvetica</option>
+                                  <option value="Impact">Impact</option>
+                                  <option value="Tahoma">Tahoma</option>
+                                  <option value="Times New Roman">Times New Roman</option>
+                                  <option value="Trebuchet MS">Trebuchet MS</option>
+                                  <option value="Verdana">Verdana</option>
+                              </select>
+                              <select class="toolbar-btn" onchange="execCmd('fontSize', this.value); this.value='';" title="Şrift Ölçüsü" style="width: auto; min-width: 80px;">
+                                  <option value="" disabled selected>Ölçü</option>
+                                  <option value="1">10px</option>
+                                  <option value="2">13px</option>
+                                  <option value="3">16px</option>
+                                  <option value="4">18px</option>
+                                  <option value="5">24px</option>
+                                  <option value="6">32px</option>
+                                  <option value="7">48px</option>
+                              </select>
+                              <div class="toolbar-btn" style="position:relative; width:34px; overflow:hidden;" title="Mətn Rəngi">
+                                  <input type="color" onchange="execCmd('foreColor', this.value)" style="position:absolute; top:-5px; left:-5px; width:50px; height:50px; border:none; cursor:pointer; padding: 0;">
+                                  <i class="fas fa-palette" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); pointer-events:none;"></i>
+                              </div>
+                              <div style="width: 1px; height: 24px; background: #ddd; margin: 0 4px;"></div>
+                              
+                              <!-- Standard Controls -->
                               <button type="button" class="toolbar-btn" onclick="execCmd('bold')"><i class="fas fa-bold"></i></button>
                               <button type="button" class="toolbar-btn" onclick="execCmd('italic')"><i class="fas fa-italic"></i></button>
                               <button type="button" class="toolbar-btn" onclick="execCmd('underline')"><i class="fas fa-underline"></i></button>
                               <button type="button" class="toolbar-btn" onclick="execCmd('justifyLeft')"><i class="fas fa-align-left"></i></button>
                               <button type="button" class="toolbar-btn" onclick="execCmd('justifyCenter')"><i class="fas fa-align-center"></i></button>
                               <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', 'H3')">H3</button>
-                              <button type="button" class="toolbar-btn" onclick="execCmd('createLink', prompt('URL daxil edin:'))"><i class="fas fa-link"></i></button>
-                              <label class="toolbar-btn" style="margin-bottom:0;">
+                              <button type="button" class="toolbar-btn" onclick="execCmd('createLink')"><i class="fas fa-link"></i></button>
+                              <label class="toolbar-btn" style="margin-bottom:0;" title="Şəkil əlavə et">
                                   <i class="fas fa-image"></i>
                                   <input type="file" style="display:none;" accept="image/*" onchange="handleEditorImageUpload(event)">
                               </label>
