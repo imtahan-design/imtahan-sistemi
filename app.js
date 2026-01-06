@@ -6760,7 +6760,7 @@ window.closeModal = function(id) {
 window.__YT_REVIEW_ENABLED = (function() {
     try {
         const val = sessionStorage.getItem('yt_review_enabled');
-        if (val === null) return true; // default: enabled for recording
+        if (val === null) return true;
         return val !== 'false';
     } catch (_) { return true; }
 })();
@@ -6810,11 +6810,7 @@ window.showQuizReview = function() {
                 <div class="question-video-container mb-3">
                     ${
                         (q.videoType === 'youtube' && window.__YT_REVIEW_ENABLED)
-                        ? `
-                            <div class="plyr__video-embed" id="review_player_${idx}">
-                                <iframe src="https://www.youtube.com/embed/${q.videoId}?origin=${window.location.origin}&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe>
-                            </div>
-                          `
+                        ? `<iframe src="https://www.youtube.com/embed/${q.videoId}?rel=1&modestbranding=0&playsinline=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="width:100%; height:360px; border:0; border-radius:8px;"></iframe>`
                         : `<div class="video-placeholder"><i class="fas fa-play-circle"></i> <span>Video İzah Yüklənib</span></div>`
                     }
                 </div>
@@ -6835,10 +6831,8 @@ window.showQuizReview = function() {
         `;
         reviewList.appendChild(reviewItem);
 
-        if (q.videoId && q.videoType === 'youtube' && window.__YT_REVIEW_ENABLED) {
-            new Plyr(`#review_player_${idx}`, {
-                youtube: { noCookie: true, rel: 0, showinfo: 0, iv_load_policy: 3, modestbranding: 1 }
-            });
+        if (q.videoId && q.videoType === 'youtube' && !window.__YT_REVIEW_ENABLED) {
+            const placeholder = reviewItem.querySelector('.video-placeholder');
         }
     });
 }
