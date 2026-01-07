@@ -67,7 +67,7 @@ service cloud.firestore {
     // --- 6. Reports (Şikayətlər) ---
     match /reports/{reportId} {
       allow create: if true;
-      allow read: if isTeacher() || isModerator();
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isTeacher() || isModerator());
       allow write: if isTeacher() || isModerator();
     }
 
@@ -96,6 +96,15 @@ service cloud.firestore {
     match /settings/{docId} {
       allow read: if isTeacher();
       allow write: if isAdmin();
+    }
+    
+    match /newsletter_subscribers/{subId} {
+      allow create: if request.resource.data.email is string
+                    && request.resource.data.email.size() > 5
+                    && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+                    && request.resource.data.keys().hasOnly(['email','createdAt']);
+      allow read: if isModerator() || isAdmin();
+      allow update, delete: if isAdmin();
     }
     
     // --- 10. News (YENİLƏNMİŞ HİSSƏ) ---

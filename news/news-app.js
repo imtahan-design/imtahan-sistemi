@@ -52,6 +52,7 @@ let currentTags = [];
 document.addEventListener('DOMContentLoaded', () => {
     loadNews();
     loadCategories();
+    setupNewsletterForm();
     
     // Search Filter
     document.getElementById('newsSearch').addEventListener('input', (e) => {
@@ -225,7 +226,7 @@ function renderNews(list) {
         // Render Featured Hero
         featuredContainer.innerHTML = `
             <div class="featured-grid">
-                <div class="featured-main" onclick="window.location.href='view.html?id=${featured.id}'" style="cursor: pointer;">
+                <div class="featured-main" onclick="window.location.href='${featured.slug ? '/news/' + featured.slug : 'view.html?id=' + featured.id}'" style="cursor: pointer;">
                     <img src="${featured.imageUrl || 'https://via.placeholder.com/800x500?text=No+Image'}" alt="${featured.title}">
                     <div class="featured-overlay">
                         <span class="featured-badge">${featured.category}</span>
@@ -247,7 +248,7 @@ function renderNews(list) {
         const sideContainer = featuredContainer.querySelector('.featured-side');
         sideItems.forEach(item => {
             sideContainer.innerHTML += `
-                <div class="side-card" onclick="window.location.href='view.html?id=${item.id}'" style="cursor: pointer;">
+                <div class="side-card" onclick="window.location.href='${item.slug ? '/news/' + item.slug : 'view.html?id=' + item.id}'" style="cursor: pointer;">
                     <img class="side-image" src="${item.imageUrl || 'https://via.placeholder.com/180x250?text=No+Image'}" alt="${item.title}">
                     <div class="side-content">
                         <span class="mini-cat">${item.category}</span>
@@ -284,12 +285,18 @@ function renderNews(list) {
                 <h3 class="card-title">${item.title}</h3>
                 <p class="card-excerpt">${item.excerpt || ''}</p>
                 <div class="card-footer">
-                    <a href="view.html?id=${item.id}" class="read-more">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
+                    <a href="${item.slug ? '/news/' + item.slug : 'view.html?id=' + item.id}" class="read-more">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
+                    <div class="share-inline" style="display:flex; gap:8px; margin-left:8px;">
+                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}${item.slug ? '/news/' + item.slug : '/news/view.html?id=' + item.id}','${item.title}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
+                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}${item.slug ? '/news/' + item.slug : '/news/view.html?id=' + item.id}','${item.title}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
+                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}${item.slug ? '/news/' + item.slug : '/news/view.html?id=' + item.id}','${item.title}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
+                    </div>
                 </div>
             </div>
         `;
         grid.appendChild(card);
     });
+    setIndexSeo(list);
 }
 
 function updateTicker(list) {
@@ -302,7 +309,7 @@ function updateTicker(list) {
 
     // 1. Prepare items HTML
     const itemsHtml = list.slice(0, 10).map(n => `
-        <a href="view.html?id=${n.id}" class="ticker-item">
+        <a href="${n.slug ? '/news/' + n.slug : 'view.html?id=' + n.id}" class="ticker-item">
             ${n.category ? `<span style="color:#f87171; font-weight:bold; margin-right:5px; font-size:0.85em;">[${n.category.toUpperCase()}]</span>` : ''}
             ${n.title}
         </a>
@@ -328,7 +335,111 @@ function formatDate(dateStr) {
     const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
+function slugify(str) {
+    return (str || '')
+        .toLowerCase()
+        .replace(/ğ/g,'g').replace(/ə/g,'e').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c').replace(/ş/g,'s').replace(/ü/g,'u')
+        .replace(/[^a-z0-9\s-]/g,'')
+        .trim()
+        .replace(/\s+/g,'-')
+        .replace(/-+/g,'-')
+        .slice(0, 120);
+}
 
+function setMetaName(name, content) {
+    var m = document.querySelector('meta[name="' + name + '"]');
+    if (!m) { m = document.createElement('meta'); m.setAttribute('name', name); document.head.appendChild(m); }
+    m.setAttribute('content', content || '');
+}
+function setMetaProp(prop, content) {
+    var m = document.querySelector('meta[property="' + prop + '"]');
+    if (!m) { m = document.createElement('meta'); m.setAttribute('property', prop); document.head.appendChild(m); }
+    m.setAttribute('content', content || '');
+}
+function setLinkRel(rel, href) {
+    var l = document.querySelector('link[rel="' + rel + '"]');
+    if (!l) { l = document.createElement('link'); l.setAttribute('rel', rel); document.head.appendChild(l); }
+    l.setAttribute('href', href || '');
+}
+function setJsonLd(data) {
+    var s = document.querySelector('script[type="application/ld+json"]');
+    if (!s) { s = document.createElement('script'); s.type = 'application/ld+json'; document.head.appendChild(s); }
+    s.textContent = JSON.stringify(data);
+}
+function buildIndexDescription(list) {
+    var titles = (list || []).slice(0, 5).map(n => n.title).filter(Boolean);
+    var s = titles.join(' • ');
+    if (s.length > 200) s = s.slice(0, 200);
+    return s || 'Təhsilə dair ən son xəbərlər və yeniliklər.';
+}
+function setIndexSeo(list) {
+    var url = location.origin + '/news/index.html';
+    var title = 'Xəbərlər – İmtahan Platforması';
+    var desc = buildIndexDescription(list || []);
+    var image = 'https://imtahan.site/assets/logo.png';
+    document.title = title;
+    setMetaName('description', desc);
+    setMetaProp('og:type', 'website');
+    setMetaProp('og:url', url);
+    setMetaProp('og:title', title);
+    setMetaProp('og:description', desc);
+    setMetaProp('og:image', image);
+    setMetaName('twitter:card', 'summary_large_image');
+    setMetaName('twitter:url', url);
+    setMetaName('twitter:title', title);
+    setMetaName('twitter:description', desc);
+    setMetaName('twitter:image', image);
+    setLinkRel('canonical', url);
+    var itemList = {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "itemListElement": (list || []).slice(0, 10).map((n, i) => ({
+            "@type": "ListItem",
+            "position": i + 1,
+            "url": location.origin + "/news/view.html?id=" + n.id,
+            "name": n.title
+        }))
+    };
+    setJsonLd(itemList);
+}
+
+function shareArticle(platform, url, title) {
+    var shareUrl = '';
+    var encodedUrl = encodeURIComponent(url);
+    var encodedTitle = encodeURIComponent(title || document.title);
+    if (platform === 'facebook') shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+    if (platform === 'twitter') shareUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`;
+    if (platform === 'linkedin') shareUrl = `https://www.linkedin.com/shareArticle?mini=true&url=${encodedUrl}&title=${encodedTitle}`;
+    if (platform === 'whatsapp') shareUrl = `https://api.whatsapp.com/send?text=${encodedTitle}%20${encodedUrl}`;
+    if (platform === 'telegram') shareUrl = `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`;
+    if (platform === 'copy') {
+        navigator.clipboard.writeText(url);
+        alert('Link kopyalandı!');
+        return;
+    }
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+}
+
+function setupNewsletterForm() {
+    var form = document.querySelector('.newsletter-form');
+    if (!form) return;
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var emailInput = form.querySelector('input[type="email"]');
+        var email = (emailInput && emailInput.value || '').trim();
+        if (!email) return;
+        try {
+            await db.collection('newsletter_subscribers').add({
+                email: email,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            if (emailInput) emailInput.value = '';
+            alert('Abunə olduğunuz üçün təşəkkürlər!');
+        } catch (err) {
+            alert('Xəta: ' + err.message);
+        }
+    });
+}
 // Modal Functions
 window.openAddNewsModal = function() {
     currentEditingId = null;
@@ -579,6 +690,7 @@ window.handleNewsSubmit = async function(event) {
     const category = document.getElementById('newsCategory').value;
     const readTime = document.getElementById('newsReadTime').value;
     const imageUrl = document.getElementById('newsImage').value;
+    const slug = slugify(title);
     
     const newsData = {
         title,
@@ -592,17 +704,21 @@ window.handleNewsSubmit = async function(event) {
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         status: 'published', // default
         views: 0,
-        isFeatured: false
+        isFeatured: false,
+        slug
     };
     
     try {
+        let createdId = null;
         if (currentEditingId) {
             delete newsData.date; // Don't overwrite create date
             delete newsData.views;
             delete newsData.isFeatured;
+            delete newsData.slug;
             await db.collection('news').doc(currentEditingId).update(newsData);
         } else {
-            await db.collection('news').add(newsData);
+            const ref = await db.collection('news').add(newsData);
+            createdId = ref.id;
         }
         
         // Cache təmizlə ki, yeni məlumat yüklənsin
@@ -611,6 +727,32 @@ window.handleNewsSubmit = async function(event) {
 
         closeNewsModal();
         loadNews();
+        
+        const isAdminOrMod = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+        if (!currentEditingId && isAdminOrMod && createdId) {
+            try {
+                const postBody = {
+                    title,
+                    url: `${location.origin}/news/${slug}`,
+                    imageUrl,
+                    excerpt,
+                    tags: currentTags,
+                    category
+                };
+                await fetch('http://localhost:5000/api/telegram/post-news', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(postBody)
+                });
+                await fetch('http://localhost:5000/api/rss/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(postBody)
+                });
+            } catch (err) {
+                console.warn('Telegram paylaşım alınmadı:', err.message);
+            }
+        }
     } catch (e) {
         alert('Xəta: ' + e.message);
     }
@@ -812,6 +954,11 @@ function renderAllNewsGrid(list) {
                 <p class="news-excerpt">${item.excerpt || ''}</p>
                 <div class="news-footer">
                     <a href="view.html?id=${item.id}" class="read-more" style="color:var(--primary); text-decoration:none; font-weight:600;">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
+                    <div class="share-inline" style="display:flex; gap:8px; margin-left:8px;">
+                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}/news/view.html?id=${item.id}','${item.title}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
+                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}/news/view.html?id=${item.id}','${item.title}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
+                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}/news/view.html?id=${item.id}','${item.title}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
+                    </div>
                 </div>
             </div>
         `;

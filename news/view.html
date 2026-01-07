@@ -490,28 +490,106 @@
         const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
         return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
     }
+    function buildDescription(item) {
+        var t = item.excerpt || item.content || '';
+        var s = t.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        if (s.length > 180) s = s.slice(0, 180);
+        return s;
+    }
+    function setMetaName(name, content) {
+        var m = document.querySelector('meta[name="' + name + '"]');
+        if (!m) {
+            m = document.createElement('meta');
+            m.setAttribute('name', name);
+            document.head.appendChild(m);
+        }
+        m.setAttribute('content', content || '');
+    }
+    function setMetaProp(prop, content) {
+        var m = document.querySelector('meta[property="' + prop + '"]');
+        if (!m) {
+            m = document.createElement('meta');
+            m.setAttribute('property', prop);
+            document.head.appendChild(m);
+        }
+        m.setAttribute('content', content || '');
+    }
+    function setLinkRel(rel, href) {
+        var l = document.querySelector('link[rel="' + rel + '"]');
+        if (!l) {
+            l = document.createElement('link');
+            l.setAttribute('rel', rel);
+            document.head.appendChild(l);
+        }
+        l.setAttribute('href', href || '');
+    }
+    function setJsonLd(data) {
+        var s = document.querySelector('script[type="application/ld+json"]');
+        if (!s) {
+            s = document.createElement('script');
+            s.type = 'application/ld+json';
+            document.head.appendChild(s);
+        }
+        s.textContent = JSON.stringify(data);
+    }
+    function setSeoTags(item) {
+        var url = window.location.href;
+        var desc = buildDescription(item);
+        var image = (item.imageUrl && /^https?:\/\//.test(item.imageUrl)) ? item.imageUrl : 'https://imtahan.site/assets/logo.png';
+        setMetaName('description', desc);
+        if (item.tags && item.tags.length) setMetaName('keywords', item.tags.join(','));
+        setMetaProp('og:type', 'article');
+        setMetaProp('og:url', url);
+        setMetaProp('og:title', item.title || '');
+        setMetaProp('og:description', desc);
+        setMetaProp('og:image', image);
+        setMetaName('twitter:card', 'summary_large_image');
+        setMetaName('twitter:url', url);
+        setMetaName('twitter:title', item.title || '');
+        setMetaName('twitter:description', desc);
+        setMetaName('twitter:image', image);
+        setLinkRel('canonical', url);
+        var jsonLd = {
+            "@context": "https://schema.org",
+            "@type": "NewsArticle",
+            "headline": item.title || '',
+            "image": [image],
+            "datePublished": item.date ? new Date(item.date).toISOString() : new Date().toISOString(),
+            "dateModified": new Date().toISOString(),
+            "author": {"@type": "Organization", "name": "İmtahan"},
+            "publisher": {"@type": "Organization", "name": "İmtahan", "logo": {"@type": "ImageObject", "url": "https://imtahan.site/assets/logo.png"}},
+            "description": desc,
+            "mainEntityOfPage": {"@type": "WebPage", "@id": url}
+        };
+        setJsonLd(jsonLd);
+    }
 
     async function loadArticle() {
         const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
-
+        let id = urlParams.get('id');
+        let slug = null;
         if (!id) {
-            document.getElementById('loading').innerHTML = '<p style="color: red;">Xəbər tapılmadı (ID yoxdur).</p>';
-            return;
+            const parts = window.location.pathname.split('/');
+            const last = parts[parts.length - 1];
+            if (last && last !== 'view.html' && last !== 'index.html') {
+                slug = last;
+            }
         }
 
         // Increment view count
         try {
-            await db.collection('news').doc(id).update({
-                views: firebase.firestore.FieldValue.increment(1)
-            });
+            if (id) {
+                await db.collection('news').doc(id).update({
+                    views: firebase.firestore.FieldValue.increment(1)
+                });
+            }
         } catch (e) {
             // Ignore if doc doesn't exist or offline (we handle load below)
             console.log("View increment failed or doc not found yet");
         }
 
         // 1. Try Local Storage (Legacy/Fallback)
-        let localItem = readLocalNews().find(n => n.id === id);
+        let localItem = id ? readLocalNews().find(n => n.id === id) : null;
 
         // 2. Try Session Storage (Shared with Index)
         if (!localItem) {
@@ -520,7 +598,7 @@
                 if (sessionCache) {
                     const parsed = JSON.parse(sessionCache);
                     // Check timestamp if needed, but for single article view, stale data is better than read
-                    localItem = parsed.data.find(n => n.id === id);
+                    localItem = id ? parsed.data.find(n => n.id === id) : (slug ? parsed.data.find(n => n.slug === slug) : null);
                 }
             } catch (e) { console.warn("Session cache read error", e); }
         }
@@ -533,10 +611,21 @@
         }
 
         try {
-            const doc = await db.collection('news').doc(id).get();
             let articleData = null;
+            if (slug && !id) {
+                const snap = await db.collection('news').where('slug','==',slug).limit(1).get();
+                if (!snap.empty) {
+                    const d = snap.docs[0];
+                    id = d.id;
+                    articleData = { id: d.id, ...d.data() };
+                }
+            }
+            let doc = null;
+            if (!articleData && id) {
+                doc = await db.collection('news').doc(id).get();
+            }
 
-            if (!doc.exists) {
+            if (!articleData && doc && !doc.exists) {
                 // Check initial data fallback
                 const initialData = readLocalNews().find(n => n.id === id) || getInitialData().find(n => n.id === id);
                 if (initialData) {
@@ -545,7 +634,7 @@
                     document.getElementById('loading').innerHTML = '<p style="color: red;">Xəbər tapılmadı.</p>';
                     return;
                 }
-            } else {
+            } else if (!articleData && doc && doc.exists) {
                 articleData = { id: doc.id, ...doc.data() };
             }
 
@@ -569,6 +658,7 @@
 
     function renderArticle(item) {
         document.title = `${item.title} – İmtahan Platforması`;
+        setSeoTags(item);
         
         document.getElementById('newsCategory').textContent = item.category;
         document.getElementById('newsTitle').textContent = item.title;
