@@ -597,19 +597,8 @@
             }
         }
 
-        // Increment view count (requires ID)
-        // We defer this until we have the ID from Firestore if we only have slug
+        // Increment view count moved to after ID resolution
 
-        try {
-            if (id) {
-                await db.collection('news').doc(id).update({
-                    views: firebase.firestore.FieldValue.increment(1)
-                });
-            }
-        } catch (e) {
-            // Ignore if doc doesn't exist or offline (we handle load below)
-            console.log("View increment failed or doc not found yet");
-        }
 
         // 1. Try Local Storage (Legacy/Fallback)
         let localItem = id ? readLocalNews().find(n => n.id === id) : null;
@@ -659,6 +648,17 @@
                 }
             } else if (!articleData && doc && doc.exists) {
                 articleData = { id: doc.id, ...doc.data() };
+            }
+
+            // Fix for 0 views: Increment view count now that we have the ID
+            if (articleData && articleData.id) {
+                 try {
+                     db.collection('news').doc(articleData.id).update({
+                        views: firebase.firestore.FieldValue.increment(1)
+                    });
+                    // Optimistic update for UI
+                    articleData.views = (articleData.views || 0) + 1;
+                 } catch(e) { console.error("View increment error", e); }
             }
 
             renderArticle(articleData);
