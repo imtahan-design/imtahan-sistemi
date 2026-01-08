@@ -442,11 +442,11 @@
                                     </div>
                                     <div class="limit-item">
                                         <i class="fas fa-calendar-day"></i>
-                                        <span>Gündəlik <strong>15 dəfə</strong> sual yaratma limiti</span>
+                                        <span>Gündəlik <strong>5 dəfə</strong> sual yaratma limiti</span>
                                     </div>
                                     <div class="limit-item">
                                         <i class="fas fa-file-alt"></i>
-                                        <span>Gündəlik <strong>6 fayl</strong> emalı (Maks. 10MB, 20 səhifə)</span>
+                                        <span>Gündəlik <strong>3 fayl</strong> emalı (Maks. 10MB, 20 səhifə)</span>
                                     </div>
                                 </div>
 
@@ -518,8 +518,8 @@
                                 </div>
                                 <div class="ai-usage-info" id="ai-usage-info">
                                     <span class="limit-badge"><i class="fas fa-clock"></i> Gözləmə: <strong id="ai-cooldown-timer">0</strong>s</span>
-                                    <span class="limit-badge"><i class="fas fa-list-ol"></i> Sual: <strong id="ai-remaining-limit">15</strong>/15</span>
-                                    <span class="limit-badge"><i class="fas fa-file-upload"></i> Fayl: <strong id="ai-file-remaining-limit">6</strong>/6</span>
+                                    <span class="limit-badge"><i class="fas fa-list-ol"></i> Sual: <strong id="ai-remaining-limit">5</strong>/5</span>
+                                    <span class="limit-badge"><i class="fas fa-file-upload"></i> Fayl: <strong id="ai-file-remaining-limit">3</strong>/3</span>
                                 </div>
                                 <div id="ai-loading" class="ai-loading hidden">
                                     <div class="spinner"></div>
@@ -1209,6 +1209,9 @@
                     </div>
                 </div>
                 <button id="review-btn" onclick="showQuizReview()" class="btn-secondary w-full mb-2">Suallara Bax</button>
+                <button onclick="shareResult()" class="btn-success w-full mb-2" style="background: #25D366; border-color: #25D366; color: white;">
+                    <i class="fab fa-whatsapp"></i> Nəticəni Paylaş
+                </button>
                 <button onclick="showDashboard()" class="btn-primary w-full">Ana Səhifəyə Qayıt</button>
             </div>
         </section>
@@ -1381,8 +1384,8 @@
                                     </div>
                                     <div class="ai-usage-info" id="admin-ai-usage-info">
                                         <span class="limit-badge"><i class="fas fa-clock"></i> Gözləmə: <strong id="admin-ai-cooldown-timer">0</strong>s</span>
-                                        <span class="limit-badge"><i class="fas fa-list-ol"></i> Sual: <strong id="admin-ai-remaining-limit">15</strong>/15</span>
-                                        <span class="limit-badge"><i class="fas fa-file-upload"></i> Fayl: <strong id="admin-ai-file-remaining-limit">6</strong>/6</span>
+                                        <span class="limit-badge"><i class="fas fa-list-ol"></i> Sual: <strong id="admin-ai-remaining-limit">5</strong>/5</span>
+                                        <span class="limit-badge"><i class="fas fa-file-upload"></i> Fayl: <strong id="admin-ai-file-remaining-limit">3</strong>/3</span>
                                     </div>
                                     <div id="admin-ai-loading" class="ai-loading hidden">
                                         <div class="spinner"></div>
@@ -1697,7 +1700,7 @@
     </div>
 
     <script>
-        const IS_NEWS_READY = false;
+        const IS_NEWS_READY = true;
 
         function showConstructionModal() {
             const modal = document.getElementById('construction-modal');
