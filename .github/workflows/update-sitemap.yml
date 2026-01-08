@@ -1,0 +1,35 @@
+name: Update Sitemap
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Hər gün gecə saat 00:00-da işə düşür
+  workflow_dispatch: # Əllə işə salmaq üçün
+
+permissions:
+  contents: write
+
+jobs:
+  update-sitemap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Sitemap
+        run: node tools/update_sitemap.js
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add sitemap.xml
+          # Only commit if there are changes
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update sitemap.xml [skip ci]" && git push)
