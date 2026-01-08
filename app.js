@@ -472,6 +472,9 @@ async function loadData() {
             // Dövlət qulluğu miqrasiyası (Tamamilə deaktiv edildi)
             // setTimeout(() => runDovletQulluguMigration(), 2000); 
 
+            // Public Questions Migration (v1)
+            // setTimeout(() => migratePublicQuestionsToGlobal(), 3000); 
+
         } catch (error) {
             console.error("Error loading from Firebase:", error);
             // Fallback to local if error (e.g. offline)
@@ -487,13 +490,25 @@ async function loadData() {
         parentId: cat.parentId || null
     }));
 
+    let hasChanged = false;
+    let publicGeneral = categories.find(c => c.id === 'public_general' || (c.name && c.name.trim() === 'Ümumi Suallar'));
+    if (!publicGeneral) {
+        publicGeneral = { id: 'public_general', name: 'Ümumi Suallar', time: 0, questions: [], parentId: null };
+        categories.push(publicGeneral);
+        if (db) db.collection('categories').doc('public_general').set(publicGeneral);
+        hasChanged = true;
+    }
+    if (hasChanged) {
+        saveCategories();
+    }
+
     // Dublikatları təmizləmək (Tamamilə bağlandı və təmizləndi)
     if (false) {
         // Köhnə təmizləmə kodu tamamilə deaktiv edildi
     }
 
     // Seed Data if Empty (Bərpa edildi)
-    let hasChanged = false;
+    hasChanged = false;
     
     // --- Bütün avtomatik təmizləmə və birləşdirmə məntiqləri ləğv edildi ---
     // Hər bir kateqoriya artıq müstəqildir.
@@ -4488,8 +4503,8 @@ function renderCategories() {
             <div class="category-actions">
                 ${hasSub ? `<button class="btn-secondary" onclick="enterCategory('${cat.id}')">Bölmələrə Bax</button>` : ''}
                 ${(hasQuestions || isXI) ? `<button class="btn-primary" onclick="startQuizCheck('${cat.id}')">Testə Başla</button>` : ''}
-                ${!hasSub ? `<button class="btn-outline" onclick="openPublicQuestionsFromDash('${cat.id}')"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
-                ${!hasSub && !hasQuestions && !isXI ? '<p class="text-muted text-xs italic">Tezliklə...</p>' : ''}
+                ${cat.id === 'public_general' ? `<button class="btn-outline" onclick="openGlobalPublicQuestions()"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
+                ${!hasSub && !hasQuestions && !isXI && cat.id !== 'public_general' ? '<p class="text-muted text-xs italic">Tezliklə...</p>' : ''}
             </div>
         `;
         grid.appendChild(div);
@@ -4595,7 +4610,7 @@ function renderAdminCategories() {
             <div class="category-actions">
                 <button class="btn-secondary" onclick="enterAdminCategory('${cat.id}')">Bölməyə Bax</button>
                 <button class="btn-primary" onclick="openCategoryQuestions('${cat.id}')">Suallar (${cat.questions ? cat.questions.length : 0})</button>
-                ${!hasSub ? `<button class="btn-outline" onclick="openPublicQuestionsFromDash('${cat.id}')"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
+                ${cat.id === 'public_general' ? `<button class="btn-outline" onclick="openGlobalPublicQuestions()"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
             </div>
         `;
         grid.appendChild(div);
@@ -4729,8 +4744,67 @@ let activeCategoryId = null;
 let currentDiscussionQuestionId = null;
 
 // --- Public Questions Logic ---
+window.migratePublicQuestionsToGlobal = async function() {
+    if (!db) return;
+    try {
+        // Check if already migrated
+        const migratedDoc = await db.collection('settings').doc('migration_v1_public_questions').get();
+        if (migratedDoc.exists && migratedDoc.data().done) {
+            return;
+        }
+
+        console.log("Starting migration of public questions to 'public_general'...");
+        
+        // Get all public questions
+        const snapshot = await db.collection('public_questions').get();
+        
+        if (snapshot.empty) return;
+
+        let batch = db.batch();
+        let count = 0;
+        let totalUpdated = 0;
+        
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (data.categoryId !== 'public_general') {
+                const ref = db.collection('public_questions').doc(doc.id);
+                batch.update(ref, { 
+                    categoryId: 'public_general',
+                    originalCategoryId: data.categoryId, // Preserve history
+                    migratedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                count++;
+                totalUpdated++;
+            }
+            
+            // Batch limit is 500
+            if (count >= 450) {
+                batch.commit();
+                batch = db.batch();
+                count = 0;
+            }
+        });
+        
+        if (count > 0) {
+            await batch.commit();
+        }
+        
+        // Mark as done
+        await db.collection('settings').doc('migration_v1_public_questions').set({ done: true, date: firebase.firestore.FieldValue.serverTimestamp() });
+        console.log(`Migration complete. Updated ${totalUpdated} questions.`);
+        
+    } catch (e) {
+        console.error("Migration error:", e);
+    }
+}
+
 window.openPublicQuestionsFromDash = function(id) {
-    activeCategoryId = id;
+    activeCategoryId = 'public_general';
+    showPublicQuestions();
+}
+
+window.openGlobalPublicQuestions = function() {
+    activeCategoryId = 'public_general';
     showPublicQuestions();
 }
 
@@ -4741,7 +4815,7 @@ window.showPublicQuestions = function() {
 
     hideAllSections();
     document.getElementById('public-questions-section').classList.remove('hidden');
-    document.getElementById('public-questions-title').textContent = `${cat.name} - Ümumi Suallar`;
+    document.getElementById('public-questions-title').textContent = (cat.id === 'public_general') ? 'Ümumi Suallar' : `${cat.name} - Ümumi Suallar`;
     
     // Show add button for everyone, but logic handles login check
     const addBtn = document.getElementById('add-public-q-btn');
@@ -4753,11 +4827,14 @@ window.showPublicQuestions = function() {
 
 window.hidePublicQuestions = function() {
     if (activeCategoryId) {
-        // Əgər istifadəçi admin və ya moderatordursa admin panelinə, deyilsə dashboard-a qaytar
-        if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator')) {
-            openCategory(activeCategoryId);
-        } else {
+        if (activeCategoryId === 'public_general') {
             showDashboard();
+        } else {
+            if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator')) {
+                openCategory(activeCategoryId);
+            } else {
+                showDashboard();
+            }
         }
     } else {
         showDashboard();
@@ -4834,7 +4911,7 @@ window.submitPublicQuestion = async function() {
         : (currentUser.username || 'Anonim');
 
     const newQ = {
-        categoryId: activeCategoryId,
+        categoryId: 'public_general',
         text: text,
         options: opts,
         correctIndex: correct,
