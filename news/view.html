@@ -567,16 +567,39 @@
     async function loadArticle() {
         const urlParams = new URLSearchParams(window.location.search);
         let id = urlParams.get('id');
-        let slug = null;
-        if (!id) {
+        let slug = urlParams.get('slug'); // Get slug from query parameter (from 404 redirect)
+        
+        // If no explicit params, check URL path for direct slug access (local dev or supported server)
+        if (!id && !slug) {
             const parts = window.location.pathname.split('/');
             const last = parts[parts.length - 1];
             if (last && last !== 'view.html' && last !== 'index.html') {
                 slug = last;
             }
         }
+        
+        // If we have a slug but no ID, try to find the ID first
+        if (slug && !id) {
+            // Update URL to look pretty if it's currently ugly (e.g. view.html?slug=...)
+            // This is purely visual for the user after the 404 redirect
+            if (window.history && window.history.replaceState && window.location.protocol !== 'file:') {
+                // If we are at view.html?slug=xyz, we want to show /news/xyz
+                // But we must be careful not to trigger a reload or 404 loop if user refreshes
+                // Actually, for static hosting, we can't really change the URL to /news/slug 
+                // because a refresh would hit 404 again (which is fine, it redirects back).
+                // So let's make it look nice:
+                const cleanSlug = slug.split('?')[0]; // simple cleanup
+                const newPath = '/news/' + cleanSlug;
+                // Only replace if we are not already there
+                if (window.location.pathname !== newPath) {
+                   window.history.replaceState({path: newPath}, '', newPath);
+                }
+            }
+        }
 
-        // Increment view count
+        // Increment view count (requires ID)
+        // We defer this until we have the ID from Firestore if we only have slug
+
         try {
             if (id) {
                 await db.collection('news').doc(id).update({
