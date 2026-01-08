@@ -3750,17 +3750,39 @@ function handleUrlParams() {
 
     // Əgər kateqoriya ID-si varsa, həmin bölməni aç
     if (catId) {
-        // Təhlükəsizlik: Kateqoriyanın mövcudluğunu yoxla
-        const exists = categories.some(c => c.id === catId);
-        if (exists) {
-            currentParentId = catId;
-            window.showDashboard(false); // Dashboard-u göstər ki, kateqoriyalar görünsün
+        const category = categories.find(c => c.id === catId);
+        
+        if (category) {
+            // Əvvəlcə dashboard bölməsini göstəririk (bu funksiya currentParentId-ni sıfırlayır)
+            window.showDashboard(false);
+            
+            const hasSub = categories.some(c => c.parentId === catId);
+            if (hasSub) {
+                // Alt bölmələr var, onları göstər
+                currentParentId = catId;
+                renderCategories();
+            } else {
+                // Testdir, onun olduğu kateqoriyanı aç və testi başlat
+                currentParentId = category.parentId;
+                renderCategories();
+                
+                // Testə başla pəncərəsini aç
+                setTimeout(() => {
+                    startQuizCheck(catId);
+                    // Kartı tap və ona tərəf sürüşdür
+                    const card = document.querySelector(`.category-card[data-id="${catId}"]`);
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 100);
+            }
         } else {
             console.warn("URL-dəki kateqoriya tapılmadı, ana səhifəyə yönləndirilir.");
             currentParentId = null;
             const url = new URL(window.location);
             url.searchParams.delete('cat');
             window.history.replaceState({}, document.title, url);
+            window.showDashboard(false);
         }
     } else {
         currentParentId = null;
@@ -4418,6 +4440,7 @@ function renderCategories() {
     filteredCategories.forEach((cat, index) => {
         const div = document.createElement('div');
         div.className = 'category-card animate-up';
+        div.dataset.id = cat.id; // Add data-id for easier selection
         div.style.animationDelay = `${index * 0.15}s`;
         
         // Simple icon mapping
@@ -6604,7 +6627,57 @@ function showResult() {
     // Additional stats if needed
     const totalQuestionsElem = document.getElementById('total-questions-stat');
     if (totalQuestionsElem) totalQuestionsElem.textContent = total;
+
+    // Share button logic
+    const shareBtn = document.getElementById('share-quiz-btn');
+    if (shareBtn) {
+        if (!activePrivateQuiz && currentQuiz && currentQuiz.categoryId) {
+            shareBtn.classList.remove('hidden');
+        } else {
+            shareBtn.classList.add('hidden');
+        }
+    }
 }
+
+window.copyPublicQuizLink = function() {
+    if (!currentQuiz || !currentQuiz.categoryId) return;
+    
+    const catId = currentQuiz.categoryId;
+    const link = `${window.location.origin}${window.location.pathname}?cat=${catId}`;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(link).then(() => {
+            showNotification('Link kopyalandı! Dostuna göndərə bilərsən.', 'success');
+        }).catch(err => {
+            console.error('Kopyalama xətası:', err);
+            // Fallback
+            const textArea = document.createElement("textarea");
+            textArea.value = link;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showNotification('Link kopyalandı! Dostuna göndərə bilərsən.', 'success');
+            } catch (err) {
+                prompt('Link:', link);
+            }
+            document.body.removeChild(textArea);
+        });
+    } else {
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = link;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showNotification('Link kopyalandı! Dostuna göndərə bilərsən.', 'success');
+        } catch (err) {
+            prompt('Link:', link);
+        }
+        document.body.removeChild(textArea);
+    }
+};
 
 window.showDashboard = function(doPush = true) {
     removeProtection();
