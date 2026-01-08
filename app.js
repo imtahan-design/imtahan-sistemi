@@ -1145,7 +1145,7 @@ function updateUI() {
         const categoryAdminSection = document.getElementById('category-admin-section');
         const quizSection = document.getElementById('quiz-section');
 
-        if (!isPrivateQuiz && !urlParams.has('mode')) {
+        if (!isPrivateQuiz && !urlParams.has('mode') && !(urlParams.has('cat') || urlParams.has('ct'))) {
             // Əgər giriş səhifəsindəyiksə və ya heç bir xüsusi bölmə açıq deyilsə, dashboard-u göstər
             const isAuthPage = urlParams.get('page') === 'login' || urlParams.get('page') === 'register';
             const noSectionOpen = (!adminDashboardSection || adminDashboardSection.classList.contains('hidden')) && 
@@ -1176,9 +1176,10 @@ function updateUI() {
         
         const urlParams = new URLSearchParams(window.location.search);
         const hasAuthMode = urlParams.has('mode');
+        const hasCatParam = urlParams.has('cat') || urlParams.has('ct');
         const page = urlParams.get('page');
         
-        if (!isPrivateQuiz && !hasAuthMode && page !== 'login' && page !== 'register') {
+        if (!isPrivateQuiz && !hasAuthMode && !hasCatParam && page !== 'login' && page !== 'register') {
             showDashboard();
         }
     }
