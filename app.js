@@ -3756,31 +3756,29 @@ function handleUrlParams() {
         console.log("Category found:", category);
         
         if (category) {
-            // Əvvəlcə dashboard bölməsini göstəririk (bu funksiya currentParentId-ni sıfırlayır)
             window.showDashboard(false);
             
             const hasSub = categories.some(c => c.parentId === catId);
             if (hasSub) {
-                // Alt bölmələr var, onları göstər
                 currentParentId = catId;
                 renderCategories();
+                return;
             } else {
-                // Testdir, onun olduğu kateqoriyanı aç və testi başlat
                 currentParentId = category.parentId;
                 renderCategories();
                 
-                // Testə başla pəncərəsini aç
                 setTimeout(() => {
                     startQuizCheck(catId);
-                    // Kartı tap və ona tərəf sürüşdür
                     const card = document.querySelector(`.category-card[data-id="${catId}"]`);
                     if (card) {
                         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                }, 100);
+                }, 250);
+                return;
             }
         } else {
             console.warn("URL-dəki kateqoriya tapılmadı, ana səhifəyə yönləndirilir.");
+            showNotification('Paylaşılan test tapılmadı və ya silinib.', 'error');
             currentParentId = null;
             const url = new URL(window.location);
             url.searchParams.delete('cat');
@@ -6656,7 +6654,11 @@ window.copyPublicQuizLink = function() {
     if (!currentQuiz || !currentQuiz.categoryId) return;
     
     const catId = currentQuiz.categoryId;
-    const link = `${window.location.origin}${window.location.pathname}?cat=${catId}`;
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.hash = '';
+    url.searchParams.set('cat', catId);
+    const link = url.toString();
     
     if (navigator.clipboard) {
         navigator.clipboard.writeText(link).then(() => {
