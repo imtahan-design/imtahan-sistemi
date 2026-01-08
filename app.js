@@ -3750,7 +3750,10 @@ function handleUrlParams() {
 
     // Əgər kateqoriya ID-si varsa, həmin bölməni aç
     if (catId) {
+        console.log("URL catId:", catId);
+        console.log("Categories loaded:", categories.length);
         const category = categories.find(c => c.id === catId);
+        console.log("Category found:", category);
         
         if (category) {
             // Əvvəlcə dashboard bölməsini göstəririk (bu funksiya currentParentId-ni sıfırlayır)
@@ -4618,6 +4621,7 @@ window.openCategoryQuestions = function(id) {
 }
 
 window.startQuizCheck = function(catId) {
+    console.log("Starting quiz check for:", catId);
     // If we want to force login for quiz:
     // if(!currentUser) return showLogin();
     
@@ -6249,7 +6253,16 @@ window.deleteQuestion = async function(qId) {
 // --- Quiz Logic ---
 window.startQuiz = function() {
     const cat = categories.find(c => c.id === activeCategoryId);
-    if (!cat || cat.questions.length === 0) return;
+    if (!cat) {
+        console.error("Kateqoriya tapılmadı:", activeCategoryId);
+        return;
+    }
+    
+    if (!cat.questions || cat.questions.length === 0) {
+        console.warn("Bu kateqoriyada sual yoxdur:", cat.name);
+        showNotification('Bu testdə hələ sual yoxdur.', 'warning');
+        return;
+    }
 
     // Show Quiz Setup Modal
     const setupModal = document.getElementById('quiz-setup-modal');
