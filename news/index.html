@@ -428,7 +428,7 @@
       
       <div style="display: flex; align-items: center; gap: 8px;">
           <div id="auth-buttons">
-              <button class="nav-btn nav-btn-secondary" onclick="document.getElementById('loginModal').classList.add('active')">Daxil ol</button>
+              <button class="nav-btn nav-btn-secondary" onclick="openLoginModal()">Daxil ol</button>
           </div>
           <div id="user-info" style="display:none; align-items:center; gap:5px;">
               <span id="user-name" style="font-weight:600;">User</span>
@@ -610,9 +610,13 @@
   <div class="modal" id="loginModal">
        <div class="modal-content" style="max-width: 400px; text-align: center;">
            <h3>Daxil Ol</h3>
-           <p style="margin-bottom: 20px;">Admin paneli üçün giriş</p>
-           <button class="btn-submit" onclick="firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => document.getElementById('loginModal').classList.remove('active'))"><i class="fab fa-google"></i> Google ilə</button>
-           <button style="margin-top:10px; background:transparent; border:none; color:var(--text-muted); cursor:pointer;" onclick="document.getElementById('loginModal').classList.remove('active')">Bağla</button>
+           <p style="margin-bottom: 20px;">Email və şifrə ilə giriş</p>
+           <form onsubmit="handleLogin(event)">
+               <input type="text" id="loginEmail" class="form-input" placeholder="Email və ya istifadəçi adı" style="margin-bottom:10px;" required>
+               <input type="password" id="loginPassword" class="form-input" placeholder="Şifrə" style="margin-bottom:10px;" required>
+               <button type="submit" class="btn-submit">Daxil ol</button>
+           </form>
+           <button style="margin-top:10px; background:transparent; border:none; color:var(--text-muted); cursor:pointer;" onclick="closeLoginModal()">Bağla</button>
        </div>
   </div>
 
