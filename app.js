@@ -3701,6 +3701,7 @@ function handleUrlParams() {
     const urlParams = new URLSearchParams(window.location.search);
     const quizId = urlParams.get('quiz');
     const catId = urlParams.get('cat');
+    const catNameParam = urlParams.get('ct');
     const page = urlParams.get('page');
     const mode = urlParams.get('mode');
     const yt = urlParams.get('yt');
@@ -3752,7 +3753,16 @@ function handleUrlParams() {
     if (catId) {
         console.log("URL catId:", catId);
         console.log("Categories loaded:", categories.length);
-        const category = categories.find(c => c.id === catId);
+        let category = categories.find(c => String(c.id) === String(catId));
+        if (!category && catNameParam) {
+            const targetName = decodeURIComponent(catNameParam).toLowerCase();
+            const matches = categories.filter(c => (c.name || '').toLowerCase() === targetName);
+            if (matches.length === 1) {
+                category = matches[0];
+            } else if (matches.length > 1) {
+                category = matches.find(c => !categories.some(cc => cc.parentId === c.id)) || matches[0];
+            }
+        }
         console.log("Category found:", category);
         
         if (category) {
@@ -6658,6 +6668,10 @@ window.copyPublicQuizLink = function() {
     url.search = '';
     url.hash = '';
     url.searchParams.set('cat', catId);
+    const cat = categories.find(c => String(c.id) === String(catId));
+    if (cat && cat.name) {
+        url.searchParams.set('ct', encodeURIComponent(cat.name));
+    }
     const link = url.toString();
     
     if (navigator.clipboard) {
