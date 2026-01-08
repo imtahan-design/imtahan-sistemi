@@ -226,7 +226,7 @@ function renderNews(list) {
         // Render Featured Hero
         featuredContainer.innerHTML = `
             <div class="featured-grid">
-                <div class="featured-main" onclick="window.location.href='${featured.slug ? '/news/' + featured.slug : 'view.html?id=' + featured.id}'" style="cursor: pointer;">
+                <div class="featured-main" onclick="window.location.href='view.html?id=${featured.id}'" style="cursor: pointer;">
                     <img src="${featured.imageUrl || 'https://via.placeholder.com/800x500?text=No+Image'}" alt="${featured.title}">
                     <div class="featured-overlay">
                         <span class="featured-badge">${featured.category}</span>
@@ -248,7 +248,7 @@ function renderNews(list) {
         const sideContainer = featuredContainer.querySelector('.featured-side');
         sideItems.forEach(item => {
             sideContainer.innerHTML += `
-                <div class="side-card" onclick="window.location.href='${item.slug ? '/news/' + item.slug : 'view.html?id=' + item.id}'" style="cursor: pointer;">
+                <div class="side-card" onclick="window.location.href='view.html?id=${item.id}'" style="cursor: pointer;">
                     <img class="side-image" src="${item.imageUrl || 'https://via.placeholder.com/180x250?text=No+Image'}" alt="${item.title}">
                     <div class="side-content">
                         <span class="mini-cat">${item.category}</span>
@@ -285,11 +285,11 @@ function renderNews(list) {
                 <h3 class="card-title">${item.title}</h3>
                 <p class="card-excerpt">${item.excerpt || ''}</p>
                 <div class="card-footer">
-                    <a href="${item.slug ? '/news/' + item.slug : 'view.html?id=' + item.id}" class="read-more">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
+                    <a href="view.html?id=${item.id}" class="read-more">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
                     <div class="share-inline" style="display:flex; gap:8px; margin-left:8px;">
-                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}${item.slug ? '/news/' + item.slug : '/news/view.html?id=' + item.id}','${item.title}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
-                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}${item.slug ? '/news/' + item.slug : '/news/view.html?id=' + item.id}','${item.title}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
-                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}${item.slug ? '/news/' + item.slug : '/news/view.html?id=' + item.id}','${item.title}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
+                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}/news/view.html?id=${item.id}','${item.title}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
+                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}/news/view.html?id=${item.id}','${item.title}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
+                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}/news/view.html?id=${item.id}','${item.title}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
                     </div>
                 </div>
             </div>
@@ -309,7 +309,7 @@ function updateTicker(list) {
 
     // 1. Prepare items HTML
     const itemsHtml = list.slice(0, 10).map(n => `
-        <a href="${n.slug ? '/news/' + n.slug : 'view.html?id=' + n.id}" class="ticker-item">
+        <a href="view.html?id=${n.id}" class="ticker-item">
             ${n.category ? `<span style="color:#f87171; font-weight:bold; margin-right:5px; font-size:0.85em;">[${n.category.toUpperCase()}]</span>` : ''}
             ${n.title}
         </a>
