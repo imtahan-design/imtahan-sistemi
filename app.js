@@ -6669,10 +6669,6 @@ window.copyPublicQuizLink = function() {
     url.search = '';
     url.hash = '';
     url.searchParams.set('cat', catId);
-    const cat = categories.find(c => String(c.id) === String(catId));
-    if (cat && cat.name) {
-        url.searchParams.set('ct', encodeURIComponent(cat.name));
-    }
     const link = url.toString();
     
     if (navigator.clipboard) {
