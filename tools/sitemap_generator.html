@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitemap Generator</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        textarea { width: 100%; height: 400px; font-family: monospace; margin-top: 10px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #2563eb; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #1d4ed8; }
+        .status { margin-top: 10px; color: #666; }
+    </style>
+</head>
+<body>
+    <h1>Sitemap Generator</h1>
+    <p>Click the button to fetch all news from Firebase and generate a <code>sitemap.xml</code> content.</p>
+    <button onclick="generateSitemap()">Generate Sitemap</button>
+    <div id="status" class="status">Ready</div>
+    <textarea id="output" readonly placeholder="XML will appear here..."></textarea>
+    <p><small>Copy this content and replace your root <code>sitemap.xml</code> file.</small></p>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAak_eY0WNpY7cqAEuWEBG9wBDhg1NPw_0",
+            authDomain: "imtahansistemi-17659.firebaseapp.com",
+            projectId: "imtahansistemi-17659",
+            storageBucket: "imtahansistemi-17659.appspot.com",
+            messagingSenderId: "715396853166",
+            appId: "1:715396853166:web:9829b853e5e572de4d2c3f"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        async function generateSitemap() {
+            const status = document.getElementById('status');
+            const output = document.getElementById('output');
+            
+            status.textContent = "Fetching news...";
+            output.value = "";
+
+            try {
+                const snapshot = await db.collection('news').orderBy('date', 'desc').get();
+                status.textContent = `Found ${snapshot.size} articles. Generating XML...`;
+
+                let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+                xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+                // Add static pages
+                const staticPages = [
+                    { loc: 'https://imtahan.site/', priority: '1.0', changefreq: 'daily' },
+                    { loc: 'https://imtahan.site/news/index.html', priority: '0.9', changefreq: 'hourly' },
+                    // Add other static pages if known
+                ];
+
+                staticPages.forEach(page => {
+                    xml += '  <url>\n';
+                    xml += `    <loc>${page.loc}</loc>\n`;
+                    xml += `    <changefreq>${page.changefreq}</changefreq>\n`;
+                    xml += `    <priority>${page.priority}</priority>\n`;
+                    xml += '  </url>\n';
+                });
+
+                // Add news articles
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    let url = '';
+                    
+                    if (data.slug) {
+                        url = `https://imtahan.site/news/${data.slug}`;
+                    } else {
+                        url = `https://imtahan.site/news/view.html?id=${doc.id}`;
+                    }
+
+                    let lastMod = new Date().toISOString();
+                    if (data.date) {
+                        try {
+                            lastMod = new Date(data.date).toISOString();
+                        } catch(e) {}
+                    }
+
+                    xml += '  <url>\n';
+                    xml += `    <loc>${url}</loc>\n`;
+                    xml += `    <lastmod>${lastMod}</lastmod>\n`;
+                    xml += `    <changefreq>monthly</changefreq>\n`;
+                    xml += `    <priority>0.7</priority>\n`;
+                    xml += '  </url>\n';
+                });
+
+                xml += '</urlset>';
+                output.value = xml;
+                status.textContent = "Done! Copy the XML below.";
+
+            } catch (error) {
+                console.error(error);
+                status.textContent = "Error: " + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
