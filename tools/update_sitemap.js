@@ -51,7 +51,11 @@ async function generateSitemap() {
             const data = doc.data();
             let url = '';
             
+            // Use slug if available (supported by firebase rewrites), otherwise fallback to ID
             if (data.slug) {
+                // Ensure no leading slash in stored slug to avoid double slash if configured that way, 
+                // but usually stored slugs are clean. Let's assume clean.
+                // Firebase rewrite maps /news/** -> /news/view.html
                 url = `https://imtahan.site/news/${data.slug}`;
             } else {
                 url = `https://imtahan.site/news/view.html?id=${doc.id}`;

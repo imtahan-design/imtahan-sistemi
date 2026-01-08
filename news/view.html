@@ -533,7 +533,14 @@
         s.textContent = JSON.stringify(data);
     }
     function setSeoTags(item) {
-        var url = window.location.href;
+        // Use slug-based URL if available (better for SEO), otherwise fallback to ID
+        var url = '';
+        if (item.slug && location.protocol !== 'file:') {
+             url = location.origin + '/news/' + item.slug;
+        } else {
+             url = location.origin + '/news/view.html?id=' + item.id;
+        }
+        
         var desc = buildDescription(item);
         var image = (item.imageUrl && /^https?:\/\//.test(item.imageUrl)) ? item.imageUrl : 'https://imtahan.site/assets/logo.png';
         setMetaName('description', desc);

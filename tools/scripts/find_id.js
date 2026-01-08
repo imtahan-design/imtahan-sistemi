@@ -1,6 +1,13 @@
 const TelegramBot = require('node-telegram-bot-api');
+require('dotenv').config(); // Load environment variables
 
-const token = '8097805947:AAHGJwE6ZnGz9eMkT55a3kp1wew7iVO_11E';
+const token = '8097805947:AAGh5MCPlj1Czx-aaJ24owBkS0dBzpqEI1M';
+
+if (token === 'YOUR_TOKEN_HERE') {
+    console.error("XƏTA: Token tapılmadı! Zəhmət olmasa .env faylı yaradın və TELEGRAM_BOT_TOKEN dəyişənini əlavə edin.");
+    process.exit(1);
+}
+
 const bot = new TelegramBot(token, { polling: true });
 
 console.log("🕵️ Bot qrupları dinləyir... Zəhmət olmasa qrupda bir mesaj yazın!");
@@ -8,12 +15,13 @@ console.log("🕵️ Bot qrupları dinləyir... Zəhmət olmasa qrupda bir mesaj
 bot.on('message', (msg) => {
     const chatId = msg.chat.id;
     const chatType = msg.chat.type;
-    const chatTitle = msg.chat.title;
+    const title = msg.chat.title || msg.from.first_name;
 
-    console.log(`\n✅ MESAJ TUTULDU!`);
-    console.log(`📂 Qrup Adı: ${chatTitle}`);
-    console.log(`🆔 Chat ID: ${chatId}  <-- BU BİZƏ LAZIMDIR`);
-    console.log(`👤 Yazan: ${msg.from.first_name}`);
-    
-    process.exit(0);
+    console.log(`----------------------------------------`);
+    console.log(`📨 Yeni Mesaj!`);
+    console.log(`🆔 Chat ID: ${chatId}`);
+    console.log(`imkan: ${chatType}`);
+    console.log(`📌 Ad: ${title}`);
+    console.log(`📝 Mesaj: ${msg.text}`);
+    console.log(`----------------------------------------`);
 });

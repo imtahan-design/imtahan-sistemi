@@ -19,13 +19,14 @@ const storage = firebase.storage();
 // Helper to generate safe links - Defined at top level
 function getNewsLink(item) {
     if (!item) return '#';
-    // If running locally (file protocol), always use view.html?id=
-    // This prevents "File not found" errors during local testing
-    if (window.location.protocol === 'file:') {
+    // If running locally (file protocol) or no slug, use query parameter
+    if (window.location.protocol === 'file:' || !item.slug) {
         return 'view.html?id=' + item.id;
     }
-    // On server, use the pretty slug if available
-    return item.slug || 'view.html?id=' + item.id;
+    // On server with rewrite rules, use the pretty slug
+    // Ensure slug doesn't start with /
+    const slug = item.slug.startsWith('/') ? item.slug.substring(1) : item.slug;
+    return slug;
 }
 
 // State
@@ -748,7 +749,7 @@ window.handleNewsSubmit = async function(event) {
             try {
                 const postBody = {
                     title,
-                    url: `${location.origin}/news/${slug}`,
+                    url: `https://imtahan.site/news/${slug}`,
                     imageUrl,
                     excerpt,
                     tags: currentTags,
