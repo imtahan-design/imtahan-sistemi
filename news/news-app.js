@@ -223,7 +223,7 @@ function renderCategoryOptions() {
 
 function renderNews(list, featured = null) {
     const grid = document.getElementById('newsGrid');
-    const featuredContainer = document.getElementById('featuredNews');
+    const featuredContainer = document.getElementById('featuredContainer');
     
     if (!grid) return;
     grid.innerHTML = '';
