@@ -6603,12 +6603,15 @@ nav:hover {
         position: fixed;
         inset: 0;
         width: 100vw;
-        height: 100vh;
         height: 100dvh;
         border-radius: 0;
         box-shadow: none;
+        /* keep hidden until .active applies */
+    }
+    #chat-window.active {
         transform: none;
         opacity: 1;
+        pointer-events: all;
     }
     .chat-header {
         padding: 14px;
