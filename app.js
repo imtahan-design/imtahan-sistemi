@@ -8473,7 +8473,7 @@ window.sendChatMessage = async function() {
                     user = cred.user;
                 } catch(e) {
                     console.error("Anonymous auth failed:", e);
-                    throw new Error("Qonaq girişi alınmadı: " + e.message);
+                    user = null;
                 }
             }
         }
@@ -8487,8 +8487,8 @@ window.sendChatMessage = async function() {
 
         const msgData = {
             text: text,
-            sender: 'user', // Həmişə 'user' kimi göndəririk (Admin olsa belə, user widget-indən yazır)
-            userId: user.uid, // MÜTLƏQ Auth UID olmalıdır
+            sender: 'user',
+            userId: user ? user.uid : 'guest',
             userName: displayName,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             read: false
@@ -8606,7 +8606,10 @@ if (auth) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(initUserChat, 2000); 
+    setTimeout(() => { 
+        initUserChat(); 
+        listenForMessages(); 
+    }, 2000); 
 });
 
 /* =========================================
