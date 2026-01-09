@@ -1904,7 +1904,8 @@ function hideAllSections() {
         'profile-section', 'teacher-dashboard-section', 
         'create-private-quiz-section', 'private-access-section',
         'admin-question-section', 'review-section', 'public-questions-section',
-        'top-users-section', 'reports-section', 'teacher-reports-section'
+        'top-users-section', 'reports-section', 'teacher-reports-section',
+        'admin-chat-section'
     ];
     sections.forEach(id => {
         const elem = document.getElementById(id);
@@ -6805,6 +6806,9 @@ window.showDashboard = function(doPush = true) {
     studentName = '';
     
     hideAllSections();
+    const chatSec = document.getElementById('admin-chat-section');
+    if (chatSec) chatSec.classList.add('hidden'); // Explicitly hide to be safe
+
     document.getElementById('dashboard-section').classList.remove('hidden');
     currentParentId = null;
     renderCategories();
@@ -8306,3 +8310,650 @@ window.saveAdminAiKey = async function() {
     // Admin key save logic removed (handled via server env)
     showNotification('API açarı server tərəfindən idarə olunur.', 'info');
 };
+
+/* =========================================
+   LIVE CHAT FUNCTIONALITY (MODERN & SECURE)
+   ========================================= */
+
+window.initUserChat = function() {
+    if (document.getElementById('live-chat-widget')) return;
+
+    const widget = document.createElement('div');
+    widget.id = 'live-chat-widget';
+    
+    const guestName = localStorage.getItem('guest_chat_name');
+    const isRegistered = (typeof currentUser !== 'undefined' && currentUser); 
+    
+    const showPreScreen = !isRegistered && !guestName;
+
+    widget.innerHTML = `
+        <button id="chat-toggle-btn" class="chat-toggle-btn" onclick="toggleLiveChat()">
+            <i class="fas fa-comments"></i>
+            <span class="status-dot" style="position: absolute; top: 0; right: 0; width: 14px; height: 14px; border: 2px solid white;"></span>
+        </button>
+
+        <div id="chat-window">
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="operator-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="operator-details">
+                        <h4>Dəstək Xidməti</h4>
+                        <span><span class="status-dot"></span> Onlayn</span>
+                    </div>
+                </div>
+                <button onclick="toggleLiveChat()" style="background:none; border:none; color:white; cursor:pointer;">
+                    <i class="fas fa-times" style="font-size: 18px;"></i>
+                </button>
+            </div>
+
+            <div id="chat-pre-screen" class="${showPreScreen ? '' : 'hidden'}">
+                <div class="pre-screen-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h3>Xoş Gəlmisiniz!</h3>
+                <p>Sizə müraciət edə bilməyimiz üçün zəhmət olmasa adınızı qeyd edin.</p>
+                
+                <div class="chat-input-group">
+                    <input type="text" id="guest-name-input" placeholder="Adınız (Məs: Əli)">
+                </div>
+                
+                <button class="start-chat-btn" onclick="saveGuestChatName()">
+                    <span>Söhbətə Başla</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <div id="chat-messages">
+                <div class="message-wrapper bot">
+                    <div class="message-content">
+                        Salam! Sizə necə kömək edə bilərəm?
+                    </div>
+                    <div class="message-time">${new Date().toLocaleTimeString('az-AZ', {hour:'2-digit', minute:'2-digit'})}</div>
+                </div>
+            </div>
+
+            <div class="chat-footer">
+                <input type="text" id="chat-input" placeholder="Mesajınızı yazın..." onkeypress="handleChatInputKey(event)">
+                <button class="send-btn" onclick="sendChatMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(widget);
+
+    if (!showPreScreen) {
+        listenForMessages();
+    }
+};
+
+window.toggleLiveChat = function() {
+    const win = document.getElementById('chat-window');
+    const btn = document.getElementById('chat-toggle-btn');
+    if (win) win.classList.toggle('active');
+    if (btn) btn.classList.toggle('open');
+    
+    if (win && win.classList.contains('active')) {
+        setTimeout(() => {
+            const input = document.getElementById('chat-input');
+            if (input) input.focus();
+        }, 300);
+    }
+};
+
+window.saveGuestChatName = function() {
+    const input = document.getElementById('guest-name-input');
+    const name = input.value.trim();
+    
+    if (!name) {
+        alert("Zəhmət olmasa adınızı daxil edin.");
+        return;
+    }
+    
+    localStorage.setItem('guest_chat_name', name);
+    
+    const preScreen = document.getElementById('chat-pre-screen');
+    if (preScreen) {
+        preScreen.style.opacity = '0';
+        setTimeout(() => {
+            preScreen.classList.add('hidden');
+        }, 300);
+    }
+    
+    listenForMessages();
+};
+
+window.handleChatInputKey = function(e) {
+    if (e.key === 'Enter') sendChatMessage();
+};
+
+window.sendChatMessage = async function() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    // UI-da dərhal göstər (Optimistik)
+    const tempId = 'temp_' + Date.now();
+    addMessageToUI(text, 'user', tempId);
+    input.value = '';
+    
+    try {
+        // 1. Auth Statusunu Yoxla
+        // Əgər Firebase hələ yüklənməyibsə, biraz gözlə
+        if (!auth) {
+            console.warn("Firebase Auth hələ hazır deyil.");
+            throw new Error("Sistem yüklənir, zəhmət olmasa gözləyin...");
+        }
+
+        let user = auth.currentUser;
+        
+        // Əgər LocalStorage-da istifadəçi varsa amma Firebase-də yoxdursa (Sessiya bitib)
+        const localUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        
+        if (!user) {
+            if (localUser) {
+                // İstifadəçi daxil olmuş kimi görünür, amma Firebase sessiyası yoxdur.
+                // Bu halda anonim giriş ETMƏYƏK, çünki bu, admin/müəllim hesabını "qonaq" edə bilər.
+                // İstifadəçidən yenidən giriş istəyək və ya səhifəni yeniləyək.
+                console.warn("Sessiya uyğunsuzluğu: LocalStorage var, Firebase Auth yoxdur.");
+                // Yenidən cəhd etmək üçün 1 saniyə gözləyək (bəlkə onAuthStateChanged gecikir)
+                await new Promise(r => setTimeout(r, 1000));
+                user = auth.currentUser;
+                
+                if (!user) {
+                    throw new Error("Sessiya bitib. Zəhmət olmasa yenidən giriş edin.");
+                }
+            } else {
+                // Həqiqətən qonaqdırsa, Anonim giriş et
+                try {
+                    const cred = await auth.signInAnonymously();
+                    user = cred.user;
+                } catch(e) {
+                    console.error("Anonymous auth failed:", e);
+                    throw new Error("Qonaq girişi alınmadı: " + e.message);
+                }
+            }
+        }
+
+        // 2. Mesajı Hazırla
+        const guestName = localStorage.getItem('guest_chat_name') || 'Qonaq';
+        // İstifadəçi adını dəqiqləşdir: Əgər real istifadəçidirsə onun adını, yoxsa qonaq adını götür
+        const displayName = (user && !user.isAnonymous && localUser) 
+            ? (localUser.name || localUser.username || user.email) 
+            : guestName;
+
+        const msgData = {
+            text: text,
+            sender: 'user', // Həmişə 'user' kimi göndəririk (Admin olsa belə, user widget-indən yazır)
+            userId: user.uid, // MÜTLƏQ Auth UID olmalıdır
+            userName: displayName,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            read: false
+        };
+
+        // 3. Firestore-a Yaz
+        if (db) {
+            await db.collection('messages').add(msgData);
+            
+            // Listener-i aktivləşdir (əgər yoxdursa)
+            listenForMessages(); 
+        } else {
+            throw new Error("Verilənlər bazası ilə əlaqə yoxdur.");
+        }
+    } catch (e) {
+        console.error("Send Error:", e);
+        // Xəta mesajını UI-da göstər
+        const errDiv = document.querySelector(`[data-temp-id="${tempId}"]`);
+        if (errDiv) {
+            errDiv.classList.add('error');
+            errDiv.innerHTML += `<div class="text-xs text-red-200 mt-1"><i class="fas fa-exclamation-circle"></i> Göndərilmədi: ${e.code === 'permission-denied' ? 'İcazə yoxdur' : e.message}</div>`;
+        } else {
+            addMessageToUI("Mesaj göndərilmədi: " + (e.code === 'permission-denied' ? 'İcazə yoxdur' : e.message), 'bot');
+        }
+    }
+};
+
+function addMessageToUI(text, type, tempId = null) {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+    
+    const div = document.createElement('div');
+    div.className = `message-wrapper ${type}`;
+    if (tempId) div.setAttribute('data-temp-id', tempId);
+    
+    const safeText = window.escapeHtml ? window.escapeHtml(text) : text.replace(/</g, '&lt;');
+    
+    div.innerHTML = `
+        <div class="message-content">${safeText}</div>
+        <div class="message-time">${new Date().toLocaleTimeString('az-AZ', {hour:'2-digit', minute:'2-digit'})}</div>
+    `;
+    
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+window.listenForMessages = function() {
+    if (!db || !auth) return;
+    
+    // Yalnız real Auth UID istifadə et! LocalStorage "guest_uid"-ə etibar etmə.
+    // Əgər auth.currentUser yoxdursa, dinləmə.
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    const uid = user.uid;
+    
+    // Köhnə listeneri dayandır və yenisini qur
+    if (window.chatListenerUnsubscribe) {
+        try { window.chatListenerUnsubscribe(); } catch {}
+        window.chatListenerUnsubscribe = null;
+    }
+    
+    console.log("Chat dinlənilir: ", uid);
+    
+    try {
+        window.chatListenerUnsubscribe = db.collection('messages')
+            .where('userId', '==', uid)
+            .limit(400) // indeks tələb etmədən gətir
+            .onSnapshot(snapshot => {
+                const items = [];
+                snapshot.forEach(doc => items.push(doc.data()));
+                
+                // Müştəri tərəfində timestamp-a görə sıralama
+                items.sort((a, b) => {
+                    const ta = a.timestamp ? (a.timestamp.toMillis ? a.timestamp.toMillis() : a.timestamp.toDate().getTime()) : 0;
+                    const tb = b.timestamp ? (b.timestamp.toMillis ? b.timestamp.toMillis() : b.timestamp.toDate().getTime()) : 0;
+                    return ta - tb;
+                });
+                
+                // Son 50 mesajı göstər
+                const last = items.slice(Math.max(items.length - 50, 0));
+                
+                // UI yenilə
+                const container = document.getElementById('chat-messages');
+                if (container) container.innerHTML = '';
+                last.forEach(m => {
+                    const type = (m.sender === 'user') ? 'user' : 'bot';
+                    addMessageToUI(m.text, type);
+                });
+            }, error => {
+                console.error("Chat listen error:", error);
+                if (error.code === 'permission-denied') {
+                    window.chatListenerUnsubscribe = null;
+                }
+            });
+    } catch (e) {
+        console.error("Setup listen error:", e);
+    }
+};
+
+// Auth statusu dəyişəndə listeneri yenilə
+if (auth) {
+    auth.onAuthStateChanged(user => {
+        // Köhnə listeneri dayandır
+        if (window.chatListenerUnsubscribe) {
+            window.chatListenerUnsubscribe();
+            window.chatListenerUnsubscribe = null;
+        }
+        
+        if (user) {
+            // Yeni user üçün dinlə
+            listenForMessages();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initUserChat, 2000); 
+});
+
+/* =========================================
+   ADMIN CHAT LOGIC
+   ========================================= */
+
+window.showAdminChat = function() {
+    if (typeof hideAllSections === 'function') hideAllSections();
+    const section = document.getElementById('admin-chat-section');
+    if (section) section.classList.remove('hidden');
+    loadAdminChatList();
+};
+
+window.loadAdminChatList = async function() {
+    const list = document.getElementById('admin-chat-list');
+    if (!list) return;
+    
+    list.innerHTML = '<div class="loading-spinner">Yüklənir...</div>';
+    
+    // Auth Yoxlanışı
+    if (!auth || !auth.currentUser) {
+        // Bir az gözləyək, bəlkə yüklənir
+        await new Promise(r => setTimeout(r, 1000));
+        if (!auth.currentUser) {
+            list.innerHTML = `
+                <div class="p-4 text-center text-red-600">
+                    <p><i class="fas fa-lock"></i> İcazə yoxdur.</p>
+                    <p class="text-xs mt-2 text-gray-500">Firebase sessiyası tapılmadı. Zəhmət olmasa <a href="#" onclick="logout()" class="underline">Çıxış</a> edib yenidən daxil olun.</p>
+                </div>`;
+            return;
+        }
+    }
+
+    try {
+        const snapshot = await db.collection('messages')
+            .orderBy('timestamp', 'desc')
+            .limit(200)
+            .get();
+            
+        const users = {};
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.userId && !users[data.userId]) {
+                users[data.userId] = {
+                    userId: data.userId,
+                    userName: data.userName || 'Adsız İstifadəçi',
+                    lastMessage: data.text,
+                    timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
+                    unread: !data.read && data.sender === 'user'
+                };
+            }
+        });
+        
+        list.innerHTML = '';
+        const userArray = Object.values(users);
+        
+        if (userArray.length === 0) {
+            list.innerHTML = '<p style="text-align:center; padding:20px;">Hələ ki mesaj yoxdur.</p>';
+            return;
+        }
+        
+        // Sort users by timestamp (newest first)
+        userArray.sort((a, b) => b.timestamp - a.timestamp);
+        
+        // Update chat count
+        const countElement = document.getElementById('admin-chat-count');
+        if (countElement) {
+            countElement.textContent = userArray.length;
+        }
+        
+        userArray.forEach(u => {
+            const div = document.createElement('div');
+            // Messenger Style User Item
+            div.style.cssText = "padding: 12px 16px; border-bottom: 1px solid #334155; cursor: pointer; transition: background 0.2s; display: flex; gap: 12px;";
+            div.onmouseover = () => { if(!div.classList.contains('active')) div.style.background = 'rgba(255,255,255,0.05)'; };
+            div.onmouseout = () => { if(!div.classList.contains('active')) div.style.background = 'transparent'; };
+            
+            if (u.unread) {
+                div.style.background = 'rgba(37, 99, 235, 0.1)';
+                div.style.borderLeft = '4px solid #2563eb';
+            } else {
+                div.style.borderLeft = '4px solid transparent';
+            }
+            
+            const timeAgo = getTimeAgo(u.timestamp);
+            const messagePreview = u.lastMessage.length > 35 ? u.lastMessage.substring(0, 35) + '...' : u.lastMessage;
+            
+            div.innerHTML = `
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; color: #60a5fa; border: 1px solid #475569; flex-shrink: 0;">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <h4 style="font-weight: bold; font-size: 14px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(u.userName)}</h4>
+                        <span style="font-size: 11px; color: #94a3b8; white-space: nowrap; margin-left: 8px;">${timeAgo}</span>
+                    </div>
+                    <p style="font-size: 12px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(messagePreview)}</p>
+                </div>
+                ${u.unread ? '<div style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; margin-top: 8px; flex-shrink: 0; box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);"></div>' : ''}
+            `;
+            div.onclick = () => {
+                // Highlight active user
+                document.querySelectorAll('#admin-chat-list > div').forEach(el => {
+                    el.classList.remove('active');
+                    el.style.background = 'transparent';
+                    if(el.querySelector('.unread-indicator')) el.style.background = 'rgba(37, 99, 235, 0.1)';
+                });
+                div.classList.add('active');
+                div.style.background = '#1e293b';
+                openAdminChat(u.userId, u.userName);
+            };
+            list.appendChild(div);
+        });
+        
+    } catch (e) {
+        console.error("Error loading chats:", e);
+        let roleInfo = '';
+        try {
+            if (auth && auth.currentUser) {
+                const udoc = await db.collection('users').doc(auth.currentUser.uid).get();
+                if (udoc.exists) {
+                    const r = udoc.data().role || 'yoxdur';
+                    roleInfo = `<p class="text-xs text-gray-500 mt-2">Cari rol: ${r}</p>`;
+                } else {
+                    roleInfo = `<p class="text-xs text-gray-500 mt-2">İstifadəçi məlumatı tapılmadı (users/${auth.currentUser.uid}).</p>`;
+                }
+            }
+        } catch (er) {
+            roleInfo = `<p class="text-xs text-gray-500 mt-2">Rol oxunmadı: ${er.message}</p>`;
+        }
+        const fixBtn = e.code === 'permission-denied' 
+            ? `<button onclick="fixAdminRole('${auth.currentUser.uid}')" class="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition shadow-sm"><i class="fas fa-wrench"></i> Admin Hüququnu Düzəlt</button>` 
+            : '';
+        list.innerHTML = `
+            <div class="p-4 text-center text-red-600">
+                <p>Xəta: ${e.code === 'permission-denied' ? 'İcazə yoxdur' : e.message}</p>
+                ${e.code === 'permission-denied' ? `<p class="text-xs text-gray-500 mt-2">UID: ${auth.currentUser.uid} (Admin hüququ yoxdur?)</p>` : ''}
+                ${roleInfo}
+                ${fixBtn}
+            </div>`;
+    }
+};
+
+window.fixAdminRole = async function(uid) {
+    if (!confirm("Admin hüququnu bərpa etmək istədiyinizə əminsiniz?")) return;
+    
+    const btn = document.querySelector('button[onclick^="fixAdminRole"]');
+    if(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Bərpa edilir...';
+    }
+
+    try {
+        await db.collection('users').doc(uid).set({
+            role: 'admin'
+        }, { merge: true });
+        
+        showNotification('Admin hüququ uğurla bərpa edildi. Yenidən yüklənir...', 'success');
+        try {
+            await new Promise(r => setTimeout(r, 600));
+            await db.collection('users').doc(uid).get();
+        } catch {}
+        loadAdminChatList();
+    } catch (e) {
+        console.error("Admin hüququ düzəltmək xətası:", e);
+        alert('Xəta: ' + e.message + '\n\nQeyd: Əgər bu xəta davam edərsə, Firestore qaydalarında "users" kolleksiyasına yazma icazəsini yoxlayın.');
+        if(btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-wrench"></i> Yenidən cəhd et';
+        }
+    }
+};
+
+let currentAdminChatUnsubscribe = null;
+let currentChatUserId = null;
+
+window.openAdminChat = function(userId, userName) {
+    currentChatUserId = userId;
+    
+    // UI Updates
+    const title = document.getElementById('admin-chat-user-name');
+    const status = document.getElementById('admin-chat-user-status');
+    const messagesBox = document.getElementById('admin-messages-box');
+    const view = document.getElementById('admin-conversation-view');
+    
+    if (title) title.textContent = userName;
+    if (status) status.textContent = 'Yüklənir...';
+    if (view) view.classList.remove('hidden');
+    if (messagesBox) messagesBox.innerHTML = '<div class="loading-spinner">Yüklənir...</div>';
+    
+    // Unsubscribe previous listener
+    if (currentAdminChatUnsubscribe) {
+        currentAdminChatUnsubscribe();
+    }
+    
+    // Listen for messages with this user
+    currentAdminChatUnsubscribe = db.collection('messages')
+        .where('userId', '==', userId)
+        .limit(400)
+        .onSnapshot(snapshot => {
+            const items = [];
+            snapshot.forEach(doc => {
+                items.push({ ref: doc.ref, data: doc.data() });
+            });
+            items.sort((a, b) => {
+                const ta = a.data.timestamp ? (a.data.timestamp.toMillis ? a.data.timestamp.toMillis() : a.data.timestamp.toDate().getTime()) : 0;
+                const tb = b.data.timestamp ? (b.data.timestamp.toMillis ? b.data.timestamp.toMillis() : b.data.timestamp.toDate().getTime()) : 0;
+                return ta - tb;
+            });
+            const last = items.slice(Math.max(items.length - 50, 0));
+            if (messagesBox) messagesBox.innerHTML = '';
+            
+            // Find last user activity time
+            let lastUserActivity = null;
+            last.forEach(({ data, ref }) => {
+                appendAdminChatMessage(data);
+                if (data.sender === 'user' && !data.read) {
+                    ref.update({ read: true }).catch(e => console.warn("Read update failed:", e));
+                }
+                if (data.sender === 'user' && data.timestamp) {
+                    const msgTime = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+                    if (!lastUserActivity || msgTime > lastUserActivity) {
+                        lastUserActivity = msgTime;
+                    }
+                }
+            });
+            
+            // Update user status
+            if (status) {
+                if (lastUserActivity) {
+                    const timeAgo = getTimeAgo(lastUserActivity);
+                    status.textContent = `Son aktivlik: ${timeAgo} əvvəl`;
+                } else {
+                    status.textContent = 'Aktivlik yoxdur';
+                }
+            }
+            
+            // Reliable scroll to bottom with scrollIntoView
+            if (messagesBox && messagesBox.lastElementChild) {
+                setTimeout(() => {
+                    messagesBox.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    messagesBox.scrollTop = messagesBox.scrollHeight;
+                }, 100);
+            }
+        }, error => {
+            console.error("Admin chat listen error:", error);
+            if (messagesBox) {
+                messagesBox.innerHTML = `<div class="text-center text-red-500 mt-4">
+                    <p>Çat yüklənmədi: ${error.message}</p>
+                </div>`;
+            }
+        });
+};
+
+window.backToChatList = function() {
+    const view = document.getElementById('admin-conversation-view');
+    if (view) view.classList.add('hidden'); // Only relevant on mobile
+    if (currentAdminChatUnsubscribe) {
+        currentAdminChatUnsubscribe();
+        currentAdminChatUnsubscribe = null;
+    }
+    currentChatUserId = null;
+    loadAdminChatList(); 
+};
+
+window.sendAdminReply = async function() {
+    if (!currentChatUserId) return;
+    
+    const input = document.getElementById('admin-reply-input');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    input.value = '';
+    
+    try {
+        await db.collection('messages').add({
+            text: text,
+            sender: 'admin', 
+            userId: currentChatUserId,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            read: true 
+        });
+    } catch (e) {
+        alert("Mesaj göndərilmədi: " + e.message);
+    }
+};
+
+// Time ago helper function
+function getTimeAgo(timestamp) {
+    const now = new Date();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return 'indi';
+    if (minutes < 60) return `${minutes} dəq`;
+    if (hours < 24) return `${hours} saat`;
+    return `${days} gün`;
+}
+
+// Refresh chat function
+window.refreshChat = function() {
+    if (currentChatUserId) {
+        const userName = document.getElementById('admin-chat-user-name').textContent;
+        openAdminChat(currentChatUserId, userName);
+        showNotification('Çat yeniləndi', 'info');
+    } else {
+        loadAdminChatList();
+    }
+};
+
+function appendAdminChatMessage(data) {
+    const container = document.getElementById('admin-messages-box');
+    if (!container) return;
+    
+    const isMe = data.sender === 'admin' || data.sender === 'bot';
+    const div = document.createElement('div');
+    div.style.cssText = `display: flex; width: 100%; margin-bottom: 8px; justify-content: ${isMe ? 'flex-end' : 'flex-start'}; animation: fadeIn 0.2s ease;`;
+    
+    const safeText = window.escapeHtml ? window.escapeHtml(data.text) : data.text.replace(/</g, '&lt;');
+    const time = data.timestamp ? data.timestamp.toDate().toLocaleTimeString('az-AZ', {hour:'2-digit', minute:'2-digit'}) : '';
+    
+    // Messenger Bubble Styles
+    const bubbleStyle = isMe 
+        ? 'background: #2563eb; color: white; border-radius: 18px 18px 4px 18px; box-shadow: 0 2px 5px rgba(37, 99, 235, 0.3);' 
+        : 'background: #334155; color: #f1f5f9; border-radius: 18px 18px 18px 4px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); border: 1px solid #475569;';
+
+    div.innerHTML = `
+        <div style="display: flex; max-width: 75%; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'};">
+            <div style="${bubbleStyle} padding: 10px 16px; min-width: 60px; position: relative;">
+                <div style="font-size: 14px; line-height: 1.5; word-wrap: break-word; white-space: pre-wrap;">${safeText}</div>
+                <div style="font-size: 10px; color: ${isMe ? 'rgba(255,255,255,0.7)' : '#94a3b8'}; margin-top: 4px; text-align: right; display: flex; justify-content: flex-end; align-items: center; gap: 4px;">
+                    ${time}
+                    ${isMe ? '<i class="fas fa-check-double" style="font-size: 8px;"></i>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(div);
+    
+    // Auto-scroll logic (improved with scrollIntoView)
+    setTimeout(() => {
+        div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        // Fallback
+        if (container) container.scrollTop = container.scrollHeight;
+    }, 50);
+}

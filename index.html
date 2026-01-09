@@ -908,9 +908,8 @@
                     <div class="admin-top-actions flex flex-wrap gap-2 justify-end">
                         <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()"><i class="fas fa-arrow-left"></i> Geri</button>
                         <button class="btn-outline" onclick="toggleAdminStats()"><i class="fas fa-chart-line"></i> Statistika</button>
-                        <button id="restore-btn-global" class="btn-danger px-5 py-2 rounded-lg font-bold shadow-md" onclick="restoreMissingQuestions()"><i class="fas fa-undo"></i> Sualları Bərpa Et</button>
-                        <button class="btn-success" onclick="exportData()">💾 Export</button>
                         <button class="btn-outline" onclick="showReports()"><i class="fas fa-flag"></i> Şikayətlər</button>
+                        <button class="btn-outline" onclick="showAdminChat()"><i class="fas fa-comments"></i> Canlı Çat</button>
                         <button class="btn-primary" onclick="showAddCategoryModal()">+ Yeni Kateqoriya</button>
                     </div>
                 </div>
@@ -932,6 +931,79 @@
                 </div>
                 <div class="text-center mt-4">
                     <button id="admin-reports-load-more" onclick="loadMoreAdminReports()" class="btn-secondary hidden">Daha çox yüklə</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Chat Section -->
+        <section id="admin-chat-section" class="hidden">
+            <div class="container">
+                <div class="header-actions animate-up">
+                    <button onclick="showAdminDashboard()" class="btn-secondary"><i class="fas fa-arrow-left"></i> Geri</button>
+                    <h2><i class="fas fa-comments"></i> Canlı Çat İdarəetməsi</h2>
+                </div>
+                
+                <style>
+                    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                    .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+                    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+                    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+                </style>
+
+                <!-- MESSENGER STYLE LAYOUT (CSS GRID) -->
+                <div style="display: grid; grid-template-columns: 300px 1fr; height: 600px; background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; margin-top: 20px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);">
+                    
+                    <!-- LEFT SIDE -->
+                    <div style="display: flex; flex-direction: column; border-right: 1px solid #334155; background: #0f172a;">
+                        <!-- Header -->
+                        <div style="padding: 16px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; background: #1e293b;">
+                            <span style="color: white; font-weight: bold;">Müraciətlər</span>
+                            <span id="admin-chat-count" style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 99px; font-size: 12px;">0</span>
+                        </div>
+                        <!-- List -->
+                        <div id="admin-chat-list" class="custom-scrollbar" style="flex: 1; overflow-y: auto; overscroll-behavior: contain;">
+                            <!-- JS will populate -->
+                        </div>
+                    </div>
+
+                    <!-- RIGHT SIDE (Chat) -->
+                    <div id="admin-conversation-view" style="display: grid; grid-template-rows: 70px 1fr 80px; background: #0f172a; min-width: 0; overflow: hidden;">
+                        
+                        <!-- Chat Header -->
+                        <div style="border-bottom: 1px solid #334155; display: flex; align-items: center; padding: 0 20px; background: #1e293b; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; background: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <div id="admin-chat-user-name" style="color: white; font-weight: bold; font-size: 16px;">Seçilməyib</div>
+                                    <div id="admin-chat-user-status" style="color: #94a3b8; font-size: 12px;">...</div>
+                                </div>
+                            </div>
+                            <button onclick="refreshChat()" style="color: #94a3b8; background: none; border: none; cursor: pointer; padding: 8px; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#94a3b8'"><i class="fas fa-sync-alt"></i></button>
+                        </div>
+
+                        <!-- Chat Body -->
+                        <div id="admin-messages-box" class="custom-scrollbar" style="overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 20px 20px; min-height: 0; overscroll-behavior: contain;">
+                            <div style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b;">
+                                <i class="fas fa-comments" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                                <p style="font-size: 18px;">Söhbətə başlamaq üçün istifadəçi seçin</p>
+                            </div>
+                        </div>
+
+                        <!-- Chat Footer -->
+                        <div style="border-top: 1px solid #334155; padding: 0 20px; background: #1e293b; display: flex; align-items: center; gap: 12px;">
+                            <input type="hidden" id="admin-chat-user-id">
+                            <input type="text" id="admin-reply-input" placeholder="Cavab yazın..." 
+                                onkeypress="if(event.key==='Enter')sendAdminReply()"
+                                style="flex: 1; background: #0f172a; border: 1px solid #475569; padding: 12px 20px; border-radius: 99px; color: white; outline: none; transition: border-color 0.2s;"
+                                onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#475569'">
+                            <button onclick="sendAdminReply()" style="width: 48px; height: 48px; background: #2563eb; color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.5); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </section>
@@ -1460,6 +1532,9 @@
             <p>&copy; 2025 İmtahan.site - Bütün hüquqlar qorunur.</p>
         </div>
     </footer>
+
+    <!-- Notification Container -->
+    <div id="notification-container" class="notification-container"></div>
 
     <!-- Contact Modal -->
     <div id="contact-modal" class="modal hidden">
