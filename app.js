@@ -8404,7 +8404,7 @@ window.toggleLiveChat = function() {
     }
 };
 
-window.saveGuestChatName = function() {
+window.saveGuestChatName = async function() {
     const input = document.getElementById('guest-name-input');
     const name = input.value.trim();
     
@@ -8414,6 +8414,12 @@ window.saveGuestChatName = function() {
     }
     
     localStorage.setItem('guest_chat_name', name);
+    
+    try {
+        if (auth && !auth.currentUser) {
+            await auth.signInAnonymously();
+        }
+    } catch(e) {}
     
     const preScreen = document.getElementById('chat-pre-screen');
     if (preScreen) {
@@ -8538,12 +8544,10 @@ function addMessageToUI(text, type, tempId = null) {
 window.listenForMessages = function() {
     if (!db || !auth) return;
     
-    // Yalnız real Auth UID istifadə et! LocalStorage "guest_uid"-ə etibar etmə.
-    // Əgər auth.currentUser yoxdursa, dinləmə.
     const user = auth.currentUser;
-    if (!user) return;
-    
-    const uid = user.uid;
+    const guestName = localStorage.getItem('guest_chat_name');
+    const targetId = user ? user.uid : (guestName ? 'guest' : null);
+    if (!targetId) return;
     
     // Köhnə listeneri dayandır və yenisini qur
     if (window.chatListenerUnsubscribe) {
@@ -8551,11 +8555,9 @@ window.listenForMessages = function() {
         window.chatListenerUnsubscribe = null;
     }
     
-    console.log("Chat dinlənilir: ", uid);
-    
     try {
         window.chatListenerUnsubscribe = db.collection('messages')
-            .where('userId', '==', uid)
+            .where('userId', '==', targetId)
             .limit(400) // indeks tələb etmədən gətir
             .onSnapshot(snapshot => {
                 const items = [];
@@ -8589,19 +8591,15 @@ window.listenForMessages = function() {
     }
 };
 
-// Auth statusu dəyişəndə listeneri yenilə
 if (auth) {
     auth.onAuthStateChanged(user => {
-        // Köhnə listeneri dayandır
-        if (window.chatListenerUnsubscribe) {
-            window.chatListenerUnsubscribe();
-            window.chatListenerUnsubscribe = null;
-        }
-        
-        if (user) {
-            // Yeni user üçün dinlə
-            listenForMessages();
-        }
+        try {
+            if (window.chatListenerUnsubscribe) {
+                window.chatListenerUnsubscribe();
+                window.chatListenerUnsubscribe = null;
+            }
+        } catch(e) {}
+        listenForMessages();
     });
 }
 
@@ -8610,6 +8608,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initUserChat(); 
         listenForMessages(); 
     }, 2000); 
+    if (typeof window.setupGlobalChatCleanup === 'function') window.setupGlobalChatCleanup();
 });
 
 /* =========================================
@@ -8621,6 +8620,39 @@ window.showAdminChat = function() {
     const section = document.getElementById('admin-chat-section');
     if (section) section.classList.remove('hidden');
     loadAdminChatList();
+    try {
+        if (window.adminChatInterval) clearInterval(window.adminChatInterval);
+        window.adminChatInterval = setInterval(() => loadAdminChatList(), 60000);
+    } catch {}
+};
+window.runChatCleanup = async function() {
+    if (!db) return;
+    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+    if (!isAdmin) return;
+    try {
+        const snapshot = await db.collection('messages').orderBy('timestamp','desc').limit(300).get();
+        const latestByUser = {};
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const uid = data.userId;
+            if (!uid || uid === 'guest') return;
+            const ts = data.timestamp ? (data.timestamp.toMillis ? data.timestamp.toMillis() : (data.timestamp.toDate ? data.timestamp.toDate().getTime() : new Date(data.timestamp).getTime())) : 0;
+            if (!latestByUser[uid]) latestByUser[uid] = ts;
+        });
+        const now = Date.now();
+        const tenMin = 10 * 60 * 1000;
+        for (const uid in latestByUser) {
+            const ts = latestByUser[uid];
+            if (!ts) continue;
+            if (now - ts > tenMin) await cleanupUserChat(uid);
+        }
+        try { const list = document.getElementById('admin-chat-list'); if (list) loadAdminChatList(); } catch {}
+    } catch(e) {}
+};
+window.setupGlobalChatCleanup = function() {
+    try { if (window.globalChatCleanupInterval) clearInterval(window.globalChatCleanupInterval); } catch {}
+    window.globalChatCleanupInterval = setInterval(() => { window.runChatCleanup(); }, 60000);
+    window.runChatCleanup();
 };
 
 window.loadAdminChatList = async function() {
@@ -8691,6 +8723,18 @@ window.loadAdminChatList = async function() {
         if (countElement) {
             countElement.textContent = userArray.length;
         }
+        
+        try {
+            const now = Date.now();
+            const tenMin = 10 * 60 * 1000;
+            for (const u of userArray) {
+                if (!u || !u.timestamp) continue;
+                const ts = u.timestamp instanceof Date ? u.timestamp.getTime() : new Date(u.timestamp).getTime();
+                if (now - ts > tenMin) {
+                    await cleanupUserChat(u.userId);
+                }
+            }
+        } catch(e) {}
         
         userArray.forEach(u => {
             const div = document.createElement('div');
@@ -8765,6 +8809,17 @@ window.loadAdminChatList = async function() {
     }
 };
 
+window.cleanupUserChat = async function(userId) {
+    if (!db || !userId) return;
+    if (currentChatUserId && currentChatUserId === userId) return;
+    try {
+        const snapshot = await db.collection('messages').where('userId', '==', userId).limit(400).get();
+        if (snapshot.empty) return;
+        const batch = db.batch();
+        snapshot.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+    } catch(e) {}
+};
 window.fixAdminRole = async function(uid) {
     if (!confirm("Admin hüququnu bərpa etmək istədiyinizə əminsiniz?")) return;
     

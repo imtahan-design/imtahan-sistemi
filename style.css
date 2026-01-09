@@ -6811,11 +6811,15 @@ nav:hover {
     font-size: 15px;
     outline: none;
     transition: all 0.3s;
+    color: #1e293b;
 }
 
 .chat-input-group input:focus {
     border-color: #4f46e5;
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+.chat-input-group input::placeholder {
+    color: #94a3b8;
 }
 
 .start-chat-btn {
