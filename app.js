@@ -8650,14 +8650,25 @@ window.loadAdminChatList = async function() {
         
         snapshot.forEach(doc => {
             const data = doc.data();
-            if (data.userId && !users[data.userId]) {
+            if (!data.userId) return;
+
+            if (!users[data.userId]) {
                 users[data.userId] = {
                     userId: data.userId,
                     userName: data.userName || 'Adsız İstifadəçi',
                     lastMessage: data.text,
-                    timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
+                    timestamp: data.timestamp ? (data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp)) : new Date(),
                     unread: !data.read && data.sender === 'user'
                 };
+            } else {
+                // Update name if we found a better one
+                if ((users[data.userId].userName === 'Adsız İstifadəçi' || !users[data.userId].userName) && data.userName) {
+                    users[data.userId].userName = data.userName;
+                }
+                // Check for unread messages
+                if (!data.read && data.sender === 'user') {
+                    users[data.userId].unread = true;
+                }
             }
         });
         
@@ -8921,6 +8932,9 @@ window.refreshChat = function() {
 };
 
 function appendAdminChatMessage(data) {
+    // Safety check: ensure message belongs to current chat
+    if (currentChatUserId && data.userId !== currentChatUserId) return;
+
     const container = document.getElementById('admin-messages-box');
     if (!container) return;
     
