@@ -514,6 +514,12 @@
         }
         m.setAttribute('content', content || '');
     }
+    function appendMetaProp(prop, content) {
+        var m = document.createElement('meta');
+        m.setAttribute('property', prop);
+        m.setAttribute('content', content || '');
+        document.head.appendChild(m);
+    }
     function setLinkRel(rel, href) {
         var l = document.querySelector('link[rel="' + rel + '"]');
         if (!l) {
@@ -533,16 +539,17 @@
         s.textContent = JSON.stringify(data);
     }
     function setSeoTags(item) {
-        // Use slug-based URL if available (better for SEO), otherwise fallback to ID
         var url = '';
         if (item.slug && location.protocol !== 'file:') {
              url = location.origin + '/news/' + item.slug;
         } else {
              url = location.origin + '/news/view.html?id=' + item.id;
         }
-        
         var desc = buildDescription(item);
         var image = (item.imageUrl && /^https?:\/\//.test(item.imageUrl)) ? item.imageUrl : 'https://imtahan.site/assets/logo.png';
+        var modifiedIso = (item.updatedAt && item.updatedAt.toDate) ? item.updatedAt.toDate().toISOString() : (item.updatedAt ? new Date(item.updatedAt).toISOString() : new Date().toISOString());
+        var publishedIso = item.date ? new Date(item.date).toISOString() : new Date().toISOString();
+        setMetaName('robots', 'index,follow');
         setMetaName('description', desc);
         if (item.tags && item.tags.length) setMetaName('keywords', item.tags.join(','));
         setMetaProp('og:type', 'article');
@@ -550,22 +557,32 @@
         setMetaProp('og:title', item.title || '');
         setMetaProp('og:description', desc);
         setMetaProp('og:image', image);
+        setMetaProp('og:image:alt', item.title || '');
+        setMetaProp('og:site_name', 'İmtahan');
+        setMetaProp('og:locale', 'az_AZ');
+        setMetaProp('article:published_time', publishedIso);
+        setMetaProp('article:modified_time', modifiedIso);
+        setMetaProp('article:section', item.category || 'Xəbərlər');
+        if (item.tags && item.tags.length) item.tags.forEach(function(t){ appendMetaProp('article:tag', t); });
         setMetaName('twitter:card', 'summary_large_image');
         setMetaName('twitter:url', url);
         setMetaName('twitter:title', item.title || '');
         setMetaName('twitter:description', desc);
         setMetaName('twitter:image', image);
+        setMetaName('twitter:image:alt', item.title || '');
         setLinkRel('canonical', url);
         var jsonLd = {
             "@context": "https://schema.org",
             "@type": "NewsArticle",
             "headline": item.title || '',
             "image": [image],
-            "datePublished": item.date ? new Date(item.date).toISOString() : new Date().toISOString(),
-            "dateModified": new Date().toISOString(),
+            "datePublished": publishedIso,
+            "dateModified": modifiedIso,
             "author": {"@type": "Organization", "name": "İmtahan"},
             "publisher": {"@type": "Organization", "name": "İmtahan", "logo": {"@type": "ImageObject", "url": "https://imtahan.site/assets/logo.png"}},
             "description": desc,
+            "articleSection": item.category || 'Xəbərlər',
+            "keywords": item.tags && item.tags.length ? item.tags.join(',') : '',
             "mainEntityOfPage": {"@type": "WebPage", "@id": url}
         };
         setJsonLd(jsonLd);

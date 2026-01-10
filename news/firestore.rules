@@ -67,7 +67,7 @@ service cloud.firestore {
     // --- 6. Reports (Şikayətlər) ---
     match /reports/{reportId} {
       allow create: if true;
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isTeacher() || isModerator());
+      allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || isTeacher() || isModerator())) || (resource.data.type == 'live_chat');
       allow write: if isTeacher() || isModerator();
     }
 
@@ -117,6 +117,11 @@ service cloud.firestore {
 
       // DİQQƏT: Baxış sayını (views) hamı artıra bilər, amma başqa şeyi dəyişə bilməzlər
       allow update: if isModerator() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']);
+    }
+    
+    match /live_chat_sessions/{chatId} {
+      allow read: if true;
+      allow write: if true;
     }
   }
 }

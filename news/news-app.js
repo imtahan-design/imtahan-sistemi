@@ -394,18 +394,41 @@ function setIndexSeo(list) {
     var desc = buildIndexDescription(list || []);
     var image = 'https://imtahan.site/assets/logo.png';
     document.title = title;
+    setMetaName('robots', 'index,follow');
     setMetaName('description', desc);
     setMetaProp('og:type', 'website');
     setMetaProp('og:url', url);
     setMetaProp('og:title', title);
     setMetaProp('og:description', desc);
     setMetaProp('og:image', image);
+    setMetaProp('og:image:alt', title);
+    setMetaProp('og:site_name', 'İmtahan');
+    setMetaProp('og:locale', 'az_AZ');
     setMetaName('twitter:card', 'summary_large_image');
     setMetaName('twitter:url', url);
     setMetaName('twitter:title', title);
     setMetaName('twitter:description', desc);
     setMetaName('twitter:image', image);
+    setMetaName('twitter:image:alt', title);
     setLinkRel('canonical', url);
+    var org = {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "İmtahan",
+        "url": location.origin,
+        "logo": image
+    };
+    var website = {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "url": location.origin + "/news/",
+        "name": "İmtahan Xəbərlər",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": location.origin + "/news/index.html?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    };
     var itemList = {
         "@context": "https://schema.org",
         "@type": "ItemList",
@@ -416,7 +439,7 @@ function setIndexSeo(list) {
             "name": n.title
         }))
     };
-    setJsonLd(itemList);
+    setJsonLd([org, website, itemList]);
 }
 
 function shareArticle(platform, url, title) {
