@@ -1528,14 +1528,15 @@ window.toggleEmailField = function() {
 let pendingUser = null;
 let verificationCode = null;
 
-async function sendVerificationEmail(email, code) {
+async function sendVerificationEmail(email, code, userName) {
     try {
         await emailjs.send(
             "service_rjwl984",
             "template_y8eq8n8",
             {
                 user_email: email,
-                code: code
+                code: code,
+                user_name: userName || "İstifadəçi"
             }
         );
         return true;
@@ -1591,7 +1592,7 @@ window.register = async function() {
             pendingUser = { name, surname, username, password: pass, role: role, email: email };
             verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
             
-            const success = await sendVerificationEmail(email, verificationCode);
+            const success = await sendVerificationEmail(email, verificationCode, `${name} ${surname}`);
             
             if (success) {
                 showNotification(`${email} ünvanına təsdiq kodu göndərildi. Zəhmət olmasa emailinizi yoxlayın.`, 'success');
@@ -7571,9 +7572,60 @@ window.deleteReport = async function(reportId) {
             reports = reports.filter(r => r.id != reportId);
             localStorage.setItem('reports', JSON.stringify(reports));
         }
+        showNotification('Şikayət silindi', 'success');
         loadReports();
     } catch (e) {
-        console.error(e);
+        console.error("Delete Report Error:", e);
+        showNotification('Şikayəti silmək mümkün olmadı: ' + (e.message || 'İcazə yoxdur'), 'error');
+    }
+}
+
+window.cleanupBadReports = async function() {
+    if (!confirm('Bütün boş və ya xətalı şikayətləri təmizləmək istədiyinizə əminsiniz?')) return;
+    
+    try {
+        showNotification('Təmizləmə başlayır...', 'info');
+        let deletedCount = 0;
+        
+        if (db) {
+            const snapshot = await db.collection('reports').get();
+            
+            // Firestore batch limit is 500, let's process in batches if needed
+            // But for simple cleanup, we can just delete one by one or use small batches
+            const deletePromises = [];
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                // Təmizləmə kriteriyaları:
+                // 1. Mesaj yoxdursa
+                // 2. Tipi 'live_chat' isə
+                // 3. QuestionId yoxdursa və contact_form deyilsə
+                const isBad = !data.message || 
+                              data.type === 'live_chat' || 
+                              (!data.questionId && data.type !== 'contact_form');
+                              
+                if (isBad) {
+                    deletePromises.push(db.collection('reports').doc(doc.id).delete());
+                    deletedCount++;
+                }
+            });
+            
+            if (deletePromises.length > 0) {
+                await Promise.all(deletePromises);
+            }
+        } else {
+            let reports = JSON.parse(localStorage.getItem('reports') || '[]');
+            const initialCount = reports.length;
+            reports = reports.filter(r => r.message && r.type !== 'live_chat' && (r.questionId || r.type === 'contact_form'));
+            deletedCount = initialCount - reports.length;
+            localStorage.setItem('reports', JSON.stringify(reports));
+        }
+        
+        showNotification(`${deletedCount} ədəd xətalı şikayət silindi`, 'success');
+        loadReports();
+    } catch (e) {
+        console.error("Cleanup Error:", e);
+        showNotification('Təmizləmə zamanı xəta: ' + (e.message || 'İcazə yoxdur'), 'error');
     }
 }
 

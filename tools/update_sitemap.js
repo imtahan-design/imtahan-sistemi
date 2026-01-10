@@ -34,7 +34,7 @@ async function generateSitemap() {
         // Static pages
         const staticPages = [
             { loc: 'https://imtahan.site/', priority: '1.0', changefreq: 'daily' },
-            { loc: 'https://imtahan.site/news', priority: '0.9', changefreq: 'hourly' },
+            { loc: 'https://imtahan.site/bloq', priority: '0.9', changefreq: 'hourly' },
             { loc: 'https://imtahan.site/index.html', priority: '0.8', changefreq: 'weekly' }
         ];
 
@@ -51,14 +51,14 @@ async function generateSitemap() {
             const data = doc.data();
             let url = '';
             
-            // GitHub Pages üçün ən ideal format: /news/slug
+            // Kanonik format: /bloq/slug
             // 404 xətası olmaması üçün aşağıda fiziki qovluq və index.html yaradılır.
             if (data.slug) {
-                url = `https://imtahan.site/news/${data.slug}`;
+                url = `https://imtahan.site/bloq/${data.slug}`;
                 
                 // --- STATİK SƏHİFƏ GENERASİYASI (SEO üçün) ---
                 try {
-                    const slugDir = path.resolve(__dirname, '../news', data.slug);
+                    const slugDir = path.resolve(__dirname, '../bloq', data.slug);
                     if (!fs.existsSync(slugDir)) {
                         fs.mkdirSync(slugDir, { recursive: true });
                     }
@@ -71,7 +71,7 @@ async function generateSitemap() {
                     const title = `${data.title} – İmtahan Bloq`;
                     const description = (data.excerpt || data.content || '').replace(/<[^>]+>/g, ' ').substring(0, 160).trim();
                     const imageUrl = data.imageUrl || 'https://imtahan.site/assets/logo.png';
-                    const canonical = `https://imtahan.site/news/${data.slug}`;
+                    const canonical = `https://imtahan.site/bloq/${data.slug}`;
 
                     const publishedISO = (data.date ? new Date(data.date).toISOString() : new Date().toISOString());
                     const modifiedISO = publishedISO;
@@ -79,7 +79,7 @@ async function generateSitemap() {
                     const tags = Array.isArray(data.tags) ? data.tags : [];
                     const articleTagMeta = tags.map(t => `<meta property="article:tag" content="${String(t).trim()}">`).join('\\n');
                     const seoTags = `
-    <base href="/news/">
+    <base href="/bloq/">
     <title>${title}</title>
     <meta name="description" content="${description}">
     <link rel="canonical" href="${canonical}">
@@ -121,7 +121,7 @@ async function generateSitemap() {
                     console.error(`Error generating static page for ${data.slug}:`, err.message);
                 }
             } else {
-                url = `https://imtahan.site/news/view.html?id=${doc.id}`;
+                url = `https://imtahan.site/bloq/view.html?id=${doc.id}`;
             }
 
             let lastMod = new Date().toISOString();

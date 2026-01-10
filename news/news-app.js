@@ -19,13 +19,13 @@ const storage = firebase.storage();
 // Helper to generate safe links - Defined at top level
 function getNewsLink(item) {
     if (!item) return '#';
-    // Artıq tam "Pretty URL" istifadə edirik: /news/slug
+    // Artıq tam "Pretty URL" istifadə edirik: /bloq/slug
     // GitHub Pages-də 404 xətası olmaması üçün update_sitemap.js tərəfindən fiziki qovluqlar yaradılacaq.
     const slug = item.slug || (item.title ? slugify(item.title) : null);
     if (slug) {
-        return '/news/' + slug;
+        return '/bloq/' + slug;
     }
-    return '/news/view.html?id=' + item.id;
+    return '/bloq/view.html?id=' + item.id;
 }
 
 // State
