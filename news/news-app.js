@@ -36,6 +36,7 @@ let isAllNewsPage = false;
 let categories = ['İmtahana Hazırlıq', 'Fənn İzahları', 'Motivasiya', 'Məsləhətlər', 'Təhsil Siyasəti'];
 let currentEditingId = null;
 let savedSelectionRange = null;
+let slugManuallyEdited = false;
 
 // Auth Listener
 auth.onAuthStateChanged(user => {
@@ -76,6 +77,20 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         renderNews(filtered);
     });
+    
+    const titleEl = document.getElementById('newsTitle');
+    const slugEl = document.getElementById('newsSlug');
+    if (titleEl && slugEl) {
+        titleEl.addEventListener('input', (e) => {
+            if (!slugManuallyEdited) {
+                slugEl.value = slugify(e.target.value);
+            }
+        });
+        slugEl.addEventListener('input', (e) => {
+            slugManuallyEdited = true;
+            e.target.value = slugify(e.target.value);
+        });
+    }
     
     // Tag Input Handler
     document.getElementById('tagInput').addEventListener('keydown', function(e) {
@@ -496,6 +511,9 @@ window.openAddNewsModal = function() {
     document.getElementById('newsForm').reset();
     document.getElementById('richEditor').innerHTML = '';
     document.getElementById('newsId').value = '';
+    const slugEl = document.getElementById('newsSlug');
+    if (slugEl) slugEl.value = '';
+    slugManuallyEdited = false;
     currentTags = [];
     renderTags();
     updateImagePreview(); // Clear preview
@@ -519,6 +537,9 @@ window.editNews = function(id) {
     document.getElementById('newsCategory').value = item.category;
     document.getElementById('newsReadTime').value = item.readTime || 3;
     document.getElementById('newsImage').value = item.imageUrl || '';
+    const slugEl = document.getElementById('newsSlug');
+    if (slugEl) slugEl.value = item.slug || slugify(item.title || '');
+    slugManuallyEdited = true;
     
     // Tags
     currentTags = item.tags || [];
@@ -739,7 +760,18 @@ window.handleNewsSubmit = async function(event) {
     const category = document.getElementById('newsCategory').value;
     const readTime = document.getElementById('newsReadTime').value;
     const imageUrl = document.getElementById('newsImage').value;
-    const slug = slugify(title);
+    const slugInput = document.getElementById('newsSlug') ? document.getElementById('newsSlug').value : '';
+    let slug = slugify(slugInput || title);
+    
+    try {
+        const q = await db.collection('news').where('slug', '==', slug).get();
+        if (!q.empty) {
+            const conflict = q.docs.find(d => d.id !== currentEditingId);
+            if (conflict) {
+                slug = slug + '-2';
+            }
+        }
+    } catch (e) {}
     
     const newsData = {
         title,
