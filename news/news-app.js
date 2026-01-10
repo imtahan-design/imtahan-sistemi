@@ -19,14 +19,13 @@ const storage = firebase.storage();
 // Helper to generate safe links - Defined at top level
 function getNewsLink(item) {
     if (!item) return '#';
-    // If running locally (file protocol) or no slug, use query parameter
-    if (window.location.protocol === 'file:' || !item.slug) {
-        return '/news/view.html?id=' + item.id;
+    // Artıq tam "Pretty URL" istifadə edirik: /news/slug
+    // GitHub Pages-də 404 xətası olmaması üçün update_sitemap.js tərəfindən fiziki qovluqlar yaradılacaq.
+    const slug = item.slug || (item.title ? slugify(item.title) : null);
+    if (slug) {
+        return '/news/' + slug;
     }
-    // On server with rewrite rules, use the pretty slug
-    // Ensure it starts with /news/
-    const slug = item.slug.startsWith('/') ? item.slug.substring(1) : item.slug;
-    return '/news/' + slug;
+    return '/news/view.html?id=' + item.id;
 }
 
 // State

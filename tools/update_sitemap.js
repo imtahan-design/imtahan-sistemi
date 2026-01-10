@@ -51,12 +51,51 @@ async function generateSitemap() {
             const data = doc.data();
             let url = '';
             
-            // Use slug if available (supported by firebase rewrites), otherwise fallback to ID
+            // GitHub Pages üçün ən ideal format: /news/slug
+            // 404 xətası olmaması üçün aşağıda fiziki qovluq və index.html yaradılır.
             if (data.slug) {
-                // Ensure no leading slash in stored slug to avoid double slash if configured that way, 
-                // but usually stored slugs are clean. Let's assume clean.
-                // Firebase rewrite maps /news/** -> /news/view.html
                 url = `https://imtahan.site/news/${data.slug}`;
+                
+                // --- STATİK SƏHİFƏ GENERASİYASI (SEO üçün) ---
+                try {
+                    const slugDir = path.resolve(__dirname, '../news', data.slug);
+                    if (!fs.existsSync(slugDir)) {
+                        fs.mkdirSync(slugDir, { recursive: true });
+                    }
+                    
+                    // view.html-i şablon kimi istifadə edirik
+                    const templatePath = path.resolve(__dirname, '../news/view.html');
+                    let htmlContent = fs.readFileSync(templatePath, 'utf8');
+                    
+                    // Meta teqləri və başlığı dinamik olaraq ilkin HTML-ə yerləşdiririk (Google üçün)
+                    const title = `${data.title} – İmtahan Platforması`;
+                    const description = (data.excerpt || data.content || '').replace(/<[^>]+>/g, ' ').substring(0, 160).trim();
+                    const imageUrl = data.imageUrl || 'https://imtahan.site/assets/logo.png';
+                    const canonical = `https://imtahan.site/news/${data.slug}`;
+
+                    // 1. Base tag əlavə edirik ki, daxili qovluqda bütün linklər düzgün işləsin
+                    // 2. Title və Meta teqləri yeniləyirik
+                    // 3. Canonical linki daxil edirik
+                    
+                    const seoTags = `
+    <base href="/news/">
+    <title>${title}</title>
+    <meta name="description" content="${description}">
+    <link rel="canonical" href="${canonical}">
+    <meta property="og:title" content="${title}">
+    <meta property="og:description" content="${description}">
+    <meta property="og:image" content="${imageUrl}">
+    <meta property="og:url" content="${canonical}">
+    <meta property="og:type" content="article">
+                    `;
+
+                    htmlContent = htmlContent.replace(/<title>.*?<\/title>/, seoTags);
+                    
+                    fs.writeFileSync(path.join(slugDir, 'index.html'), htmlContent);
+                    // console.log(`Generated static page for: ${data.slug}`);
+                } catch (err) {
+                    console.error(`Error generating static page for ${data.slug}:`, err.message);
+                }
             } else {
                 url = `https://imtahan.site/news/view.html?id=${doc.id}`;
             }
