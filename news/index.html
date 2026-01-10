@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xəbərlər – İmtahan Platforması</title>
-  <meta name="description" content="İmtahan platformasının ən son xəbərləri, təlimlər və müsabiqələr haqqında məlumat.">
+  <title>Bloq və Məqalələr – İmtahan Platforması</title>
+  <meta name="description" content="İmtahan Bloqu: təhsil, imtahan hazırlığı, faydalı məqalələr və izahlar.">
   <link rel="canonical" href="https://imtahan.site/news">
   <link rel="shortcut icon" href="logo.png" type="image/png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -425,7 +425,10 @@
     <div class="nav-container">
       <a href="index.html" class="nav-logo">
         <div class="nav-logo-icon"><i class="fas fa-graduation-cap"></i></div>
-        <div class="nav-logo-text"><h1>İmtahan Xəbər</h1><span>Təhsil Platforması</span></div>
+        <div class="nav-logo-text">
+          <h1>İmtahan <span>Bloq</span></h1>
+          <span>Təhsil, inkişaf və uğur üçün faydalı məqalələr</span>
+        </div>
       </a>
       
       <div style="display: flex; align-items: center; gap: 8px;">
@@ -445,10 +448,10 @@
 
   <!-- Ticker -->
   <div class="news-ticker-container">
-      <div class="ticker-label"><i class="fas fa-bolt" style="margin-right:8px;"></i> Son Xəbərlər</div>
+      <div class="ticker-label"><i class="fas fa-bolt" style="margin-right:8px;"></i> Son Məqalələr</div>
       <div class="ticker-wrapper">
          <div class="ticker-content" id="newsTickerContent">
-            <span style="padding:0 20px;">Xəbərlər yüklənir...</span>
+            <span style="padding:0 20px;">Məqalələr yüklənir...</span>
          </div>
       </div>
   </div>
@@ -462,7 +465,7 @@
           <div class="filters-card">
               <div class="search-wrapper">
                   <i class="fas fa-search"></i>
-                  <input type="text" id="newsSearch" class="search-input" placeholder="Xəbər axtar...">
+                  <input type="text" id="newsSearch" class="search-input" placeholder="Məqalə axtar...">
               </div>
               <select id="categoryFilter" class="filter-select">
                   <option value="all">Bütün kateqoriyalar</option>
@@ -472,7 +475,7 @@
                   <option value="oldest">Ən köhnə</option>
               </select>
               <div id="adminControls" class="admin-controls">
-                  <button class="btn-add" onclick="openAddNewsModal()"><i class="fas fa-plus"></i> <span class="desktop-only">Yeni Xəbər</span></button>
+                  <button class="btn-add" onclick="openAddNewsModal()"><i class="fas fa-plus"></i> <span class="desktop-only">Yeni Məqalə</span></button>
                   <button id="fixSlugsBtn" class="btn-add" style="background:#f59e0b; margin-left:8px;" onclick="fixAllSlugs()"><i class="fas fa-wrench"></i> <span class="desktop-only">Slugs</span></button>
               </div>
           </div>
@@ -484,7 +487,7 @@
   <!-- Newsletter -->
   <section class="newsletter-section">
       <div class="newsletter-content">
-          <h2>Xəbərləri Qaçırmayın</h2>
+          <h2>Məqalələri Qaçırmayın</h2>
           <p>Həftəlik ən vacib xəbərləri email ünvanınıza göndərək.</p>
           <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Abunə olduğunuz üçün təşəkkürlər!');">
               <input type="email" placeholder="Email ünvanınız" required>
@@ -507,7 +510,7 @@
   <div class="modal" id="newsModal">
       <div class="modal-content" style="max-width: 900px;">
           <div class="modal-header">
-              <h3 class="modal-title" id="modalTitle">Yeni Xəbər</h3>
+              <h3 class="modal-title" id="modalTitle">Yeni Məqalə</h3>
               <button class="close-modal" onclick="closeNewsModal()"><i class="fas fa-times"></i></button>
           </div>
           <form id="newsForm" onsubmit="handleNewsSubmit(event)">

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xəbər – İmtahan Platforması</title>
+  <title>Məqalə – İmtahan Bloq</title>
   <link rel="shortcut icon" href="logo.png" type="image/png">
   <link rel="icon" href="/assets/logo.png" type="image/png" sizes="32x32">
   <link rel="icon" href="/assets/logo.png" type="image/png" sizes="16x16">
@@ -368,8 +368,8 @@
           <i class="fas fa-graduation-cap"></i>
         </div>
         <div class="nav-logo-text">
-          <h1>İmtahan Xəbər</h1>
-          <span>Təhsil Platforması</span>
+          <h1>İmtahan Bloq</h1>
+          <span>Təhsil, inkişaf və uğur üçün faydalı məqalələr</span>
         </div>
       </a>
       
@@ -381,10 +381,10 @@
 
   <!-- News Ticker -->
   <div class="news-ticker-container">
-      <div class="ticker-label"><i class="fas fa-bolt" style="margin-right:8px;"></i> Son Xəbərlər</div>
+      <div class="ticker-label"><i class="fas fa-bolt" style="margin-right:8px;"></i> Son Məqalələr</div>
       <div class="ticker-wrapper">
          <div class="ticker-content" id="newsTickerContent">
-            <span style="padding:0 20px;">Xəbərlər yüklənir...</span>
+           <span style="padding:0 20px;">Məqalələr yüklənir...</span>
          </div>
       </div>
   </div>
@@ -421,7 +421,7 @@
 
         <!-- Related News (Inside Card) -->
         <section class="related-section" id="relatedSection" style="display: none; border-top: 1px solid var(--border); padding-top: 40px;">
-            <h3 class="related-title">Oxşar Xəbərlər</h3>
+            <h3 class="related-title">Oxşar Məqalələr</h3>
             <div class="related-grid" id="relatedGrid"></div>
         </section>
     </article>
@@ -622,11 +622,11 @@
         setMetaProp('og:description', desc);
         setMetaProp('og:image', image);
         setMetaProp('og:image:alt', item.title || '');
-        setMetaProp('og:site_name', 'İmtahan');
+        setMetaProp('og:site_name', 'İmtahan Bloq');
         setMetaProp('og:locale', 'az_AZ');
         setMetaProp('article:published_time', publishedIso);
         setMetaProp('article:modified_time', modifiedIso);
-        setMetaProp('article:section', item.category || 'Xəbərlər');
+        setMetaProp('article:section', item.category || 'Bloq');
         if (item.tags && item.tags.length) item.tags.forEach(function(t){ appendMetaProp('article:tag', t); });
         setMetaName('twitter:card', 'summary_large_image');
         setMetaName('twitter:url', url);
@@ -637,19 +637,61 @@
         setLinkRel('canonical', url);
         var jsonLd = {
             "@context": "https://schema.org",
-            "@type": "NewsArticle",
+            "@type": "BlogPosting",
             "headline": item.title || '',
+            "description": desc,
             "image": [image],
             "datePublished": publishedIso,
             "dateModified": modifiedIso,
-            "author": {"@type": "Organization", "name": "İmtahan"},
-            "publisher": {"@type": "Organization", "name": "İmtahan", "logo": {"@type": "ImageObject", "url": "https://imtahan.site/assets/logo.png"}},
-            "description": desc,
-            "articleSection": item.category || 'Xəbərlər',
+            "author": [{
+                "@type": "Organization",
+                "name": "İmtahan Bloq",
+                "url": location.origin
+            }],
+            "publisher": {
+                "@type": "Organization",
+                "name": "İmtahan Bloq",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://imtahan.site/assets/logo.png"
+                }
+            },
+            "articleSection": item.category || 'Bloq',
             "keywords": item.tags && item.tags.length ? item.tags.join(',') : '',
-            "mainEntityOfPage": {"@type": "WebPage", "@id": url}
+            "mainEntityOfPage": {
+                "@type": "WebPage",
+                "@id": url
+            }
         };
-        setJsonLd(jsonLd);
+        var breadcrumbs = {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Ana Səhifə",
+                    "item": location.origin + "/"
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Bloq",
+                    "item": location.origin + "/news"
+                }
+            ].concat(item.category ? [{
+                "@type": "ListItem",
+                "position": 3,
+                "name": item.category,
+                "item": location.origin + "/news?category=" + encodeURIComponent(item.category)
+            }] : []).concat([{
+                "@type": "ListItem",
+                "position": item.category ? 4 : 3,
+                "name": item.title || '',
+                "item": url
+            }])
+        };
+        setJsonLd([jsonLd, breadcrumbs]);
     }
 
     async function loadArticle() {
@@ -733,7 +775,7 @@
                         <p style="color: #666; font-size: 18px;">Bağlantı zəifdir və ya xəbər tapılmadı.</p>
                         <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
                             <a href="javascript:location.reload()" style="padding:10px 20px; background:var(--primary); color:white; border-radius:5px; text-decoration:none;">Yenidən yoxla</a>
-                            <a href="/news" style="padding:10px 20px; background:#f3f4f6; color:var(--text-main); border-radius:5px; text-decoration:none;">Xəbərlərə qayıt</a>
+                            <a href="/news" style="padding:10px 20px; background:#f3f4f6; color:var(--text-main); border-radius:5px; text-decoration:none;">Bloqa qayıt</a>
                         </div>
                     </div>
                 `;
@@ -826,8 +868,8 @@
                 document.getElementById('loading').innerHTML = `
                     <div style="text-align:center; padding: 40px;">
                         <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
-                        <p style="color: #666; font-size: 18px;">Xəbər tapılmadı və ya silinib.</p>
-                        <a href="/news" style="display:inline-block; margin-top:20px; padding:10px 20px; background:var(--primary); color:white; border-radius:5px; text-decoration:none;">Xəbərlərə qayıt</a>
+                        <p style="color: #666; font-size: 18px;">Məqalə tapılmadı və ya silinib.</p>
+                        <a href="/news" style="display:inline-block; margin-top:20px; padding:10px 20px; background:var(--primary); color:white; border-radius:5px; text-decoration:none;">Bloqa qayıt</a>
                     </div>
                 `;
                 return;
@@ -862,14 +904,14 @@
         console.log("Rendering article:", item.id);
         
         try {
-            document.title = `${item.title || 'Xəbər'} – İmtahan Platforması`;
+            document.title = `${item.title || 'Məqalə'} – İmtahan Bloq`;
             setSeoTags(item);
         } catch (e) {
             console.error("SEO/Title error:", e);
         }
         
         try {
-            document.getElementById('newsCategory').textContent = item.category || 'Xəbərlər';
+            document.getElementById('newsCategory').textContent = item.category || 'Bloq';
             document.getElementById('newsTitle').textContent = item.title || '';
             
             const metaDiv = document.getElementById('newsMeta');

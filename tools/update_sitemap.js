@@ -68,15 +68,16 @@ async function generateSitemap() {
                     let htmlContent = fs.readFileSync(templatePath, 'utf8');
                     
                     // Meta teqləri və başlığı dinamik olaraq ilkin HTML-ə yerləşdiririk (Google üçün)
-                    const title = `${data.title} – İmtahan Platforması`;
+                    const title = `${data.title} – İmtahan Bloq`;
                     const description = (data.excerpt || data.content || '').replace(/<[^>]+>/g, ' ').substring(0, 160).trim();
                     const imageUrl = data.imageUrl || 'https://imtahan.site/assets/logo.png';
                     const canonical = `https://imtahan.site/news/${data.slug}`;
 
-                    // 1. Base tag əlavə edirik ki, daxili qovluqda bütün linklər düzgün işləsin
-                    // 2. Title və Meta teqləri yeniləyirik
-                    // 3. Canonical linki daxil edirik
-                    
+                    const publishedISO = (data.date ? new Date(data.date).toISOString() : new Date().toISOString());
+                    const modifiedISO = publishedISO;
+                    const section = data.category || 'Bloq';
+                    const tags = Array.isArray(data.tags) ? data.tags : [];
+                    const articleTagMeta = tags.map(t => `<meta property="article:tag" content="${String(t).trim()}">`).join('\\n');
                     const seoTags = `
     <base href="/news/">
     <title>${title}</title>
@@ -87,6 +88,29 @@ async function generateSitemap() {
     <meta property="og:image" content="${imageUrl}">
     <meta property="og:url" content="${canonical}">
     <meta property="og:type" content="article">
+    <meta property="og:site_name" content="İmtahan Bloq">
+    <meta property="article:published_time" content="${publishedISO}">
+    <meta property="article:modified_time" content="${modifiedISO}">
+    <meta property="article:section" content="${section}">
+    ${articleTagMeta}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="${title}">
+    <meta name="twitter:description" content="${description}">
+    <meta name="twitter:image" content="${imageUrl}">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "${data.title.replace(/"/g, '\\"')}",
+      "description": "${description.replace(/"/g, '\\"')}",
+      "image": ["${imageUrl}"],
+      "datePublished": "${publishedISO}",
+      "author": {
+        "@type": "Organization",
+        "name": "İmtahan Bloq"
+      }
+    }
+    </script>
                     `;
 
                     htmlContent = htmlContent.replace(/<title>.*?<\/title>/, seoTags);

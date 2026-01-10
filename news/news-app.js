@@ -33,7 +33,7 @@ let currentUser = null;
 let allNews = [];
 let lastVisibleDoc = null; // For pagination
 let isAllNewsPage = false;
-let categories = ['Rəsmi Xəbərlər', 'Təlimlər', 'Müsabiqələr', 'Texnoloji Yeniliklər'];
+let categories = ['İmtahana Hazırlıq', 'Fənn İzahları', 'Motivasiya', 'Məsləhətlər', 'Təhsil Siyasəti'];
 let currentEditingId = null;
 let savedSelectionRange = null;
 
@@ -149,7 +149,7 @@ async function loadNews() {
         if (cached) {
             const parsed = JSON.parse(cached);
             if (Date.now() - parsed.timestamp < 5 * 60 * 1000) {
-                console.log("Xəbərlər cache-dən yükləndi");
+                console.log("Məqalələr cache-dən yükləndi");
                 allNews = parsed.data;
                 renderNews(allNews);
                 updateTicker(allNews);
@@ -178,7 +178,7 @@ async function loadNews() {
             document.getElementById('newsGrid').innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
                     <i class="fas fa-database fa-2x" style="color: var(--text-muted);"></i>
-                    <p style="margin-top: 10px; color: var(--text-muted);">Xəbərləri yükləmək mümkün olmadı. (Database Permission Error)</p>
+                    <p style="margin-top: 10px; color: var(--text-muted);">Məqalələri yükləmək mümkün olmadı. (Database Permission Error)</p>
                     <p style="font-size: 0.9em; color: #666; margin-top:5px;">Firebase Qaydaları (Firestore Rules) oxumağa icazə vermir.</p>
                 </div>
             `;
@@ -318,7 +318,7 @@ function updateTicker(list) {
     const container = document.getElementById('newsTickerContent');
     if (!container) return;
     if (list.length === 0) {
-        container.innerHTML = '<span style="padding:0 20px;">Xəbər yoxdur.</span>';
+        container.innerHTML = '<span style="padding:0 20px;">Məqalə yoxdur.</span>';
         return;
     }
 
@@ -385,11 +385,11 @@ function buildIndexDescription(list) {
     var titles = (list || []).slice(0, 5).map(n => n.title).filter(Boolean);
     var s = titles.join(' • ');
     if (s.length > 200) s = s.slice(0, 200);
-    return s || 'Təhsilə dair ən son xəbərlər və yeniliklər.';
+    return s || 'Təhsilə dair faydalı məqalələr və izahlar.';
 }
 function setIndexSeo(list) {
     var url = location.origin + '/news';
-    var title = 'Xəbərlər – İmtahan Platforması';
+    var title = 'Bloq və Məqalələr – İmtahan Platforması';
     var desc = buildIndexDescription(list || []);
     var image = 'https://imtahan.site/assets/logo.png';
     document.title = title;
@@ -401,7 +401,7 @@ function setIndexSeo(list) {
     setMetaProp('og:description', desc);
     setMetaProp('og:image', image);
     setMetaProp('og:image:alt', title);
-    setMetaProp('og:site_name', 'İmtahan');
+    setMetaProp('og:site_name', 'İmtahan Bloq');
     setMetaProp('og:locale', 'az_AZ');
     setMetaName('twitter:card', 'summary_large_image');
     setMetaName('twitter:url', url);
@@ -413,7 +413,7 @@ function setIndexSeo(list) {
     var org = {
         "@context": "https://schema.org",
         "@type": "Organization",
-        "name": "İmtahan",
+        "name": "İmtahan Bloq",
         "url": location.origin,
         "logo": image
     };
@@ -421,7 +421,7 @@ function setIndexSeo(list) {
         "@context": "https://schema.org",
         "@type": "WebSite",
         "url": location.origin + "/news",
-        "name": "İmtahan Xəbər",
+        "name": "İmtahan Bloq",
         "potentialAction": {
             "@type": "SearchAction",
             "target": location.origin + "/news?q={search_term_string}",
@@ -434,11 +434,22 @@ function setIndexSeo(list) {
         "itemListElement": (list || []).slice(0, 10).map((n, i) => ({
             "@type": "ListItem",
             "position": i + 1,
-            "url": location.origin + "/news/view.html?id=" + n.id,
+            "url": location.origin + getNewsLink(n),
             "name": n.title
         }))
     };
-    setJsonLd([org, website, itemList]);
+    var blog = {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "url": location.origin + "/news",
+        "name": "İmtahan Bloq",
+        "blogPost": (list || []).slice(0, 10).map(n => ({
+            "@type": "BlogPosting",
+            "headline": n.title,
+            "url": location.origin + getNewsLink(n)
+        }))
+    };
+    setJsonLd([org, website, itemList, blog]);
 }
 
 function shareArticle(platform, url, title) {
@@ -481,7 +492,7 @@ function setupNewsletterForm() {
 // Modal Functions
 window.openAddNewsModal = function() {
     currentEditingId = null;
-    document.getElementById('modalTitle').textContent = 'Yeni Xəbər';
+    document.getElementById('modalTitle').textContent = 'Yeni Məqalə';
     document.getElementById('newsForm').reset();
     document.getElementById('richEditor').innerHTML = '';
     document.getElementById('newsId').value = '';
@@ -500,7 +511,7 @@ window.editNews = function(id) {
     if (!item) return;
     
     currentEditingId = id;
-    document.getElementById('modalTitle').textContent = 'Xəbəri Redaktə Et';
+    document.getElementById('modalTitle').textContent = 'Məqaləni Redaktə Et';
     document.getElementById('newsId').value = id;
     document.getElementById('newsTitle').value = item.title;
     document.getElementById('richEditor').innerHTML = item.content || '';
@@ -536,7 +547,7 @@ window.removeTag = function(index) {
 }
 
 window.deleteNews = async function(id) {
-    if (!confirm('Bu xəbəri silmək istədiyinizə əminsiniz?')) return;
+    if (!confirm('Bu məqaləni silmək istədiyinizə əminsiniz?')) return;
     try {
         await db.collection('news').doc(id).delete();
         // Cache təmizlə
