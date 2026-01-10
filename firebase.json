@@ -8,7 +8,27 @@
     ],
     "cleanUrls": true,
     "trailingSlash": false,
+    "redirects": [
+      {
+        "source": "/news",
+        "destination": "/bloq",
+        "type": 301
+      },
+      {
+        "source": "/news/**",
+        "destination": "/bloq/**",
+        "type": 301
+      }
+    ],
     "rewrites": [
+      {
+        "source": "/bloq",
+        "destination": "/news/index.html"
+      },
+      {
+        "source": "/bloq/**",
+        "destination": "/news/view.html"
+      },
       {
         "source": "/news/**",
         "destination": "/news/view.html"
