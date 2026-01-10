@@ -8,7 +8,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyAak_eY0WNpY7cqAEuWEBG9wBDhg1NPw_0",
     authDomain: "imtahansistemi-17659.firebaseapp.com",
     projectId: "imtahansistemi-17659",
-    storageBucket: "imtahansistemi-17659.appspot.com",
+    storageBucket: "imtahansistemi-17659.firebasestorage.app",
     messagingSenderId: "715396853166",
     appId: "1:715396853166:web:9829b853e5e572de4d2c3f"
 };
@@ -34,7 +34,7 @@ async function generateSitemap() {
         // Static pages
         const staticPages = [
             { loc: 'https://imtahan.site/', priority: '1.0', changefreq: 'daily' },
-            { loc: 'https://imtahan.site/news/index.html', priority: '0.9', changefreq: 'hourly' },
+            { loc: 'https://imtahan.site/news', priority: '0.9', changefreq: 'hourly' },
             { loc: 'https://imtahan.site/index.html', priority: '0.8', changefreq: 'weekly' }
         ];
 
