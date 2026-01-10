@@ -77,7 +77,7 @@ async function generateSitemap() {
                     const modifiedISO = publishedISO;
                     const section = data.category || 'Bloq';
                     const tags = Array.isArray(data.tags) ? data.tags : [];
-                    const articleTagMeta = tags.map(t => `<meta property="article:tag" content="${String(t).trim()}">`).join('\\n');
+                    const articleTagMeta = tags.map(t => `<meta property="article:tag" content="${String(t).trim()}">`).join('\n');
                     const seoTags = `
     <base href="/bloq/">
     <title>${title}</title>
