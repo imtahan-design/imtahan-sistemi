@@ -12,11 +12,10 @@
             // deməli bu xəbər linkidir (məs: /news/maraqli-xeber-slug)
             if (path.includes('/news/')) {
                 // Slug-ı çıxarırıq (sonuncu hissə)
-                var parts = path.split('/');
+                var parts = path.split('/').filter(p => p);
                 var slug = parts[parts.length - 1];
                 
                 // view.html faylına yönləndiririk, slug-ı parametr kimi ötürürük
-                // view.html özü URL-i təmizləyəcək
                 if (slug && slug !== 'index.html' && slug !== 'view.html') {
                     var newUrl = '/news/view.html?slug=' + encodeURIComponent(slug);
                     window.location.replace(newUrl);

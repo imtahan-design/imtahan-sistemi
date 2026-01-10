@@ -389,7 +389,7 @@ function buildIndexDescription(list) {
     return s || 'Təhsilə dair ən son xəbərlər və yeniliklər.';
 }
 function setIndexSeo(list) {
-    var url = location.origin + '/news/index.html';
+    var url = location.origin + '/news';
     var title = 'Xəbərlər – İmtahan Platforması';
     var desc = buildIndexDescription(list || []);
     var image = 'https://imtahan.site/assets/logo.png';
@@ -421,11 +421,11 @@ function setIndexSeo(list) {
     var website = {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "url": location.origin + "/news/",
-        "name": "İmtahan Xəbərlər",
+        "url": location.origin + "/news",
+        "name": "İmtahan Xəbər",
         "potentialAction": {
             "@type": "SearchAction",
-            "target": location.origin + "/news/index.html?q={search_term_string}",
+            "target": location.origin + "/news?q={search_term_string}",
             "query-input": "required name=search_term_string"
         }
     };
