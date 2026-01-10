@@ -26,12 +26,16 @@
         "destination": "/news/index.html"
       },
       {
+        "source": "/bloq/",
+        "destination": "/news/index.html"
+      },
+      {
         "source": "/bloq/**",
         "destination": "/news/view.html"
       },
       {
-        "source": "/news/**",
-        "destination": "/news/view.html"
+        "source": "**",
+        "destination": "/index.html"
       }
     ]
   }
