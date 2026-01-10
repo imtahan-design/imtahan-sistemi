@@ -468,9 +468,33 @@
         apiKey: "AIzaSyAak_eY0WNpY7cqAEuWEBG9wBDhg1NPw_0",
         authDomain: "imtahansistemi-17659.firebaseapp.com",
         projectId: "imtahansistemi-17659",
-        storageBucket: "imtahansistemi-17659.appspot.com",
+        storageBucket: "imtahansistemi-17659.firebasestorage.app",
         messagingSenderId: "715396853166",
         appId: "1:715396853166:web:9829b853e5e572de4d2c3f"
+    };
+
+    // Diagnostics helper
+    const diag = {
+        logs: [],
+        log: function(msg, data) {
+            const entry = `[${new Date().toLocaleTimeString()}] ${msg} ${data ? JSON.stringify(data) : ''}`;
+            console.log(entry);
+            this.logs.push(entry);
+            if (window.location.search.includes('debug=1')) {
+                let panel = document.getElementById('diagPanel');
+                if (!panel) {
+                    panel = document.createElement('div');
+                    panel.id = 'diagPanel';
+                    panel.style = 'position:fixed; bottom:0; right:0; background:rgba(0,0,0,0.8); color:white; padding:10px; font-family:monospace; font-size:12px; max-height:200px; overflow:auto; z-index:9999; width:100%; pointer-events:none;';
+                    document.body.appendChild(panel);
+                }
+                panel.innerHTML = this.logs.join('<br>');
+                panel.scrollTop = panel.scrollHeight;
+            }
+        }
+    };
+    window.onerror = function(msg, url, line) {
+        diag.log(`GLOBAL ERROR: ${msg} at ${url}:${line}`);
     };
 
     // Initialize Firebase
@@ -484,11 +508,29 @@
     function readLocalNews() {
         try { return JSON.parse(localStorage.getItem(LOCAL_NEWS_KEY) || '[]'); } catch { return []; }
     }
+    
+    function getNewsLink(item) {
+        if (!item) return '#';
+        if (window.location.protocol === 'file:' || !item.slug) {
+            return '/news/view.html?id=' + item.id;
+        }
+        const slug = item.slug.startsWith('/') ? item.slug.substring(1) : item.slug;
+        return '/news/' + slug;
+    }
     function formatDate(dateStr) {
         if (!dateStr) return '';
-        const date = new Date(dateStr);
-        const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
-        return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+        try {
+            // Handle Firestore Timestamp
+            if (dateStr && typeof dateStr.toDate === 'function') {
+                dateStr = dateStr.toDate();
+            }
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return dateStr; 
+            const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
+            return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+        } catch (e) {
+            return dateStr || '';
+        }
     }
     function buildDescription(item) {
         var t = item.excerpt || item.content || '';
@@ -559,8 +601,23 @@
         }
         var desc = buildDescription(item);
         var image = (item.imageUrl && /^https?:\/\//.test(item.imageUrl)) ? item.imageUrl : 'https://imtahan.site/assets/logo.png';
-        var modifiedIso = (item.updatedAt && item.updatedAt.toDate) ? item.updatedAt.toDate().toISOString() : (item.updatedAt ? new Date(item.updatedAt).toISOString() : new Date().toISOString());
-        var publishedIso = item.date ? new Date(item.date).toISOString() : new Date().toISOString();
+        var modifiedIso = new Date().toISOString();
+        try {
+            if (item.updatedAt && item.updatedAt.toDate) {
+                modifiedIso = item.updatedAt.toDate().toISOString();
+            } else if (item.updatedAt) {
+                const d = new Date(item.updatedAt);
+                if (!isNaN(d.getTime())) modifiedIso = d.toISOString();
+            }
+        } catch (e) { console.warn("Date error:", e); }
+
+        var publishedIso = new Date().toISOString();
+        try {
+            if (item.date) {
+                const d = new Date(item.date);
+                if (!isNaN(d.getTime())) publishedIso = d.toISOString();
+            }
+        } catch (e) { console.warn("Date error:", e); }
         setMetaName('robots', 'index,follow');
         setMetaName('description', desc);
         if (item.tags && item.tags.length) setMetaName('keywords', item.tags.join(','));
@@ -601,195 +658,274 @@
     }
 
     async function loadArticle() {
-        console.log("Loading article...");
+        diag.log("Loading article...");
         
-        // Timeout for loading
-        const loadingTimeout = setTimeout(() => {
-            const loadingDiv = document.getElementById('loading');
-            if (loadingDiv && loadingDiv.style.display !== 'none') {
-                loadingDiv.innerHTML += `
-                    <p style="margin-top: 15px; color: #f59e0b; font-size: 0.9em;">
-                        <i class="fas fa-wifi"></i> Bağlantı zəif ola bilər, xahiş edirik gözləyin...
-                    </p>
-                `;
-            }
-        }, 8000);
-
         const urlParams = new URLSearchParams(window.location.search);
         let id = urlParams.get('id');
         let slug = urlParams.get('slug'); 
-        console.log("Params:", { id, slug });
+        diag.log("Params extracted:", { id, slug });
         
         if (!id && !slug) {
             const parts = window.location.pathname.split('/').filter(p => !!p);
-            const last = parts[parts.length - 1];
-            if (last && last !== 'view.html' && last !== 'index.html' && last !== 'news') {
-                slug = last;
-                console.log("Extracted slug from path:", slug);
+            diag.log("Path parts for slug extraction:", parts);
+            
+            // URL /news/slug formatında olanda 'news' hissəsini çıxırıq
+            if (parts.length >= 2 && parts[0] === 'news') {
+                slug = parts[1];
+            } else if (parts.length === 1 && parts[0] !== 'news') {
+                slug = parts[0];
+            }
+            
+            if (slug && (slug === 'view.html' || slug === 'index.html' || slug === 'news')) {
+                slug = null;
+            }
+            
+            if (slug) {
+                diag.log("Extracted slug from path:", slug);
             }
         }
         
-        // If we have a slug but no ID, try to find the ID first
+        // Ensure db is available
+        if (typeof db === 'undefined') {
+            diag.log("ERROR: Firestore 'db' is not defined!");
+            document.getElementById('loading').innerHTML = '<p style="color:red; text-align:center; padding:20px;">Sistem xətası: Verilənlər bazası ilə əlaqə qurulmadı.</p>';
+            return;
+        }
+        
         if (slug && !id) {
-            // Update URL to look pretty if it's currently ugly (e.g. view.html?slug=...)
-            // This is purely visual for the user after the 404 redirect
             if (window.history && window.history.replaceState && window.location.protocol !== 'file:') {
-                // If we are at view.html?slug=xyz, we want to show /news/xyz
-                // But we must be careful not to trigger a reload or 404 loop if user refreshes
-                // Actually, for static hosting, we can't really change the URL to /news/slug 
-                // because a refresh would hit 404 again (which is fine, it redirects back).
-                // So let's make it look nice:
-                const cleanSlug = slug.split('?')[0]; // simple cleanup
+                const cleanSlug = slug.split('?')[0];
                 const newPath = '/news/' + cleanSlug;
-                // Only replace if we are not already there
                 if (window.location.pathname !== newPath) {
                    window.history.replaceState({path: newPath}, '', newPath);
+                   diag.log("Updated URL state to:", newPath);
                 }
             }
         }
 
-        // Increment view count moved to after ID resolution
-
-
-        // 1. Try Local Storage (Legacy/Fallback)
-        let localItem = id ? readLocalNews().find(n => n.id === id) : null;
-
-        // 2. Try Session Storage (Shared with Index)
-        if (!localItem) {
-            try {
+        // Try to find in cache first for instant load
+        let localItem = null;
+        try {
+            if (id) {
+                localItem = readLocalNews().find(n => n.id === id);
+            }
+            if (!localItem) {
                 const sessionCache = sessionStorage.getItem('news_list_cache');
                 if (sessionCache) {
                     const parsed = JSON.parse(sessionCache);
-                    // Check timestamp if needed, but for single article view, stale data is better than read
                     localItem = id ? parsed.data.find(n => n.id === id) : (slug ? parsed.data.find(n => n.slug === slug) : null);
                 }
-            } catch (e) { console.warn("Session cache read error", e); }
-        }
+            }
+        } catch (e) { diag.log("Cache read error", e.message); }
 
         if (localItem) {
+            diag.log("Found in cache, rendering immediately");
             renderArticle(localItem);
             loadRelatedNews(localItem.category, localItem.id);
             loadTrendNews(localItem.id);
-            // Cache tapılsa belə, serverdən yenilənmiş məlumatı (baxış sayını) gətirmək üçün davam edirik.
+        } else {
+            diag.log("Not found in cache, waiting for Firestore...");
+            loadTrendNews();
         }
+
+        // Global timeout for Firestore
+        const loadingTimeout = setTimeout(() => {
+            if (document.getElementById('loading').style.display !== 'none') {
+                diag.log("TIMEOUT: Firestore taking too long.");
+                document.getElementById('loading').innerHTML = `
+                    <div style="text-align:center; padding: 40px;">
+                        <i class="fas fa-wifi-slash" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
+                        <p style="color: #666; font-size: 18px;">Bağlantı zəifdir və ya xəbər tapılmadı.</p>
+                        <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
+                            <a href="javascript:location.reload()" style="padding:10px 20px; background:var(--primary); color:white; border-radius:5px; text-decoration:none;">Yenidən yoxla</a>
+                            <a href="/news" style="padding:10px 20px; background:#f3f4f6; color:var(--text-main); border-radius:5px; text-decoration:none;">Xəbərlərə qayıt</a>
+                        </div>
+                    </div>
+                `;
+            }
+        }, 12000);
 
         try {
             let articleData = null;
+            
+            // 1. Try Slug Query
             if (slug && !id) {
-                const snap = await db.collection('news').where('slug','==',slug).limit(1).get();
-                if (!snap.empty) {
-                    const d = snap.docs[0];
-                    id = d.id;
-                    articleData = { id: d.id, ...d.data() };
-                } else {
-                    console.warn("No article found with slug query, trying fallback search...");
-                    // Fallback: search among latest news for a matching title-slug
-                    try {
-                        const latestSnap = await db.collection('news').orderBy('date', 'desc').limit(50).get();
-                        console.log("Checking latest 50 news for slug match...");
-                        const found = latestSnap.docs.find(d => slugify(d.data().title) === slug);
-                        if (found) {
-                            console.log("Found article via title-slug fallback!", found.id);
-                            id = found.id;
-                            articleData = { id: found.id, ...found.data() };
-                        } else {
-                            console.warn("Fallback also failed to find article.");
-                        }
-                    } catch (e) {
-                        console.error("Fallback search failed:", e);
+                try {
+                    diag.log("Querying Firestore for slug:", slug);
+                    const snap = await db.collection('news').where('slug','==',slug).limit(1).get();
+                    if (!snap.empty) {
+                        const d = snap.docs[0];
+                        id = d.id;
+                        articleData = { id: d.id, ...d.data() };
+                        diag.log("Found by slug query", id);
+                    } else {
+                        diag.log("Slug query returned empty");
                     }
+                } catch (e) {
+                    diag.log("Slug query failed (missing index?)", e.message);
                 }
             }
             
-            if (!articleData && id) {
-                const doc = await db.collection('news').doc(id).get();
-                if (doc.exists) {
-                    articleData = { id: doc.id, ...doc.data() };
+            // 2. Try Fallback Title Match (if slug query failed or no slug field)
+            if (!articleData && slug && !id) {
+                try {
+                    diag.log("Trying fallback title-slug match (limit 200)...");
+                    // Increased limit to 200 for better chance
+                    const latestSnap = await db.collection('news').orderBy('date', 'desc').limit(200).get();
+                    diag.log("Fallback search in docs count:", latestSnap.size);
+                    const found = latestSnap.docs.find(d => {
+                        const data = d.data();
+                        return slugify(data.title) === slug || (data.slug === slug);
+                    });
+                    if (found) {
+                        diag.log("Found article via fallback match!", found.id);
+                        id = found.id;
+                        articleData = { id: found.id, ...found.data() };
+                    } else {
+                        diag.log("Fallback match found nothing in latest 200");
+                    }
+                } catch (e) {
+                    diag.log("Fallback match failed", e.message);
+                    // If orderBy failed (index), try without it
+                    try {
+                        diag.log("Retrying fallback without orderBy...");
+                        const snap2 = await db.collection('news').limit(200).get();
+                        const found2 = snap2.docs.find(d => {
+                            const data = d.data();
+                            return slugify(data.title) === slug || (data.slug === slug);
+                        });
+                        if (found2) {
+                            id = found2.id;
+                            articleData = { id: found2.id, ...found2.data() };
+                            diag.log("Found article via fallback (no orderBy)!", id);
+                        }
+                    } catch (e2) { diag.log("Fallback retry failed", e2.message); }
                 }
+            }
+            
+            // 3. Try Direct ID Query
+            if (!articleData && id) {
+                try {
+                    diag.log("Querying Firestore for ID:", id);
+                    const doc = await db.collection('news').doc(id).get();
+                    if (doc.exists) {
+                        articleData = { id: doc.id, ...doc.data() };
+                        diag.log("Found by ID query");
+                    } else {
+                        diag.log("ID query returned non-existent doc");
+                    }
+                } catch (e) {
+                    diag.log("ID query failed", e.message);
+                }
+            }
+
+            // 4. Final Fallback to local data
+            if (!articleData) {
+                diag.log("Checking initial data fallback...");
+                articleData = (typeof getInitialData === 'function' ? getInitialData().find(n => n.id === id || (slug && n.slug === slug)) : null);
             }
 
             if (!articleData) {
+                diag.log("FINAL ERROR: Article not found anywhere.");
                 clearTimeout(loadingTimeout);
-                // Check initial data fallback
-                const initialData = (typeof readLocalNews === 'function' ? readLocalNews().find(n => n.id === id) : null) || 
-                                  (typeof getInitialData === 'function' ? getInitialData().find(n => n.id === id) : null);
-                if (initialData) {
-                    articleData = initialData;
-                } else {
-                    document.getElementById('loading').innerHTML = `
-                        <div style="text-align:center; padding: 40px;">
-                            <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
-                            <p style="color: #666; font-size: 18px;">Xəbər tapılmadı və ya silinib.</p>
-                            <a href="/news" style="display:inline-block; margin-top:20px; padding:10px 20px; background:var(--primary-color); color:white; border-radius:5px; text-decoration:none;">Xəbərlərə qayıt</a>
-                        </div>
-                    `;
-                    return;
-                }
+                document.getElementById('loading').innerHTML = `
+                    <div style="text-align:center; padding: 40px;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
+                        <p style="color: #666; font-size: 18px;">Xəbər tapılmadı və ya silinib.</p>
+                        <a href="/news" style="display:inline-block; margin-top:20px; padding:10px 20px; background:var(--primary); color:white; border-radius:5px; text-decoration:none;">Xəbərlərə qayıt</a>
+                    </div>
+                `;
+                return;
             }
 
-            // Fix for 0 views: Increment view count now that we have the ID
+            // Update views
             if (articleData && articleData.id) {
                  try {
                      db.collection('news').doc(articleData.id).update({
                         views: firebase.firestore.FieldValue.increment(1)
                     });
-                    // Optimistic update for UI
                     articleData.views = (articleData.views || 0) + 1;
-                 } catch(e) { console.error("View increment error", e); }
+                    diag.log("Views incremented");
+                 } catch(e) { diag.log("View increment error", e.message); }
             }
 
             clearTimeout(loadingTimeout);
+            diag.log("Success! Rendering article.");
             renderArticle(articleData);
             loadRelatedNews(articleData.category, articleData.id);
             loadTrendNews(articleData.id);
 
         } catch (error) {
             clearTimeout(loadingTimeout);
-            console.error("Error loading article:", error);
+            diag.log("CRITICAL ERROR in loadArticle", error.message);
             document.getElementById('loading').innerHTML = `<p style="color: red; text-align:center; padding:20px;">Xəta baş verdi: ${error.message}</p>`;
         }
     }
 
     function renderArticle(item) {
         if (!item) return;
-        document.title = `${item.title || 'Xəbər'} – İmtahan Platforması`;
-        setSeoTags(item);
+        console.log("Rendering article:", item.id);
         
-        document.getElementById('newsCategory').textContent = item.category;
-        document.getElementById('newsTitle').textContent = item.title;
+        try {
+            document.title = `${item.title || 'Xəbər'} – İmtahan Platforması`;
+            setSeoTags(item);
+        } catch (e) {
+            console.error("SEO/Title error:", e);
+        }
         
-        document.getElementById('newsMeta').innerHTML = `
-            <span><i class="far fa-calendar"></i> ${formatDate(item.date)}</span>
-            <span><i class="far fa-clock"></i> ${item.readTime} dəq</span>
-            <span><i class="far fa-eye"></i> ${item.views || 0}</span>
-        `;
+        try {
+            document.getElementById('newsCategory').textContent = item.category || 'Xəbərlər';
+            document.getElementById('newsTitle').textContent = item.title || '';
+            
+            const metaDiv = document.getElementById('newsMeta');
+            if (metaDiv) {
+                metaDiv.innerHTML = `
+                    <span><i class="far fa-calendar"></i> ${formatDate(item.date)}</span>
+                    <span><i class="far fa-clock"></i> ${item.readTime || 3} dəq</span>
+                    <span><i class="far fa-eye"></i> ${item.views || 0}</span>
+                `;
+            }
 
-        if (item.imageUrl) {
-            const img = document.getElementById('newsCover');
-            img.src = item.imageUrl;
-            img.style.display = 'block';
+            if (item.imageUrl) {
+                const img = document.getElementById('newsCover');
+                if (img) {
+                    img.src = item.imageUrl;
+                    img.style.display = 'block';
+                }
+            }
+
+            // Format content
+            const content = item.content || item.excerpt || '';
+            const contentDiv = document.getElementById('newsContent');
+            if (contentDiv) {
+                if (!content || content.trim() === '') {
+                    contentDiv.innerHTML = '<p style="color:var(--text-muted); font-style:italic;">Məzmun yoxdur.</p>';
+                } else if (!content.trim().startsWith('<')) {
+                    contentDiv.innerHTML = content.split('\n').map(p => `<p>${p}</p>`).join('');
+                } else {
+                    contentDiv.innerHTML = content;
+                }
+            }
+
+            // Tags rendering
+            const tagsContainer = document.getElementById('newsTags');
+            if (tagsContainer) {
+                if (item.tags && item.tags.length > 0) {
+                    tagsContainer.innerHTML = item.tags.map(tag => `<span class="tag">#${tag}</span>`).join('');
+                    tagsContainer.style.display = 'flex';
+                } else {
+                    tagsContainer.style.display = 'none';
+                }
+            }
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('articleBody').style.display = 'block';
+            console.log("Article rendered successfully.");
+            
+        } catch (e) {
+            console.error("Render inner error:", e);
+            document.getElementById('loading').innerHTML = `<p style="color: red; text-align:center; padding:20px;">Göstərmə xətası: ${e.message}</p>`;
         }
-
-        // Format content
-        const content = item.content || item.excerpt;
-        // If content is plain text (not HTML), wrap in paragraphs
-        if (!content.trim().startsWith('<')) {
-             document.getElementById('newsContent').innerHTML = content.split('\n').map(p => `<p>${p}</p>`).join('');
-        } else {
-             document.getElementById('newsContent').innerHTML = content;
-        }
-
-        // Tags rendering
-        const tagsContainer = document.getElementById('newsTags');
-        if (item.tags && item.tags.length > 0) {
-            tagsContainer.innerHTML = item.tags.map(tag => `<span class="tag">#${tag}</span>`).join('');
-            tagsContainer.style.display = 'flex';
-        } else {
-            tagsContainer.style.display = 'none';
-        }
-
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('articleBody').style.display = 'block';
     }
 
     async function loadRelatedNews(category, currentId) {
@@ -840,7 +976,7 @@
                 grid.innerHTML = '';
                 filteredRelated.forEach(item => {
                     grid.innerHTML += `
-                        <a href="view.html?id=${item.id}" class="related-card" style="text-decoration: none;">
+                        <a href="${getNewsLink(item)}" class="related-card" style="text-decoration: none;">
                             ${item.imageUrl ? `<img src="${item.imageUrl}" class="related-img" onerror="this.insertAdjacentHTML('beforebegin','<div class=&quot;related-img&quot; style=&quot;background: var(--gradient-1)&quot;></div>'); this.remove();">` : `<div class="related-img" style="background: var(--gradient-1)"></div>`}
                             <div class="related-content">
                                 <span class="related-cat">${item.category}</span>
@@ -916,8 +1052,8 @@
                     grid.innerHTML = '';
                     trends.forEach(item => {
                         grid.innerHTML += `
-                            <a href="view.html?id=${item.id}" class="mini-card">
-                                ${item.imageUrl ? `<img src="${item.imageUrl}" class="mini-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM2MzY2ZjEiLz48L3N2Zz4='">` : `<div class="mini-img" style="background: var(--gradient-1)"></div>`}
+                            <a href="${getNewsLink(item)}" class="mini-card">
+                                ${item.imageUrl ? `<img src="${item.imageUrl}" class="mini-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM2MzY2ZjEiLz48L3N2Zz4='">` : `<div class="mini-img" style="background: var(--gradient-2)"></div>`}
                                 <div class="mini-content">
                                     <span class="mini-cat">${item.category}</span>
                                     <h4 class="mini-head">${item.title}</h4>
@@ -941,8 +1077,8 @@
                 grid.innerHTML = '';
                 trends.forEach(item => {
                     grid.innerHTML += `
-                            <a href="view.html?id=${item.id}" class="mini-card">
-                                ${item.imageUrl ? `<img src="${item.imageUrl}" class="mini-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM2MzY2ZjEiLz48L3N2Zz4='">` : `<div class="mini-img" style="background: var(--gradient-1)"></div>`}
+                            <a href="${getNewsLink(item)}" class="mini-card">
+                                ${item.imageUrl ? `<img src="${item.imageUrl}" class="mini-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM2MzY2ZjEiLz48L3N2Zz4='">` : `<div class="mini-img" style="background: var(--gradient-2)"></div>`}
                                 <div class="mini-content">
                                     <span class="mini-cat">${item.category}</span>
                                     <h4 class="mini-head">${item.title}</h4>
@@ -971,7 +1107,7 @@
         }
 
         const itemsHtml = itemsToRender.map(item => `
-            <a href="view.html?id=${item.id}" class="ticker-item">
+            <a href="${getNewsLink(item)}" class="ticker-item">
                 ${item.category ? `<span style="color:var(--secondary); font-weight:bold; margin-right:5px;">[${item.category.toUpperCase()}]</span>` : ''}
                 ${escapeHtml(item.title)}
             </a>

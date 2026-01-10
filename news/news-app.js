@@ -3,7 +3,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyAak_eY0WNpY7cqAEuWEBG9wBDhg1NPw_0",
     authDomain: "imtahansistemi-17659.firebaseapp.com",
     projectId: "imtahansistemi-17659",
-    storageBucket: "imtahansistemi-17659.appspot.com",
+    storageBucket: "imtahansistemi-17659.firebasestorage.app",
     messagingSenderId: "715396853166",
     appId: "1:715396853166:web:9829b853e5e572de4d2c3f"
 };
@@ -21,12 +21,12 @@ function getNewsLink(item) {
     if (!item) return '#';
     // If running locally (file protocol) or no slug, use query parameter
     if (window.location.protocol === 'file:' || !item.slug) {
-        return 'view.html?id=' + item.id;
+        return '/news/view.html?id=' + item.id;
     }
     // On server with rewrite rules, use the pretty slug
-    // Ensure slug doesn't start with /
+    // Ensure it starts with /news/
     const slug = item.slug.startsWith('/') ? item.slug.substring(1) : item.slug;
-    return slug;
+    return '/news/' + slug;
 }
 
 // State
@@ -303,9 +303,9 @@ function renderNews(list, featured = null) {
                 <div class="card-footer">
                     <a href="${getNewsLink(item)}" class="read-more">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
                     <div class="share-inline" style="display:flex; gap:8px; margin-left:8px;">
-                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}/news/${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
-                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}/news/${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
-                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}/news/${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
+                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
+                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
+                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
                     </div>
                 </div>
             </div>
@@ -798,6 +798,50 @@ window.handleNewsSubmit = async function(event) {
     }
 }
 
+// Slug Fixer for Admins
+window.fixAllSlugs = async function() {
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) {
+        alert('Bu əməliyyat üçün admin olmalısınız.');
+        return;
+    }
+    
+    if (!confirm('Bütün xəbərlərin slug-larını yoxlayıb düzəltmək istəyirsiniz? (Bu, Firestore-da bir neçə Write əməliyyatı edəcək)')) return;
+    
+    const btn = document.getElementById('fixSlugsBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşlənir...';
+    btn.disabled = true;
+
+    try {
+        const snapshot = await db.collection('news').get();
+        let fixCount = 0;
+        const batch = db.batch();
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (!data.slug) {
+                const newSlug = slugify(data.title);
+                batch.update(db.collection('news').doc(doc.id), { slug: newSlug });
+                fixCount++;
+            }
+        });
+        
+        if (fixCount > 0) {
+            await batch.commit();
+            alert(`${fixCount} xəbərin slug-ı bərpa edildi.`);
+            sessionStorage.removeItem('news_list_cache');
+            loadNews();
+        } else {
+            alert('Bütün xəbərlərin slug-ı qaydasındadır.');
+        }
+    } catch (err) {
+        alert('Xəta: ' + err.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
 // Category Management
 window.openCategoryModal = function() {
     renderCategoryList();
@@ -995,9 +1039,9 @@ function renderAllNewsGrid(list) {
                 <div class="news-footer">
                     <a href="${getNewsLink(item)}" class="read-more" style="color:var(--primary); text-decoration:none; font-weight:600;">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
                     <div class="share-inline" style="display:flex; gap:8px; margin-left:8px;">
-                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}/news/${getNewsLink(item)}','${item.title}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
-                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}/news/${getNewsLink(item)}','${item.title}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
-                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}/news/${getNewsLink(item)}','${item.title}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
+                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}${getNewsLink(item)}','${item.title}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
+                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}${getNewsLink(item)}','${item.title}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
+                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}${getNewsLink(item)}','${item.title}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
                     </div>
                 </div>
             </div>

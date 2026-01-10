@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İmtahan.site - Real İdarəetmə Paneli</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #00e676;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --insta-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        }
+        
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
+        h1 { color: var(--dark); margin: 0; }
+        h2 { margin-top: 0; font-size: 1.2rem; color: #64748b; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+        button.save-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .news-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #e2e8f0; }
+        .news-item:last-child { border-bottom: none; }
+        .news-content h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
+        .news-meta { font-size: 0.9rem; color: #64748b; }
+        
+        .insta-btn {
+            background: var(--light); color: #444; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 20px;
+            cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; font-weight: 600;
+        }
+        .insta-btn:hover { background: var(--insta-gradient); color: white; border-color: transparent; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(220, 39, 67, 0.3); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 500px; text-align: center; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .server-status { padding: 10px; background: #fee2e2; color: #b91c1c; border-radius: 6px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .server-status.online { background: #dcfce7; color: #166534; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>imtahan.site</h1>
+            <span style="color:#64748b">Admin Panel (Serverə qoşulur)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div id="status-indicator" class="server-status">
+                <i class="fas fa-circle-xmark"></i> Server Offline (Serveri işə salın)
+            </div>
+            <button id="btn-start-server" class="save-btn" style="background:#16a34a;" onclick="startLocalServer()">
+                <i class="fas fa-power-off"></i> Serveri Başlat
+            </button>
+        </div>
+    </header>
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+        <div class="card">
+            <h2><i class="fas fa-pen-to-square"></i> Yeni Xəbər Yaz</h2>
+            <div class="form-group">
+                <label>Başlıq</label>
+                <input type="text" id="new-title" placeholder="Xəbər başlığı...">
+            </div>
+            <div class="form-group">
+                <label>Məzmun</label>
+                <textarea id="new-content" rows="4" placeholder="Xəbərin tam mətni..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; resize: vertical;"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Kateqoriya</label>
+                <select id="new-category" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="Rəsmi Xəbərlər">Rəsmi Xəbərlər</option>
+                    <option value="Təlimlər">Təlimlər</option>
+                    <option value="Müsabiqələr">Müsabiqələr</option>
+                    <option value="Texnoloji Yeniliklər">Texnoloji Yeniliklər</option>
+                </select>
+            </div>
+            <button class="save-btn" onclick="addNews()">Əlavə et</button>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-newspaper"></i> Xəbərlər Siyahısı</h2>
+            <div id="news-list">
+                <div style="text-align: center; padding: 20px; color: #64748b;">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p>Xəbərlər yüklənir...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELEGRAM BOT SECTION -->
+    <div class="card" style="grid-column: 1 / -1; margin-top: 0px; border-left: 5px solid #229ED9;">
+        <h2 style="color: #229ED9;"><i class="fab fa-telegram"></i> Telegram Quiz Bot</h2>
+        
+        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+            <!-- CONTROL PANEL -->
+            <div style="flex: 1; min-width: 300px; padding-right: 20px; border-right: 1px solid #e2e8f0;">
+                <h3>⚡ Sürətli Əməliyyatlar</h3>
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <p style="margin: 0 0 10px 0;"><strong>Status:</strong> <span style="color: green;">Aktiv</span></p>
+                    <p style="margin: 0 0 10px 0;"><strong>Rejim:</strong> <span id="schedule-desc">12:00, 14:00, 16:00, 18:00, 20:00, 22:00, 00:00</span></p>
+                    <p style="margin: 0; color: #d97706; font-weight: bold; font-size: 1.1em;">
+                        <i class="far fa-clock"></i> Növbəti: <span id="next-run-time">Cədvəl üzrə</span>
+                    </p>
+                </div>
+                
+                <button onclick="startQuiz(30)" id="btn-start-quiz" class="save-btn" style="background: #229ED9; width: 100%; margin-bottom: 15px; padding: 15px;">
+                    <i class="fas fa-rocket"></i> Quizi İndi Başlat (30 Sual)
+                </button>
+                <p style="font-size: 0.8rem; color: #64748b;">* Bu düymə basılanda Telegram kanalında dərhal 30 suallıq sessiya başlayır.</p>
+            </div>
+
+            <!-- ADD QUESTION FORM -->
+            <div style="flex: 2; min-width: 300px;">
+                <h3>📝 Yeni Sual Əlavə Et</h3>
+                <div class="form-group">
+                    <label>Sual</label>
+                    <input type="text" id="q-text" placeholder="Sualın mətni..." style="width: 100%;">
+                </div>
+                
+                <label>Variantlar</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="q-opt0" placeholder="Variant A">
+                    <input type="text" id="q-opt1" placeholder="Variant B">
+                    <input type="text" id="q-opt2" placeholder="Variant C">
+                    <input type="text" id="q-opt3" placeholder="Variant D">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>Düzgün Cavab</label>
+                        <select id="q-correct" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <option value="0">Variant A</option>
+                            <option value="1">Variant B</option>
+                            <option value="2">Variant C</option>
+                            <option value="3">Variant D</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>İzah (Cavabdan sonra görünəcək)</label>
+                        <input type="text" id="q-explanation" placeholder="İzah mətni...">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                     <label>Kateqoriya</label>
+                     <input type="text" id="q-category" placeholder="Məs: Tarix, Coğrafiya..." value="Ümumi">
+                </div>
+
+                <button onclick="addQuizQuestion()" id="btn-add-question" class="save-btn" style="background: #229ED9;">
+                    <i class="fas fa-plus"></i> Sualı Bazaya Yaz
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="startModal" class="modal">
+  <div class="modal-content">
+    <h3>Serveri başlatmaq üçün addımlar</h3>
+    <div style="text-align:left; background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:12px; margin-top:10px;">
+      <div style="margin-bottom:8px;">1) Terminal açın</div>
+      <div style="margin-bottom:8px;">2) Qovluğa keçin:</div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <code style="background:#111827; color:#f9fafb; padding:6px 10px; border-radius:6px;">cd C:\Users\User\Desktop\Imtahan1</code>
+        <button class="save-btn" style="padding:6px 10px;" onclick="copyText('cd C:\\\\Users\\\\User\\\\Desktop\\\\Imtahan1')">Kopyala</button>
+      </div>
+      <div style="margin:10px 0 8px;">3) Serveri işə salın:</div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <code style="background:#111827; color:#f9fafb; padding:6px 10px; border-radius:6px;">node server.js</code>
+        <button class="save-btn" style="padding:6px 10px;" onclick="copyText('node server.js')">Kopyala</button>
+      </div>
+    </div>
+    <div style="margin-top:14px; display:flex; justify-content:center; gap:10px;">
+      <button class="save-btn" onclick="closeStartModal()">Bağla</button>
+    </div>
+  </div>
+</div>
+
+<script>
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyAak_eY0WNpY7cqAEuWEBG9wBDhg1NPw_0",
+        authDomain: "imtahansistemi-17659.firebaseapp.com",
+        projectId: "imtahansistemi-17659",
+        storageBucket: "imtahansistemi-17659.firebasestorage.app",
+        messagingSenderId: "715396853166",
+        appId: "1:715396853166:web:9829b853e5e572de4d2c3f"
+    };
+
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    // Serverin işlək olduğunu yoxlayaq
+    async function checkServer() {
+        const status = document.getElementById('status-indicator');
+        try {
+            // Sağlamlıq yoxlaması
+            const response = await fetch('http://localhost:5000/health');
+            const data = await response.json();
+            
+            if (data.status === 'online') {
+                status.className = 'server-status online';
+                status.innerHTML = `<i class="fas fa-check-circle"></i> Server Online (${data.instagram === 'connected' ? 'Instagram Bağlıdır' : 'Instagram Bağlı Deyil'})`;
+            }
+        } catch (e) {
+            console.log("Server tapılmadı");
+            status.className = 'server-status';
+            status.innerHTML = '<i class="fas fa-circle-xmark"></i> Server Offline (Serveri işə salın)';
+        }
+    }
+    
+    // Səhifə açılanda yoxla
+    checkServer();
+    setInterval(checkServer, 5000);
+    
+    // Real Xəbərləri Yüklə (Canlı İzləmə ilə)
+    function loadRealNews() {
+        db.collection('news').orderBy('date', 'desc').limit(20)
+            .onSnapshot((snapshot) => {
+                const list = document.getElementById('news-list');
+                
+                if (snapshot.empty) {
+                    list.innerHTML = '<div style="text-align: center; padding: 20px;">Xəbər tapılmadı.</div>';
+                    return;
+                }
+
+                list.innerHTML = ''; // Təmizlə
+                
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const item = document.createElement('div');
+                    item.className = 'news-item';
+                    
+                    // Vaxtı formatla (əgər timestamp formatındadırsa)
+                    let timeStr = 'Bilinmir';
+                    if (data.date) {
+                        try {
+                             // Firebase Timestamp və ya String ola bilər
+                             const date = data.date.toDate ? data.date.toDate() : new Date(data.date);
+                             timeStr = date.toLocaleTimeString('az-AZ', { hour: '2-digit', minute: '2-digit' });
+                        } catch(e) { timeStr = data.date; }
+                    }
+
+                    // Təhlükəsiz başlıq və məzmun (quotes escape)
+                    const escapeHtml = (str) => {
+                        return (str || '')
+                            .replace(/'/g, "\\'")     // JS string üçün tək dırnaq
+                            .replace(/"/g, "&quot;")  // HTML atributu üçün cüt dırnaq
+                            .replace(/\n/g, "\\n");   // Yeni sətir
+                    };
+
+                    const safeTitle = escapeHtml(data.title);
+                    const safeContent = escapeHtml(data.content);
+
+                    item.innerHTML = `
+                        <div class="news-content">
+                            <h3>${data.title}</h3>
+                            <div class="news-meta">Kateqoriya: ${data.category} | ${timeStr}</div>
+                        </div>
+                        <button class="insta-btn" onclick="shareToInsta('${safeTitle}', '${safeContent}', this)">
+                            <i class="fab fa-instagram"></i> Paylaş
+                        </button>
+                    `;
+                    list.appendChild(item);
+                });
+            }, (error) => {
+                console.error("Xəbərləri yükləmək mümkün olmadı:", error);
+                document.getElementById('news-list').innerHTML = `
+                    <div style="color:red; text-align:center; padding:20px;">
+                        Xəbərləri yükləmək mümkün olmadı.<br>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+            });
+    }
+
+    // Xəbərləri dinləməyə başla
+    loadRealNews();
+
+    function slugify(str) {
+        return (str || '')
+            .toLowerCase()
+            .replace(/ğ/g,'g').replace(/ə/g,'e').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c').replace(/ş/g,'s').replace(/ü/g,'u')
+            .replace(/[^a-z0-9\s-]/g,'')
+            .trim()
+            .replace(/\s+/g,'-')
+            .replace(/-+/g,'-')
+            .slice(0, 120);
+    }
+
+    async function addNews() {
+        const title = document.getElementById('new-title').value;
+        const content = document.getElementById('new-content').value;
+        const category = document.getElementById('new-category').value;
+        const btn = document.querySelector('.save-btn');
+        
+        if(!title) {
+            alert("Zəhmət olmasa başlıq yazın");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Əlavə edilir...';
+        
+        try {
+            const slug = slugify(title);
+            await db.collection('news').add({
+                title: title,
+                content: content,
+                category: category,
+                date: new Date().toISOString(), // Consistent with news-app.js
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                excerpt: content ? content.replace(/<[^>]+>/g, '').substring(0, 150) + '...' : title,
+                tags: [],
+                slug: slug,
+                views: 0,
+                status: 'published',
+                readTime: Math.ceil((content || '').split(' ').length / 200) || 1
+            });
+            
+            // Cache təmizlə ki, news səhifəsində dərhal görünsün
+            sessionStorage.removeItem('news_list_cache');
+            sessionStorage.removeItem('trend_news_cache');
+            
+            // Uğurlu
+            document.getElementById('new-title').value = '';
+            document.getElementById('new-content').value = '';
+            btn.innerHTML = '<i class="fas fa-check"></i> Əlavə edildi';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = 'Əlavə et';
+            }, 2000);
+            
+            // QEYD: Siyahıya əl ilə əlavə etmirik, çünki onSnapshot bunu avtomatik edəcək!
+        } catch (error) {
+            console.error("Xəta:", error);
+            alert("Xəta baş verdi: " + error.message);
+            btn.disabled = false;
+            btn.innerHTML = 'Əlavə et';
+        }
+    }
+
+    async function shareToInsta(title, content, btn) {
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Göndərilir...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('http://localhost:5000/share-to-instagram', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title: title, content: content })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                btn.innerHTML = '<i class="fas fa-check"></i> Paylaşıldı!';
+                btn.style.background = '#00e676';
+                btn.style.color = 'white';
+                
+                // Mövcud şəkli sil (əgər varsa)
+                const existingImg = btn.parentNode.querySelector('.generated-post');
+                if(existingImg) existingImg.remove();
+
+                // Yeni şəkli göstər
+                const img = document.createElement('img');
+                img.src = 'http://localhost:5000/' + result.image;
+                img.className = 'generated-post';
+                img.style.maxWidth = '200px';
+                img.style.marginTop = '15px';
+                img.style.borderRadius = '8px';
+                img.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+                img.style.display = 'block';
+                
+                // Düymənin altına əlavə et
+                const container = document.createElement('div');
+                container.style.width = '100%';
+                container.style.marginTop = '10px';
+                container.appendChild(img);
+                
+                // Flex container olduğu üçün strukturu bir az dəyişirik
+                btn.parentNode.style.flexWrap = 'wrap';
+                btn.parentNode.appendChild(container);
+
+                alert(`✅ Uğurla paylaşıldı!`);
+            } else {
+                alert('Xəta: ' + result.error);
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        } catch (error) {
+            alert('❌ Serverə qoşulmaq olmadı!\nZəhmət olmasa terminalda "python server.py" əmrini işlədin.');
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        }
+    }
+
+    async function startLocalServer() {
+        const status = document.getElementById('status-indicator');
+        try {
+            const resp = await fetch('http://localhost:5000/health?t=' + Date.now(), { cache: 'no-store' });
+            const data = await resp.json();
+            if (data && data.status === 'online') {
+                status.className = 'server-status online';
+                status.innerHTML = `<i class="fas fa-check-circle"></i> Server Online (${data.instagram === 'connected' ? 'Instagram Bağlıdır' : 'Instagram Bağlı Deyil'})`;
+                return;
+            }
+        } catch (e) {}
+        document.getElementById('startModal').style.display = 'flex';
+    }
+    function closeStartModal() {
+        document.getElementById('startModal').style.display = 'none';
+    }
+    function copyText(text) {
+        navigator.clipboard.writeText(text).then(() => {});
+    }
+
+    // TELEGRAM BOT FUNKSİYALARI
+    async function loadSchedule() {
+        try {
+            // Cache busting üçün timestamp əlavə edildi
+            const response = await fetch('http://localhost:5000/api/telegram/schedule?t=' + new Date().getTime());
+            const data = await response.json();
+            
+            // Rejim təsvirini yenilə
+            if (data.description) {
+                document.getElementById('schedule-desc').innerText = data.description;
+            }
+
+            // Növbəti vaxtı göstər (Əgər varsa)
+            if (data.nextRun) {
+                const date = new Date(data.nextRun);
+                const timeStr = date.toLocaleTimeString('az-AZ', { hour: '2-digit', minute: '2-digit' });
+                const dayStr = date.toLocaleDateString('az-AZ', { day: 'numeric', month: 'long' });
+                document.getElementById('next-run-time').innerHTML = `${timeStr} <span style="font-size:0.8em; color:#666">(${dayStr})</span>`;
+            } else {
+                // Əgər nextRun yoxdursa (yeni API formatı), sadəcə "Aktiv" yaz
+                document.getElementById('next-run-time').innerText = "Cədvəl aktivdir";
+            }
+        } catch (error) {
+            console.error("Schedule error:", error);
+            document.getElementById('next-run-time').innerText = "Serverlə əlaqə yoxdur";
+        }
+    }
+
+    // Səhifə yüklənəndə cədvəli yoxla
+    window.addEventListener('load', loadSchedule);
+    // Hər dəqiqə yenilə
+    setInterval(loadSchedule, 60000);
+
+    async function startQuiz(count) {
+        const btn = document.getElementById('btn-start-quiz');
+        const originalText = btn.innerHTML;
+        
+        if (!confirm(`${count} suallıq quiz sessiyasını başlatmaq istədiyinizə əminsiniz?`)) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Başladılır...';
+
+        try {
+            const response = await fetch('http://localhost:5000/api/telegram/start-quiz', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ count: count })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert("✅ Quiz sessiyası uğurla başladı!");
+            } else {
+                alert("❌ Xəta: " + result.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("❌ Serverlə əlaqə qurmaq mümkün olmadı.");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    async function addQuizQuestion() {
+        const question = document.getElementById('q-text').value;
+        const opt0 = document.getElementById('q-opt0').value;
+        const opt1 = document.getElementById('q-opt1').value;
+        const opt2 = document.getElementById('q-opt2').value;
+        const opt3 = document.getElementById('q-opt3').value;
+        const correct = parseInt(document.getElementById('q-correct').value);
+        const explanation = document.getElementById('q-explanation').value;
+        const category = document.getElementById('q-category').value;
+        
+        const btn = document.getElementById('btn-add-question');
+        const originalText = btn.innerHTML;
+
+        if (!question || !opt0 || !opt1 || !opt2 || !opt3) {
+            alert("Zəhmət olmasa sual və bütün variantları doldurun.");
+            return;
+        }
+
+        const newQuestion = {
+            question: question,
+            options: [opt0, opt1, opt2, opt3],
+            correct_option_id: correct,
+            explanation: explanation || "İzah yoxdur.",
+            category: category
+        };
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Əlavə edilir...';
+
+        try {
+            const response = await fetch('http://localhost:5000/api/telegram/add-question', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newQuestion)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert("✅ Sual bazaya əlavə edildi!");
+                // Sahələri təmizlə
+                document.getElementById('q-text').value = '';
+                document.getElementById('q-opt0').value = '';
+                document.getElementById('q-opt1').value = '';
+                document.getElementById('q-opt2').value = '';
+                document.getElementById('q-opt3').value = '';
+                document.getElementById('q-explanation').value = '';
+            } else {
+                alert("❌ Xəta: " + result.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("❌ Serverlə əlaqə qurmaq mümkün olmadı.");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+</script>
+
+</body>
+</html>
