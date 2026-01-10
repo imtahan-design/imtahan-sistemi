@@ -11,12 +11,12 @@
             // Əgər link /news/ ilə başlayırsa və fayl tapılmayıbsa (404),
             // deməli bu xəbər linkidir (məs: /news/maraqli-xeber-slug)
             if (path.includes('/news/')) {
-                // Slug-ı çıxarırıq (sonuncu hissə)
-                var parts = path.split('/').filter(p => p);
+                // Slug-ı çıxarırıq (boş olmayan sonuncu hissə)
+                var parts = path.split('/').filter(function(p) { return !!p; });
                 var slug = parts[parts.length - 1];
                 
                 // view.html faylına yönləndiririk, slug-ı parametr kimi ötürürük
-                if (slug && slug !== 'index.html' && slug !== 'view.html') {
+                if (slug && slug !== 'index.html' && slug !== 'view.html' && slug !== 'news') {
                     var newUrl = '/news/view.html?slug=' + encodeURIComponent(slug);
                     window.location.replace(newUrl);
                     return;

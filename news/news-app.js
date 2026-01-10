@@ -303,9 +303,9 @@ function renderNews(list, featured = null) {
                 <div class="card-footer">
                     <a href="${getNewsLink(item)}" class="read-more">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
                     <div class="share-inline" style="display:flex; gap:8px; margin-left:8px;">
-                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}/news/${getNewsLink(item)}','${item.title}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
-                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}/news/${getNewsLink(item)}','${item.title}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
-                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}/news/${getNewsLink(item)}','${item.title}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
+                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}/news/${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
+                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}/news/${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
+                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}/news/${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
                     </div>
                 </div>
             </div>
@@ -734,14 +734,14 @@ window.handleNewsSubmit = async function(event) {
     const newsData = {
         title,
         content,
-        excerpt,
+        excerpt: excerpt || (content ? content.replace(/<[^>]+>/g, '').substring(0, 150) + '...' : title),
         category,
-        readTime,
+        readTime: parseInt(readTime) || Math.ceil((content || '').split(' ').length / 200) || 3,
         imageUrl,
         tags: currentTags,
         date: new Date().toISOString(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        status: 'published', // default
+        status: 'published', 
         views: 0,
         isFeatured: false,
         slug
@@ -753,7 +753,8 @@ window.handleNewsSubmit = async function(event) {
             delete newsData.date; // Don't overwrite create date
             delete newsData.views;
             delete newsData.isFeatured;
-            delete newsData.slug;
+            // Biz slug-ı silmirik, əksinə əgər başlıq dəyişibsə slug-ı da yeniləyirik
+            // Və ya ən azından slug sahəsinin olduğundan əmin oluruq
             await db.collection('news').doc(currentEditingId).update(newsData);
         } else {
             const ref = await db.collection('news').add(newsData);
@@ -992,11 +993,11 @@ function renderAllNewsGrid(list) {
                 <h3 class="news-title">${item.title}</h3>
                 <p class="news-excerpt">${item.excerpt || ''}</p>
                 <div class="news-footer">
-                    <a href="view.html?id=${item.id}" class="read-more" style="color:var(--primary); text-decoration:none; font-weight:600;">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
+                    <a href="${getNewsLink(item)}" class="read-more" style="color:var(--primary); text-decoration:none; font-weight:600;">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
                     <div class="share-inline" style="display:flex; gap:8px; margin-left:8px;">
-                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}/news/view.html?id=${item.id}','${item.title}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
-                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}/news/view.html?id=${item.id}','${item.title}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
-                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}/news/view.html?id=${item.id}','${item.title}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
+                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}/news/${getNewsLink(item)}','${item.title}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
+                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}/news/${getNewsLink(item)}','${item.title}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
+                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}/news/${getNewsLink(item)}','${item.title}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
                     </div>
                 </div>
             </div>

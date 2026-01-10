@@ -538,6 +538,18 @@
         }
         s.textContent = JSON.stringify(data);
     }
+
+    function slugify(str) {
+        return (str || '')
+            .toLowerCase()
+            .replace(/ğ/g,'g').replace(/ə/g,'e').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c').replace(/ş/g,'s').replace(/ü/g,'u')
+            .replace(/[^a-z0-9\s-]/g,'')
+            .trim()
+            .replace(/\s+/g,'-')
+            .replace(/-+/g,'-')
+            .slice(0, 120);
+    }
+
     function setSeoTags(item) {
         var url = '';
         if (item.slug && location.protocol !== 'file:') {
@@ -589,16 +601,31 @@
     }
 
     async function loadArticle() {
+        console.log("Loading article...");
+        
+        // Timeout for loading
+        const loadingTimeout = setTimeout(() => {
+            const loadingDiv = document.getElementById('loading');
+            if (loadingDiv && loadingDiv.style.display !== 'none') {
+                loadingDiv.innerHTML += `
+                    <p style="margin-top: 15px; color: #f59e0b; font-size: 0.9em;">
+                        <i class="fas fa-wifi"></i> Bağlantı zəif ola bilər, xahiş edirik gözləyin...
+                    </p>
+                `;
+            }
+        }, 8000);
+
         const urlParams = new URLSearchParams(window.location.search);
         let id = urlParams.get('id');
-        let slug = urlParams.get('slug'); // Get slug from query parameter (from 404 redirect)
+        let slug = urlParams.get('slug'); 
+        console.log("Params:", { id, slug });
         
-        // If no explicit params, check URL path for direct slug access (local dev or supported server)
         if (!id && !slug) {
-            const parts = window.location.pathname.split('/');
+            const parts = window.location.pathname.split('/').filter(p => !!p);
             const last = parts[parts.length - 1];
-            if (last && last !== 'view.html' && last !== 'index.html') {
+            if (last && last !== 'view.html' && last !== 'index.html' && last !== 'news') {
                 slug = last;
+                console.log("Extracted slug from path:", slug);
             }
         }
         
@@ -654,24 +681,50 @@
                     const d = snap.docs[0];
                     id = d.id;
                     articleData = { id: d.id, ...d.data() };
+                } else {
+                    console.warn("No article found with slug query, trying fallback search...");
+                    // Fallback: search among latest news for a matching title-slug
+                    try {
+                        const latestSnap = await db.collection('news').orderBy('date', 'desc').limit(50).get();
+                        console.log("Checking latest 50 news for slug match...");
+                        const found = latestSnap.docs.find(d => slugify(d.data().title) === slug);
+                        if (found) {
+                            console.log("Found article via title-slug fallback!", found.id);
+                            id = found.id;
+                            articleData = { id: found.id, ...found.data() };
+                        } else {
+                            console.warn("Fallback also failed to find article.");
+                        }
+                    } catch (e) {
+                        console.error("Fallback search failed:", e);
+                    }
                 }
             }
-            let doc = null;
+            
             if (!articleData && id) {
-                doc = await db.collection('news').doc(id).get();
+                const doc = await db.collection('news').doc(id).get();
+                if (doc.exists) {
+                    articleData = { id: doc.id, ...doc.data() };
+                }
             }
 
-            if (!articleData && doc && !doc.exists) {
+            if (!articleData) {
+                clearTimeout(loadingTimeout);
                 // Check initial data fallback
-                const initialData = readLocalNews().find(n => n.id === id) || getInitialData().find(n => n.id === id);
+                const initialData = (typeof readLocalNews === 'function' ? readLocalNews().find(n => n.id === id) : null) || 
+                                  (typeof getInitialData === 'function' ? getInitialData().find(n => n.id === id) : null);
                 if (initialData) {
                     articleData = initialData;
                 } else {
-                    document.getElementById('loading').innerHTML = '<p style="color: red;">Xəbər tapılmadı.</p>';
+                    document.getElementById('loading').innerHTML = `
+                        <div style="text-align:center; padding: 40px;">
+                            <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
+                            <p style="color: #666; font-size: 18px;">Xəbər tapılmadı və ya silinib.</p>
+                            <a href="/news" style="display:inline-block; margin-top:20px; padding:10px 20px; background:var(--primary-color); color:white; border-radius:5px; text-decoration:none;">Xəbərlərə qayıt</a>
+                        </div>
+                    `;
                     return;
                 }
-            } else if (!articleData && doc && doc.exists) {
-                articleData = { id: doc.id, ...doc.data() };
             }
 
             // Fix for 0 views: Increment view count now that we have the ID
@@ -685,26 +738,21 @@
                  } catch(e) { console.error("View increment error", e); }
             }
 
+            clearTimeout(loadingTimeout);
             renderArticle(articleData);
             loadRelatedNews(articleData.category, articleData.id);
             loadTrendNews(articleData.id);
 
         } catch (error) {
+            clearTimeout(loadingTimeout);
             console.error("Error loading article:", error);
-            // Try fallback
-            const initialData = getInitialData().find(n => n.id === id);
-            if (initialData) {
-                renderArticle(initialData);
-                loadRelatedNews(initialData.category, initialData.id);
-                loadTrendNews(initialData.id);
-            } else {
-                document.getElementById('loading').innerHTML = `<p style="color: red;">Xəta baş verdi: ${error.message}</p>`;
-            }
+            document.getElementById('loading').innerHTML = `<p style="color: red; text-align:center; padding:20px;">Xəta baş verdi: ${error.message}</p>`;
         }
     }
 
     function renderArticle(item) {
-        document.title = `${item.title} – İmtahan Platforması`;
+        if (!item) return;
+        document.title = `${item.title || 'Xəbər'} – İmtahan Platforması`;
         setSeoTags(item);
         
         document.getElementById('newsCategory').textContent = item.category;
