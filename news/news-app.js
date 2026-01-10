@@ -25,7 +25,7 @@ function getNewsLink(item) {
     if (slug) {
         return '/bloq/' + slug;
     }
-    return '/bloq/view.html?id=' + item.id;
+    return '/news/view.html?id=' + item.id;
 }
 
 // State
@@ -783,7 +783,7 @@ window.handleNewsSubmit = async function(event) {
             try {
                 const postBody = {
                     title,
-                    url: `https://imtahan.site/news/${slug}`,
+                    url: `https://imtahan.site/bloq/${slug}`,
                     imageUrl,
                     excerpt,
                     tags: currentTags,
@@ -815,7 +815,7 @@ window.fixAllSlugs = async function() {
         return;
     }
     
-    if (!confirm('Bütün xəbərlərin slug-larını yoxlayıb düzəltmək istəyirsiniz? (Bu, Firestore-da bir neçə Write əməliyyatı edəcək)')) return;
+    if (!confirm('Bütün məqalələrin slug-larını yoxlayıb düzəltmək istəyirsiniz? (Bu, Firestore-da bir neçə Write əməliyyatı edəcək)')) return;
     
     const btn = document.getElementById('fixSlugsBtn');
     const originalText = btn.innerHTML;
@@ -838,11 +838,11 @@ window.fixAllSlugs = async function() {
         
         if (fixCount > 0) {
             await batch.commit();
-            alert(`${fixCount} xəbərin slug-ı bərpa edildi.`);
+            alert(`${fixCount} məqalənin slug-ı bərpa edildi.`);
             sessionStorage.removeItem('news_list_cache');
             loadNews();
         } else {
-            alert('Bütün xəbərlərin slug-ı qaydasındadır.');
+            alert('Bütün məqalələrin slug-ı qaydasındadır.');
         }
     } catch (err) {
         alert('Xəta: ' + err.message);
@@ -993,11 +993,11 @@ window.loadMoreNews = async function() {
         
         if (snapshot.empty) {
             if (btn) {
-                btn.textContent = 'Başqa xəbər yoxdur';
+                btn.textContent = 'Başqa məqalə yoxdur';
                 btn.disabled = true;
                 // If it's the first load and empty
                 if (!lastVisibleDoc) {
-                     document.getElementById('all-news-grid').innerHTML = '<p style="text-align:center; grid-column:1/-1;">Hələ ki xəbər yoxdur.</p>';
+                     document.getElementById('all-news-grid').innerHTML = '<p style="text-align:center; grid-column:1/-1;">Hələ ki məqalə yoxdur.</p>';
                 }
             }
             return;
