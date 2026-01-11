@@ -123,5 +123,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+    
+    match /messages/{messageId} {
+      allow read: if isAdmin() || isModerator() || (isAuthenticated() && resource.data.userId == request.auth.uid) || resource.data.userId == 'guest';
+      allow create: if true;
+      allow update, delete: if isAdmin() || isModerator();
+    }
   }
 }

@@ -532,6 +532,11 @@ window.openAddNewsModal = function() {
     document.getElementById('modalTitle').textContent = 'Yeni Məqalə';
     document.getElementById('newsForm').reset();
     document.getElementById('richEditor').innerHTML = '';
+    document.getElementById('htmlEditor').value = '';
+    
+    // Reset HTML mode if active
+    if (isHtmlMode) toggleHtmlMode();
+    
     document.getElementById('newsId').value = '';
     const slugEl = document.getElementById('newsSlug');
     if (slugEl) slugEl.value = '';
@@ -555,6 +560,11 @@ window.editNews = function(id) {
     document.getElementById('newsId').value = id;
     document.getElementById('newsTitle').value = item.title;
     document.getElementById('richEditor').innerHTML = item.content || '';
+    document.getElementById('htmlEditor').value = item.content || '';
+    
+    // Ensure we start in visual mode
+    if (isHtmlMode) toggleHtmlMode();
+    
     document.getElementById('newsExcerpt').value = item.excerpt || '';
     document.getElementById('newsCategory').value = item.category;
     document.getElementById('newsReadTime').value = item.readTime || 3;
@@ -772,12 +782,55 @@ window.restoreSelection = function() {
     }
 }
 
+let isHtmlMode = false;
+window.toggleHtmlMode = function() {
+    const richEditor = document.getElementById('richEditor');
+    const htmlEditor = document.getElementById('htmlEditor');
+    const btn = document.getElementById('htmlModeBtn');
+    
+    isHtmlMode = !isHtmlMode;
+    
+    if (isHtmlMode) {
+        // Switch to HTML
+        htmlEditor.value = richEditor.innerHTML;
+        richEditor.style.display = 'none';
+        htmlEditor.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-eye"></i> Visual';
+        btn.style.color = '#10b981'; // Green for visual mode
+        // Disable toolbar buttons
+        document.querySelectorAll('.toolbar-btn:not(#htmlModeBtn), .editor-select, .editor-color').forEach(el => {
+            el.style.opacity = '0.5';
+            el.style.pointerEvents = 'none';
+        });
+    } else {
+        // Switch to Visual
+        richEditor.innerHTML = htmlEditor.value;
+        htmlEditor.style.display = 'none';
+        richEditor.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-code"></i> HTML';
+        btn.style.color = 'var(--primary)';
+        // Enable toolbar buttons
+        document.querySelectorAll('.toolbar-btn, .editor-select, .editor-color').forEach(el => {
+            el.style.opacity = '1';
+            el.style.pointerEvents = 'auto';
+        });
+    }
+}
+
 // Form Submit
 window.handleNewsSubmit = async function(event) {
     event.preventDefault();
     
     const title = document.getElementById('newsTitle').value;
-    const content = document.getElementById('richEditor').innerHTML;
+    
+    // Get content based on mode
+    let content;
+    if (isHtmlMode) {
+        content = document.getElementById('htmlEditor').value;
+    } else {
+        content = document.getElementById('richEditor').innerHTML;
+    }
+    
     const excerpt = document.getElementById('newsExcerpt').value;
     const category = document.getElementById('newsCategory').value;
     const readTime = document.getElementById('newsReadTime').value;

@@ -559,19 +559,22 @@
                               </div>
                               <div style="width: 1px; height: 24px; background: #ddd; margin: 0 4px;"></div>
                               
-                              <button type="button" class="toolbar-btn" onclick="execCmd('bold')"><i class="fas fa-bold"></i></button>
-                              <button type="button" class="toolbar-btn" onclick="execCmd('italic')"><i class="fas fa-italic"></i></button>
-                              <button type="button" class="toolbar-btn" onclick="execCmd('underline')"><i class="fas fa-underline"></i></button>
-                              <button type="button" class="toolbar-btn" onclick="execCmd('justifyLeft')"><i class="fas fa-align-left"></i></button>
-                              <button type="button" class="toolbar-btn" onclick="execCmd('justifyCenter')"><i class="fas fa-align-center"></i></button>
-                              <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', 'H3')">H3</button>
-                              <button type="button" class="toolbar-btn" onclick="execCmd('createLink')"><i class="fas fa-link"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('bold')" title="Qalın"><i class="fas fa-bold"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('italic')" title="Maili"><i class="fas fa-italic"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('underline')" title="Altıxətli"><i class="fas fa-underline"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('justifyLeft')" title="Sola"><i class="fas fa-align-left"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('justifyCenter')" title="Mərkəzə"><i class="fas fa-align-center"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('justifyRight')" title="Sağa"><i class="fas fa-align-right"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', 'H3')" title="Başlıq H3">H3</button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('createLink')" title="Link Əlavə Et"><i class="fas fa-link"></i></button>
                               <label class="toolbar-btn" style="margin-bottom:0;" title="Şəkil əlavə et">
                                   <i class="fas fa-image"></i>
                                   <input type="file" style="display:none;" accept="image/*" onchange="handleEditorImageUpload(event)">
                               </label>
+                              <button type="button" class="toolbar-btn" onclick="toggleHtmlMode()" id="htmlModeBtn" title="HTML Rejimi" style="margin-left: auto; color: var(--primary); width: auto; padding: 0 8px;"><i class="fas fa-code"></i> HTML</button>
                           </div>
                           <div id="richEditor" class="rich-editor" contenteditable="true"></div>
+                          <textarea id="htmlEditor" class="rich-editor" style="display:none; font-family: monospace; white-space: pre; overflow: auto;"></textarea>
                       </div>
                   </div>
                   <div class="cms-sidebar">
