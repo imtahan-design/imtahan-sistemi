@@ -966,6 +966,11 @@ window.handleNewsSubmit = async function(event) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(postBody)
                 });
+                await fetch('http://localhost:5000/api/github/dispatch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ref: 'main' })
+                });
             } catch (err) {
                 console.warn('Telegram paylaşım alınmadı:', err.message);
             }
