@@ -15,20 +15,12 @@
         "type": 301
       },
       {
-        "source": "/news/**",
-        "destination": "/bloq/**",
+        "source": "/news/:path*",
+        "destination": "/bloq/:path*",
         "type": 301
       }
     ],
     "rewrites": [
-      {
-        "source": "/bloq",
-        "destination": "/news/index.html"
-      },
-      {
-        "source": "/bloq/",
-        "destination": "/news/index.html"
-      },
       {
         "source": "/bloq/**",
         "destination": "/news/view.html"

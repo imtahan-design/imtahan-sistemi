@@ -76,7 +76,12 @@ async function generateSitemap() {
                         .trim()
                         .replace(/"/g, '&quot;')
                         .substring(0, 160);
-                    const imageUrl = (data.imageUrl && !/^data:/i.test(data.imageUrl)) ? data.imageUrl : 'https://imtahan.site/assets/logo.png';
+                    let imageUrl = data.imageUrl || 'https://imtahan.site/assets/logo.png';
+                    if (imageUrl.startsWith('assets/')) {
+                        imageUrl = 'https://imtahan.site/' + imageUrl;
+                    } else if (!imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
+                        imageUrl = 'https://imtahan.site/assets/logo.png';
+                    }
                     const canonical = `https://imtahan.site/bloq/${data.slug}`;
 
                     const publishedISO = (data.date ? new Date(data.date).toISOString() : new Date().toISOString());
@@ -84,7 +89,7 @@ async function generateSitemap() {
                     const section = data.category || 'Bloq';
                     const tags = Array.isArray(data.tags) ? data.tags : [];
                     const articleTagMeta = tags.map(t => `<meta property="article:tag" content="${String(t).trim().replace(/"/g, '&quot;')}">`).join('\n    ');
-                    const seoTags = `<base href="/bloq/">
+                    const seoTags = `<base href="/">
     <title>${title}</title>
     <meta name="description" content="${description}">
     <link rel="canonical" href="${canonical}">
