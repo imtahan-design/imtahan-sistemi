@@ -42,6 +42,9 @@ app.post('/api/telegram/start-quiz', async (req, res) => {
     console.log(`🕹️ Admin paneldən Quiz başladılır (${questionCount} sual)...`);
     
     // Guard edilmiş başlanğıc
+    if (!telegramBot || typeof telegramBot.startQuizBatch !== 'function') {
+        return res.status(503).json({ success: false, message: 'Bot aktiv deyil' });
+    }
     const ok = await telegramBot.startQuizBatch(questionCount);
     if (!ok) {
         return res.status(429).json({ success: false, message: 'Batch artıq davam edir. Xahiş olunur bir qədər sonra yenidən.' });
@@ -50,12 +53,30 @@ app.post('/api/telegram/start-quiz', async (req, res) => {
     res.json({ success: true, message: `Quiz sessiyasi başladıldı (${questionCount} sual)` });
 });
 
+app.post('/api/admin/telegram-config', (req, res) => {
+    try {
+        const { token, channelId } = req.body || {};
+        if (!token || !channelId) {
+            return res.status(400).json({ success: false, message: 'Token və Channel ID tələb olunur' });
+        }
+        process.env.TELEGRAM_BOT_TOKEN = token;
+        process.env.TELEGRAM_CHANNEL_ID = channelId;
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // 2. Yeni sual əlavə et
 app.post('/api/telegram/add-question', (req, res) => {
     const newQuestion = req.body;
     
     // Validasiya
-    if (!newQuestion.question || !newQuestion.options || !newQuestion.correct_option_id) {
+    const hasQuestion = typeof newQuestion.question === 'string' && newQuestion.question.trim().length > 0;
+    const hasOptions = Array.isArray(newQuestion.options) && newQuestion.options.length >= 2;
+    const idx = newQuestion.correct_option_id;
+    const hasCorrect = typeof idx === 'number' && idx >= 0 && idx < (hasOptions ? newQuestion.options.length : 0);
+    if (!hasQuestion || !hasOptions || !hasCorrect) {
         return res.status(400).json({ success: false, message: 'Çatışmayan məlumatlar var.' });
     }
 
@@ -72,6 +93,100 @@ function normalizeText(s) {
     if (!s) return '';
     return s.replace(/\s+/g, ' ').trim();
 }
+
+app.get('/admin/telegram', (req, res) => {
+    const html = `
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Telegram Quiz İdarəetmə</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 720px; margin: 0 auto; padding: 24px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+button { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; }
+.primary { background: #2563eb; color: #fff; }
+.secondary { background: #e5e7eb; }
+.status { margin-top: 8px; color: #475569; min-height: 20px; }
+</style>
+</head>
+<body>
+<h1>Telegram Quiz İdarəetmə</h1>
+<div class="row">
+  <div>
+    <label>Bot Token</label>
+    <input id="tg_token" placeholder="TELEGRAM_BOT_TOKEN">
+  </div>
+  <div>
+    <label>Kanal ID</label>
+    <input id="tg_channel" placeholder="@kanal_adi və ya ID">
+  </div>
+</div>
+<button class="secondary" id="saveBtn">Konfiqurasiyanı saxla</button>
+<div class="status" id="saveStatus"></div>
+<hr style="margin: 20px 0;">
+<div class="row">
+  <div>
+    <label>Quiz sual sayı</label>
+    <input id="q_count" type="number" value="30">
+  </div>
+  <div style="display:flex; align-items:flex-end;">
+    <button class="primary" id="startBtn">Quiz-i Başlat</button>
+  </div>
+</div>
+<div class="status" id="startStatus"></div>
+<script>
+const saveBtn = document.getElementById('saveBtn');
+const startBtn = document.getElementById('startBtn');
+const saveStatus = document.getElementById('saveStatus');
+const startStatus = document.getElementById('startStatus');
+saveBtn.onclick = async () => {
+  saveStatus.textContent = 'Yüklənir...';
+  try {
+    const token = document.getElementById('tg_token').value.trim();
+    const channelId = document.getElementById('tg_channel').value.trim();
+    const resp = await fetch('/api/admin/telegram-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, channelId })
+    });
+    const data = await resp.json();
+    if (data && data.success) {
+      saveStatus.textContent = 'Saxlandı.';
+    } else {
+      saveStatus.textContent = 'Xəta: ' + (data.message || 'Naməlum');
+    }
+  } catch (e) {
+    saveStatus.textContent = 'Xəta: ' + e.message;
+  }
+};
+startBtn.onclick = async () => {
+  startStatus.textContent = 'Yüklənir...';
+  try {
+    const count = parseInt(document.getElementById('q_count').value || '30', 10);
+    const resp = await fetch('/api/telegram/start-quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ count })
+    });
+    const data = await resp.json();
+    if (data && data.success) {
+      startStatus.textContent = data.message || 'Başladı.';
+    } else {
+      startStatus.textContent = 'Xəta: ' + (data.message || 'Naməlum');
+    }
+  } catch (e) {
+    startStatus.textContent = 'Xəta: ' + e.message;
+  }
+};
+</script>
+</body>
+</html>`;
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+});
 
 function fingerprintQuestion(q) {
     const qText = toAsciiSimple(normalizeText(q.question).toLowerCase());
