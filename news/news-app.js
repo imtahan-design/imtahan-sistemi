@@ -697,7 +697,7 @@ window.updateImagePreview = function() {
 window.handleFileSelect = function(event) {
     const file = event.target.files[0];
     if (file) {
-        // Şəkil sıxılma funksiyası (Max 800px, 0.7 keyfiyyət)
+        // Şəkil sıxılma funksiyası (Max 800px, 0.7 keyfiyyət) və Firebase Storage-a yükləmə
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
@@ -728,18 +728,37 @@ window.handleFileSelect = function(event) {
                 
                 // Keyfiyyəti 0.7-yə salaraq base64 alırıq
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                
-                // Firestore limiti yoxlanışı (təxminən 1MB)
-                if (dataUrl.length > 1000000) {
-                     alert("Şəkil sıxıldıqdan sonra da çox böyükdür. Daha kiçik şəkil seçin.");
-                     return;
-                }
-
-                document.getElementById('newsImage').value = dataUrl;
-                updateImagePreview();
+                uploadCoverToStorage(dataUrl);
             };
         };
         reader.readAsDataURL(file);
+    }
+}
+
+async function uploadCoverToStorage(dataUrl) {
+    try {
+        // Firestore limiti yoxlanışı (təxminən 1MB) – vizual üçün keçid;
+        // Storage-a yükləyəcəyimiz üçün limit problem deyil, amma çox böyük faylları xəbərdar edək
+        if (dataUrl.length > 3_000_000) {
+            alert("Şəkil çox böyükdür. Zəhmət olmasa daha kiçik fayl seçin.");
+            return;
+        }
+        const unique = Date.now() + '-' + Math.random().toString(36).slice(2);
+        const ref = storage.ref(`covers/${unique}.jpg`);
+        const metadata = { contentType: 'image/jpeg', cacheControl: 'public,max-age=31536000' };
+        // Base64 data_url yüklənir
+        const snapshot = await ref.putString(dataUrl, 'data_url', metadata);
+        const url = await snapshot.ref.getDownloadURL();
+        // Form dəyərini real HTTPS URL ilə doldur
+        document.getElementById('newsImage').value = url;
+        updateImagePreview();
+    } catch (err) {
+        alert("Şəkili yükləmək mümkün olmadı: " + err.message);
+        // Uğursuz olarsa, ən azından lokal göstəriş üçün base64 istifadə et
+        try {
+            document.getElementById('newsImage').value = dataUrl;
+            updateImagePreview();
+        } catch {}
     }
 }
 
@@ -748,9 +767,49 @@ window.handleEditorImageUpload = function(event) {
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            restoreSelection();
-            document.execCommand('insertImage', false, e.target.result);
-            saveSelection();
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = async function() {
+                // Editor şəkilləri üçün daha kiçik ölçü
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 1000;
+                const MAX_HEIGHT = 1000;
+                let width = img.width;
+                let height = img.height;
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                
+                // Storage-a yüklə və məzmunun içinə HTTPS URL ilə daxil et
+                try {
+                    const unique = Date.now() + '-' + Math.random().toString(36).slice(2);
+                    const ref = storage.ref(`editor/${unique}.jpg`);
+                    const metadata = { contentType: 'image/jpeg', cacheControl: 'public,max-age=31536000' };
+                    const snapshot = await ref.putString(dataUrl, 'data_url', metadata);
+                    const url = await snapshot.ref.getDownloadURL();
+                    restoreSelection();
+                    document.execCommand('insertImage', false, url);
+                    saveSelection();
+                } catch (err) {
+                    // Uğursuz olarsa, base64 ilə daxil et
+                    restoreSelection();
+                    document.execCommand('insertImage', false, dataUrl);
+                    saveSelection();
+                }
+            };
         };
         reader.readAsDataURL(file);
     }

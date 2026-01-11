@@ -69,23 +69,29 @@ async function generateSitemap() {
                     
                     // Meta teqləri və başlığı dinamik olaraq ilkin HTML-ə yerləşdiririk (Google üçün)
                     const title = `${data.title} – İmtahan Bloq`;
-                    const description = (data.excerpt || data.content || '').replace(/<[^>]+>/g, ' ').substring(0, 160).trim();
-                    const imageUrl = data.imageUrl || 'https://imtahan.site/assets/logo.png';
+                    const description = (data.excerpt || data.content || '')
+                        .replace(/<[^>]+>/g, ' ')
+                        .replace(/&nbsp;/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim()
+                        .replace(/"/g, '&quot;')
+                        .substring(0, 160);
+                    const imageUrl = (data.imageUrl && !/^data:/i.test(data.imageUrl)) ? data.imageUrl : 'https://imtahan.site/assets/logo.png';
                     const canonical = `https://imtahan.site/bloq/${data.slug}`;
 
                     const publishedISO = (data.date ? new Date(data.date).toISOString() : new Date().toISOString());
                     const modifiedISO = publishedISO;
                     const section = data.category || 'Bloq';
                     const tags = Array.isArray(data.tags) ? data.tags : [];
-                    const articleTagMeta = tags.map(t => `<meta property="article:tag" content="${String(t).trim()}">`).join('\n');
-                    const seoTags = `
-    <base href="/bloq/">
+                    const articleTagMeta = tags.map(t => `<meta property="article:tag" content="${String(t).trim().replace(/"/g, '&quot;')}">`).join('\n    ');
+                    const seoTags = `<base href="/bloq/">
     <title>${title}</title>
     <meta name="description" content="${description}">
     <link rel="canonical" href="${canonical}">
     <meta property="og:title" content="${title}">
     <meta property="og:description" content="${description}">
     <meta property="og:image" content="${imageUrl}">
+    <meta property="og:image:alt" content="${title}">
     <meta property="og:url" content="${canonical}">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="İmtahan Bloq">
@@ -110,8 +116,7 @@ async function generateSitemap() {
         "name": "İmtahan Bloq"
       }
     }
-    </script>
-                    `;
+    </script>`;
 
                     htmlContent = htmlContent.replace(/<title>.*?<\/title>/, seoTags);
                     
