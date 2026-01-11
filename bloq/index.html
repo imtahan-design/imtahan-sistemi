@@ -464,26 +464,27 @@
       <div id="featuredContainer" style="margin-bottom: 60px;"></div>
 
       <div class="filters-container">
-          <div class="filters-card">
-              <div class="search-wrapper">
-                  <i class="fas fa-search"></i>
-                  <input type="text" id="newsSearch" class="search-input" placeholder="Məqalə axtar...">
-              </div>
-              <select id="categoryFilter" class="filter-select">
-                  <option value="all">Bütün kateqoriyalar</option>
-              </select>
-              <select id="sortFilter" class="filter-select">
-                  <option value="newest">Ən yeni</option>
-                  <option value="oldest">Ən köhnə</option>
-              </select>
-              <div id="adminControls" class="admin-controls">
-                  <button class="btn-add" onclick="openAddNewsModal()"><i class="fas fa-plus"></i> <span class="desktop-only">Yeni Məqalə</span></button>
-                  <button id="fixSlugsBtn" class="btn-add" style="background:#f59e0b; margin-left:8px;" onclick="fixAllSlugs()"><i class="fas fa-wrench"></i> <span class="desktop-only">Slugs</span></button>
+              <div class="filters-card">
+                  <div class="search-wrapper">
+                      <i class="fas fa-search"></i>
+                      <input type="text" id="newsSearch" class="search-input" placeholder="Məqalə axtar...">
+                  </div>
+                  <select id="categoryFilter" class="filter-select">
+                      <option value="all">Bütün kateqoriyalar</option>
+                  </select>
+                  <select id="sortFilter" class="filter-select">
+                      <option value="newest">Ən yeni</option>
+                      <option value="oldest">Ən köhnə</option>
+                  </select>
+                  <div id="adminControls" class="admin-controls">
+                      <button class="btn-add" onclick="openAddNewsModal()"><i class="fas fa-plus"></i> <span class="desktop-only">Yeni Məqalə</span></button>
+                      <button id="fixSlugsBtn" class="btn-add" style="background:#f59e0b; margin-left:8px;" onclick="fixAllSlugs()"><i class="fas fa-wrench"></i> <span class="desktop-only">Slugs</span></button>
+                      <button class="btn-add" style="background:#10b981; margin-left:8px;" onclick="openCategoryModal()"><i class="fas fa-list"></i> <span class="desktop-only">Kateqoriyalar</span></button>
+                  </div>
               </div>
           </div>
-      </div>
 
-      <div class="news-grid" id="newsGrid"></div>
+          <div class="news-grid" id="newsGrid"></div>
   </main>
 
   <section class="newsletter-section">
@@ -600,7 +601,7 @@
                       </div>
                       <div class="form-group">
                           <label class="form-label">Teqlər</label>
-                          <input type="text" id="tagInput" class="form-input" placeholder="Enter ilə əlavə et...">
+                          <input type="text" id="tagInput" class="form-input" placeholder="Vergül/; və Enter ilə toplu əlavə et...">
                           <div id="tagList" class="tag-container" style="margin-top:8px;"></div>
                       </div>
                   </div>
@@ -610,6 +611,26 @@
                   <button type="submit" class="btn-submit">Yadda Saxla</button>
               </div>
           </form>
+      </div>
+  </div>
+
+  <div class="modal" id="categoryManagerModal">
+      <div class="modal-content" style="max-width: 600px;">
+          <div class="modal-header">
+              <h3 class="modal-title">Kateqoriyaları İdarə Et</h3>
+              <button class="close-modal" onclick="closeCategoryModal()"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body">
+              <div class="form-group">
+                  <label class="form-label">Yeni Kateqoriya</label>
+                  <input type="text" id="newCategoryInput" class="form-input" placeholder="məs: Məsləhətlər">
+              </div>
+              <div style="display:flex; gap:8px; margin-bottom:16px;">
+                  <button class="btn-add" style="background:#10b981;" onclick="addCategory()"><i class="fas fa-plus"></i> Əlavə et</button>
+                  <button class="nav-btn nav-btn-secondary" onclick="closeCategoryModal()">Bağla</button>
+              </div>
+              <div id="categoryList" style="display:flex; flex-direction:column; gap:8px;"></div>
+          </div>
       </div>
   </div>
 

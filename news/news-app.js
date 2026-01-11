@@ -92,17 +92,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Tag Input Handler
+    // Tag Input Handler (supports bulk add via comma/semicolon/newline or Enter)
     document.getElementById('tagInput').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' || e.key === ',' || e.key === ';' || e.key === 'Tab') {
             e.preventDefault();
-            const val = this.value.trim();
-            if (val && !currentTags.includes(val)) {
-                currentTags.push(val);
+            const raw = this.value || '';
+            const parts = raw.split(/[,\n;]+/).map(t => t.trim()).filter(Boolean);
+            if (parts.length > 0) {
+                parts.forEach(t => {
+                    if (!currentTags.includes(t)) {
+                        currentTags.push(t);
+                    }
+                });
                 renderTags();
                 this.value = '';
             }
         }
+    });
+    document.getElementById('tagInput').addEventListener('paste', function() {
+        setTimeout(() => {
+            const raw = (this.value || '').trim();
+            if (/[,\n;]+/.test(raw)) {
+                const parts = raw.split(/[,\n;]+/).map(t => t.trim()).filter(Boolean);
+                if (parts.length > 0) {
+                    parts.forEach(t => {
+                        if (!currentTags.includes(t)) {
+                            currentTags.push(t);
+                        }
+                    });
+                    renderTags();
+                    this.value = '';
+                }
+            }
+        }, 0);
     });
     
     // Category Filter
