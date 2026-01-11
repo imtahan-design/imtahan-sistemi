@@ -10,6 +10,7 @@ const multer = require('multer');
 const mammoth = require('mammoth');
 const { IgApiClient } = require('instagram-private-api');
 const telegramBot = require('./telegram_bot'); // Telegram Bot əlavə edildi
+const { exec } = require('child_process');
 
 const app = express();
 app.use(cors());
@@ -509,6 +510,25 @@ app.post('/api/github/dispatch', async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 });
+
+// Lokal statik səhifə və sitemap generasiyası (PAT tələb etmədən)
+app.post('/api/build/static', async (req, res) => {
+    try {
+        const scriptPath = path.join(__dirname, 'tools', 'update_sitemap.js');
+        if (!fs.existsSync(scriptPath)) {
+            return res.status(404).json({ success: false, message: 'update_sitemap.js tapılmadı.' });
+        }
+        exec(`node "${scriptPath}"`, { cwd: __dirname }, (error, stdout, stderr) => {
+            if (error) {
+                return res.status(500).json({ success: false, message: error.message, stderr });
+            }
+            res.json({ success: true, message: 'Statik build tamamlandı.', stdout });
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // Instagram Setup
 const ig = new IgApiClient();
 let isLoggedIn = false;
