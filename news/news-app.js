@@ -3,7 +3,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyAak_eY0WNpY7cqAEuWEBG9wBDhg1NPw_0",
     authDomain: "imtahansistemi-17659.firebaseapp.com",
     projectId: "imtahansistemi-17659",
-    storageBucket: "imtahansistemi-17659.firebasestorage.app",
+    storageBucket: "imtahansistemi-17659.appspot.com",
     messagingSenderId: "715396853166",
     appId: "1:715396853166:web:9829b853e5e572de4d2c3f"
 };
@@ -726,8 +726,9 @@ window.handleFileSelect = function(event) {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Keyfiyyəti 0.7-yə salaraq base64 alırıq
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('newsImage').value = dataUrl;
+                updateImagePreview();
                 uploadCoverToStorage(dataUrl);
             };
         };
