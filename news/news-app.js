@@ -877,6 +877,42 @@ window.toggleHtmlMode = function() {
     }
 }
 
+// Toast notification helper
+window.showToast = function(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#10b981' : '#ef4444'};
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 9999;
+        transition: all 0.3s ease;
+        transform: translateY(100px);
+        opacity: 0;
+        font-weight: 500;
+    `;
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.style.transform = 'translateY(0)';
+        toast.style.opacity = '1';
+    }, 10);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        toast.style.transform = 'translateY(100px)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 // Form Submit
 window.handleNewsSubmit = async function(event) {
     event.preventDefault();
@@ -944,45 +980,34 @@ window.handleNewsSubmit = async function(event) {
 
         closeNewsModal();
         loadNews();
-        
+        showToast('Məqalə uğurla yadda saxlanıldı');
+
+        // SEO Yeniləmə (Google və Sitemap üçün)
         const isAdminOrMod = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
-        if (!currentEditingId && isAdminOrMod && createdId) {
+        if (isAdminOrMod) {
+            console.log("SEO yeniləmə başladılır...");
             try {
-                const postBody = {
-                    title,
-                    url: `https://imtahan.site/bloq/${slug}`,
-                    imageUrl,
-                    excerpt,
-                    tags: currentTags,
-                    category
-                };
-                await fetch('http://localhost:5000/api/telegram/post-news', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(postBody)
-                });
-                await fetch('http://localhost:5000/api/rss/add', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(postBody)
-                });
-                await fetch('http://localhost:5000/api/build/static', {
+                // Bizim yeni endpoint-i çağırırıq
+                const seoResponse = await fetch('/api/admin/update-seo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
-                await fetch('http://localhost:5000/api/github/dispatch', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ref: 'main' })
-                });
+                const seoData = await seoResponse.json();
+                console.log("SEO Cavab:", seoData);
+                if (seoData.success) {
+                    showToast('SEO və Sitemap uğurla yeniləndi');
+                } else {
+                    showToast('SEO yenilənməsində xəta baş verdi', 'error');
+                }
             } catch (err) {
-                console.warn('Telegram paylaşım alınmadı:', err.message);
+                console.warn('SEO yeniləmə alınmadı:', err.message);
+                showToast('SEO yenilənməsi alınmadı', 'error');
             }
         }
-    } catch (e) {
-        alert('Xəta: ' + e.message);
+        } catch (e) {
+            showToast('Xəta: ' + e.message, 'error');
+        }
     }
-}
 
 // Slug Fixer for Admins
 window.fixAllSlugs = async function() {
