@@ -63,6 +63,9 @@
             <button id="btn-start-server" class="save-btn" style="background:#16a34a;" onclick="startLocalServer()">
                 <i class="fas fa-power-off"></i> Serveri Başlat
             </button>
+            <button id="btn-restart-server" class="save-btn" style="background:#f59e0b;" onclick="restartServer()">
+                <i class="fas fa-rotate-right"></i> Yenidən Başlat
+            </button>
         </div>
     </header>
 
@@ -87,6 +90,9 @@
                 </select>
             </div>
             <button class="save-btn" onclick="addNews()">Əlavə et</button>
+            <button class="save-btn" style="background:#8b5cf6; margin-top: 10px;" onclick="updateSEO()">
+                <i class="fas fa-search"></i> SEO Yenilə (Google üçün)
+            </button>
         </div>
 
         <div class="card">
@@ -116,10 +122,32 @@
                     </p>
                 </div>
                 
-                <button onclick="startQuiz(30)" id="btn-start-quiz" class="save-btn" style="background: #229ED9; width: 100%; margin-bottom: 15px; padding: 15px;">
-                    <i class="fas fa-rocket"></i> Quizi İndi Başlat (30 Sual)
+                <h3>⚙️ Telegram Konfiqurasiya</h3>
+                <div class="form-group">
+                    <label>Bot Token</label>
+                    <input type="text" id="tg-token" placeholder="TELEGRAM_BOT_TOKEN">
+                </div>
+                <div class="form-group">
+                    <label>Kanal ID</label>
+                    <input type="text" id="tg-channel" placeholder="@kanal_adi və ya ID">
+                </div>
+                <button id="btn-save-tg-config" class="save-btn" style="background:#0ea5e9; width:100%; margin-bottom: 10px;" onclick="saveTelegramConfig()">
+                    <i class="fas fa-save"></i> Konfiqurasiyanı Saxla
                 </button>
-                <p style="font-size: 0.8rem; color: #64748b;">* Bu düymə basılanda Telegram kanalında dərhal 30 suallıq sessiya başlayır.</p>
+                <div id="tg-config-status" style="font-size:0.9rem; color:#64748b; margin-bottom: 20px;"></div>
+                
+                <div class="form-group">
+                    <label>Sual sayı</label>
+                    <input type="number" id="quiz-count" value="30" min="1" max="100" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                
+                <button onclick="startQuiz(parseInt(document.getElementById('quiz-count').value || '30', 10))" id="btn-start-quiz" class="save-btn" style="background: #229ED9; width: 100%; margin-bottom: 15px; padding: 15px;">
+                    <i class="fas fa-rocket"></i> Quizi İndi Başlat (<span id="quiz-count-label">30</span> Sual)
+                </button>
+                <button onclick="stopQuiz()" id="btn-stop-quiz" class="save-btn" style="background: #ef4444; width: 100%; margin-bottom: 15px; padding: 12px;">
+                    <i class="fas fa-stop"></i> Dayandır
+                </button>
+                <p id="quiz-count-note" style="font-size: 0.8rem; color: #64748b;">* Bu düymə basılanda Telegram kanalında dərhal 30 suallıq sessiya başlayır.</p>
             </div>
 
             <!-- ADD QUESTION FORM -->
@@ -206,13 +234,31 @@
         firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.firestore();
+    const API_BASES = [];
+    if (location.origin && /^https?:\/\//.test(location.origin)) { API_BASES.push(location.origin); }
+    API_BASES.push('http://localhost:5000');
+    API_BASES.push('http://127.0.0.1:5000');
+    async function apiFetch(path, init) {
+        let lastResp = null;
+        for (const base of API_BASES) {
+            try {
+                const resp = await fetch(base + path, init);
+                if (resp) {
+                    if (resp.ok || resp.status === 200) return resp;
+                    lastResp = resp;
+                }
+            } catch (e) {}
+        }
+        if (lastResp) return lastResp;
+        throw new Error('Serverlə əlaqə qurmaq mümkün olmadı');
+    }
 
     // Serverin işlək olduğunu yoxlayaq
     async function checkServer() {
         const status = document.getElementById('status-indicator');
         try {
             // Sağlamlıq yoxlaması
-            const response = await fetch('http://localhost:5000/health');
+            const response = await apiFetch('/health');
             const data = await response.json();
             
             if (data.status === 'online') {
@@ -294,6 +340,37 @@
     // Xəbərləri dinləməyə başla
     loadRealNews();
 
+    async function updateSEO() {
+        const btn = event.target.closest('button');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SEO Yenilənir...';
+        
+        try {
+            const response = await apiFetch('/api/admin/update-seo', {
+                method: 'POST'
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                btn.style.background = '#16a34a';
+                btn.innerHTML = '<i class="fas fa-check"></i> SEO Hazırdır!';
+                setTimeout(() => {
+                    btn.style.background = '#8b5cf6';
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }, 3000);
+            } else {
+                throw new Error(data.message);
+            }
+        } catch (error) {
+            console.error("SEO Xətası:", error);
+            alert("❌ SEO yeniləmə xətası: " + error.message);
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+    }
+
     function slugify(str) {
         return (str || '')
             .toLowerCase()
@@ -363,7 +440,7 @@
         btn.disabled = true;
 
         try {
-            const response = await fetch('http://localhost:5000/share-to-instagram', {
+            const response = await apiFetch('/share-to-instagram', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -436,6 +513,41 @@
     }
 
     // TELEGRAM BOT FUNKSİYALARI
+    async function restartServer() {
+        const btn = document.getElementById('btn-restart-server');
+        const status = document.getElementById('status-indicator');
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yenidən başladılır...';
+        status.className = 'server-status';
+        status.innerHTML = '<i class="fas fa-rotate-right"></i> Server yenidən başladılır...';
+        try {
+            const resp = await apiFetch('/api/admin/restart-server', { method: 'POST' });
+            const data = await resp.json();
+            if (!data || !data.success) {
+                throw new Error(data && data.message ? data.message : 'Naməlum xəta');
+            }
+            // Online olana qədər yoxla
+            const wait = (ms) => new Promise(r => setTimeout(r, ms));
+            for (let i = 0; i < 20; i++) {
+                await wait(1000);
+                try {
+                    const hr = await apiFetch('/health');
+                    const hd = await hr.json();
+                    if (hd && hd.status === 'online') {
+                        status.className = 'server-status online';
+                        status.innerHTML = `<i class="fas fa-check-circle"></i> Server Online (${hd.instagram === 'connected' ? 'Instagram Bağlıdır' : 'Instagram Bağlı Deyil'})`;
+                        break;
+                    }
+                } catch (_) {}
+            }
+        } catch (e) {
+            alert('Xəta: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        }
+    }
     async function loadSchedule() {
         try {
             // Cache busting üçün timestamp əlavə edildi
@@ -445,6 +557,10 @@
             // Rejim təsvirini yenilə
             if (data.description) {
                 document.getElementById('schedule-desc').innerText = data.description;
+            }
+            if (data.count != null && document.getElementById('quiz-count')) {
+                document.getElementById('quiz-count').value = data.count;
+                updateQuizCountViews(data.count);
             }
 
             // Növbəti vaxtı göstər (Əgər varsa)
@@ -468,6 +584,51 @@
     // Hər dəqiqə yenilə
     setInterval(loadSchedule, 60000);
 
+    function updateQuizCountViews(val) {
+        const n = parseInt(val || '30', 10);
+        const safe = isNaN(n) ? 30 : Math.max(1, Math.min(100, n));
+        const lbl = document.getElementById('quiz-count-label');
+        const note = document.getElementById('quiz-count-note');
+        if (lbl) lbl.textContent = String(safe);
+        if (note) note.textContent = `* Bu düymə basılanda Telegram kanalında dərhal ${safe} suallıq sessiya başlayır.`;
+    }
+    const qcInput = document.getElementById('quiz-count');
+    if (qcInput) {
+        qcInput.addEventListener('input', (e) => updateQuizCountViews(e.target.value));
+        updateQuizCountViews(qcInput.value);
+    }
+    async function saveTelegramConfig() {
+        const btn = document.getElementById('btn-save-tg-config');
+        const status = document.getElementById('tg-config-status');
+        const token = document.getElementById('tg-token').value.trim();
+        const channelId = document.getElementById('tg-channel').value.trim();
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saxlanır...';
+        status.textContent = '';
+        try {
+            const payload = { quizCount: parseInt(document.getElementById('quiz-count').value || '30', 10) };
+            if (token) payload.token = token;
+            if (channelId) payload.channelId = channelId;
+            const resp = await apiFetch('/api/admin/telegram-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await resp.json();
+            if (data && data.success) {
+                status.textContent = 'Saxlandı. Dəyişikliklərin tam tətbiqi üçün serveri yenidən başladın.';
+            } else {
+                status.textContent = 'Xəta: ' + (data.message || 'Naməlum');
+            }
+        } catch (e) {
+            status.textContent = 'Xəta: ' + e.message;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        }
+    }
+
     async function startQuiz(count) {
         const btn = document.getElementById('btn-start-quiz');
         const originalText = btn.innerHTML;
@@ -478,7 +639,7 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Başladılır...';
 
         try {
-            const response = await fetch('http://localhost:5000/api/telegram/start-quiz', {
+            const response = await apiFetch('/api/telegram/start-quiz', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ count: count })
@@ -500,6 +661,27 @@
         }
     }
 
+    async function stopQuiz() {
+        const btn = document.getElementById('btn-stop-quiz');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dayandırılır...';
+        try {
+            const response = await apiFetch('/api/telegram/stop-quiz', { method: 'GET' });
+            const result = await response.json();
+            if (result.success) {
+                alert('✅ Sessiya dayandırılır.');
+            } else {
+                alert('❌ Xəta: ' + result.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('❌ Serverlə əlaqə qurmaq mümkün olmadı.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
     async function addQuizQuestion() {
         const question = document.getElementById('q-text').value;
         const opt0 = document.getElementById('q-opt0').value;
@@ -530,7 +712,7 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Əlavə edilir...';
 
         try {
-            const response = await fetch('http://localhost:5000/api/telegram/add-question', {
+            const response = await apiFetch('/api/telegram/add-question', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newQuestion)

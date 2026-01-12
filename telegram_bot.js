@@ -14,7 +14,13 @@ const channelId = process.env.TELEGRAM_CHANNEL_ID;
 const DEDUP_WINDOW_DAYS = parseInt(process.env.DEDUP_WINDOW_DAYS || '1', 10);
 const DEDUP_WINDOW_MS = Math.max(1, DEDUP_WINDOW_DAYS) * 24 * 60 * 60 * 1000;
 const TELEGRAM_CRON_ENABLED = process.env.TELEGRAM_CRON_ENABLED !== 'false';
-const TELEGRAM_QUIZ_COUNT = parseInt(process.env.TELEGRAM_QUIZ_COUNT || '30', 10);
+let QUIZ_COUNT = parseInt(process.env.TELEGRAM_QUIZ_COUNT || '30', 10);
+const TELEGRAM_CONSTITUTION_QUOTA = parseInt(process.env.TELEGRAM_CONSTITUTION_QUOTA || '10', 10);
+const TELEGRAM_POLL_OPEN_PERIOD = (() => {
+    const v = parseInt(process.env.TELEGRAM_POLL_OPEN_PERIOD || '45', 10);
+    if (isNaN(v)) return 45;
+    return Math.min(600, Math.max(5, v));
+})();
 
 // Firebase Configuration (public client config)
 const firebaseConfig = {
@@ -79,7 +85,8 @@ if (!token || !channelId) {
                     question: String(q.text || '').trim(),
                     options: (Array.isArray(q.options) ? q.options : []).map(o => String(o || '').trim()).filter(Boolean),
                     correct_option_id: typeof q.correctIndex === 'number' ? q.correctIndex : 0,
-                    explanation: '' // izah optional
+                    explanation: '',
+                    section: String(child.name || '')
                 })).filter(x => x.question && x.options.length >= 2 && x.correct_option_id >= 0 && x.correct_option_id < x.options.length);
                 questions = questions.concat(mapped);
             }
@@ -90,7 +97,8 @@ if (!token || !channelId) {
                     question: String(q.text || '').trim(),
                     options: (Array.isArray(q.options) ? q.options : []).map(o => String(o || '').trim()).filter(Boolean),
                     correct_option_id: typeof q.correctIndex === 'number' ? q.correctIndex : 0,
-                    explanation: ''
+                    explanation: '',
+                    section: String(parent.name || '')
                 })).filter(x => x.question && x.options.length >= 2 && x.correct_option_id >= 0 && x.correct_option_id < x.options.length);
                 questions = questions.concat(mapped);
             }
@@ -156,63 +164,40 @@ if (!token || !channelId) {
         if (!q || typeof q.question !== 'string') return false;
         const question = q.question.trim();
         if (!Array.isArray(q.options) || q.options.length < 2) return false;
-        if (q.options.some(o => typeof o !== 'string' || !o.trim())) return false;
-        const idx = q.correct_option_id;
-        if (typeof idx !== 'number' || idx < 0 || idx >= q.options.length) return false;
+        let opts = q.options.map(o => String(o || '').trim()).filter(Boolean);
+        if (opts.length < 2) return false;
+        opts = opts.map(o => (o.length > 100 ? o.slice(0, 100) : o));
+        let idx = q.correct_option_id;
+        if (typeof idx !== 'number' || idx < 0 || idx >= opts.length) return false;
+        if (opts.length > 10) {
+            const correct = opts[idx];
+            const rest = opts.filter((_, i) => i !== idx);
+            opts = [correct, ...rest.slice(0, 9)];
+            idx = 0;
+        }
+        q.options = opts;
+        q.correct_option_id = idx;
         if (question.length > 300) q.question = question.slice(0, 297) + '...';
         q.explanation = sanitizeExplanation(q.explanation);
         return true;
     }
 
-    // Təsadüfi suallar seçən funksiya (Dövlət Qulluğu mənbəsi üzrə)
+    const pollMeta = new Map();
+    const pollVoters = new Map();
+
+    // Təsadüfi suallar seçən funksiya (Konstitusiya 10, digər 20)
     function getRandomQuestions(count) {
-        // Firestore mənbəsindən oxunsun
-        // Qeyd: Bu funksiya async olmaması üçün cache-dən oxuyur; cache boşdursa, 0 qaytaracaq.
-        // startQuizBatch içində async yükləmə ediləcək.
-        const questions = civilCache.items || [];
-        if (questions.length === 0) return [];
-        const idToQk = new Map(questions.map(q => [q.id, questionKeyFromQ({ question: q.question, options: q.options, correct_option_id: q.correct_option_id })]));
-        
-        // Məntiq: Mənbədə kateqoriya yoxdur; mətnə görə heuristika
-        const veryHardQuestions = questions.filter(q => 
-            q.question && (q.question.toLowerCase().includes('situasiya') || q.question.length > 250)
-        );
-        const hardQuestions = questions.filter(q =>
-            !veryHardQuestions.includes(q) &&
-            (q.question && (q.question.toLowerCase().includes('qanun') || q.question.toLowerCase().includes('konstitusiya') || q.question.toLowerCase().includes('inzibati')))
-        );
-        const otherQuestions = questions.filter(q => !veryHardQuestions.includes(q) && !hardQuestions.includes(q));
-
-        let selected = [];
-
-        // QUOTALAR (30 sual üçün):
-        // 7 ədəd "Ən Çətin"
-        // 17 ədəd "Çətin"
-        // 6 ədəd "Digər"
-        
-        const veryHardTarget = 7;
-        const hardTarget = count - veryHardTarget - Math.floor(count * 0.2); // Qalanın çoxu
-        
-        // A. Ən Çətinlərdən seç (7 ədəd)
-        if (veryHardQuestions.length > 0) {
-            const shuffled = veryHardQuestions.sort(() => 0.5 - Math.random());
-            selected = selected.concat(shuffled.slice(0, veryHardTarget));
-        }
-
-        // B. Digər Çətinlərdən seç (~17 ədəd)
-        if (hardQuestions.length > 0) {
-            const remainingSpace = count - selected.length;
-            const target = Math.min(hardTarget, remainingSpace);
-            const shuffled = hardQuestions.sort(() => 0.5 - Math.random());
-            selected = selected.concat(shuffled.slice(0, target));
-        }
-
-        // C. Qalan yeri doldur (Digərlərdən)
-        if (selected.length < count) {
-            const remainingNeeded = count - selected.length;
-            const shuffledOthers = otherQuestions.sort(() => 0.5 - Math.random());
-            selected = selected.concat(shuffledOthers.slice(0, remainingNeeded));
-        }
+        const all = civilCache.items || [];
+        if (all.length === 0) return [];
+        const idToQk = new Map(all.map(q => [q.id, questionKeyFromQ({ question: q.question, options: q.options, correct_option_id: q.correct_option_id })]));
+        const re = /konstitusiya/i;
+        const constitution = all.filter(q => re.test(String(q.section || '')) || re.test(String(q.question || '')));
+        const othersPool = all.filter(q => !constitution.includes(q));
+        const targetConst = Math.min(TELEGRAM_CONSTITUTION_QUOTA, count, constitution.length);
+        const targetOthers = Math.max(0, count - targetConst);
+        const constSel = constitution.sort(() => 0.5 - Math.random()).slice(0, targetConst);
+        const otherSel = othersPool.sort(() => 0.5 - Math.random()).slice(0, targetOthers);
+        let selected = constSel.concat(otherSel);
 
         // DEDUP: Eyni sualı batch daxilində təkrarlama və yaxın tarixçədən çıxart
         const recent = loadRecent();
@@ -237,7 +222,7 @@ if (!token || !channelId) {
         }
         // Əgər unikal kifayət etmirsə, qalanını datasetdən əlavə et
         if (unique.length < count) {
-            const allShuffled = questions.sort(() => 0.5 - Math.random());
+            const allShuffled = all.sort(() => 0.5 - Math.random());
             for (const q of allShuffled) {
                 const fp = fingerprint({ question: q.question, options: q.options, correct_option_id: q.correct_option_id });
                 const qk = questionKeyFromQ({ question: q.question });
@@ -310,6 +295,7 @@ if (!token || !channelId) {
         const windowQkSet = new Set(recent.filter(r => r.at >= cutoff).map(r => r.qk || idToQk.get(r.id)));
         const batchSeen = new Set();
         for (let i = 0; i < questions.length; i++) {
+            if (cancelBatchRequested) break;
             const q = questions[i];
             try {
                 if (!validateQuestion(q)) {
@@ -327,13 +313,24 @@ if (!token || !channelId) {
                 }
                 const pollOpts = {
                     type: 'quiz',
-                    correct_option_id: q.correct_option_id,
-                    is_anonymous: false
+                    allows_multiple_answers: false,
+                    is_anonymous: false,
+                    correct_option_id: q.correct_option_id
                 };
-                if (q.explanation) {
-                    pollOpts.explanation = q.explanation;
-                }
                 const pollMsg = await bot.sendPoll(channelId, q.question, q.options, pollOpts);
+                try {
+                    const pt = pollMsg && pollMsg.poll && pollMsg.poll.type;
+                    console.log(`📊 Göndərilən poll tipi: ${pt} | open_period=— | correct=${q.correct_option_id}`);
+                } catch (_) {}
+                if (pollMsg && pollMsg.poll && pollMsg.poll.id) {
+                    const pid = pollMsg.poll.id;
+                    pollMeta.set(pid, {
+                        correct_option_id: q.correct_option_id,
+                        explanation: '',
+                        options: q.options,
+                        question: q.question
+                    });
+                }
                 console.log(`✅ Sual ${i+1}/${questions.length} göndərildi. Növbəti sual üçün gözlənilir...`);
                 // İz əlavə et
                 windowFpSet.add(fp);
@@ -341,13 +338,15 @@ if (!token || !channelId) {
                 batchSeen.add(qk);
                 recent.push({ fp, qk, id: q.id, at: Date.now() });
                 saveRecent(recent);
-                await wait(47000);
-                await wait(2000);
+                for (const ms of [TELEGRAM_POLL_OPEN_PERIOD * 1000, 2000]) {
+                    if (cancelBatchRequested) break;
+                    await wait(ms);
+                }
             } catch (error) {
                 console.error(`❌ Sual göndərilmədi (ID: ${q.id}):`, error.message);
             }
         }
-        console.log("🏁 Bu saatlıq quiz bitdi.");
+        console.log(cancelBatchRequested ? "⛔ Quiz dayandırıldı." : "🏁 Bu saatlıq quiz bitdi.");
 
         // Motivasiya mesajı və Növbəti Vaxt
         const motivationalQuotes = [
@@ -384,7 +383,11 @@ if (!token || !channelId) {
             `✨ *${randomQuote}*`;
 
         try {
-            await bot.sendMessage(channelId, endMessage, { parse_mode: 'Markdown' });
+            if (!cancelBatchRequested) {
+                await bot.sendMessage(channelId, endMessage, { parse_mode: 'Markdown' });
+            } else {
+                await bot.sendMessage(channelId, "⛔ Sessiya dayandırıldı.", { parse_mode: 'Markdown' });
+            }
             console.log("✅ Bitmə və Motivasiya mesajı göndərildi.");
         } catch (error) {
             console.error("❌ Bitmə mesajı göndərilmədi:", error.message);
@@ -452,20 +455,23 @@ if (!token || !channelId) {
 
     // Scheduler: 12:00, 14:00, 16:00, 18:00, 20:00, 22:00, 00:00
     let isBatchRunning = false;
+    let cancelBatchRequested = false;
     async function startQuizBatch(count = 30) {
         if (isBatchRunning) return false;
         isBatchRunning = true;
+        cancelBatchRequested = false;
         try {
             console.log("⏰ Cədvəl üzrə Quiz vaxtıdır! Bazadan suallar seçilir...");
             await sendQuizBatch(count);
             return true;
         } finally {
             isBatchRunning = false;
+            cancelBatchRequested = false;
         }
     }
     if (TELEGRAM_CRON_ENABLED) {
         cron.schedule('0 0,12,14,16,18,20,22 * * *', async () => {
-            const ok = await startQuizBatch(TELEGRAM_QUIZ_COUNT);
+            const ok = await startQuizBatch(QUIZ_COUNT);
             if (!ok) console.warn("⏭️ Önceki batch hələ davam edir, cədvəl çağırışı atlandı.");
         });
     }
@@ -484,18 +490,55 @@ if (!token || !channelId) {
         // Sadəlik üçün sadəcə description qaytarırıq
         return {
             cronExpression: '0 0,12,14,16,18,20,22 * * *',
-            description: '12:00, 14:00, 16:00, 18:00, 20:00, 22:00, 00:00'
+            description: '12:00, 14:00, 16:00, 18:00, 20:00, 22:00, 00:00',
+            count: getQuizCount()
         };
     }
 
-    console.log("🤖 Telegram Quiz Bot aktivdir! Cədvəl: 12, 14, 16, 18, 20, 22, 00.");
+        console.log("🤖 Telegram Quiz Bot aktivdir! Cədvəl: 12, 14, 16, 18, 20, 22, 00.");
 
-    // Avtomatik test ləğv edildi - API vasitəsilə idarə olunacaq
-    
-    async function sendNews({ title, url, imageUrl, excerpt, tags, category }) {
-        try {
-            const hashTags = Array.isArray(tags) ? tags.slice(0, 5).map(t => `#${t}`).join(' ') : '';
-            const cat = category ? `[${category}] ` : '';
+        bot.on('poll_answer', (ans) => {
+            try {
+                const pid = ans && ans.poll_id;
+                const uid = ans && ans.user && ans.user.id;
+                if (!pid || !uid) return;
+                let set = pollVoters.get(pid);
+                if (!set) {
+                    set = new Set();
+                    pollVoters.set(pid, set);
+                }
+                set.add(uid);
+            } catch (_) {}
+        });
+        bot.on('callback_query', async (cq) => {
+            try {
+                const data = cq && cq.data;
+                if (!data || !String(data).startsWith('ANS:')) return;
+                const pid = String(data).slice(4);
+                const uid = cq && cq.from && cq.from.id;
+                const voters = pollVoters.get(pid);
+                if (!uid || !voters || !voters.has(uid)) {
+                    await bot.answerCallbackQuery(cq.id, { text: 'Cavabı görmək üçün əvvəlcə səs verin.', show_alert: true });
+                    return;
+                }
+                const meta = pollMeta.get(pid);
+                if (!meta) {
+                    await bot.answerCallbackQuery(cq.id, { text: 'Cavab hazır deyil.', show_alert: true });
+                    return;
+                }
+                const correctText = (meta.options || [])[meta.correct_option_id] || '—';
+                const expl = meta.explanation || '';
+                let txt = `Düzgün cavab: ${correctText}`;
+                if (expl) txt += `\nİzah: ${expl}`;
+                if (txt.length > 190) txt = txt.slice(0, 187) + '...';
+                await bot.answerCallbackQuery(cq.id, { text: txt, show_alert: true });
+            } catch (_) {}
+        });
+
+        async function sendNews({ title, url, imageUrl, excerpt, tags, category }) {
+            try {
+                const hashTags = Array.isArray(tags) ? tags.slice(0, 5).map(t => `#${t}`).join(' ') : '';
+                const cat = category ? `[${category}] ` : '';
             const summary = excerpt ? `\n\n${excerpt}` : '';
             const text = `📰 ${cat}${title}\n${summary}\n\n🔗 ${url}\n${hashTags}`;
             
@@ -517,5 +560,17 @@ if (!token || !channelId) {
         }
     }
     
-    module.exports = { sendQuizBatch, addQuestion, getNextSchedule, sendApologyMessage, startQuizBatch, sendNews, get isBatchRunning() { return isBatchRunning; } };
+    function setQuizCount(n) {
+        const v = parseInt(n, 10);
+        if (!Number.isFinite(v)) return;
+        QUIZ_COUNT = Math.max(1, Math.min(100, v));
+        console.log(`⚙️ Quiz sual sayı yeniləndi: ${QUIZ_COUNT}`);
+    }
+    function getQuizCount() { return QUIZ_COUNT; }
+    function stopQuizBatch() {
+        if (!isBatchRunning) return false;
+        cancelBatchRequested = true;
+        return true;
+    }
+    module.exports = { sendQuizBatch, addQuestion, getNextSchedule, sendApologyMessage, startQuizBatch, sendNews, setQuizCount, getQuizCount, stopQuizBatch, get isBatchRunning() { return isBatchRunning; } };
 }

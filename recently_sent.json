@@ -1,0 +1,2835 @@
+[
+  {
+    "fp": "371744d1bf052f4071498ca106a293ef61a18009",
+    "id": 4444,
+    "at": 1767808800598
+  },
+  {
+    "fp": "3d932ea7d20c627d8cf8807f19c4b0d59b1d2070",
+    "id": 2521,
+    "at": 1767808849904
+  },
+  {
+    "fp": "e0013558cfa2b7f0061ca838f74cc23592a4d4d9",
+    "id": 3104,
+    "at": 1767808899086
+  },
+  {
+    "fp": "19583bd8fb50ff163337de5a5ea11156f65023d8",
+    "id": 2785,
+    "at": 1767808948270
+  },
+  {
+    "fp": "8fc8fe3a62f0d84ef68f53c637edca2dfb1c4773",
+    "id": 4112,
+    "at": 1767808997445
+  },
+  {
+    "fp": "0e16e526ecc5563c7893d07816d6123202216c0d",
+    "id": 959,
+    "at": 1767809046620
+  },
+  {
+    "fp": "3f513c1c2733cb4aa007b505e492d98d0218aca9",
+    "id": 3689,
+    "at": 1767809096013
+  },
+  {
+    "fp": "fa14ff2e6f2bee58b8fbac34e2da16aefef8e6d2",
+    "id": 3369,
+    "at": 1767809145180
+  },
+  {
+    "fp": "b7efa3e28080b9463eb498aa0d9dfb326324365a",
+    "id": 4709,
+    "at": 1767816000392
+  },
+  {
+    "fp": "2f8efbaa4e91d90e16975fe2a88048d89bcb3717",
+    "id": 6204,
+    "at": 1767816049548
+  },
+  {
+    "fp": "9760ce64d0edb5536b09f18b407557958ad676c1",
+    "id": 3708,
+    "at": 1767816098732
+  },
+  {
+    "fp": "b228fdb5ec774d51b0c87ee63def718e6aac1bc9",
+    "id": 3318,
+    "at": 1767816147945
+  },
+  {
+    "fp": "3947a13e444d0adbea84b6f3ff45c2e0ff5fd5c8",
+    "id": 333,
+    "at": 1767816197089
+  },
+  {
+    "fp": "b316d1841cba593e10cda1919d2272f2c02d27fd",
+    "id": 4115,
+    "at": 1767816246245
+  },
+  {
+    "fp": "038a41e40a1787ff2c7fe57ce015007b7352eb53",
+    "id": 4111,
+    "at": 1767816295446
+  },
+  {
+    "fp": "9cc7608b27dbd395dc327e7aa85e65f85333dbfb",
+    "id": 1427,
+    "at": 1767816344609
+  },
+  {
+    "fp": "e4d2c046924bb7775d25415394d4097974bcc2fa",
+    "id": 3496,
+    "at": 1767816393980
+  },
+  {
+    "fp": "41660e11216266c88b4c00520c7155409f289762",
+    "id": 4222,
+    "at": 1767816443139
+  },
+  {
+    "fp": "02484ad6c7017e770d94eb9a22205978f2bacd28",
+    "id": 104,
+    "at": 1767816492363
+  },
+  {
+    "fp": "7b54b17d52272989e1b9df050a993a36c7e7c0c7",
+    "id": 1971,
+    "at": 1767816541539
+  },
+  {
+    "fp": "47266e8e57ec36ba4aac0f3a5ae34431c3ab9fe4",
+    "id": 4132,
+    "at": 1767816590695
+  },
+  {
+    "fp": "2d5f0ac7208b14e5fa50f0c7b00da85970797890",
+    "id": 1432,
+    "at": 1767816639886
+  },
+  {
+    "fp": "78dc39d27fb53e98f35d739462640899413434e0",
+    "id": 331,
+    "at": 1767816689054
+  },
+  {
+    "fp": "38e0dd705b6310eca5f7d8db58f84ed510a0544a",
+    "id": 4727,
+    "at": 1767816738239
+  },
+  {
+    "fp": "dfc840681c00e93e28b4d7a1bef8c3e6419ad9ef",
+    "id": 3243,
+    "at": 1767816787423
+  },
+  {
+    "fp": "4bd99aead9480d188c2e7827b1dca1d1222ef6ea",
+    "id": 3394,
+    "at": 1767816836620
+  },
+  {
+    "fp": "650aedbb1b997035242e2eab297b90cbf170d441",
+    "id": 2558,
+    "at": 1767816885794
+  },
+  {
+    "fp": "dbefec4ab71f43447f3667308622dfa5d1c24364",
+    "id": 3308,
+    "at": 1767816934952
+  },
+  {
+    "fp": "399abb053358f62fc63c10294549b13ddd32cac4",
+    "id": 1461,
+    "at": 1767816984110
+  },
+  {
+    "fp": "c4e30511a6c23235d03122b22fde2b2a71346908",
+    "id": 254,
+    "at": 1767817033269
+  },
+  {
+    "fp": "27697fa900156f6d483866d234e79b89b4d84b0b",
+    "id": 3327,
+    "at": 1767817082448
+  },
+  {
+    "fp": "45a2d699e1ed37818abefed039477c5e1d318819",
+    "id": 4133,
+    "at": 1767817131627
+  },
+  {
+    "fp": "f6d990c328dd92ccdc5b6592f61b9c4495d489e0",
+    "id": 2537,
+    "at": 1767817180803
+  },
+  {
+    "fp": "7bfbbf70d796d737e2523a9fa2219324f9c99aa8",
+    "id": 629,
+    "at": 1767817229934
+  },
+  {
+    "fp": "36c725ec82515c2717f39458e23054a37f6ad84e",
+    "id": 1481,
+    "at": 1767817279121
+  },
+  {
+    "fp": "c037dbba98450063d06e307843e050d6a43b2df1",
+    "qk": "si̇tuasi̇ya: vetendas ehmedov icra hakimiyyetine evinin temiri ucun icaze isteyir. i̇cra hakimiyyeti onun erizesini qebul edir, lakin 40 gun kecmesine baxmayaraq hec bir cavab vermir. qanunla mueyyen edilmis muddet 30 gundur. sual: bu halda inzibati akt qebul edilmis sayilirmi?",
+    "id": 2322,
+    "at": 1767819883481
+  },
+  {
+    "fp": "f108c21ebabf8abc4f2f3a69c6e0d035eb64116e",
+    "qk": "dovlet qulluqcusu deyeri 55 manatdan yuxari olan hediyyeni qebul ederse ne etmelidir?",
+    "id": 477,
+    "at": 1767819932640
+  },
+  {
+    "fp": "262bd1374f3d8f4abe6a4a5a6aba7fc2c91e4e1f",
+    "qk": "vezifeli sexs xidmeti vezifelerini yerine yetirerken qonaqperverlik numayis etdirerek 700 manat deyerinde hediyye qebul edir. korrupsiyaya qarsi mubarize haqqinda qanuna gore bu halda ne bas vermelidir? (situasiya)",
+    "id": 3756,
+    "at": 1767819981861
+  },
+  {
+    "fp": "ea9e5672de59959de2898fa94cd0544eaa5f69df",
+    "qk": "\"korrupsiya\" qanunvericiliyine esasen, maliyye xarakterli melumatlarin teqdim edilmesi muddeti ne qederdir?",
+    "id": 585,
+    "at": 1767820031050
+  },
+  {
+    "fp": "628fef457fcf1f5ac425f3d77307b3a86105f9ae",
+    "qk": "milli meclis buraxildiqda onun selahiyyetlerini kim heyata kecirir? (analitik)",
+    "id": 4934,
+    "at": 1767820080223
+  },
+  {
+    "fp": "fa17c9f5f5f377c73e51d113c1504dca4de3aad9",
+    "qk": "sinaq muddeti en coxu ne qeder ola biler?",
+    "id": 1821,
+    "at": 1767820129377
+  },
+  {
+    "fp": "670ac81561b31cfb01983c1e6735a37cbd562c50",
+    "qk": "situasiya: eli dovlet orqaninin nufuzuna xelel getire bilecek melumatlari sosial sebekede paylasir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 270,
+    "at": 1767820178561
+  },
+  {
+    "fp": "8daea3e023dc44dfb896f6cd06b043d6cccd5402",
+    "qk": "vezifeli sexs oz yaxin qohumunu birbasa tabeciliyine ise qebul ede bilermi?",
+    "id": 429,
+    "at": 1767820227719
+  },
+  {
+    "fp": "c4f772d62378be2d85e41fbff4df656aa451df41",
+    "qk": "muqavile baglanmasi haqqinda teklif (oferta) hansi halda quvveden dusmus hesab olunur?",
+    "id": 2481,
+    "at": 1767820276873
+  },
+  {
+    "fp": "d19dd65ec21339655884ee696147aec68bac719e",
+    "qk": "veli xidmeti vezifelerini icra ederken ona teqdim olunan 53 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5469,
+    "at": 1767820326269
+  },
+  {
+    "fp": "030dc2db45b1d028bc01027730cdb1acd4bd31b0",
+    "qk": "eger butun guller bitkidirse ve bezi bitkiler zeherlidirse, onda:",
+    "id": 7434,
+    "at": 1767820375409
+  },
+  {
+    "fp": "4343ad221d19bc8667b6ae3a8ad21286d4acde8e",
+    "qk": "qanunlari qebul edir - bu selahiyyet kime aiddir?",
+    "id": 697,
+    "at": 1767820424654
+  },
+  {
+    "fp": "4fb3c8e97d735df6f543d2354ac591df7bb44fcb",
+    "qk": "hakimler islerine baxarken kime tabedirler?",
+    "id": 1590,
+    "at": 1767820473827
+  },
+  {
+    "fp": "2ba97b231585bf252d82fa433a7df3d0989bc2fd",
+    "qk": "i̇nzibati aktin 'hec bir huquqi netice yaratmamasi' (batil olmasi) hansi halda mumkundur? (analitik)",
+    "id": 4417,
+    "at": 1767820522961
+  },
+  {
+    "fp": "190f0279e5e5ce8d6085cfdc97cce6886fd72eeb",
+    "qk": "\"vetendaslarin muracietleri\" qanunvericiliyine esasen, muraciete baxilma muddeti muddeti ne qederdir?",
+    "id": 595,
+    "at": 1767820572112
+  },
+  {
+    "fp": "550951befe762795c24828cb709c92cc341e9e83",
+    "qk": "yetkinlik yasina catmayanlarin (14 yasdan 18 yasadek) fealiyyet qabiliyyeti barede hansi fikir dogrudur?",
+    "id": 2411,
+    "at": 1767820621290
+  },
+  {
+    "fp": "7351560b8d42022111de6132f86fe19114264e2b",
+    "qk": "dovlet qulluqcusunun xidmeti fealiyyetinin qiymetlendirilmesi zamani ona \"kafi\" qiymet verilmisdir. lakin o, 6 ildir ki, qusursuz isleyir. bu halda qulluqcunun hansi huququ var? (situasiya)",
+    "id": 3270,
+    "at": 1767820670456
+  },
+  {
+    "fp": "3afeb1b962d974bc8a369cbe4a5b000dbf45d820",
+    "qk": "budcenin icrasina nezareti kim heyata kecirir?",
+    "id": 1476,
+    "at": 1767820719876
+  },
+  {
+    "fp": "a585e9aae17532b0d2334040f5a575122a9a4176",
+    "qk": "budce ili ne vaxt baslayir?",
+    "id": 1404,
+    "at": 1767820769032
+  },
+  {
+    "fp": "29dee3abeef67339a090cb4e8aa42e397f245bc0",
+    "qk": "dovlet budcesinin layihesini kim hazirlayir?",
+    "id": 1428,
+    "at": 1767820818236
+  },
+  {
+    "fp": "f221790be30b00ea7a1af932c50dc585c8ebef54",
+    "qk": "dovlet qulluqcusu boyuk referent vezifesinde calisir. o, il erzinde tekraren xidmeti vezifeleri kobud sekilde pozmaq halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3255,
+    "at": 1767820867409
+  },
+  {
+    "fp": "da3e1afea37c0993d42e2793dc399a3f51b8ca30",
+    "qk": "xarici vetendas d inzibati sikayet verir. sikayete baxan orqan sikayetin icraatini dayandirir. bu qerar hansi halda qanunidir? (situasiya)",
+    "id": 3542,
+    "at": 1767820916560
+  },
+  {
+    "fp": "3e260981aa7acf9dfd62f67824f6e2a3c0dffa40",
+    "qk": "sahibkar b inzibati sikayet verir. sikayete baxan orqan sikayetin icraatini dayandirir. bu qerar hansi halda qanunidir? (situasiya)",
+    "id": 3616,
+    "at": 1767820965714
+  },
+  {
+    "fp": "a9845d06c0d5bf0951bf29a0450acc812e821fa7",
+    "qk": "dovlet qulluqcusunun statusu ile bagli sehv fikri secin.",
+    "id": 985,
+    "at": 1767821014860
+  },
+  {
+    "fp": "5b06310d583239363aea83ad1f99eebc132a577e",
+    "qk": "sahibkar b inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 5 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3677,
+    "at": 1767821064118
+  },
+  {
+    "fp": "e5798b7d75ac77f8417f847a54fe080d9a897e0b",
+    "qk": "heftelik normal is vaxti ne qederdir?",
+    "id": 1446,
+    "at": 1767821113293
+  },
+  {
+    "fp": "83c205253d24cf4010a15eae5fdaa9b9c5e33351",
+    "qk": "azerbaycan respublikasinda dovlet dili haqqinda qanuna gore, reklamlarda dovlet dilinin istifadesi nece tenzimlenir?",
+    "id": 2747,
+    "at": 1767871996405
+  },
+  {
+    "fp": "53ee97dd6189ca664c8c5d24cbfb4576ef6048e3",
+    "qk": "\"rehber muavini, aparat rehberi\" vezifesi inzibati vezifelerin hansi tesnifatina aiddir? (numunevi)",
+    "id": 109,
+    "at": 1767872045556
+  },
+  {
+    "fp": "bab9f6ed2adf7f5e6d6786075eaa80e6cff70b8f",
+    "qk": "eyni huquqi quvveye malik olan normativ huquqi aktlar arasinda ziddiyyet (kolliziya) yarandiqda hansi akt tetbiq edilir?",
+    "id": 2808,
+    "at": 1767872094700
+  },
+  {
+    "fp": "eccdcc86458f004d4635351aeebc994b330dc982",
+    "qk": "dovlet sirrini teskil eden melumatlarin yayilmasina gore kimler mesuliyyet dasiyir?",
+    "id": 2869,
+    "at": 1767872143838
+  },
+  {
+    "fp": "fd4f7787d02d7566cf36db3a6cbe07051f421999",
+    "qk": "gunel evvel islediyi sirketle bagli qerar qebul etmelidir. bu halda o nece davranmalidir?",
+    "id": 6165,
+    "at": 1767872192990
+  },
+  {
+    "fp": "5a970e7faf68a949c7456353b21ed8ad4a6facd2",
+    "qk": "ombudsmana sikayet huquqlarin pozuldugu gunden hansi muddet erzinde verile biler?",
+    "id": 2750,
+    "at": 1767872242197
+  },
+  {
+    "fp": "7dc81fea495a9fa2a5efd1e6e778bd4408b6f682",
+    "qk": "kimlerle emek muqavilesi baglanarken sinaq muddeti mueyyen edi̇lmi̇r?",
+    "id": 2776,
+    "at": 1767872291375
+  },
+  {
+    "fp": "85bb9ba6f2a1ff66987fc803d617eac096422d0c",
+    "qk": "dovlet qulluqcusu bas meslehetci vezifesinde calisir. o, il erzinde tekraren uzrlu sebeb olmadan ise gelmemek halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3145,
+    "at": 1767872340738
+  },
+  {
+    "fp": "ecf5244b3c77d30acc1afc17813b49cf586ef29c",
+    "qk": "satinalma muqavilesinin yerine yetirilmesi teminati muqavile mebleginin nece faizi hecminde mueyyen edilir?",
+    "id": 1442,
+    "at": 1767872390000
+  },
+  {
+    "fp": "608c617c5dd71f6d321802d605ea7a72169c2237",
+    "qk": "emek muqavilesi hansi formada baglanmalidir?",
+    "id": 1863,
+    "at": 1767872439202
+  },
+  {
+    "fp": "24fb9fbd74a441f3b85e2038e47c9cf4e6c3b1b6",
+    "qk": "dovlet budcesinin layihesini hazirlayir - bu selahiyyet kime aiddir?",
+    "id": 60,
+    "at": 1767872488400
+  },
+  {
+    "fp": "7d4eeecaa1fd279e167de89ebbd705c0fbe01e3a",
+    "qk": "i̇cra hakimiyyetinde sektor mudiri vezifesinde calisan samir etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6366,
+    "at": 1767872538562
+  },
+  {
+    "fp": "4d7141cd516a39d3bb8e88157c24b713eaf9995a",
+    "qk": "mehkeme icraati hansi dilde aparilir?",
+    "id": 1641,
+    "at": 1767872587725
+  },
+  {
+    "fp": "2e850f2e2b93c0737f0042ec50a10967cf689aa8",
+    "qk": "aciq tenderin kecirilmesi ucun elan en azi nece gun evvel verilmelidir?",
+    "id": 1657,
+    "at": 1767872636929
+  },
+  {
+    "fp": "a829bb80314911eef0fe7a57c78de05580c68bcb",
+    "qk": "ferid xidmeti vezifelerini icra ederken ona teqdim olunan 59 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6504,
+    "at": 1767872686106
+  },
+  {
+    "fp": "5eafdc0c4c34b9f31ced920320b0f9ba273b041b",
+    "qk": "(situasiya): dovlet qulluqcusu olaraq, size sexsi sosial sebeke hesabinizdan is yoldasiniz isle bagli melumat sorusur. sizin cavabiniz nece olmalidir?",
+    "id": 7303,
+    "at": 1767872735251
+  },
+  {
+    "fp": "5737630d10eebc1ff3aaea7756b04ab6c8697147",
+    "qk": "dovlet bayragi hansi hallarda yariya endirilir?",
+    "id": 7219,
+    "at": 1767872784401
+  },
+  {
+    "fp": "225616dc8a65d918d36a1db6bfc793eda33c9cba",
+    "qk": "konstitusiyaya gore, azerbaycan respublikasinda hakimiyyet bolgusu prinsipi nece teskil olunub?",
+    "id": 7133,
+    "at": 1767872833580
+  },
+  {
+    "fp": "1c4c83bb4799f0c0480eea0d9e41071936ad3b88",
+    "qk": "\"normativ xarakterli akt\" nedir?",
+    "id": 7066,
+    "at": 1767872882735
+  },
+  {
+    "fp": "63d651c7097acc9ee31a2330d0a7e920a42574fc",
+    "qk": "asagidaki hereketlerden hansi korrupsiya sayilmir?",
+    "id": 6943,
+    "at": 1767872931982
+  },
+  {
+    "fp": "6e205270eae05e171f549d2232f6b0ecc77efde2",
+    "qk": "normativ huquqi aktin derc olunmasi hansi metbuat orqanlarinda heyata kecirilir?",
+    "id": 6780,
+    "at": 1767872981210
+  },
+  {
+    "fp": "64b8d28feb1e86f6d3b317661ea4ea9a2f828a65",
+    "qk": "fiziki sexsin fealiyyet qabiliyyetinin mehdudlasdirilmasi hansi hallarda mumkundur?",
+    "id": 7073,
+    "at": 1767873030685
+  },
+  {
+    "fp": "ed234c8e7abab8653c460fd143dbc6e60450ca94",
+    "qk": "dovlet gerbindeki sekkizguseli ulduzun merkezinde ne tesvir olunub?",
+    "id": 6870,
+    "at": 1767873079849
+  },
+  {
+    "fp": "7a163af021ce231feee668edd0b7c4c9ace48f14",
+    "qk": "(situasiya): dovlet qulluqcusu vezifeye teyin olunarken, ondan teqdim etmesi teleb olunan senedlerden biri de evvelki is yerlerinden xarakteristikadir. bu xarakteristika hansi muddet erzinde teqdim edilmelidir?",
+    "id": 7134,
+    "at": 1767873129022
+  },
+  {
+    "fp": "a73d2f2023b1b0872c2cbe7a22d9526b58dee8c0",
+    "qk": "(situasiya): i̇sci 6 aydir islediyi yerde is seraitinden narazidir ve oz iradesi ile isden cixmaq qerarina gelir. o, isegoturene xeberdarliq etmelidirmi?",
+    "id": 6733,
+    "at": 1767873178206
+  },
+  {
+    "fp": "e2190eecef179883cd5e77928a46efb0cfc29ce9",
+    "qk": "i̇nzibati cezanin tetbiq edilme muddeti ne qederdir?",
+    "id": 6727,
+    "at": 1767873227379
+  },
+  {
+    "fp": "46398ce746c86c688274a6b7dd1a193ccf84935e",
+    "qk": "eger butun kitablar kagizdandirsa ve bezi kagizlar agdirsa, onda:",
+    "id": 6794,
+    "at": 1767873276530
+  },
+  {
+    "fp": "ea1d056d3af15f3d3b641538ee108fe5afe86f6c",
+    "qk": "vezifeli sexs xidmeti vezifelerini yerine yetirerken qonaqperverlik numayis etdirerek 600 manat deyerinde hediyye qebul edir. korrupsiyaya qarsi mubarize haqqinda qanuna gore bu halda ne bas vermelidir? (situasiya)",
+    "id": 3790,
+    "at": 1767873600753
+  },
+  {
+    "fp": "6ddceb07f8eabb6a673bca8c12f6a986ecf9ca4f",
+    "qk": "\"melumat azadligi\" qanunvericiliyine esasen, informasiya sorgusuna cavab muddeti ne qederdir?",
+    "id": 216,
+    "at": 1767873649898
+  },
+  {
+    "fp": "7ba7d87edc0beedb19283f75214a5e28fd111f47",
+    "qk": "situasiya: veli is yoldaslari ile yuksek tonla danisir ve etik olmayan ifadeler isledir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 261,
+    "at": 1767873699193
+  },
+  {
+    "fp": "8451b8f713e27ef0d237461650ddbc993e86a285",
+    "qk": "milli meclisin sessiyalari ile bagli yanlis fikri mueyyen edin.",
+    "id": 717,
+    "at": 1767873748336
+  },
+  {
+    "fp": "3432370cdc5b72568505f1dc3b25a82b3cab5381",
+    "qk": "\"vetendaslarin muracietleri haqqinda\" qanuna gore, muracietcinin hansi huququ var?",
+    "id": 6809,
+    "at": 1767873797501
+  },
+  {
+    "fp": "3bff337c2d7915ab7a9b98b1ccacd80b137c77f6",
+    "qk": "situasiya: nigar is yoldaslari ile yuksek tonla danisir ve etik olmayan ifadeler isledir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 255,
+    "at": 1767873846675
+  },
+  {
+    "fp": "c40b796270f9952f7d32cc0d20aff03a1ea795f4",
+    "qk": "dovlet hakimiyyetinin yegane menbeyidir - bu selahiyyet kime aiddir?",
+    "id": 23,
+    "at": 1767873895942
+  },
+  {
+    "fp": "37958307a1184f24002f80942d0b03dc2c5dd44b",
+    "qk": "situasiya: nigar rehberliyin qanuni gosterisini yerine yetirmekden imtina edir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 369,
+    "at": 1767873945171
+  },
+  {
+    "fp": "ad4983cb854e794d187d4c8fa378b36d0c82772d",
+    "qk": "vezifeli sexs xidmeti vezifelerini yerine yetirerken qonaqperverlik numayis etdirerek 800 manat deyerinde hediyye qebul edir. korrupsiyaya qarsi mubarize haqqinda qanuna gore bu halda ne bas vermelidir? (situasiya)",
+    "id": 3725,
+    "at": 1767873994339
+  },
+  {
+    "fp": "ee86a4dc9c35ee3c522c069e4d96f22a3d991677",
+    "qk": "dovlet qulluqcusunun xidmeti fealiyyetinin qiymetlendirilmesi zamani ona \"kafi\" qiymet verilmisdir. lakin o, 3 ildir ki, qusursuz isleyir. bu halda qulluqcunun hansi huququ var? (situasiya)",
+    "id": 3334,
+    "at": 1767874043499
+  },
+  {
+    "fp": "2c66ebef24449245c1949c9ad5b6222d75125fea",
+    "qk": "situasiya: aysel rehberliyin qanuni gosterisini yerine yetirmekden imtina edir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 269,
+    "at": 1767874092710
+  },
+  {
+    "fp": "3c5771f8fe1c22e0f9e8cb62225c96ddcb8e2c8b",
+    "qk": "melumat sorgusuna cavab hansi formada verilir?",
+    "id": 7238,
+    "at": 1767874141872
+  },
+  {
+    "fp": "5e4484a320fd7dd8c2de66d80992333363bac8e8",
+    "qk": "senedlerin elektron formada gonderilmesi zamani ne nezere alinmalidir?",
+    "id": 7194,
+    "at": 1767874191089
+  },
+  {
+    "fp": "76fd46ce4c0e812463f799ce05baee044e548fc6",
+    "qk": "vetendas a inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 15 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3519,
+    "at": 1767874240341
+  },
+  {
+    "fp": "20688fbe9520bc0f6828ab6f3adb82bfd7a84389",
+    "qk": "si̇tuasi̇ya: dovlet qulluqcusu samireye vetendas terefinden isinin tez hell edilmesi muqabilinde 'sirinlik' teklif olunur. samire bunu redd edir, lakin bu barede rehberliyine melumat vermir. sual: samirenin hereketinde pozuntu varmi?",
+    "id": 2248,
+    "at": 1767874289512
+  },
+  {
+    "fp": "4fab7293ccb7db7f30ed2dcc9f39a50c5b0c1cd2",
+    "qk": "qanunlarin konstitusiyaya uygunlugunu yoxlayir - bu selahiyyet kime aiddir?",
+    "id": 10,
+    "at": 1767874338816
+  },
+  {
+    "fp": "a3592ebf6d945e62590dd827336edfa2f9abc69b",
+    "qk": "dovlet qulluqcusu boyuk meslehetci vezifesinde calisir. o, il erzinde tekraren uzrlu sebeb olmadan ise gelmemek halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3347,
+    "at": 1767874387979
+  },
+  {
+    "fp": "0410b971a74800310236529c4a85d91f45a0cb84",
+    "qk": "i̇nzibati icraatda 'maraqli sexs' sayilanlari mueyyen edin. 1. i̇nzibati icraatda erizeci 2. i̇nzibati orqan terefinden icraata celb olunmus ucuncu sexsler 3. i̇nzibati orqanin rehberi (vezifeli sexsdir, maraqli sexs deyil) 4. i̇nzibati aktin unvanlandigi sexs",
+    "id": 708,
+    "at": 1767874437122
+  },
+  {
+    "fp": "c7595650abc80f68c8199e8483e20991257df8db",
+    "qk": "\"sobe mudiri\" vezifesi inzibati vezifelerin hansi tesnifatina aiddir? (numunevi)",
+    "id": 117,
+    "at": 1767874486284
+  },
+  {
+    "fp": "31d41c35369dcd08671d467476fc98058d0f9c4a",
+    "qk": "dovlet satinalmalarinda 'kotirovka sorgusu' usulu ne vaxt tetbiq edilir?",
+    "id": 1596,
+    "at": 1767874535452
+  },
+  {
+    "fp": "76f0eb961aa693490f108fb10e1dc68112d42781",
+    "qk": "situasiya: veli rehberliyin qanuni gosterisini yerine yetirmekden imtina edir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 319,
+    "at": 1767874584598
+  },
+  {
+    "fp": "2bcd22e852806893658939e6840b7c5eadc6d785",
+    "qk": "\"dovlet qullugu\" qanunvericiliyine esasen, fealiyyetin qiymetlendirilmesi muddeti ne qederdir?",
+    "id": 598,
+    "at": 1767874633764
+  },
+  {
+    "fp": "08fa6510215f9c32039e0abbd0275593b891d13e",
+    "qk": "sahibkar b inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 60 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3405,
+    "at": 1767874682926
+  },
+  {
+    "fp": "b28d67562e59b857e7b81e3a7c74535a2fb8cc58",
+    "qk": "silahli quvvelerin ali bas komandanidir - bu selahiyyet kime aiddir?",
+    "id": 625,
+    "at": 1767874732222
+  },
+  {
+    "fp": "53f782fee1bce537f6c6e2b7d597d4087c039dba",
+    "qk": "\"sektor mudiri\" vezifesi inzibati vezifelerin hansi tesnifatina aiddir? (numunevi)",
+    "id": 125,
+    "at": 1767874781506
+  },
+  {
+    "fp": "4ff9877b152f69f422afd8a294104d50e072f0a2",
+    "qk": "dovlet qulluqcusu kicik meslehetci vezifesinde calisir. o, il erzinde tekraren etik davranis qaydalarini pozmaq halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3337,
+    "at": 1767874830717
+  },
+  {
+    "fp": "a94b4e55a6b12e4cfbf874143dfd3c4fec771a08",
+    "qk": "i̇nzibati i̇craat haqqinda qanuna esasen, i̇nzibati sikayete baxilmasi hansi muddetde heyata kecirilmelidir?",
+    "id": 5141,
+    "at": 1767880800659
+  },
+  {
+    "fp": "2b196645aaa70bdcfed312f1c5e42ac454d1d0ed",
+    "qk": "\"senedlerin _____ hazirlanmasi vacibdir.\" cumledeki bosluga asagidakilardan hansi duzgun gelir?",
+    "id": 7360,
+    "at": 1767880849872
+  },
+  {
+    "fp": "d0d0d112d781e248f83b13ad629315ba310e4094",
+    "qk": "aysel xidmeti vezifelerini icra ederken ona teqdim olunan 59 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5685,
+    "at": 1767880899033
+  },
+  {
+    "fp": "6e06da09725431f8e7bcf4546fcd5d53b09d10fb",
+    "qk": "i̇cra hakimiyyetinde sektor mudiri vezifesinde calisan eli rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5723,
+    "at": 1767880948197
+  },
+  {
+    "fp": "a0c0c9ceed0aee6eae848c2ee8dff502469080b6",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 50 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5582,
+    "at": 1767880997388
+  },
+  {
+    "fp": "79b751afa253359828465e463a9fbef2595074d5",
+    "qk": "5, 10, 20, 40, ? novbeti reqem hansidir?",
+    "id": 7273,
+    "at": 1767881046590
+  },
+  {
+    "fp": "af6f4de21858d5907b4fd0b03162006585b40a56",
+    "qk": "hansi hallarda melumatin verilmesi muddeti uzadila biler?",
+    "id": 7286,
+    "at": 1767881095756
+  },
+  {
+    "fp": "19f728f2a9653bb0c22c6df0487bda742f04a142",
+    "qk": "gunel xidmeti vezifelerini icra ederken ona teqdim olunan 61 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5610,
+    "at": 1767881144967
+  },
+  {
+    "fp": "8425dfee6a72aae3645d296b1e3921b170c2fa74",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 46 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5596,
+    "at": 1767881194156
+  },
+  {
+    "fp": "db5cb42d2177217f673c719528b56d874f9927d5",
+    "qk": "mulki mecelleye gore, huquqi sexsin fealiyyetinin dayandirilmasi hansi hallarda bas verir?",
+    "id": 7321,
+    "at": 1767881243379
+  },
+  {
+    "fp": "a30570a40108e567d4b8395f5836a17f45989021",
+    "qk": "leyla xidmeti vezifelerini icra ederken ona teqdim olunan 45 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5572,
+    "at": 1767881292537
+  },
+  {
+    "fp": "2dbd0b438bd5f2cab9e000833faa90eb704e6ceb",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 52 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5159,
+    "at": 1767881341708
+  },
+  {
+    "fp": "3dae26f159a7dce644de1bbb3b7318d8df18bf6d",
+    "qk": "dovlet bayraginin olculeri ne qederdir?",
+    "id": 7299,
+    "at": 1767881390873
+  },
+  {
+    "fp": "c33f63175872db8d663a66ab3db12d4ff6e08107",
+    "qk": "agentlikde sobe mudiri vezifesinde calisan eli uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5153,
+    "at": 1767881440054
+  },
+  {
+    "fp": "58eb2807167f328eec303c7872e2fbab9b6cb9ff",
+    "qk": "nergiz xidmeti vezifelerini icra ederken ona teqdim olunan 51 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5204,
+    "at": 1767881489310
+  },
+  {
+    "fp": "5e64622ea0e90c5d1ee203ddc0d3050975245a1b",
+    "qk": "i̇cra hakimiyyetinde bas meslehetci vezifesinde calisan aysel uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5561,
+    "at": 1767881538465
+  },
+  {
+    "fp": "746d09171a374867469df2d7658669b107f280cf",
+    "qk": "aysel xidmeti vezifelerini icra ederken ona teqdim olunan 41 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5166,
+    "at": 1767881587616
+  },
+  {
+    "fp": "874a8f57d1a0a44128869b0f127a66a078f4e921",
+    "qk": "nazirlikde boyuk meslehetci vezifesinde calisan tural xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5202,
+    "at": 1767881636969
+  },
+  {
+    "fp": "3b7db0c722455be635d0a47c88ea395220346dfb",
+    "qk": "komitede aparici meslehetci vezifesinde calisan eli xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5612,
+    "at": 1767881686196
+  },
+  {
+    "fp": "2aa97628bc43c3e22de08bfc62e67018ae57fcd9",
+    "qk": "xidmetde sobe mudiri vezifesinde calisan ferid rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6139,
+    "at": 1767881735370
+  },
+  {
+    "fp": "1989442cdec0c39b4312b778dd9fa0a1e65ed110",
+    "qk": "agentlikde aparici meslehetci vezifesinde calisan ferid xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5195,
+    "at": 1767881784541
+  },
+  {
+    "fp": "7b49fd33a78531f8db4814aeaae31d508b3d8c69",
+    "qk": "xidmetde bas meslehetci vezifesinde calisan eli xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5676,
+    "at": 1767881833711
+  },
+  {
+    "fp": "417227e443616cdc4d86c62966d555aa1254f642",
+    "qk": "1, 1, 2, 3, 5, 8, 13, ? novbeti reqem hansidir?",
+    "id": 7357,
+    "at": 1767881882911
+  },
+  {
+    "fp": "c26248f6bba0178059d37adaff4728d5af1cdc12",
+    "qk": "situasiya: eli rehberliyin qanuni gosterisini yerine yetirmekden imtina edir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 366,
+    "at": 1767881932117
+  },
+  {
+    "fp": "e5a24904b978d0d0df5e365c23e6443da1d1a817",
+    "qk": "xidmetde aparici meslehetci vezifesinde calisan gunel xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6505,
+    "at": 1767881981343
+  },
+  {
+    "fp": "a7af7ef1502f0406cd51f6a3ffab290e5428f8c9",
+    "qk": "nazirlikde boyuk meslehetci vezifesinde calisan veli etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6483,
+    "at": 1767882030718
+  },
+  {
+    "fp": "3a8ad114a2f956baeab02c34deeea088259599ed",
+    "qk": "samir xidmeti vezifelerini icra ederken ona teqdim olunan 68 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6129,
+    "at": 1767882079914
+  },
+  {
+    "fp": "e9349f428f7190db735e8dd6f9bf01c61614fa05",
+    "qk": "ferid xidmeti vezifelerini icra ederken ona teqdim olunan 52 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6537,
+    "at": 1767882129293
+  },
+  {
+    "fp": "42afdab2a3b314f6a99c4d0b76633b85096256ae",
+    "qk": "asagidaki muhakimelerden hansi yanlisdir? (mehkemeler ve hakimler haqqinda qanun)",
+    "id": 3965,
+    "at": 1767888001133
+  },
+  {
+    "fp": "eb6c5e94b8457a535175c13e5e1047cd35340d5a",
+    "qk": "muracietci muracietinin qismen qaneedici cavab aldigini dusunur. o, ne ede biler?",
+    "id": 7069,
+    "at": 1767888051168
+  },
+  {
+    "fp": "9745e0c40745ec870c77b719c0c88bafaa498df4",
+    "qk": "qht numayendesi c inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 30 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3511,
+    "at": 1767888100433
+  },
+  {
+    "fp": "e7001fbbc07218479519bebbcf42488b415bdce3",
+    "qk": "qht numayendesi c inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 7 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3473,
+    "at": 1767888149665
+  },
+  {
+    "fp": "d63a4d21a72190b3c8f5cb7e33d43d3918869e60",
+    "qk": "i̇nsan huquqlari uzre muvekkil (ombudsman) sikayeti qebul etdikden sonra hansi qerari qebul ede bi̇lmez?",
+    "id": 2443,
+    "at": 1767888198840
+  },
+  {
+    "fp": "6a2dbab511e879604741314f7e7f92331cc01e8d",
+    "qk": "qht numayendesi c inzibati sikayet verir. sikayete baxan orqan sikayetin icraatini dayandirir. bu qerar hansi halda qanunidir? (situasiya)",
+    "id": 3522,
+    "at": 1767888247994
+  },
+  {
+    "fp": "ee632f1d00a9909bbb77c1bad48d607f427db06b",
+    "qk": "dovlet budcesini kim tesdiq edir?",
+    "id": 1475,
+    "at": 1767888297266
+  },
+  {
+    "fp": "9680b5e1d6f467d3cdde9c1c25e4b90de6d941bb",
+    "qk": "normativ huquqi aktlarin kolliziyasi dedikde ne basa dusulur?",
+    "id": 6677,
+    "at": 1767888346434
+  },
+  {
+    "fp": "48e0d3f74f7638f1c720f36c4e738755638cad13",
+    "qk": "\"dovlet dili haqqinda\" qanuna gore, dovlet orqanlarinin resmi internet saytlari hansi dilde olmalidir?",
+    "id": 7307,
+    "at": 1767888395681
+  },
+  {
+    "fp": "0cd8cd577eaa2e6b671a8ecb39d7553b2469a7a6",
+    "qk": "vetendas a inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 7 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3559,
+    "at": 1767888444895
+  },
+  {
+    "fp": "881c438686787054dc59f8cd3438f351452f185f",
+    "qk": "dovlet qulluqcusunun xidmeti fealiyyetinin qiymetlendirilmesi zamani ona \"kafi\" qiymet verilmisdir. lakin o, 9 ildir ki, qusursuz isleyir. bu halda qulluqcunun hansi huququ var? (situasiya)",
+    "id": 3240,
+    "at": 1767888494062
+  },
+  {
+    "fp": "ef12a93607b53fd175c29a6b205e4999be65a80b",
+    "qk": "situasiya: dovlet qulluqcusu gunel, vetendasa xidmet gostererken kobudluq edir ve isini keyfiyyetsiz yerine yetirir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 285,
+    "at": 1767888543315
+  },
+  {
+    "fp": "c2e031cbb1d4f1a4059d3d1baff3dc9c73046254",
+    "qk": "situasiya: aysel vetendasdan isini tez hell etmek ucun elave odenis teleb edir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 360,
+    "at": 1767888592549
+  },
+  {
+    "fp": "95462ba149ccfb398f6429c8ac7343f57c985c5a",
+    "qk": "xarici vetendas d inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 5 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3567,
+    "at": 1767895200457
+  },
+  {
+    "fp": "b1fa4fa03d93e9bb918646223ba63651b8d4f242",
+    "qk": "sahibkar b inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 15 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3563,
+    "at": 1767895249618
+  },
+  {
+    "fp": "f52f9e2e7beab0790e5ec5f2ee9660ea1163fc44",
+    "qk": "sahibkar b inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 10 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3549,
+    "at": 1767895298775
+  },
+  {
+    "fp": "1a6b2ceb27f44b6a1f4aa38a7ed6aab3789dd9c7",
+    "qk": "sahibkar b inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 30 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3673,
+    "at": 1767895347999
+  },
+  {
+    "fp": "5dc97ccfbb9cb06ae946b93b1c116eef5dd4608f",
+    "qk": "\"vetendaslarin muracietleri\" qanunvericiliyine esasen, herbi qulluqcularin muracietlerine baxilma muddeti ne qederdir?",
+    "id": 218,
+    "at": 1767895397147
+  },
+  {
+    "fp": "a7787fe0389ba7a4a207aa003b49e35565662aa4",
+    "qk": "senedlerin arxivde saxlanma muddetleri nece mueyyen edilir?",
+    "id": 7448,
+    "at": 1767895446433
+  },
+  {
+    "fp": "dbd9a0791f0d8ec3cfd07fa294112026885906d7",
+    "qk": "xidmetde boyuk meslehetci vezifesinde calisan ferid xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5622,
+    "at": 1767895495661
+  },
+  {
+    "fp": "b26907f1dcff4b39f707ffad7cbcdcdb2a16c0bd",
+    "qk": "vezifeli sexs xidmeti vezifelerini yerine yetirerken qonaqperverlik numayis etdirerek 1000 manat deyerinde hediyye qebul edir. korrupsiyaya qarsi mubarize haqqinda qanuna gore bu halda ne bas vermelidir? (situasiya)",
+    "id": 3716,
+    "at": 1767895544811
+  },
+  {
+    "fp": "a381d68010cc1af4e430d32b024dd10457b1b63f",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 60 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5735,
+    "at": 1767895593970
+  },
+  {
+    "fp": "df933acf78a067e46c112e63912fd32ec373ccb9",
+    "qk": "dovlet qulluqcusu bas meslehetci vezifesinde calisir. o, il erzinde tekraren rehberin qanuni gosterisini yerine yetirmemek halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3183,
+    "at": 1767895643137
+  },
+  {
+    "fp": "91dfe55363837ba60a4b78a7e2e223003ed51901",
+    "qk": "situasiya: resad is yoldaslari ile yuksek tonla danisir ve etik olmayan ifadeler isledir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 272,
+    "at": 1767895692318
+  },
+  {
+    "fp": "5350c4f0f8239a96e1945c4302cd67b5bf233c65",
+    "qk": "dovlet qulluqcusu dovlet musaviri vezifesinde calisir. o, il erzinde tekraren xidmeti vezifeleri kobud sekilde pozmaq halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3273,
+    "at": 1767895741479
+  },
+  {
+    "fp": "f121600145c5666851dabec38edd91bb1156c306",
+    "qk": "dovlet qulluqcusu bas meslehetci vezifesinde calisir. o, il erzinde tekraren etik davranis qaydalarini pozmaq halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3171,
+    "at": 1767895790645
+  },
+  {
+    "fp": "4e73f7f2711b81524aa88ae1fc779be3f15b646d",
+    "qk": "dovlet qulluqcusu kicik meslehetci vezifesinde calisir. o, il erzinde tekraren rehberin qanuni gosterisini yerine yetirmemek halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3229,
+    "at": 1767895839804
+  },
+  {
+    "fp": "30f9066cce32ec14ddc90fd1fba384ac2e0d112f",
+    "qk": "si̇tuasi̇ya: vetendas mehkemede iddia qaldirir. hakim ise baxarken gorur ki, tetbiq edilmeli olan qanun ile nazirler kabinetinin qerari arasinda ziddiyyet var. eyni zamanda hemin meseleni tenzimleyen daha yeni bir qanun da movcuddur. sual: hakim bu halda hansi normativ huquqi akti tetbiq etmelidir?",
+    "id": 2128,
+    "at": 1767895888959
+  },
+  {
+    "fp": "d7a806dcb07520032ab7b4637e13f2af30313bd6",
+    "qk": "normativ huquqi aktin rekvizitlerine asagidakilardan hansi daxi̇l deyi̇l?",
+    "id": 2603,
+    "at": 1767895938235
+  },
+  {
+    "fp": "5d8abb6d1d89a83f096872535dff9979881716ab",
+    "qk": "i̇nzibati icraatda kimler 'maraqli sexs' hesab olunur?",
+    "id": 2701,
+    "at": 1767895987491
+  },
+  {
+    "fp": "dc6a81226d09a06366e3da7afefab7542d77bcdf",
+    "qk": "situasiya: resad vetendasdan isini tez hell etmek ucun elave odenis teleb edir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 383,
+    "at": 1767896036716
+  },
+  {
+    "fp": "5081a131f79cf2c9334328389aee0a8bab71ea68",
+    "qk": "dovlet qulluqcusu dovlet musaviri vezifesinde calisir. o, il erzinde tekraren uzrlu sebeb olmadan ise gelmemek halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3231,
+    "at": 1767896085865
+  },
+  {
+    "fp": "fa2e1df235acac7fb3b309195da5217384925a77",
+    "qk": "situasiya: eli is yoldaslari ile yuksek tonla danisir ve etik olmayan ifadeler isledir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 344,
+    "at": 1767896135077
+  },
+  {
+    "fp": "449e34a9884245795953ea1f6ce1163974ff390f",
+    "qk": "dovlet qulluqcusu kicik referent vezifesinde calisir. o, il erzinde tekraren rehberin qanuni gosterisini yerine yetirmemek halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3355,
+    "at": 1767896184432
+  },
+  {
+    "fp": "0d33dc000f933923f2c66b3c341f3d9f1530ccd2",
+    "qk": "\"normativ huquqi aktlar\" qanunvericiliyine esasen, prezidentin fermanlarinin quvveye minmesi muddeti ne qederdir?",
+    "id": 152,
+    "at": 1767896233656
+  },
+  {
+    "fp": "1f39e6f0f3e01cc45a9774a4fc8016ed4df77734",
+    "qk": "\"dovlet orqaninin rehberi\" vezifesi inzibati vezifelerin hansi tesnifatina aiddir? (numunevi)",
+    "id": 133,
+    "at": 1767896282807
+  },
+  {
+    "fp": "7c8ac619b0e26129cb42ea9d21a7aa048a45c805",
+    "qk": "situasiya: aysel is yoldaslari ile yuksek tonla danisir ve etik olmayan ifadeler isledir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 298,
+    "at": 1767896331986
+  },
+  {
+    "fp": "f981d9191fcdba99f963ac03e1690e197e03fcd8",
+    "qk": "dovlet qulluqcusunun xidmeti fealiyyetinin qiymetlendirilmesi zamani ona \"kafi\" qiymet verilmisdir. lakin o, 5 ildir ki, qusursuz isleyir. bu halda qulluqcunun hansi huququ var? (situasiya)",
+    "id": 3222,
+    "at": 1767896381184
+  },
+  {
+    "fp": "c810724f5a835081396b623951298acab32a64d3",
+    "qk": "komitede aparici meslehetci vezifesinde calisan veli uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5276,
+    "at": 1767896430349
+  },
+  {
+    "fp": "1693cfcc982ca6ec36c6b720a33e91f3ee95f130",
+    "qk": "i̇nzibati i̇craat haqqinda qanuna esasen, muracietin aidiyyeti uzre gonderilmesi hansi muddetde heyata kecirilmelidir?",
+    "id": 5185,
+    "at": 1767896479511
+  },
+  {
+    "fp": "12fcfd14eb6aac54abd2ce95ceb3302433d4f680",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 45 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5658,
+    "at": 1767897073233
+  },
+  {
+    "fp": "f47b4e6f7e91ee1d660e76e77e99889e659a7ba2",
+    "qk": "i̇nzibati cezanin tetbiqi zamani vetendasin oz veziyyetini izah etmek huququ varmi?",
+    "id": 7067,
+    "at": 1767902400680
+  },
+  {
+    "fp": "e9aa91d71d8e51142d88793613fa02a0dea2bf1d",
+    "qk": "vetendas a inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 5 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3607,
+    "at": 1767902449829
+  },
+  {
+    "fp": "5ea98ad1c7f708b02a76125703da3d28bfe6c53d",
+    "qk": "tender teklifinin teminati teklif qiymetinin nece faizini teskil etmelidir?",
+    "id": 1872,
+    "at": 1767902498986
+  },
+  {
+    "fp": "be82667fb39b1c466a92b3e218871a9e57273ae1",
+    "qk": "muracietci oz muracietine cavab almadiqda ne etmelidir?",
+    "id": 6756,
+    "at": 1767902548311
+  },
+  {
+    "fp": "8002b58a1b98b5630afd2214828a11afb5dc4eed",
+    "qk": "situasiya: eli vetendasdan isini tez hell etmek ucun elave odenis teleb edir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 356,
+    "at": 1767902597487
+  },
+  {
+    "fp": "2c6c68446b69053905282c53ff90d6d5ee2da55c",
+    "qk": "situasiya: veli vetendasdan isini tez hell etmek ucun elave odenis teleb edir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 337,
+    "at": 1767902646673
+  },
+  {
+    "fp": "7d22b58f1fe8f4407de33f9c798e0373bea2f6c4",
+    "qk": "mehkeme qerarlari kimin adindan cixarilir?",
+    "id": 1903,
+    "at": 1767902695833
+  },
+  {
+    "fp": "574503c7b5b5db1f0170268091b73c7f0cd1e7ec",
+    "qk": "gunel xidmeti vezifelerini icra ederken ona teqdim olunan 58 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6000,
+    "at": 1767902745004
+  },
+  {
+    "fp": "2ff496604a26494edc08f869a2cd9bac047f9379",
+    "qk": "vetendas a inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 10 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3515,
+    "at": 1767902794155
+  },
+  {
+    "fp": "71d424f97f379f927bcabd9b62d0e7b3ef742484",
+    "qk": "dovlet qulluqcusunun xidmeti fealiyyetinin qiymetlendirilmesi zamani ona \"kafi\" qiymet verilmisdir. lakin o, 1 ildir ki, qusursuz isleyir. bu halda qulluqcunun hansi huququ var? (situasiya)",
+    "id": 3160,
+    "at": 1767902843388
+  },
+  {
+    "fp": "cd6da38d772886c70f90471aec005eddc8358b12",
+    "qk": "dovlet qulluqcusu dovlet musaviri vezifesinde calisir. o, il erzinde tekraren rehberin qanuni gosterisini yerine yetirmemek halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3123,
+    "at": 1767902892597
+  },
+  {
+    "fp": "ef015f06c9bf811f3a92e8f66606fe8946395b1a",
+    "qk": "dovlet qulluqcusu boyuk meslehetci vezifesinde calisir. o, il erzinde tekraren xidmeti vezifeleri kobud sekilde pozmaq halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3375,
+    "at": 1767902941774
+  },
+  {
+    "fp": "b5316473757ed14686792c54549d3fd66bd4b975",
+    "qk": "dovlet qulluqcusu kicik referent vezifesinde calisir. o, il erzinde tekraren xidmeti vezifeleri kobud sekilde pozmaq halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3267,
+    "at": 1767902990908
+  },
+  {
+    "fp": "f276ccf924181808feb1078fe10742f8eefc3c06",
+    "qk": "qht numayendesi c inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 5 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3485,
+    "at": 1767903040057
+  },
+  {
+    "fp": "c96236404128fd6dc52a4964e2a89b85eb5f4851",
+    "qk": "dovlet qulluqcusunun xidmeti fealiyyetinin qiymetlendirilmesi zamani ona \"kafi\" qiymet verilmisdir. lakin o, 10 ildir ki, qusursuz isleyir. bu halda qulluqcunun hansi huququ var? (situasiya)",
+    "id": 3268,
+    "at": 1767903089230
+  },
+  {
+    "fp": "eea098646d985e1087abb2e300df3c98a41f61e2",
+    "qk": "dovlet qulluqcusu boyuk meslehetci vezifesinde calisir. o, il erzinde tekraren etik davranis qaydalarini pozmaq halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3209,
+    "at": 1767903138415
+  },
+  {
+    "fp": "ed895caffbae09631884c9679e7d3c9bd4e60f10",
+    "qk": "i̇scinin isden azad olunmasi barede emr isciye ne vaxt teqdim olunmalidir?",
+    "id": 1902,
+    "at": 1767903187574
+  },
+  {
+    "fp": "bba5bdb3d92be6143e19b374c0800527c65a530b",
+    "qk": "\"i̇nzibati i̇craat\" qanunvericiliyine esasen, inzibati icraatin muddeti muddeti ne qederdir?",
+    "id": 544,
+    "at": 1767903236841
+  },
+  {
+    "fp": "54fe8535d76ecaf04346428e3c7a8172acc9960d",
+    "qk": "vetendas a inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 3 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3523,
+    "at": 1767903286081
+  },
+  {
+    "fp": "2a6eb24b9e9a2bcba375bd56c1bddb09fd965584",
+    "qk": "dovlet qulluqcusu kicik referent vezifesinde calisir. o, il erzinde tekraren uzrlu sebeb olmadan ise gelmemek halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3393,
+    "at": 1767903335414
+  },
+  {
+    "fp": "decabf7acbc91a0d1730650e4c2e0df00c9f718b",
+    "qk": "situasiya: resad dovlet orqaninin nufuzuna xelel getire bilecek melumatlari sosial sebekede paylasir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 386,
+    "at": 1767903384620
+  },
+  {
+    "fp": "84962ddea4f01cafa5622fe1245e9d89def102c1",
+    "qk": "dovlet bayragi hansi materialdan hazirlanmalidir?",
+    "id": 7372,
+    "at": 1767903433782
+  },
+  {
+    "fp": "97f76f3804666fa2d4c2eb0d97795cfbdeface01",
+    "qk": "nazirlikde boyuk meslehetci vezifesinde calisan aysel uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5772,
+    "at": 1767903482933
+  },
+  {
+    "fp": "b824b3f1cdcee387676ac0d9c776f29aad39ea60",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 69 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5725,
+    "at": 1767903532078
+  },
+  {
+    "fp": "8701a90c084de6f9f666117f915a5134ced6dfd8",
+    "qk": "xidmetde sektor mudiri vezifesinde calisan aysel uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5379,
+    "at": 1767903581214
+  },
+  {
+    "fp": "4e7f1a165d6473d527cc8fb63e6bdd5354304bbe",
+    "qk": "xidmetde boyuk meslehetci vezifesinde calisan ferid uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5298,
+    "at": 1767903630377
+  },
+  {
+    "fp": "dd1dc932bb3aa0bd9e65ef29dd7fffff37cb28ec",
+    "qk": "aysel xidmeti vezifelerini icra ederken ona teqdim olunan 60 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5199,
+    "at": 1767945600960
+  },
+  {
+    "fp": "c117e215920bc1174eea49d81c2aebae8161c3ea",
+    "qk": "xidmetde sektor mudiri vezifesinde calisan tural xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5636,
+    "at": 1767945650163
+  },
+  {
+    "fp": "ad107b4e0aa2a5d224ea7c5b381c5b8b366ddda2",
+    "qk": "\"diskresion selahiyyet\" ne demekdir?",
+    "id": 6636,
+    "at": 1767945699317
+  },
+  {
+    "fp": "6169f1b4466c77492d6dc996e43a935e70f593d8",
+    "qk": "i̇cra hakimiyyetinde boyuk meslehetci vezifesinde calisan samir etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5523,
+    "at": 1767945748670
+  },
+  {
+    "fp": "0e28d049394e07c8bb8a1a98ca649c84bf23b943",
+    "qk": "prokurorluq orqanlarina ise qebulla bagli hansi teleb qanuna ziddir? (cetin)",
+    "id": 4040,
+    "at": 1767945797838
+  },
+  {
+    "fp": "646ff89a0c7ecee2f04ecfec2286f6423c887bab",
+    "qk": "komitede sektor mudiri vezifesinde calisan veli etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5352,
+    "at": 1767945847009
+  },
+  {
+    "fp": "1ebfd36a5dcc11273af4e1bc07c9f7a289bca739",
+    "qk": "xidmetde aparici meslehetci vezifesinde calisan samir rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5957,
+    "at": 1767945896160
+  },
+  {
+    "fp": "f77298bb7211f24dce84e935183d5f1d5494cb40",
+    "qk": "gunel xidmeti vezifelerini icra ederken ona teqdim olunan 40 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5545,
+    "at": 1767945945313
+  },
+  {
+    "fp": "ecaa1536b70b38c733e2a6645869b2da01b7b8ce",
+    "qk": "ferid xidmeti vezifelerini icra ederken ona teqdim olunan 66 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5119,
+    "at": 1767945994469
+  },
+  {
+    "fp": "c97e03a4209694455ef41d27babb531011971efe",
+    "qk": "xidmetde sektor mudiri vezifesinde calisan ferid xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5526,
+    "at": 1767946043628
+  },
+  {
+    "fp": "fa6891e1798c9b1479ac0b8cf1c485bf90a6a995",
+    "qk": "gunel xidmeti vezifelerini icra ederken ona teqdim olunan 62 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6570,
+    "at": 1767946092985
+  },
+  {
+    "fp": "b9964a515af577fcf8b264982183da301f55fcd8",
+    "qk": "agentlikde bas meslehetci vezifesinde calisan eli xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5253,
+    "at": 1767946142236
+  },
+  {
+    "fp": "39dbca1049630f1c959f14caf17e5f9eb15810d2",
+    "qk": "vezifeli sexs xidmeti vezifelerini yerine yetirerken qonaqperverlik numayis etdirerek 400 manat deyerinde hediyye qebul edir. korrupsiyaya qarsi mubarize haqqinda qanuna gore bu halda ne bas vermelidir? (situasiya)",
+    "id": 3723,
+    "at": 1767946191392
+  },
+  {
+    "fp": "4ffe3d5f1b5273cb0d40e36ebf25a90267ceeb0c",
+    "qk": "eli xidmeti vezifelerini icra ederken ona teqdim olunan 52 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6021,
+    "at": 1767946240554
+  },
+  {
+    "fp": "dff116ba4b801e88b9145b73bba0300580796e60",
+    "qk": "komitede bas meslehetci vezifesinde calisan aysel etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5197,
+    "at": 1767946289702
+  },
+  {
+    "fp": "5ef40c1a27210ccbae4aac8d288f343c579b6d2c",
+    "qk": "vezifeli sexs xidmeti vezifelerini yerine yetirerken qonaqperverlik numayis etdirerek 300 manat deyerinde hediyye qebul edir. korrupsiyaya qarsi mubarize haqqinda qanuna gore bu halda ne bas vermelidir? (situasiya)",
+    "id": 3835,
+    "at": 1767946338840
+  },
+  {
+    "fp": "e142673316875afa11bfa11414bb0061ec8f42c7",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 65 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5465,
+    "at": 1767946388066
+  },
+  {
+    "fp": "218a51c3828fe9eba96372ce746718783b981b62",
+    "qk": "komitede aparici meslehetci vezifesinde calisan tural rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5169,
+    "at": 1767946437225
+  },
+  {
+    "fp": "1b3cb5c63ede0d1a6a2ce7b88bbd1160c23bf5a1",
+    "qk": "komitede sektor mudiri vezifesinde calisan aysel xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5291,
+    "at": 1767946486417
+  },
+  {
+    "fp": "e43e74c6c0dd1492246914dc3f2eb15ac7c7cae1",
+    "qk": "i̇cra hakimiyyetinde sektor mudiri vezifesinde calisan aysel etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5354,
+    "at": 1767946535954
+  },
+  {
+    "fp": "d258caddfd0bcb31854ba0eddb1305a94d799d36",
+    "qk": "i̇cra hakimiyyetinde aparici meslehetci vezifesinde calisan tural etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5362,
+    "at": 1767946585135
+  },
+  {
+    "fp": "7077c0f123a9ee786dcaaafcc4f9c481565358b6",
+    "qk": "xidmetde aparici meslehetci vezifesinde calisan samir etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5294,
+    "at": 1767946634307
+  },
+  {
+    "fp": "0ccf095d50a7abe0681df3e4e56675827924095b",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 41 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5872,
+    "at": 1767946683478
+  },
+  {
+    "fp": "09652a136085b83c0120b39cc4133d049e6ea9c5",
+    "qk": "nazirlikde boyuk meslehetci vezifesinde calisan tural etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5175,
+    "at": 1767946732676
+  },
+  {
+    "fp": "519f595fe795fa55832c3feb62dd04634c62c93f",
+    "qk": "agentlikde aparici meslehetci vezifesinde calisan leyla uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5862,
+    "at": 1767946781834
+  },
+  {
+    "fp": "48ef04228311720ae1512b40c5fc8a972ea7a239",
+    "qk": "gunel xidmeti vezifelerini icra ederken ona teqdim olunan 67 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5856,
+    "at": 1767946830984
+  },
+  {
+    "fp": "0319fe9324752d2796f4215fe9fcdab169261eed",
+    "qk": "emek mecellesine gore, iscinin ise gecikmesi neticesinde hansi tedbirler gorule biler?",
+    "id": 7322,
+    "at": 1767952800738
+  },
+  {
+    "fp": "2c9141edba31f5c157137320a122280eea91659b",
+    "qk": "dovlet qulluqcusu kicik meslehetci vezifesinde calisir. o, il erzinde tekraren uzrlu sebeb olmadan ise gelmemek halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3181,
+    "at": 1767952850049
+  },
+  {
+    "fp": "cf597ca0087360d083893ca7ca41368c6f036183",
+    "qk": "eger butun heyvanlar canlidirsa ve bezi canlilar bitkidirse, onda:",
+    "id": 7295,
+    "at": 1767952899220
+  },
+  {
+    "fp": "0e1cf86ff7483b675fd71bc3bc88e029a0b36fb5",
+    "qk": "muraciete cavab vermek ucun 30 gunluk muddet hansi hallarda uzadila biler?",
+    "id": 7258,
+    "at": 1767952948478
+  },
+  {
+    "fp": "0c6e54375baaf207a84b98c4c497ecc894b8cde7",
+    "qk": "nazirlikde aparici meslehetci vezifesinde calisan samir rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6424,
+    "at": 1767952997711
+  },
+  {
+    "fp": "ff5d02b77506e90ae7ecf44405fbd0108f9cada5",
+    "qk": "dovlet orqanlarinin beynelxalq elaqeleri hansi dilde aparilir?",
+    "id": 7239,
+    "at": 1767953046871
+  },
+  {
+    "fp": "52d0f2fd088a7a7e9e346945a557f01b1bc29f89",
+    "qk": "veli xidmeti vezifelerini icra ederken ona teqdim olunan 48 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6410,
+    "at": 1767953096103
+  },
+  {
+    "fp": "447bf38fee6bddad9d74a335bf083061ecc84840",
+    "qk": "aysel xidmeti vezifelerini icra ederken ona teqdim olunan 42 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5384,
+    "at": 1767953145288
+  },
+  {
+    "fp": "75ecf6a363230a33873704aaec3ad64fc5a37e07",
+    "qk": "ferid xidmeti vezifelerini icra ederken ona teqdim olunan 53 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5297,
+    "at": 1767953194442
+  },
+  {
+    "fp": "d9769bb185bf32f304fe414f5a5fae9e849463af",
+    "qk": "nazirlikde aparici meslehetci vezifesinde calisan tural rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5299,
+    "at": 1767953243598
+  },
+  {
+    "fp": "a58e924f87db26959fdccd78c5e070824fd5151b",
+    "qk": "xidmetde sobe mudiri vezifesinde calisan aysel xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5731,
+    "at": 1767953292754
+  },
+  {
+    "fp": "aa7c6f25ba259ea984bcb0921c2dd80597e5a815",
+    "qk": "nazirlikde aparici meslehetci vezifesinde calisan leyla uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5138,
+    "at": 1767953341926
+  },
+  {
+    "fp": "881b37f336a70f8b4fd5d93979e56005d587fdd0",
+    "qk": "komitede sobe mudiri vezifesinde calisan samir rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5730,
+    "at": 1767953391253
+  },
+  {
+    "fp": "21da86f1d932887b8814f9263526a55dbad8e9b0",
+    "qk": "i̇cra hakimiyyetinde sektor mudiri vezifesinde calisan tural xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5236,
+    "at": 1767953440439
+  },
+  {
+    "fp": "0621b61730fb4a831e4625049ffec2566c27bf41",
+    "qk": "nazirlikde sobe mudiri vezifesinde calisan ferid etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5812,
+    "at": 1767953489602
+  },
+  {
+    "fp": "22aaf798ad58811ec900bd35d3c04f7228151786",
+    "qk": "nergiz xidmeti vezifelerini icra ederken ona teqdim olunan 70 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5172,
+    "at": 1767953538763
+  },
+  {
+    "fp": "cc9702be30d25bf0939c5ed3fb2f11f5945d0113",
+    "qk": "i̇cra hakimiyyetinde aparici meslehetci vezifesinde calisan eli uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5216,
+    "at": 1767953587941
+  },
+  {
+    "fp": "075cd2b3dd219ed676f3344755277896f9f51a83",
+    "qk": "eli xidmeti vezifelerini icra ederken ona teqdim olunan 57 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5304,
+    "at": 1767953637109
+  },
+  {
+    "fp": "b32719e2edf1a2048f95515e48ba8b20c27651bd",
+    "qk": "i̇nzibati i̇craat haqqinda qanuna esasen, i̇nzibati aktin quvveye minmesi (resmi elan olundugu gunden) hansi muddetde heyata kecirilmelidir?",
+    "id": 5130,
+    "at": 1767953686305
+  },
+  {
+    "fp": "0754f3b332d932f5df932dbf37d143360d446c68",
+    "qk": "gunel xidmeti vezifelerini icra ederken ona teqdim olunan 43 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5400,
+    "at": 1767953735476
+  },
+  {
+    "fp": "16225ab4e6cc3635e1c7ed834cd7b3b10d9e445e",
+    "qk": "komitede sektor mudiri vezifesinde calisan aysel etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5346,
+    "at": 1767953784647
+  },
+  {
+    "fp": "dfa2cb7b55df31c28e931b90356b1cfa3342d7da",
+    "qk": "xidmetde bas meslehetci vezifesinde calisan nergiz rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5793,
+    "at": 1767953833804
+  },
+  {
+    "fp": "5e27a2f3732a8c82dae0ab0231849abeb1e1cd1d",
+    "qk": "agentlikde aparici meslehetci vezifesinde calisan samir etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5342,
+    "at": 1767953883236
+  },
+  {
+    "fp": "0ad6edf933e24fa20c4ceb063e0ed904e52aa786",
+    "qk": "gunel xidmeti vezifelerini icra ederken ona teqdim olunan 50 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5431,
+    "at": 1767953932439
+  },
+  {
+    "fp": "358c06527c7919a279ea34035e1b5255b805c8fd",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 62 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5432,
+    "at": 1767953981603
+  },
+  {
+    "fp": "dbd34f17d659160474ee1c17c232801c9773b2a3",
+    "qk": "\"senedlerin _____ tertib edilmesi vacibdir.\" cumledeki bosluga asagidakilardan hansi duzgun gelir?",
+    "id": 7471,
+    "at": 1767960000846
+  },
+  {
+    "fp": "5d1df691c37fb79f4c09d26944858f2e87b76538",
+    "qk": "i̇sciye esas odenisli mezuniyyet verilmesi ucun minimum is staji nece aydir?",
+    "id": 7348,
+    "at": 1767960050312
+  },
+  {
+    "fp": "21aa1ba9559a06ddf38ab031910846dc2c0e064b",
+    "qk": "\"normativ huquqi aktlar haqqinda\" konstitusiya qanununa gore, normativ aktlarin kolliziyasi halinda hansi prinsip tetbiq edilir?",
+    "id": 6820,
+    "at": 1767960099504
+  },
+  {
+    "fp": "65fd416b528cebb5cb35d47933365f4c18f894c5",
+    "qk": "i̇scinin emek muqavilesine xitam verildikde ona hansi senedler verilmelidir?",
+    "id": 6709,
+    "at": 1767960148924
+  },
+  {
+    "fp": "e28e8d37bd5590f4eda4102655447963a4fde804",
+    "qk": "\"korrupsiyaya qarsi mubarize haqqinda\" qanuna gore, vezifeli sexse icaze verilen hediyyenin maksimum deyeri ne qederdir?",
+    "id": 7228,
+    "at": 1767960198098
+  },
+  {
+    "fp": "d064b16fe550ecfd79c2841db04cbfb93cc89b4e",
+    "qk": "(situasiya): vetendas kucede masini qeyri-qanuni yerde dayandirdigina gore cerime olunub. cerime vereqesinde onun adi sehv yazilib. vetendas ne etmelidir?",
+    "id": 6779,
+    "at": 1767960247444
+  },
+  {
+    "fp": "49f32105095311fbba6323bbf06f428db17ca1ff",
+    "qk": "i̇sciye esas odenisli mezuniyyet nece teqvim gunu verilir?",
+    "id": 7192,
+    "at": 1767960296598
+  },
+  {
+    "fp": "7f1eb976a9458a3f6e2050e86fd0c67784b2ef46",
+    "qk": "senedlerin icrasina nezaret muddeti ne qederdir?",
+    "id": 6735,
+    "at": 1767960345769
+  },
+  {
+    "fp": "65162d934952bd90e6d0b16de5a81fcd94f60978",
+    "qk": "i̇scinin oz iradesi ile isden cixmasi halinda, o, xeberdarligi nece gun evvel etmelidir?",
+    "id": 6846,
+    "at": 1767960394928
+  },
+  {
+    "fp": "9f9c368dbc1d6fce9af19afbe79f055587500e4a",
+    "qk": "hakimler hansi qaydada teyin edilir?",
+    "id": 7455,
+    "at": 1767960444086
+  },
+  {
+    "fp": "1adc298e38f06297774f7fa364d9d940d3565337",
+    "qk": "karguzarliq telimatina gore, senedlerin arxivde saxlanma muddeti kim terefinden mueyyen edilir?",
+    "id": 7323,
+    "at": 1767960493246
+  },
+  {
+    "fp": "9378a4b2e21f3a043bddf5b06131722b85ebd951",
+    "qk": "i̇nzibati cezanin tetbiqi zamani vetendasin hansi huquqlari temin edilir?",
+    "id": 6750,
+    "at": 1767960542412
+  },
+  {
+    "fp": "e71c7fb05631f983c8c8d49cbc2c01b2496b7283",
+    "qk": "dovlet bayraginin rengleri neyi simvolize edir?",
+    "id": 7202,
+    "at": 1767960591582
+  },
+  {
+    "fp": "2b3442c0eeb555b8f751bff737c9c375c65272ad",
+    "qk": "dovlet qulluguna qebul zamani namizedlerden teleb olunan minimum yas heddi necedir?",
+    "id": 6826,
+    "at": 1767960640745
+  },
+  {
+    "fp": "6ea799170dbec90380fb09955caae7089e1ed976",
+    "qk": "nergiz xidmeti vezifelerini icra ederken ona teqdim olunan 50 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5663,
+    "at": 1767960689897
+  },
+  {
+    "fp": "bcd14c5715191c412e29bd3a9b94e232dbabcd88",
+    "qk": "mulki mecelleye gore, 14 yasdan 18 yasadek yetkinlik yasina catmayan sexs hansi emeliyyatlari heyata kecire biler?",
+    "id": 6812,
+    "at": 1767960739060
+  },
+  {
+    "fp": "76f72bae5fd165329063bc9c8934b4a83e7969ae",
+    "qk": "samir xidmeti vezifelerini icra ederken ona teqdim olunan 57 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5964,
+    "at": 1767960788250
+  },
+  {
+    "fp": "a9fee34027b4e90e62302ee157e27dd500214461",
+    "qk": "ferid xidmeti vezifelerini icra ederken ona teqdim olunan 51 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5212,
+    "at": 1767960837497
+  },
+  {
+    "fp": "e74cc30167f5aae82b03e514daae4e75e1952fda",
+    "qk": "(situasiya): dovlet qulluqcusu kimi, size qohumunuz terefinden is meselesi ile bagli zeng edilir. o, sizden konkret qerar qebul etmeyinizi xahis edir. siz nece davranarsiniz?",
+    "id": 7327,
+    "at": 1767960886761
+  },
+  {
+    "fp": "c2d6d53e93eb8c502877e46486f865b3a2436657",
+    "qk": "gunel xidmeti vezifelerini icra ederken ona teqdim olunan 70 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5797,
+    "at": 1767960935924
+  },
+  {
+    "fp": "ca6c8bd32eb92013c1e85f11c32bb138384e79d4",
+    "qk": "(situasiya): i̇sci 2 aydir is yerinde mezuniyyetde olmadan isleyir. i̇segoturen ona mezuniyyet vermir. i̇sci hansi huququndan istifade ede biler?",
+    "id": 7430,
+    "at": 1767960985084
+  },
+  {
+    "fp": "8edb0c8789914da898bca7010845d78ab175297e",
+    "qk": "komitede boyuk meslehetci vezifesinde calisan leyla xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5529,
+    "at": 1767961034247
+  },
+  {
+    "fp": "1f6915d551207500084374600c7e599af4c3daa4",
+    "qk": "(situasiya): i̇sci isegoturenin emrlerine tabe olmadigina gore isden cixarilib. o, bu qerarin qanunsuz oldugunu dusunur. hansi orqana muraciet ede biler?",
+    "id": 6760,
+    "at": 1767961083401
+  },
+  {
+    "fp": "da3a0635ecefd0fedb1b04d0fb6e5c71cca25f24",
+    "qk": "vezifeli sexs xidmeti vezifelerini yerine yetirerken qonaqperverlik numayis etdirerek 100 manat deyerinde hediyye qebul edir. korrupsiyaya qarsi mubarize haqqinda qanuna gore bu halda ne bas vermelidir? (situasiya)",
+    "id": 3750,
+    "at": 1767961132561
+  },
+  {
+    "fp": "10c6be40c11e60e5d6f3be3dda4a78e610e5c220",
+    "qk": "samir xidmeti vezifelerini icra ederken ona teqdim olunan 43 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5709,
+    "at": 1767961181763
+  },
+  {
+    "fp": "2e0d5dacee5fce0caa675c05bfd4d3439f86cf7b",
+    "qk": "dovlet orqanlarinin beynelxalq muqavileleri hansi dilde baglanir?",
+    "id": 7427,
+    "at": 1767961230921
+  },
+  {
+    "fp": "e79c625539e43e010df87079841a13b1156a1ada",
+    "qk": "i̇cra hakimiyyetinde boyuk meslehetci vezifesinde calisan gunel xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5496,
+    "at": 1767961280196
+  },
+  {
+    "fp": "aa07ef5458ab8bf7d36c256ebfa8a3d8b2983db6",
+    "qk": "(situasiya): dovlet qulluqcusu olaraq, size melum oldu ki, qohumunuz sizin islediyiniz sahede lisenziya almaq isteyir. sizin hereketiniz nece olmalidir?",
+    "id": 7185,
+    "at": 1767961329407
+  },
+  {
+    "fp": "e4e7bee541df8bdb72357e8c1a1113a40bb91713",
+    "qk": "xidmetde sektor mudiri vezifesinde calisan ferid uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5516,
+    "at": 1767961378640
+  },
+  {
+    "fp": "0d60b968db8bd0053c7bc344fcb585ab98dae683",
+    "qk": "tural evvel islediyi sirketle bagli qerar qebul etmelidir. bu halda o nece davranmalidir?",
+    "id": 6248,
+    "at": 1767967201272
+  },
+  {
+    "fp": "6ed746141eabbaff223ebdef3349d1a6d4b05220",
+    "qk": "qht numayendesi c inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 3 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3469,
+    "at": 1767967250458
+  },
+  {
+    "fp": "83f36b63bc936efd696f861cff0ad9d562975029",
+    "qk": "xarici vetendas d inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 10 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3423,
+    "at": 1767967299702
+  },
+  {
+    "fp": "d9c8b9d062dbee9fabbe1647bb815c565080dd49",
+    "qk": "situasiya: gunel vetendasdan isini tez hell etmek ucun elave odenis teleb edir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 673,
+    "at": 1767967348851
+  },
+  {
+    "fp": "9f826f9c07240d4fb30701cc0fdd2efec25fcf48",
+    "qk": "dovlet qulluqcusu boyuk referent vezifesinde calisir. o, il erzinde tekraren uzrlu sebeb olmadan ise gelmemek halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3353,
+    "at": 1767967398012
+  },
+  {
+    "fp": "d574a563c692da6d3b4ce1369217959680b92ffe",
+    "qk": "vezifeli sexs xidmeti vezifelerini yerine yetirerken qonaqperverlik numayis etdirerek 900 manat deyerinde hediyye qebul edir. korrupsiyaya qarsi mubarize haqqinda qanuna gore bu halda ne bas vermelidir? (situasiya)",
+    "id": 3736,
+    "at": 1767967447189
+  },
+  {
+    "fp": "d6fcdece1beb3df31b8c5a67eef46112f781d3d9",
+    "qk": "tural xidmeti vezifelerini icra ederken ona teqdim olunan 63 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6422,
+    "at": 1767967496370
+  },
+  {
+    "fp": "8f85bd15d5f49cece5e32fc743126564d867562e",
+    "qk": "komitede aparici meslehetci vezifesinde calisan ferid xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6466,
+    "at": 1767967545553
+  },
+  {
+    "fp": "85b28ea3b2cb421d644c66f589b802b5733492e8",
+    "qk": "kollektiv muraciet nedir?",
+    "id": 7284,
+    "at": 1767967594714
+  },
+  {
+    "fp": "67ffe68b0000912cd613fec3a50198fbeef52fdd",
+    "qk": "i̇scinin emek muqavilesi baglanarken teqdim etmeli oldugu senedler sirasina asagidakilardan hansi daxil deyil?",
+    "id": 7290,
+    "at": 1767967643904
+  },
+  {
+    "fp": "9228f67d53334f02d077de7dc0773ef6060765bf",
+    "qk": "huquqi sexsin fealiyyetinin dayandirilmasi hansi hallarda bas verir?",
+    "id": 7252,
+    "at": 1767967693113
+  },
+  {
+    "fp": "6e5a4351d1d7098468e2b7c95abd4773e034761a",
+    "qk": "\"mehkemeler ve hakimler haqqinda\" qanuna gore, hakimlerin musteqilliyi ne demekdir?",
+    "id": 7249,
+    "at": 1767967742293
+  },
+  {
+    "fp": "22dbcb868a12c28161304e20069b07224bb161e5",
+    "qk": "\"melumat elde etmek haqqinda\" qanuna gore, hansi melumatlarin verilmesi mecburi deyil?",
+    "id": 7306,
+    "at": 1767967791911
+  },
+  {
+    "fp": "dd3a0b4ebf3672ff7c7b1256293cbdb167f4bd75",
+    "qk": "asagidaki melumatlardan hansinin verilmesi mecburidir?",
+    "id": 7259,
+    "at": 1767967841087
+  },
+  {
+    "fp": "f7f3793c7a03743417802a8f699e98e66ba2d48c",
+    "qk": "korrupsiyaya qarsi mubarize uzre mesuliyyet dasiyan esas dovlet orqani hansidir?",
+    "id": 7253,
+    "at": 1767967890242
+  },
+  {
+    "fp": "33290a5a0a8a7fd4466dee5737f6aef2fba95f89",
+    "qk": "xidmetde bas meslehetci vezifesinde calisan leyla uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5241,
+    "at": 1767967939410
+  },
+  {
+    "fp": "ea435719a75d926b1a93dbb8b9d5110622cfff8f",
+    "qk": "(situasiya): struktur bolmeniz terefinden hazirlanmis emr layihesini rehberinize tesdiqe teqdim etdiniz. rehberiniz senedi imzaladi, lakin siz onun rekvizitlerinde sehv (tarixin sehv yazildigini) gordunuz. ne etmelisiniz?",
+    "id": 6643,
+    "at": 1767967988590
+  },
+  {
+    "fp": "a4ae5d0a729fa993391e407b040d593c57fd0a37",
+    "qk": "veli xidmeti vezifelerini icra ederken ona teqdim olunan 54 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5655,
+    "at": 1767968037897
+  },
+  {
+    "fp": "180f9d47c94611160159edeb06a10159b71e0b16",
+    "qk": "teskilatin adi senedlerde nece gosterilir?",
+    "id": 7293,
+    "at": 1767968087059
+  },
+  {
+    "fp": "e382aac63cc1ac62db9ca04feec59f467fabe0e0",
+    "qk": "mehkeme qerarinin qanuni quvveye minmesi ne demekdir?",
+    "id": 7255,
+    "at": 1767968136219
+  },
+  {
+    "fp": "e5c2190a9c0fa2f668b9ef230976a4d9b1fd8e54",
+    "qk": "veli xidmeti vezifelerini icra ederken ona teqdim olunan 63 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5282,
+    "at": 1767968185449
+  },
+  {
+    "fp": "5d83b0247d4af19cd451a72c7ac9a15bf630d5f8",
+    "qk": "tural xidmeti vezifelerini icra ederken ona teqdim olunan 64 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6598,
+    "at": 1767968235133
+  },
+  {
+    "fp": "2fd46e669f2df4c09c7335bad4403ccf401f150a",
+    "qk": "korrupsiyaya qarsi mubarize uzre melumat verme huququ kime mexsusdur?",
+    "id": 6724,
+    "at": 1767968284304
+  },
+  {
+    "fp": "159dc27129ccadeb3b61c64ab9f4a8a3789b7fbe",
+    "qk": "i̇cra hakimiyyetinde sektor mudiri vezifesinde calisan ferid uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5164,
+    "at": 1767968333545
+  },
+  {
+    "fp": "e723c53baebff0e3d49dc5b56dc4b8855c353a2f",
+    "qk": "eli xidmeti vezifelerini icra ederken ona teqdim olunan 40 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6398,
+    "at": 1767968382708
+  },
+  {
+    "fp": "e82a0c59de0cb5d8568617bf2ea6d42407c14690",
+    "qk": "i̇cra hakimiyyetinde aparici meslehetci vezifesinde calisan murad etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5628,
+    "at": 1767968431988
+  },
+  {
+    "fp": "6e1bcae7eb04846cefb6dea08a335777fd515a73",
+    "qk": "gunel xidmeti vezifelerini icra ederken ona teqdim olunan 41 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5866,
+    "at": 1767974401178
+  },
+  {
+    "fp": "675212105c74d593ac852d1fac9541dcc9962dad",
+    "qk": "\"karguzar, surucu\" vezifesi inzibati vezifelerin hansi tesnifatina aiddir? (numunevi)",
+    "id": 191,
+    "at": 1767974450358
+  },
+  {
+    "fp": "fa6b8a47e0b56bf6cde180b617ab6f9b0c77b5b3",
+    "qk": "\"konflikt maraqlari\" ifadesi ne demekdir?",
+    "id": 7436,
+    "at": 1767974499618
+  },
+  {
+    "fp": "5c7c99fc53ce61d4eabc1165334a35a3a563cb77",
+    "qk": "vetendas a inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 60 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3417,
+    "at": 1767974548796
+  },
+  {
+    "fp": "e789e5272ea6d3a5cc450ec2afd880bcb9e0baa0",
+    "qk": "nazirlikde boyuk meslehetci vezifesinde calisan leyla rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5173,
+    "at": 1767974598151
+  },
+  {
+    "fp": "4dcb007ac160080213e1b844c6fa7000ec940d36",
+    "qk": "samir evvel islediyi sirketle bagli qerar qebul etmelidir. bu halda o nece davranmalidir?",
+    "id": 6235,
+    "at": 1767974647595
+  },
+  {
+    "fp": "a63eb0e12fc59a585c1355024a55c907c0402a95",
+    "qk": "dovlet qulluqcusuna ixtisas derecesi verilerken ne nezere alinir?",
+    "id": 6703,
+    "at": 1767974696765
+  },
+  {
+    "fp": "ea0c5a4d6770747a1a5a97c64cd1e4e68d550652",
+    "qk": "aysel xidmeti vezifelerini icra ederken ona teqdim olunan 67 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6046,
+    "at": 1767974745923
+  },
+  {
+    "fp": "2e16176c65cb045f6aa4d1a31c25f3bf9de35a12",
+    "qk": "i̇nzibati hebsin maksimum muddeti ne qederdir?",
+    "id": 6651,
+    "at": 1767974795100
+  },
+  {
+    "fp": "04b48370abb26ac17cfc613e5866253ababeec04",
+    "qk": "agentlikde bas meslehetci vezifesinde calisan eli etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6106,
+    "at": 1767974844344
+  },
+  {
+    "fp": "8622fdcf676651519bbe43d415cd1394aed1ef86",
+    "qk": "nergiz evvel islediyi sirketle bagli qerar qebul etmelidir. bu halda o nece davranmalidir?",
+    "id": 6170,
+    "at": 1767974893532
+  },
+  {
+    "fp": "0d35628c6c281e58968d8f2e2c5631c714c188f0",
+    "qk": "samir basqa bir odenisli vezife tutmaq teklifi alir. bu halda o nece davranmalidir?",
+    "id": 6491,
+    "at": 1767974942733
+  },
+  {
+    "fp": "fe8573336d91e8acf43c3a955d583f013327df9c",
+    "qk": "xidmetde sektor mudiri vezifesinde calisan murad xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6531,
+    "at": 1767974991943
+  },
+  {
+    "fp": "d6db66298379ff932bdcbd5896d9f33aab2cb868",
+    "qk": "nazirlikde bas meslehetci vezifesinde calisan leyla uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6357,
+    "at": 1767975041221
+  },
+  {
+    "fp": "b57d0308e9deb3cfd055d9af52e99de6bf950925",
+    "qk": "i̇cra hakimiyyetinde bas meslehetci vezifesinde calisan nergiz uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6558,
+    "at": 1767975090382
+  },
+  {
+    "fp": "709caf5fea2adfcd87e0346a3aeb455b99a9cf14",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 66 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6526,
+    "at": 1767975139554
+  },
+  {
+    "fp": "ce4c48ed9ae89d2a22b2fbc4f21cff8be5bd8222",
+    "qk": "nazirlikde sobe mudiri vezifesinde calisan leyla uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6403,
+    "at": 1767975188719
+  },
+  {
+    "fp": "6c0503f19112c053603ba66585a0c6d16a7c0646",
+    "qk": "kinci sual?",
+    "id": 6609,
+    "at": 1767975237875
+  },
+  {
+    "fp": "08ee4e5696043a9c61e1eec36655dd0b804d3897",
+    "qk": "(situasiya): nazirliyin daxili qaydalarinda mueyyen edilmis muddet 14 gun olmasina baxmayaraq, rehberiniz mueyyen bir vetendas muracietini 3 gun erzinde hell etmeyinizi emr edir. sizin hereketiniz nece olardi?",
+    "id": 6612,
+    "at": 1767975287045
+  },
+  {
+    "fp": "c44aa7a5e97d4173969f9b0a476210acd2180bb5",
+    "qk": "agentlikde bas meslehetci vezifesinde calisan nergiz etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6450,
+    "at": 1767975336268
+  },
+  {
+    "fp": "f0e8556e046e9e407f1cc0c84b8dab98659ca39c",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 40 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6090,
+    "at": 1767975385605
+  },
+  {
+    "fp": "fa3789889fe574c0f17afa3baec48143b345ee17",
+    "qk": "agentlikde sobe mudiri vezifesinde calisan tural uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6578,
+    "at": 1767975434911
+  },
+  {
+    "fp": "8c860496bff5f1cdfc099b9bad5a7a511c26f077",
+    "qk": "\"i̇nzibati icraat haqqinda\" qanuna gore, inzibati xetanin aradan qaldirilmasi ucun sikayet hansi orqana verile biler?",
+    "id": 6616,
+    "at": 1767975484078
+  },
+  {
+    "fp": "e6a1b6d17d1cff56fa078800f62c70cf7750a63d",
+    "qk": "nazirlikde sobe mudiri vezifesinde calisan aysel uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6413,
+    "at": 1767975533311
+  },
+  {
+    "fp": "8bc030e4e5082f1896de70e8ad71a0a0b262486a",
+    "qk": "dovlet bayraginin istifadesi qaydalarina gore, bayraq hansi hallarda yandirila bilmez?",
+    "id": 7408,
+    "at": 1767981600744
+  },
+  {
+    "fp": "3dbeb4e590fdf16f7f41fde0e76c1b7ab235b6b6",
+    "qk": "xarici vetendas d inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 60 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3463,
+    "at": 1767981649960
+  },
+  {
+    "fp": "c54a42af68698052e469d4bae30fa2fdcce6737f",
+    "qk": "(situasiya): vetendas sexsen gelib, sikayetini sifahi sekilde ifade edir ve derhal cavab isteyir. siz ne edersiniz?",
+    "id": 6654,
+    "at": 1767981699143
+  },
+  {
+    "fp": "6335aa14ef2ac5032441e123627727f94843daa2",
+    "qk": "14 yasinadek olan yetkinlik yasina catmayanin hansi emeliyyatlari etmek huququ var?",
+    "id": 7207,
+    "at": 1767981748393
+  },
+  {
+    "fp": "808cc272898a109b202e238515b22cfc1ec57e39",
+    "qk": "nergiz xidmeti vezifelerini icra ederken ona teqdim olunan 46 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6393,
+    "at": 1767981797653
+  },
+  {
+    "fp": "2e459003b67cfa17826068d950c83967ff7c532c",
+    "qk": "samir xidmeti vezifelerini icra ederken ona teqdim olunan 65 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6520,
+    "at": 1767981846868
+  },
+  {
+    "fp": "87e6ed37ef05bbdd7ba10dad6c6d0f5593d42563",
+    "qk": "eli xidmeti vezifelerini icra ederken ona teqdim olunan 47 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6419,
+    "at": 1767981896028
+  },
+  {
+    "fp": "3c37f75c60e3c911c7333e95b3fc4c8f08050947",
+    "qk": "i̇cra hakimiyyetinde sektor mudiri vezifesinde calisan eli uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6390,
+    "at": 1767981945280
+  },
+  {
+    "fp": "14fb1fdea2f8974cf6ee8249a1fce52100fb1c0a",
+    "qk": "vetendas a inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 30 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3497,
+    "at": 1767981994427
+  },
+  {
+    "fp": "df2e7ac8a00279132f901181d7f912ed070995e9",
+    "qk": "melumat sorgusuna cavab vermek muddeti nece gundur?",
+    "id": 6757,
+    "at": 1767982043631
+  },
+  {
+    "fp": "2e8374ac300f3f08f5200b78a0b2a66d5bbb87a3",
+    "qk": "gunel xidmeti vezifelerini icra ederken ona teqdim olunan 56 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6524,
+    "at": 1767982092825
+  },
+  {
+    "fp": "3b3b9c5d07418c395b0f91bae59074574155bc3a",
+    "qk": "veli xidmeti vezifelerini icra ederken ona teqdim olunan 55 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6533,
+    "at": 1767982142039
+  },
+  {
+    "fp": "d8e63da93b8af67ce6cdb6e0697d09fb1a774cf1",
+    "qk": "dovlet bayraginin istifadesi ile bagli asagidaki ifadelerden hansi yanlisdir?",
+    "id": 6628,
+    "at": 1767982191381
+  },
+  {
+    "fp": "d5bcc55f44c493ea54a18e522e65a69ae9633eff",
+    "qk": "(situasiya): dovlet qulluqcusu olaraq, size melum oldu ki, is yoldasiniz vezife vezifesinden sexsi meqsedler ucun istifade edir. o, sizden bu barede susmaginizi xahis edir. sizin hereketiniz nece olardi?",
+    "id": 6912,
+    "at": 1767982240575
+  },
+  {
+    "fp": "13abf60cfaeff3b46e6ac2c878a21c7c5b35fbca",
+    "qk": "(situasiya): vetendasa inzibati ceza tetbiq edilib, lakin o, hemin qerari edaletli hesab etmir ve sikayet etmek isteyir. sikayet muddeti ne qederdir?",
+    "id": 6749,
+    "at": 1767982289743
+  },
+  {
+    "fp": "2aaec377dd40dd1608d2df7b3a9194c763084bda",
+    "qk": "senedlerin icrasina nezaret hansi hallarda heyata kecirilir?",
+    "id": 7193,
+    "at": 1767982338895
+  },
+  {
+    "fp": "7ad9558d36f1194abcfcdd113329facfa08f2368",
+    "qk": "normativ huquqi aktin quvveye minmesi ucun ne lazimdir?",
+    "id": 6752,
+    "at": 1767982388094
+  },
+  {
+    "fp": "cbbe3d823904a44e2e6252b7ef40c7be1730bbd0",
+    "qk": "dovlet bayragi hansi hallarda istifade oluna bilmez?",
+    "id": 6718,
+    "at": 1767982437271
+  },
+  {
+    "fp": "dbe3090506fb2f6fc4c367451e214185c17c1f4f",
+    "qk": "dovlet qulluqcusu boyuk referent vezifesinde calisir. o, il erzinde tekraren rehberin qanuni gosterisini yerine yetirmemek halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3361,
+    "at": 1767982486453
+  },
+  {
+    "fp": "e6a988dc9865aac0af60d4ee4a2f12b56a727da5",
+    "qk": "azerbaycan respublikasi prezidenti selahiyyetlerini ne vaxt heyata kecirmeye baslayir?",
+    "id": 6671,
+    "at": 1767982535808
+  },
+  {
+    "fp": "0b044218c40fe3234cb020ae00eede675fa07250",
+    "qk": "qht numayendesi c inzibati orqana sorgu gonderir. orqan sorgunun cavablandirilmasini 15 gun gecikdirir ve hec bir melumat vermir. i̇nzibati i̇craat haqqinda qanuna esasen, bu hereketsizlik nece qiymetlendirilir? (cetin)",
+    "id": 3547,
+    "at": 1767982584964
+  },
+  {
+    "fp": "96a1b4f34625c4b10a0b326a939b34c86cc713a1",
+    "qk": "(situasiya): rehberiniz size sifahi emr verir ki, mueyyen senedi tecili olaraq hazirlayasiniz ve diger bolmeye gondereseniz. senedi hazirlayib gonderdiniz. sonradan melum oldu ki, senedde sehv melumat var. kim mesuliyyet dasiyir?",
+    "id": 6664,
+    "at": 1767982634131
+  },
+  {
+    "fp": "9683b8a705e5efec3e5b15f93d79ada64d145a7b",
+    "qk": "dovlet qulluqcusunun xidmeti vezifelerini yerine yetirerken hansi prinsiplere riayet etmelidir?",
+    "id": 6753,
+    "at": 1767982683321
+  },
+  {
+    "fp": "ab62c8f5f3ddbab318139423bdf93b9d273f53a6",
+    "qk": "asagidaki ifadelerden hansinda sehv var?",
+    "id": 7176,
+    "at": 1767982732485
+  },
+  {
+    "fp": "fd8e501b54a147d12ae612a080f29bdc9bb7ab7a",
+    "qk": "muraciete cavab vermek ucun muddet 30 gundur. bu muddet hansi tarixden hesablanir?",
+    "id": 6729,
+    "at": 1767982781634
+  },
+  {
+    "fp": "e59420fbfabb471b5ba6a7eeb41f1d6d9a7c060e",
+    "qk": "azerbaycan respublikasinda mehkeme sistemi ne ile temsil olunur?",
+    "id": 6639,
+    "at": 1767982830842
+  },
+  {
+    "fp": "876a652e37ca2a90948539f8da36bae2710ffec9",
+    "qk": "eger butun muellimler savadlidirsa ve bezi savadli insanlar alimdirse, onda:",
+    "id": 6738,
+    "at": 1767982880029
+  },
+  {
+    "fp": "b8912cf5395abcb52b236a27eb0e4a0f08f7da97",
+    "qk": "nazirlikde sobe mudiri vezifesinde calisan nergiz etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5536,
+    "at": 1767982929209
+  },
+  {
+    "fp": "6e232c7e756efdd74d15d66f4756e3aac9b8058d",
+    "qk": "(situasiya): dovlet qulluqcusu ise gecikdiyine gore cerime olunub. o, bu qerara etiraz etmek isteyir. hansi orqana muraciet ede biler?",
+    "id": 7164,
+    "at": 1767988800843
+  },
+  {
+    "fp": "9463dda853a519b84739363825643805d7ff3cbe",
+    "qk": "agentlikde sobe mudiri vezifesinde calisan ferid xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5831,
+    "at": 1767988849990
+  },
+  {
+    "fp": "0abf05eb9c943f8a50ef0a29828dabb0ecdf83c3",
+    "qk": "tural xidmeti vezifelerini icra ederken ona teqdim olunan 56 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5375,
+    "at": 1767988899299
+  },
+  {
+    "fp": "0334980aa7c918c4bc90899802979a0fbd714581",
+    "qk": "i̇cra hakimiyyetinde sektor mudiri vezifesinde calisan tural etik davranis qaydalarini pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5136,
+    "at": 1767988948454
+  },
+  {
+    "fp": "882bb859497ab6e7e779c8a625489a5a5a36f15a",
+    "qk": "i̇cra hakimiyyetinde boyuk meslehetci vezifesinde calisan nergiz xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5859,
+    "at": 1767988997634
+  },
+  {
+    "fp": "f2d722e10f27d803d0c59326ab7fc1e48538e562",
+    "qk": "agentlikde sobe mudiri vezifesinde calisan nergiz uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5894,
+    "at": 1767989046774
+  },
+  {
+    "fp": "48a88094067f6c0b1516369c81969de07ce65d2b",
+    "qk": "i̇cra hakimiyyetinde sektor mudiri vezifesinde calisan samir rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5121,
+    "at": 1767989095924
+  },
+  {
+    "fp": "22eec2f118ac9534e716e1d315602403057d7018",
+    "qk": "murad xidmeti vezifelerini icra ederken ona teqdim olunan 64 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5328,
+    "at": 1767989145081
+  },
+  {
+    "fp": "35385f78f4d15fde4963b13e0942b54321abdd43",
+    "qk": "xidmetde sobe mudiri vezifesinde calisan veli rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5844,
+    "at": 1767989194350
+  },
+  {
+    "fp": "89f02a42df40e1a9821b36dbc3f90420d4d45a2d",
+    "qk": "leyla xidmeti vezifelerini icra ederken ona teqdim olunan 70 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5687,
+    "at": 1767989243659
+  },
+  {
+    "fp": "3968fbaec82b8648e027673449d605fa65806a4d",
+    "qk": "aysel xidmeti vezifelerini icra ederken ona teqdim olunan 70 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5358,
+    "at": 1767989292845
+  },
+  {
+    "fp": "c6e681a3cc526fe4aa2049b299367042ccc78dcb",
+    "qk": "ferid xidmeti vezifelerini icra ederken ona teqdim olunan 56 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5883,
+    "at": 1767989342023
+  },
+  {
+    "fp": "5e087423d32a9ad989c14107a89d3825ccea8690",
+    "qk": "veli xidmeti vezifelerini icra ederken ona teqdim olunan 69 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5232,
+    "at": 1767989393621
+  },
+  {
+    "fp": "825352ab5149bba7bea966868bae9ec5fea00cba",
+    "qk": "komitede aparici meslehetci vezifesinde calisan samir xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5624,
+    "at": 1767989442799
+  },
+  {
+    "fp": "de4e3ddc81fff17ca672ff3491e3efa554ee7d6c",
+    "qk": "xidmetde sobe mudiri vezifesinde calisan gunel uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5369,
+    "at": 1767989491993
+  },
+  {
+    "fp": "28999830cfbfa754f6023606c6bf11ff2a8e694f",
+    "qk": "komitede bas meslehetci vezifesinde calisan nergiz rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5762,
+    "at": 1767989541160
+  },
+  {
+    "fp": "1fee859ab198a4977c45045b2c43060adb152749",
+    "qk": "xidmetde bas meslehetci vezifesinde calisan leyla rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5829,
+    "at": 1767989590325
+  },
+  {
+    "fp": "70de9e982d74ff54404ccfa3549dc50991b22ba6",
+    "qk": "komitede boyuk meslehetci vezifesinde calisan samir rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5190,
+    "at": 1767989639489
+  },
+  {
+    "fp": "5d3707f0f0498c9cb77271bfa1f3c915b3b402d0",
+    "qk": "ferid xidmeti vezifelerini icra ederken ona teqdim olunan 63 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5144,
+    "at": 1767989688646
+  },
+  {
+    "fp": "e1c8bb20fdd122724024bd610d32e82c9f79b90e",
+    "qk": "leyla xidmeti vezifelerini icra ederken ona teqdim olunan 55 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5102,
+    "at": 1767989737792
+  },
+  {
+    "fp": "82577c391ad02b55be277b4e7997019c5fcb961c",
+    "qk": "xidmetde boyuk meslehetci vezifesinde calisan ferid rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5343,
+    "at": 1767989786945
+  },
+  {
+    "fp": "e8922cb59fe3d354c29c795a2e5869c61d20b804",
+    "qk": "leyla xidmeti vezifelerini icra ederken ona teqdim olunan 44 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5474,
+    "at": 1767989836108
+  },
+  {
+    "fp": "09b9bad5e387210fe22bedd6e9b8c72275da8596",
+    "qk": "nergiz xidmeti vezifelerini icra ederken ona teqdim olunan 45 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5847,
+    "at": 1767989885257
+  },
+  {
+    "fp": "08e78c5a01e042467a093cb80e9cf5777caaab7b",
+    "qk": "eli xidmeti vezifelerini icra ederken ona teqdim olunan 56 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5361,
+    "at": 1767989934417
+  },
+  {
+    "fp": "5d51df5e5e02723d2a8dde9468b44986bf0d53c9",
+    "qk": "tural xidmeti vezifelerini icra ederken ona teqdim olunan 70 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5133,
+    "at": 1767989983573
+  },
+  {
+    "fp": "30ff370e05b1b4173a11354b08237078336022ed",
+    "qk": "eli xidmeti vezifelerini icra ederken ona teqdim olunan 50 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5712,
+    "at": 1767990032769
+  },
+  {
+    "fp": "8b4b7515f556e01230606e8792d1ca90eeb0ef52",
+    "qk": "komitede boyuk meslehetci vezifesinde calisan ferid xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5865,
+    "at": 1767990081925
+  },
+  {
+    "fp": "8e816a6638e648af88b8d477a01d8da7b210586a",
+    "qk": "ferid xidmeti vezifelerini icra ederken ona teqdim olunan 64 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5459,
+    "at": 1767990131085
+  },
+  {
+    "fp": "d7dc23cd4727bf1de8527783129743232528bc95",
+    "qk": "i̇cra hakimiyyetinde sektor mudiri vezifesinde calisan ferid xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5544,
+    "at": 1767990180264
+  },
+  {
+    "fp": "8f6beae0a64d2bf61a72d8cc72128902f7acef5f",
+    "qk": "vezifeli sexs xidmeti vezifelerini yerine yetirerken qonaqperverlik numayis etdirerek 500 manat deyerinde hediyye qebul edir. korrupsiyaya qarsi mubarize haqqinda qanuna gore bu halda ne bas vermelidir? (situasiya)",
+    "id": 3724,
+    "at": 1767990229641
+  },
+  {
+    "fp": "7f5bd1b9a3d1cc78346d87d08dba1f1c526eae8d",
+    "qk": "konstitusiyaya esasen kollektiv emek mubahiseleri hansi qaydada hell olunur?",
+    "id": "1767034684452_1",
+    "at": 1768161177348
+  },
+  {
+    "fp": "10dcf6433d8fd55651024c83aca815764d48a654",
+    "qk": "naxcivan muxtar respublikasinda konstitusiya nezaretini hansi orqan heyata kecirir?",
+    "id": "1766934946320_116",
+    "at": 1768161226582
+  },
+  {
+    "fp": "d7e5c04fda7cad3373cafbe66d9026c812b2851a",
+    "qk": "naxcivan muxtar respublikasi konstitusiyasina deyisiklikler ve elaveler naxcivan muxtar respublikasinin ali meclisinde nece ses coxlugu ile qebul edildikden sonra tesdiq olunmaq ucun azerbaycan respublikasinin milli meclisine teqdim edilir?",
+    "id": "1766934946320_172",
+    "at": 1768161275780
+  },
+  {
+    "fp": "15a5d287291fc91c6bdbc861f534703037e34f53",
+    "qk": "melumat munasibetlerinin subyektleri kimlerdir?",
+    "id": "1767195356231_44",
+    "at": 1768162198889
+  },
+  {
+    "fp": "ced2e5c81066ceae2f7c672109527cb596ec11e3",
+    "qk": "“aynur seni oraya sehneye devet edirler” verilmis cumlede hansi durgu isareleri buraxilmisdir?",
+    "id": "1767034684452_126",
+    "at": 1768162248057
+  },
+  {
+    "fp": "d750e0ff9a043572e3a9e676827624857348b8cc",
+    "qk": "seckilerde istirak etmemeye gore azerbaycan respublikasinin vetendaslari hansi huquqi mesuliyyete celb olunurlar?",
+    "id": "1766934946320_142",
+    "at": 1768162297216
+  },
+  {
+    "fp": "1ef26313d876a34d8834d1489df11b2f77f88a9f",
+    "qk": "pul nisanlarinin tedavule buraxilmasi huququ yalniz:",
+    "id": "1766934946320_61",
+    "at": 1768162346381
+  },
+  {
+    "fp": "6f9cc704c3aeabd59dee60082ccf9c427ee7f62e",
+    "qk": "muracietin metninde neye yol verilmemelidir?",
+    "id": "1767199348909_18",
+    "at": 1768162395557
+  },
+  {
+    "fp": "f3ce988373582785274e979e5272bedd92138e2d",
+    "qk": "azerbaycan respublikasinin konstitusiyasi nece kecid muddeadan ibaretdir?",
+    "id": "1766934946320_184",
+    "at": 1768162444729
+  },
+  {
+    "fp": "35e6e410357165b6308803109de1ccb83cafdef6",
+    "qk": "konstitusiya hansi ifade ile baslayir?",
+    "id": "1766934946320_125",
+    "at": 1768162493975
+  },
+  {
+    "fp": "ab902db36b7ca6a8bd81ac911e83690ee5b28f28",
+    "qk": "muraciet asagidaki hallardan hansinda baxilmamis saxlanila bilmez?",
+    "id": "1767199348909_29",
+    "at": 1768162543289
+  },
+  {
+    "fp": "443145a280df23c782dc9c07f7c91ab4b137f0d8",
+    "qk": "elektron muracietlere nece cavab verilir?",
+    "id": "1767199348909_23",
+    "at": 1768162592452
+  },
+  {
+    "fp": "0feff34e0ce84bbad55393ca20d47a286f449b64",
+    "qk": "“dovlet orqanlarinda, dovlet mulkiyyetinde olan ve paylarinin (sehmlerinin) nezaret zerfi dovlete mexsus olan huquqi sexslerde ve budce teskilatlarinda karguzarligin aparilmasina dair telimat”a esasen teskilatin struktur bolmelerinin adi nece yazilir?",
+    "id": "1766934946320_41",
+    "at": 1768162641633
+  },
+  {
+    "fp": "4600579adaa8e3b5e325c88bdcc5b855119456a9",
+    "qk": "muraciete baxan subyektlerin vezifeli sexsleri muracietlere baxarken asagidakilardan hansini etmemelidirler?",
+    "id": "1767199348909_44",
+    "at": 1768162690776
+  },
+  {
+    "fp": "5f2920ea2e3eccf20971378f781fb2f099748e83",
+    "qk": "naxcivan necenci ilden naxcivan muxtar respublikasi adlandirilmisdir?",
+    "id": "1766934946320_176",
+    "at": 1768162739928
+  },
+  {
+    "fp": "5123a9efe4325d12c5f600522324b4e9c5d8b0a5",
+    "qk": "melumatin elde edilmesi asagidaki yollardan hansi ile temin edilmir?",
+    "id": "1767195356231_9",
+    "at": 1768162789081
+  },
+  {
+    "fp": "9e2c09298b42fa0d9533d4f6e09a8a19c9eb8a6f",
+    "qk": "vetendas dovlet orqani rehberinin qerarindan haraya sikayet vere biler?",
+    "id": "1767199348909_36",
+    "at": 1768162838297
+  },
+  {
+    "fp": "838ff56d69665b712d4e0fd3cdc7138947f5e0a2",
+    "qk": "asagida gosterilen meselelerden hansilari yalniz referendum yolu ile hell olunur? 1) vergiler ve dovlet budcesi 2) azerbaycan respublikasinin konstitusiyasinin qebul edilmesi ve ona deyisiklikler edilmesi 3) amnistiya ve efv etme 4) azerbaycan respublikasinin dovlet serhedlerinin deyisdirilmesi",
+    "id": "1766934946320_51",
+    "at": 1768162887539
+  },
+  {
+    "fp": "05cc28209149f06f0d0210c52b92ace82e73f44b",
+    "qk": "azerbaycan respublikasinin konstitusiyasinda azerbaycan respublikasi prezidentinin azerbaycan respublikasinin milli meclisini buraxmaq huququ nezerde tutulmusdurmu?",
+    "id": "1766934946320_14",
+    "at": 1768162936689
+  },
+  {
+    "fp": "1ce84d5ebb9f12f810f42632c87f9c01ff0c8a1a",
+    "qk": "sexsiyyetin onun haqqinda toplanmis melumatla bagli asagidaki huquqlarindan hansi metnde qeyd edilmemisdir?",
+    "id": "1767195356231_56",
+    "at": 1768162985863
+  },
+  {
+    "fp": "763395caa0b4bafa53ddc386074ee7e9a2364b2d",
+    "qk": "bu qanun ne vaxt quvveye minmisdir?",
+    "id": "1767194888783_39",
+    "at": 1768163035199
+  },
+  {
+    "fp": "a7f1258b12e6df39639f697a325df911fb0d80db",
+    "qk": "muraciete baxan subyekt elave melumatlarin oyrenilmesi ucun sorgu gonderdikde, hemin sorguya ne qeder muddetde cavab verilmelidir?",
+    "id": "1767199348909_25",
+    "at": 1768163084412
+  },
+  {
+    "fp": "c49bb3db2a6ac7c3d28a160253d1ddb95d87df81",
+    "qk": "seckilerde ve referendumda istirak etmek huququ yoxdur:",
+    "id": "1766934946320_121",
+    "at": 1768163133560
+  },
+  {
+    "fp": "bf1590505051a2a818ae755800db324f8c381b7f",
+    "qk": "dovlet sirri teskil eden melumatlarin birge islerin gorulmesi ile elaqedar verilmesi zamani sifariscinin ohdeliyi nedir?",
+    "id": "1767202423338_58",
+    "at": 1768163182911
+  },
+  {
+    "fp": "550c4787de38b9178500207faed7d356c8e60894",
+    "qk": "herbi qulluqcularin xidmetle elaqedar muracietleri nece tenzimlenir?",
+    "id": "1767199348909_12",
+    "at": 1768163232073
+  },
+  {
+    "fp": "7cf9d59e9ad8e2d16a3569cd7708983f9ff7555c",
+    "qk": "konstitusiyada tesbit edilmis insan ve vetendas huquqlarini ve azadliqlarini qorumaq ve gozlemek kimin borcudur?",
+    "id": "1767034684452_53",
+    "at": 1768163281232
+  },
+  {
+    "fp": "6e73109b98eab604d7989ca85f2e5a49614c4f52",
+    "qk": "melumat azadliginin esas prinsiplerinden biri kimi melumatin axtarilmasinin, elde edilmesinin, istifade olunmasinin, yayilmasinin ve qorunmasinin hansi xususiyyeti qeyd olunur?",
+    "id": "1767195356231_26",
+    "at": 1768163332049
+  },
+  {
+    "fp": "d3c7ac9bc8b662a1f433cf75eb7d8a9b68fa15e7",
+    "qk": "qanuna gore, “sifahi muraciet” ne vaxt edile biler?",
+    "id": "1767199348909_5",
+    "at": 1768163381231
+  },
+  {
+    "fp": "3c08828022993579d31b90b0fe65527bbe76e996",
+    "qk": "elave oyrenilme ve yoxlanilma teleb eden muracietlere nece is gunu muddetinde baxilmalidir?",
+    "id": "1767199348909_38",
+    "at": 1768163430422
+  },
+  {
+    "fp": "cc171fc0166898294cc455994eb1720e756f1f67",
+    "qk": "asagidakilardan hansi melumat azadliginin heyata kecirilmesinin esas prinsiplerinden biri deyil?",
+    "id": "1767195356231_25",
+    "at": 1768163479577
+  },
+  {
+    "fp": "9642ab9c7ce7f88bb5f9605accccf0cb58b9439a",
+    "qk": "vetendaslarin muracietleri haqqinda ar-nin qanununa esasen x muessisesinde sikayetlere baxmaq huququ yalniz z sexsine verilmisdir. m sexsi terefinden z sexsi haqqinda sikayet daxil olarsa ve hemin sikayeti aidiyyati uzre gondermek mumkun olmazsa x muessisesinin rehberi hansi tedbir gormelidir?",
+    "id": "1767034684452_5",
+    "at": 1768164137046
+  },
+  {
+    "fp": "8bae62f8ea93867cbe71a58dfa51ebd42c9afbb9",
+    "qk": "dovlet qullugu haqqinda qanuna esasen gosterilenlerden hansi 2-ci kateqoriya icra hakimiyyeti orqani deyil?",
+    "id": "1767034684452_2",
+    "at": 1768164186274
+  },
+  {
+    "fp": "feb1fbda34add2bdcc39b5e2ac7e89e9f665b36e",
+    "qk": "mentiqi ardicilligi tamamlayin: qanun, qerar, ferman…?",
+    "id": "1767036331578_58",
+    "at": 1768164235431
+  },
+  {
+    "fp": "8c72ff20faf57206b1f02926b87811bde339319b",
+    "qk": "asagidakilardan hansi azerbaycan respublikasinin konstitusiyasinda belediyyelerin iclaslarinda hell edile bilen mesele kimi nezerde tutulmamisdir?",
+    "id": "1766934946320_134",
+    "at": 1768164284764
+  },
+  {
+    "fp": "fdb7996f495543b3fa13655fae03821e12082777",
+    "qk": "cumlelerden birinde evezlik mubteda rolundadir:",
+    "id": "1767036331578_61",
+    "at": 1768164333976
+  },
+  {
+    "fp": "88eeb1b86893d7df9bd521b4fdeab2a94cdd88e9",
+    "qk": "korrupsiyanin qarsisinin alinmasi sahesinde ixtisaslasmis orqan funksiyalarini kim heyata kecirir?",
+    "id": "1767194888783_24",
+    "at": 1768164386474
+  },
+  {
+    "fp": "beb641b297f21ba173fac240230244a2e958698f",
+    "qk": "vezifeli sexs xidmeti vezifelerinin icrasi ile elaqedar bir il erzinde her hansi fiziki ve ya huquqi sexsden umumi meblegi nece manatdan yuxari olan bir ve ya bir nece hediyyeni qebul ede bilmez?",
+    "id": "1767194888783_13",
+    "at": 1768164435644
+  },
+  {
+    "fp": "907b3bdfa653685a8db5527101f2378d7a9a3ffd",
+    "qk": "asagida verilmis cumlede hansi durgu isareleri buraxilib? bu gun dostlarim aydin emin polad hami bura gelecek.",
+    "id": "1767036331578_10",
+    "at": 1768164484791
+  },
+  {
+    "fp": "5db2a32ded19481322a8d47b5440e6eb37307bdd",
+    "qk": "etik davranis uzre muvekkilin fealiyyeti cercivesinde, dovlet orqaninin rehberine teqdim etdiyi teklifler ve tovsiyeler esasen hansi meqsedlere xidmet edir?",
+    "id": "1767194557339_61",
+    "at": 1768164533952
+  },
+  {
+    "fp": "21a7ce90f3c5dc98241e2d9d692e79031db7e08a",
+    "qk": "dovlet qulluqcularina qulluq stajina gore ayliq vezife maasina mueyyen edilmis elavelerin odenilmesi meqsedi ile ne qeder vesait nezerde tutulur?",
+    "id": "1767034684452_48",
+    "at": 1768164583260
+  },
+  {
+    "fp": "f57a97dce5d9e787df909102782e9d241171abd2",
+    "qk": "azerbaycan respublikasinin konstitusiyasina esasen hamiliqla qebul edilmis beynelxalq huquq normalarina gore azerbaycan respublikasi:",
+    "id": "1766934946320_39",
+    "at": 1768164632438
+  },
+  {
+    "fp": "1ecdebfcf35e8e3f193a9dba0c9bf4695b983bf7",
+    "qk": "dovlet qulluqculari ucun teminatlardan biri hansidir?",
+    "id": "1767192069572_32",
+    "at": 1768164681646
+  },
+  {
+    "fp": "6f9089833a0f010b97061d52c799295237ddaa00",
+    "qk": "i̇ntizam tenbehi qaydasinda dovlet qulluqcusunun ixtisas derecesi nece pille asagi salina biler (madde 17.2-nin birinci hissesine uygun olaraq verilmis ixtisas dereceleri istisna olmaqla)?",
+    "id": "1767192069572_17",
+    "at": 1768164730824
+  },
+  {
+    "fp": "3386d94c58023fa18c1901fbef8adc111a6b4ccd",
+    "qk": "karguzarliq haqqinda telimata esasen senedlerin dovruyyesinin teskili ile bagli deyilenlerden sehv olani mueyyen edin.",
+    "id": "1767034684452_6",
+    "at": 1768166863703
+  },
+  {
+    "fp": "15015aee757aa0689933d6f43e5be29e780401f1",
+    "qk": "korrupsiya ile elaqedar huquqpozmalar hansi mesuliyyet novlerine sebeb olur?",
+    "id": "1767194888783_18",
+    "at": 1768166884146
+  },
+  {
+    "fp": "2bb4fd46e1eac43c136bc740b8c737fc55a6911f",
+    "qk": "konstitusiyaya esasen asagidakilardan biri yalnisdir:",
+    "id": "1767034684452_4",
+    "at": 1768166933425
+  },
+  {
+    "fp": "aa48885c9cb77b43dc6786ccac04a3604e62e973",
+    "qk": "sovetler birliyi dovrunde azerbaycanda necenci illerde konstitusiya qebul edilmisdir?",
+    "id": "1766934946320_146",
+    "at": 1768166982760
+  },
+  {
+    "fp": "58698de7fc814ece418d6c93e4bf13ee876f44ce",
+    "qk": "azerbaycan respublikasinin konstitusiyasina gore qanunvericilik tesebbusu huququna malik deyil:",
+    "id": "1766934946320_107",
+    "at": 1768167032020
+  },
+  {
+    "fp": "02240e34adac115dfcf6060ba8b540734783cd6b",
+    "qk": "dovlet qulluqcusu ona verilen emrin qanuna zidd olmasina emin oldugu halda ne etmelidir?",
+    "id": "1767194557339_28",
+    "at": 1768167081349
+  },
+  {
+    "fp": "1c9517bdb7eb7000d5f554c8bd03df7a937c8ba1",
+    "qk": "\"korrupsiya\" anlayisi bu qanuna esasen neyi ifade edir?",
+    "id": "1767194888783_20",
+    "at": 1768167130805
+  },
+  {
+    "fp": "46977d3528ca863f39d77fbafc1e375871c23a53",
+    "qk": "madde 16.2-ye esasen, dovlet qulluqcusuna dovlet emlakindan sexsi maraqlari namine istifade etmek qadagandirmi?",
+    "id": "1767194557339_17",
+    "at": 1768167180158
+  },
+  {
+    "fp": "267625ed5c16b8a0aea966585bfef6f0bcbd9e8d",
+    "qk": "“dovlet qulluqcularinin etik davranis qaydalari haqqinda” azerbaycan respublikasinin qanununa esasen dovlet qulluqcusunun ictimai ve ya siyasi fealiyyeti ile bagli duzgun deyil:",
+    "id": "1766934946320_31",
+    "at": 1768167229418
+  },
+  {
+    "fp": "505224460148d3522116e2d87dd15732dd532a92",
+    "qk": "konstitusiyaya gore kimlerin istisna hallarda secki huququ mehdudlasdirila biliner? 1. herbi qulluqcularin 2. qocalarin 3. hakimlerin 4. mehbuslarin 5. pedaqoji isle mesgul olanlarin 6. din xadimlerinin 7. tibb iscilerinin",
+    "id": "1766934946320_87",
+    "at": 1768167278698
+  },
+  {
+    "fp": "5f247c54fa23a408eefc3dadaf6afc7570909b2a",
+    "qk": "korrupsiyaya qarsi mubarize uzre komissiyanin terkibi kimlerden ibaretdir?",
+    "id": "1767194888783_7",
+    "at": 1768167328586
+  },
+  {
+    "fp": "69670293cb1a397b9648b747d151cd4af155a8c7",
+    "qk": "azerbaycan respublikasi tehlukesizlik surasi katibinin xidmetinde sobe mudiri vezifesi hansi inzibati tesnifata aid edilir ve bu vezife ucun verile bilecek ixtisas derecelerinden biri hansidir?",
+    "id": "1767194222733_59",
+    "at": 1768167377850
+  },
+  {
+    "fp": "406033191526da43b7ab3a8eb5402fff6e829bf7",
+    "qk": "azerbaycan respublikasinin milli meclisi asagidaki meselelerden hansilara dair umumi qaydalar mueyyen ederken 83 ses coxlugu ile qanunlar qebul etmir? 1) aile munasibetleri 2) referendum 3) azerbaycan respublikasi milli meclisinin deputatlarinin statusu 4) azerbaycan respublikasi prezidentinin se...",
+    "id": "1766934946320_52",
+    "at": 1768167427240
+  },
+  {
+    "fp": "919485e8ad45bb2cbbc7404c16ef1074019b0486",
+    "qk": "korrupsiya riski nece mueyyen edilir?",
+    "id": "1767194888783_1",
+    "at": 1768167476509
+  },
+  {
+    "fp": "a84df127f4b475d152a4e3f2cee5f52adc857d4c",
+    "qk": "qanuna esasen, informasiyanin elde edilmesine icaze verilmesi hansi sertle mehdudlasdirila biler?",
+    "id": "1767201623947_39",
+    "at": 1768167525942
+  },
+  {
+    "fp": "a30fabf70febbfe611067457461d95aced36f9c9",
+    "qk": "azerbaycan respublikasinin “dovlet gerbi haqqinda” esasname tesdiq edilmisdir:",
+    "id": "1766934946320_72",
+    "at": 1768167575223
+  },
+  {
+    "fp": "fe5c7db9fa4b6852ee21c71c842b7bb55b9f3c2d",
+    "qk": "kimler emek muqavilesinin baglanilmasina mecbur edilir?",
+    "id": "1766934946320_71",
+    "at": 1768167624483
+  },
+  {
+    "fp": "37e27a16ee248a529efc86542145e3cf2f8736b3",
+    "qk": "azerbaycan respublikasinin konstitusiyasinda mehkeme hakimiyyetini heyata keciren mehkemelerden hansinin adi cekilmir?",
+    "id": "1766934946320_105",
+    "at": 1768167673784
+  },
+  {
+    "fp": "2992f696d6732a55470d95f5fc83152b54090457",
+    "qk": "seckili vezifeler istisna olmaqla, vezifeli sexslerin yaxin qohumlari bilavasite onun tabeliyinde hansi vezifeni tuta bilerler?",
+    "id": "1767194888783_29",
+    "at": 1768167723107
+  },
+  {
+    "fp": "b5b12395ff677464c5859342dc6e59309eea8b14",
+    "qk": "etik davranis qaydalarina emel olunmasina nezaret sisteminde, dovlet orqanlarinda yeni tetbiq edilen \"etik davranis uzre muvekkil\"in esas funksiyalari hansilardir?",
+    "id": "1767194557339_60",
+    "at": 1768167772567
+  },
+  {
+    "fp": "407b9b8799af2ebe8ef862418e4693f9f2221c3e",
+    "qk": "metne esasen, “alinmasi mehdudlasdirilan melumat” anlayisina asagidakilardan hansi daxil deyil?",
+    "id": "1767195356231_50",
+    "at": 1768167821856
+  },
+  {
+    "fp": "401bebd21e4216cb95d703b4dfa802e8a70ed5b7",
+    "qk": "bu belediyye sistemi baden-vurtemberq ve bavariyada fealiyyet gosterir. burada belediyyeler vahid kollegiyada – belediyye surasinda birlesirler. ehali proporsional sayda sura uzvlerini ve suranin sedrini – burqomisteri secir. burqomister belediyyede ustun movqeye malikdir. sohbet hansi belediyye ...",
+    "id": "1766934946320_139",
+    "at": 1768168650872
+  },
+  {
+    "fp": "588ed8b05a66ef351dd091edfb40238010949c0b",
+    "qk": "konstitusiya mehkemesi prezident seckilerinin yekunlari haqqinda melumati hansi muddetde resmen elan edir?",
+    "id": "1767034684452_66",
+    "at": 1768168992903
+  },
+  {
+    "fp": "c06eb162e9346fef099600d58a525e4a8f7b9081",
+    "qk": "azerbaycan respublikasinin konstitusiyasi hansi hisse ile baslayir?",
+    "id": "1766934946320_2",
+    "at": 1768169042185
+  },
+  {
+    "fp": "ee1721c54acb0ee43b082195ed25b53cd40bb8bf",
+    "qk": "azerbaycan respublikasi ali mehkemesinin hakimleri hansi orqan ve ya vezifeli sexsin teqdimati ile teyin edilir?",
+    "id": "1766934946320_15",
+    "at": 1768169379466
+  },
+  {
+    "fp": "f72eee581fb6fb30e0cf6aee7122cd455718e6ef",
+    "qk": "konstitusiyaya esasen naxcivan muxtar respublikasinin ali meclisi asagidakilardan hansina dair umumi qayda (qaydalar) mueyyen etmir?",
+    "id": "1767034684452_20",
+    "at": 1768169429164
+  },
+  {
+    "fp": "cfb8b594f6fb05ee4bbc03180262b4ae18cac6ad",
+    "qk": "azerbaycan respublikasinda mehkeme hakimiyyetinin musteqilliyinin teminatcisi kimdir?",
+    "id": "1766934946320_60",
+    "at": 1768169741296
+  },
+  {
+    "fp": "e025ce29ed745dec585fa4d9713156e2fd793fd5",
+    "qk": "dogru fikir hansidir?",
+    "id": "1766934946320_123",
+    "at": 1768169788427
+  },
+  {
+    "fp": "b4e75ca58ef1b476c5d0b56237bdf273a24153f0",
+    "qk": "azerbaycan respublikasinin konstitusiyasi ne zaman quvveye minmisdir?",
+    "id": "1766934946320_12",
+    "at": 1768169835576
+  },
+  {
+    "fp": "f62ba2bbd1f4566227a177f0491673a516a79245",
+    "qk": "azerbaycan respublikasinin konstitusiyasina esasen naxcivan muxtar respublikasinda yerli icra hakimiyyetlerinin bascilari hansi qaydada vezifeye teyin edilir?",
+    "id": "1766934946320_49",
+    "at": 1768170603861
+  },
+  {
+    "fp": "caca826a8841816f6bc013818e641149298e599d",
+    "qk": "dovlet qullugu nedir?",
+    "id": "1766934946320_63",
+    "at": 1768170651072
+  },
+  {
+    "fp": "448d2ff786c01ba0fd44438931c43d44e89a6942",
+    "qk": "azerbaycan respublikasinin konstitusiyasina gore yerli ozunuidareetmeni hansi qurum heyata kecirir?",
+    "id": "1766934946320_118",
+    "at": 1768170698209
+  },
+  {
+    "fp": "8c89ce376b5651dcb029f4f29e1886669b55caae",
+    "qk": "asagidakilardan biri huquq deyil?",
+    "id": "1766934946320_18",
+    "at": 1768170856542
+  },
+  {
+    "fp": "ca74d71ae4c457a56f20ae8ce381f64082917065",
+    "qk": "azerbaycan respublikasinin konstitusiyasina esasen verilenlerin hansinda konstitusiya mehkemesini reyi alinir?",
+    "id": "1767034684452_55",
+    "at": 1768170903701
+  },
+  {
+    "fp": "932d11946798c1e31c6ea409f3aafb0afb9d538f",
+    "qk": "konstitusiyaya gore azerbaycan respublikasinin vetendaslari haqqinda fikirlerden biri sehvdir:",
+    "id": "1766934946320_89",
+    "at": 1768170950840
+  },
+  {
+    "fp": "d2cdeeb5047dfc3596887971f81d14fc91f34e4f",
+    "qk": "azerbaycan respublikasinin konstitusiyasina gore emek muqavilesi ile isleyenlere qanunla mueyyen edilmis, lakin gunde nece saatdan artiq olmayan is gunu temin edilir?",
+    "id": "1766934946320_174",
+    "at": 1768171177786
+  },
+  {
+    "fp": "3b58c1327c67541975dc1931878a6c0f3da2f2fb",
+    "qk": "dovletin ali meqsedi:",
+    "id": "1766934946320_124",
+    "at": 1768171224929
+  },
+  {
+    "fp": "ebf2d0284ea1c23c0632df8499e90a946a58887f",
+    "qk": "nazirler kabineti serencamlar qebul edir:",
+    "id": "1766934946320_129",
+    "at": 1768171272091
+  }
+]

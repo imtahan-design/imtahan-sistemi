@@ -93,7 +93,7 @@
         </div>
         
         <!-- Auth Pages -->
-        <section id="auth-section">
+        <section id="auth-section" class="hidden">
             <div class="auth-container">
                 <div class="auth-box" id="login-box">
                     <h2>Giriş</h2>
@@ -629,6 +629,7 @@
                         <button id="admin-back-btn" class="btn-secondary hidden" onclick="navigateAdminUp()" style="margin-right: 10px;"><i class="fas fa-arrow-left"></i> Geri</button>
                         <button class="btn-success" onclick="exportData()" style="margin-right: 10px;">💾 Bazanı Yüklə (Export)</button>
                         <button class="btn-outline" onclick="showReports()" style="margin-right: 10px;"><i class="fas fa-flag"></i> Şikayətlər</button>
+                        <button class="btn-outline" onclick="showAdminChats()" style="margin-right: 10px;"><i class="fas fa-comments"></i> Dəstək</button>
                         <button class="btn-primary" onclick="showAddCategoryModal()">+ Yeni Kateqoriya</button>
                     </div>
                 </div>
@@ -1246,6 +1247,32 @@
         </div>
     </div>
 
-    <script src="app.js?v=6.2" defer></script>
+    <!-- Live Support Widget -->
+    <div id="live-chat-widget">
+        <div id="chat-window" class="hidden">
+            <div class="chat-header">
+                <h3><i class="fas fa-headset"></i> Canlı Dəstək</h3>
+                <button onclick="toggleLiveChat()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="chat-messages" class="chat-messages">
+                <!-- Messages will appear here -->
+                <div class="text-center text-muted text-sm mt-4 opacity-70">
+                    Sualınızı yazın, tezliklə cavablandıracağıq.
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Mesajınızı yazın..." onkeypress="handleChatInput(event)">
+                <button onclick="sendChatMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+        <div id="live-chat-btn" onclick="toggleLiveChat()">
+            <i class="fas fa-comment-dots"></i>
+            <div id="chat-unread-badge" class="chat-badge hidden">0</div>
+        </div>
+    </div>
+
+    <script src="app.js?v=6.7" defer></script>
 </body>
 </html>

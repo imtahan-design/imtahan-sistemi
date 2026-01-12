@@ -1,0 +1,142 @@
+rules_version = '2'; 
+ service cloud.firestore { 
+   match /databases/{database}/documents { 
+     
+     // --- Helper Functions (Təhlükəsizlik Köməkçiləri) --- 
+     function isAuthenticated() { 
+       return request.auth != null; 
+     } 
+     
+     function isUser(userId) { 
+       return isAuthenticated() && request.auth.uid == userId; 
+     } 
+     
+     function getUserData() { 
+       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; 
+     } 
+     
+     function hasRole(role) { 
+       return isAuthenticated() && getUserData().role == role; 
+     } 
+     
+     function isAdmin() { 
+       return hasRole('admin'); 
+     } 
+     
+     function isTeacher() { 
+       return hasRole('teacher') || isAdmin(); 
+     } 
+     
+     function isModerator() { 
+       return hasRole('moderator') || isAdmin(); 
+     } 
+ 
+     // --- 1. Users Collection (Məxfilik Qorunur) --- 
+     match /users/{userId} { 
+       // Düzəliş: İstifadəçi adı ilə giriş (username login) işləməsi üçün oxumaq icazəsi açıq olmalıdır. 
+       allow read: if true; 
+       allow write: if isUser(userId) || isAdmin(); 
+     } 
+ 
+     // --- 2. Categories (Kateqoriyalar) --- 
+     match /categories/{catId} { 
+       allow read: if true; 
+       allow write: if isTeacher() || isModerator(); 
+     } 
+ 
+     // --- 3. Private Quizzes (Şəxsi Testlər) --- 
+     match /private_quizzes/{quizId} { 
+       allow read: if true; 
+       allow write: if isTeacher() || isModerator(); 
+     } 
+ 
+     // --- 4. Student Attempts (Nəticələrin Məxfiliyi) --- 
+     match /student_attempts/{attemptId} { 
+       allow create: if true; 
+       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isTeacher()); 
+       allow update, delete: if isAdmin(); 
+     } 
+ 
+     // --- 5. Public Questions --- 
+     match /public_questions/{qId} { 
+       allow read: if true; 
+       allow create: if isAuthenticated(); 
+       allow update, delete: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isModerator()); 
+     } 
+ 
+     // --- 6. Reports (Şikayətlər) --- 
+     match /reports/{reportId} { 
+       allow create: if true; 
+       allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || isTeacher() || isModerator())) || (resource.data.type == 'live_chat'); 
+       // Düzəliş: Silmə və yeniləmə icazəsi əlavə edildi
+       allow update, delete: if isTeacher() || isModerator(); 
+     } 
+ 
+     // --- 7. Discussions (Müzakirələr - SPAM Qorunması) --- 
+     match /discussions/{commentId} { 
+       allow read: if true; 
+       allow create: if isAuthenticated(); 
+       allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isModerator()); 
+     } 
+ 
+     // --- 8. Attempts (Anonim Cəhdlər) --- 
+     match /attempts/{attemptId} { 
+       allow create: if true; 
+       allow read: if true; 
+     } 
+ 
+     // --- 9. Settings (YENİLƏNMİŞ - API Key Qorunması və Xəbər Kateqoriyaları) --- 
+     
+     // Xəbər kateqoriyaları üçün istisna (Hamı oxuya bilsin) 
+     match /settings/news_categories { 
+       allow read: if true; 
+       allow write: if isAdmin(); 
+     } 
+ 
+     // Digər bütün ayarlar (API key və s. - Yalnız müəllimlər) 
+     match /settings/{docId} { 
+       allow read: if isTeacher(); 
+       allow write: if isAdmin(); 
+     } 
+     
+     // --- 9.1 Newsletter Subscribers --- 
+     match /newsletter_subscribers/{subId} { 
+       allow create: if request.resource.data.email is string 
+                     && request.resource.data.email.size() > 5 
+                     && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$') 
+                     && request.resource.data.keys().hasOnly(['email','createdAt']); 
+       allow read: if isModerator() || isAdmin(); 
+       allow update, delete: if isAdmin(); 
+     } 
+     
+     // --- 10. News (YENİLƏNMİŞ HİSSƏ) --- 
+     match /news/{newsId} { 
+       // Xəbərləri hamı oxuya bilər 
+       allow read: if true; 
+       
+       // Yalnız Moderatorlar yarada və silə bilər 
+       allow create, delete: if isModerator(); 
+ 
+       // DİQQƏT: Baxış sayını (views) hamı artıra bilər, amma başqa şeyi dəyişə bilməzlər 
+       allow update: if isModerator() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']); 
+     } 
+     
+     match /live_chat_sessions/{chatId} { 
+       allow read: if true; 
+       allow write: if true; 
+     } 
+ 
+     // --- 11. Messages (Canlı Çat) --- 
+     match /messages/{messageId} { 
+       // Admin və Moderator hamısını oxuya bilər 
+       // İstifadəçi yalnız öz mesajlarını (və ya 'guest' mesajlarını) oxuya bilər 
+       allow read: if isAdmin() || isModerator() || (isAuthenticated() && resource.data.userId == request.auth.uid) || resource.data.userId == 'guest'; 
+       
+       // Hər kəs yaza bilər (Qonaqlar da) 
+       allow create: if true; 
+       
+       // Silmə və redaktə yalnız admin/moderator 
+       allow update, delete: if isAdmin() || isModerator(); 
+     } 
+   } 
+ }

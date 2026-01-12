@@ -1,0 +1,95 @@
+<!-- 
+    İmtahan Platforması - Brend Email Şablonları
+    Bu fayldakı kodları EmailJS (ve ya diger email xidmeti) panelinde "HTML" hissesine kopyalayın.
+-->
+
+<!-- 1. Qeydiyyat Tesdiq Kodu Şablonu (Verification Template) -->
+<!-- 
+    EmailJS Deyişenleri: 
+    {{user_name}} - İstifadəçinin adı və soyadı
+    {{code}} - Təsdiq kodu
+    {{user_email}} - Göndərilən email
+-->
+<div id="verification-template" style="display:none;">
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f7f9; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 30px; text-align: center; color: white; }
+        .logo { width: 80px; margin-bottom: 15px; border-radius: 50%; background: white; padding: 5px; }
+        .content { padding: 40px; text-align: center; }
+        .welcome-text { font-size: 24px; font-weight: 700; color: #1e3c72; margin-bottom: 20px; }
+        .instruction { font-size: 16px; color: #666; margin-bottom: 30px; }
+        .code-box { background: #f0f4f8; border: 2px dashed #2a5298; border-radius: 8px; padding: 20px; font-size: 36px; font-weight: 800; color: #1e3c72; letter-spacing: 5px; margin: 20px 0; }
+        .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; }
+        .btn { display: inline-block; padding: 12px 25px; background: #2a5298; color: white !important; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 20px; }
+        .contact-info { margin-top: 15px; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://imtahan.site/assets/logo.png" alt="Logo" class="logo">
+            <div style="font-size: 20px; font-weight: 600;">İmtahan Platforması</div>
+        </div>
+        <div class="content">
+            <div class="welcome-text">Salam, {{user_name}}!</div>
+            <div class="instruction">Platformamıza xoş gəlmisiniz. Qeydiyyatı tamamlamaq üçün aşağıdakı təsdiq kodunu daxil edin:</div>
+            <div class="code-box">{{code}}</div>
+            <p style="font-size: 14px; color: #888;">Bu kod 10 dəqiqə ərzində keçərlidir. Əgər bu müraciəti siz etməmisinizsə, bu məktubu görməzdən gələ bilərsiniz.</p>
+            <a href="https://imtahan.site" class="btn" style="color: white;">Sayta keçid et</a>
+        </div>
+        <div class="footer">
+            <div class="contact-info">AzHun Holding &copy; 2026</div>
+            <div>Email: info@azhunholding.com | Sayt: imtahan.site</div>
+            <div style="margin-top: 10px;">Bu avtomatik göndərilmiş bir bildirişdir.</div>
+        </div>
+    </div>
+</body>
+</html>
+</div>
+
+<!-- 2. Abunəlik Təşəkkür Şablonu (Newsletter Template) -->
+<!-- 
+    EmailJS Deyişenleri: 
+    {{user_email}} - Abunə olan email
+-->
+<div id="newsletter-template" style="display:none;">
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f7f9; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 30px; text-align: center; color: white; }
+        .logo { width: 80px; margin-bottom: 15px; border-radius: 50%; background: white; padding: 5px; }
+        .content { padding: 40px; text-align: center; }
+        .welcome-text { font-size: 24px; font-weight: 700; color: #1e3c72; margin-bottom: 20px; }
+        .instruction { font-size: 16px; color: #666; margin-bottom: 30px; }
+        .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; }
+        .btn { display: inline-block; padding: 12px 25px; background: #2a5298; color: white !important; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://imtahan.site/assets/logo.png" alt="Logo" class="logo">
+            <div style="font-size: 20px; font-weight: 600;">İmtahan Platforması</div>
+        </div>
+        <div class="content">
+            <div class="welcome-text">Təşəkkür edirik!</div>
+            <div class="instruction">Xəbər bülletenimizə uğurla abunə oldunuz. Artıq ən son imtahan xəbərləri, yeniliklər və faydalı məlumatlar birbaşa sizin emailinizə gələcək.</div>
+            <a href="https://imtahan.site/news" class="btn" style="color: white;">Xəbərləri oxu</a>
+        </div>
+        <div class="footer">
+            <div class="contact-info">AzHun Holding &copy; 2026</div>
+            <div>Email: info@azhunholding.com | Sayt: imtahan.site</div>
+        </div>
+    </div>
+</body>
+</html>
+</div>
