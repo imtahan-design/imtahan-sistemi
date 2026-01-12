@@ -19,6 +19,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr; 
+        const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
+        return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    } catch (e) {
+        return dateStr || '';
+    }
+}
+
 async function generateSitemap() {
     console.log("Fetching news from Firestore...");
     
@@ -125,6 +137,39 @@ async function generateSitemap() {
 
                     htmlContent = htmlContent.replace(/<title>.*?<\/title>/, seoTags);
                     
+                    // --- PRE-RENDERING CONTENT INJECTION ---
+                    // 1. Hide loading spinner
+                    htmlContent = htmlContent.replace('<div id="loading" style="text-align: center; padding: 60px;">', '<div id="loading" style="display: none;">');
+                    
+                    // 2. Show article body container
+                    htmlContent = htmlContent.replace('<div id="articleBody" style="display: none;">', '<div id="articleBody" style="display: block;">');
+                    
+                    // 3. Inject Title
+                    htmlContent = htmlContent.replace('<h1 class="article-title" id="newsTitle"></h1>', `<h1 class="article-title" id="newsTitle">${data.title}</h1>`);
+                    
+                    // 4. Inject Category
+                    htmlContent = htmlContent.replace('<div class="article-category" id="newsCategory"></div>', `<div class="article-category" id="newsCategory">${data.category || 'Bloq'}</div>`);
+                    
+                    // 5. Inject Date
+                    const dateStr = formatDate(data.date);
+                    htmlContent = htmlContent.replace('<div class="article-meta" id="newsMeta"></div>', `<div class="article-meta" id="newsMeta"><i class="fas fa-calendar-alt" style="margin-right:8px"></i> ${dateStr}</div>`);
+                    
+                    // 6. Inject Image
+                    if (imageUrl) {
+                         htmlContent = htmlContent.replace('<img id="newsCover" class="article-image" style="display: none;">', `<img id="newsCover" class="article-image" src="${imageUrl}" alt="${data.title}">`);
+                    }
+                    
+                    // 7. Inject Content
+                    if (data.content) {
+                        htmlContent = htmlContent.replace('<div class="article-content" id="newsContent"></div>', `<div class="article-content" id="newsContent">${data.content}</div>`);
+                    }
+                    
+                    // 8. Inject Tags
+                    if (tags.length > 0) {
+                        const tagsHtml = tags.map(tag => `<a href="/bloq" class="tag">#${tag}</a>`).join('');
+                        htmlContent = htmlContent.replace('<div class="article-tags" id="newsTags"></div>', `<div class="article-tags" id="newsTags">${tagsHtml}</div>`);
+                    }
+
                     fs.writeFileSync(path.join(slugDir, 'index.html'), htmlContent);
                     // console.log(`Generated static page for: ${data.slug}`);
                 } catch (err) {

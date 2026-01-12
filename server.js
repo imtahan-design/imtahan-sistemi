@@ -10,7 +10,7 @@ const multer = require('multer');
 const mammoth = require('mammoth');
 const { IgApiClient } = require('instagram-private-api');
 const telegramBot = require('./telegram_bot'); // Telegram Bot əlavə edildi
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 
 const app = express();
 app.use(cors());
@@ -34,6 +34,44 @@ app.get('/news/:slug', (req, res) => {
 });
 
 // TELEGRAM BOT API ENDPOINTS
+// SEO & Sitemap: Yenilə
+app.post('/api/admin/update-seo', (req, res) => {
+    console.log("🔍 SEO Yeniləmə sorğusu alındı...");
+    const scriptPath = path.join(__dirname, 'tools', 'update_sitemap.js');
+    
+    exec(`node "${scriptPath}"`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`SEO Xətası: ${error.message}`);
+            return res.status(500).json({ success: false, message: error.message });
+        }
+        console.log(`SEO Çıxışı: ${stdout}`);
+        if (stderr) console.error(`SEO Stderr: ${stderr}`);
+        
+        res.json({ 
+            success: true, 
+            message: 'SEO və Statik səhifələr uğurla yeniləndi',
+            output: stdout 
+        });
+    });
+});
+
+// Admin: Serveri yenidən başlat
+app.post('/api/admin/restart-server', (req, res) => {
+    try {
+        const child = spawn(process.execPath, [path.join(__dirname, 'server.js')], {
+            cwd: __dirname,
+            detached: true,
+            stdio: 'ignore'
+        });
+        child.unref();
+        res.json({ success: true, message: 'Server yenidən başladılır' });
+        setTimeout(() => {
+            process.exit(0);
+        }, 500);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
 // 1. Quizi əl ilə başlat
 app.post('/api/telegram/start-quiz', async (req, res) => {
     const { count } = req.body;
@@ -53,15 +91,55 @@ app.post('/api/telegram/start-quiz', async (req, res) => {
     res.json({ success: true, message: `Quiz sessiyasi başladıldı (${questionCount} sual)` });
 });
 
+// 1a. Quiz-i dayandır (GET/POST hər ikisi)
+app.all('/api/telegram/stop-quiz', (req, res) => {
+    try {
+        console.log("🛑 Admin paneldən dayandırma sorğusu alındı:", req.method);
+        if (!telegramBot || typeof telegramBot.stopQuizBatch !== 'function') {
+            return res.status(503).json({ success: false, message: 'Bot aktiv deyil' });
+        }
+        const ok = telegramBot.stopQuizBatch();
+        if (!ok) {
+            return res.status(409).json({ success: false, message: 'Hazırda aktiv sessiya yoxdur' });
+        }
+        res.json({ success: true, message: 'Quiz sessiyasi dayandırılır' });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
 app.post('/api/admin/telegram-config', (req, res) => {
     try {
-        const { token, channelId } = req.body || {};
-        if (!token || !channelId) {
-            return res.status(400).json({ success: false, message: 'Token və Channel ID tələb olunur' });
+        const { token, channelId, quizCount } = req.body || {};
+        const hasToken = typeof token === 'string' && token.trim().length > 0;
+        const hasChannel = typeof channelId === 'string' && channelId.trim().length > 0;
+        if (hasToken) process.env.TELEGRAM_BOT_TOKEN = token.trim();
+        if (hasChannel) process.env.TELEGRAM_CHANNEL_ID = channelId.trim();
+        if (quizCount != null) {
+            process.env.TELEGRAM_QUIZ_COUNT = String(quizCount);
+            if (telegramBot && typeof telegramBot.setQuizCount === 'function') {
+                telegramBot.setQuizCount(quizCount);
+            }
+            try {
+                const envPath = path.join(__dirname, '.env');
+                let content = '';
+                try { content = fs.readFileSync(envPath, 'utf8'); } catch (_) { content = ''; }
+                const lines = content.split(/\r?\n/).filter(l => l.length > 0);
+                let found = false;
+                const updated = lines.map(l => {
+                    if (/^\s*TELEGRAM_QUIZ_COUNT\s*=/.test(l)) {
+                        found = true;
+                        return `TELEGRAM_QUIZ_COUNT=${quizCount}`;
+                    }
+                    return l;
+                });
+                if (!found) updated.push(`TELEGRAM_QUIZ_COUNT=${quizCount}`);
+                fs.writeFileSync(envPath, updated.join('\n') + '\n', 'utf8');
+            } catch (_) {}
         }
-        process.env.TELEGRAM_BOT_TOKEN = token;
-        process.env.TELEGRAM_CHANNEL_ID = channelId;
-        res.json({ success: true });
+        if (!hasToken && !hasChannel && quizCount == null) {
+            return res.status(400).json({ success: false, message: 'Heç bir dəyişiklik göndərilmədi' });
+        }
+        res.json({ success: true, updated: { token: !!hasToken, channelId: !!hasChannel, quizCount: quizCount != null } });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
