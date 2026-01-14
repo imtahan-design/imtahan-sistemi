@@ -75,7 +75,7 @@ async function generateSitemap() {
                     }
                     
                     // view.html-i şablon kimi istifadə edirik
-                    const templatePath = path.resolve(__dirname, '../news/view.html');
+                    const templatePath = path.resolve(__dirname, '../bloq/view.html');
                     let htmlContent = fs.readFileSync(templatePath, 'utf8');
                     
                     // Meta teqləri və başlığı dinamik olaraq ilkin HTML-ə yerləşdiririk (Google üçün)

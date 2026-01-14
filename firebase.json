@@ -10,16 +10,6 @@
     "trailingSlash": false,
     "redirects": [
       {
-        "source": "/blog",
-        "destination": "/bloq",
-        "type": 301
-      },
-      {
-        "source": "/blog/:path*",
-        "destination": "/bloq/:path*",
-        "type": 301
-      },
-      {
         "source": "/news",
         "destination": "/bloq",
         "type": 301
@@ -28,12 +18,22 @@
         "source": "/news/:path*",
         "destination": "/bloq/:path*",
         "type": 301
+      },
+      {
+        "source": "/blog",
+        "destination": "/bloq",
+        "type": 301
+      },
+      {
+        "source": "/blog/:path*",
+        "destination": "/bloq/:path*",
+        "type": 301
       }
     ],
     "rewrites": [
       {
         "source": "/bloq/**",
-        "destination": "/news/view.html"
+        "destination": "/bloq/view.html"
       },
       {
         "source": "**",
