@@ -25,7 +25,7 @@ function getNewsLink(item) {
     if (slug) {
         return '/bloq/' + slug;
     }
-    return '/news/view.html?id=' + item.id;
+    return '/bloq/view.html?id=' + item.id;
 }
 
 // State
@@ -68,15 +68,18 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNewsletterForm();
     
     // Search Filter
-    document.getElementById('newsSearch').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = allNews.filter(n => 
-            n.title.toLowerCase().includes(term) || 
-            n.excerpt.toLowerCase().includes(term) ||
-            (n.tags && n.tags.some(tag => tag.toLowerCase().includes(term)))
-        );
-        renderNews(filtered);
-    });
+    const newsSearch = document.getElementById('newsSearch');
+    if (newsSearch) {
+        newsSearch.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allNews.filter(n => 
+                n.title.toLowerCase().includes(term) || 
+                (n.excerpt && n.excerpt.toLowerCase().includes(term)) ||
+                (n.tags && n.tags.some(tag => tag.toLowerCase().includes(term)))
+            );
+            renderNews(filtered);
+        });
+    }
     
     const titleEl = document.getElementById('newsTitle');
     const slugEl = document.getElementById('newsSlug');
@@ -93,26 +96,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Tag Input Handler (supports bulk add via comma/semicolon/newline or Enter)
-    document.getElementById('tagInput').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ',' || e.key === ';' || e.key === 'Tab') {
-            e.preventDefault();
-            const raw = this.value || '';
-            const parts = raw.split(/[,\n;]+/).map(t => t.trim()).filter(Boolean);
-            if (parts.length > 0) {
-                parts.forEach(t => {
-                    if (!currentTags.includes(t)) {
-                        currentTags.push(t);
-                    }
-                });
-                renderTags();
-                this.value = '';
-            }
-        }
-    });
-    document.getElementById('tagInput').addEventListener('paste', function() {
-        setTimeout(() => {
-            const raw = (this.value || '').trim();
-            if (/[,\n;]+/.test(raw)) {
+    const tagInput = document.getElementById('tagInput');
+    if (tagInput) {
+        tagInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ',' || e.key === ';' || e.key === 'Tab') {
+                e.preventDefault();
+                const raw = this.value || '';
                 const parts = raw.split(/[,\n;]+/).map(t => t.trim()).filter(Boolean);
                 if (parts.length > 0) {
                     parts.forEach(t => {
@@ -124,27 +113,50 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.value = '';
                 }
             }
-        }, 0);
-    });
+        });
+        tagInput.addEventListener('paste', function() {
+            setTimeout(() => {
+                const raw = (this.value || '').trim();
+                if (/[,\n;]+/.test(raw)) {
+                    const parts = raw.split(/[,\n;]+/).map(t => t.trim()).filter(Boolean);
+                    if (parts.length > 0) {
+                        parts.forEach(t => {
+                            if (!currentTags.includes(t)) {
+                                currentTags.push(t);
+                            }
+                        });
+                        renderTags();
+                        this.value = '';
+                    }
+                }
+            }, 0);
+        });
+    }
     
     // Category Filter
-    document.getElementById('categoryFilter').addEventListener('change', (e) => {
-        const cat = e.target.value;
-        if (cat === 'all') {
-            renderNews(allNews);
-        } else {
-            renderNews(allNews.filter(n => n.category === cat));
-        }
-    });
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', (e) => {
+            const cat = e.target.value;
+            if (cat === 'all') {
+                renderNews(allNews);
+            } else {
+                renderNews(allNews.filter(n => n.category === cat));
+            }
+        });
+    }
     
     // Sort Filter
-    document.getElementById('sortFilter').addEventListener('change', (e) => {
-        const sort = e.target.value;
-        const sorted = [...allNews].sort((a, b) => {
-            return sort === 'newest' ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date);
+    const sortFilter = document.getElementById('sortFilter');
+    if (sortFilter) {
+        sortFilter.addEventListener('change', (e) => {
+            const sort = e.target.value;
+            const sorted = [...allNews].sort((a, b) => {
+                return sort === 'newest' ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date);
+            });
+            renderNews(sorted);
         });
-        renderNews(sorted);
-    });
+    }
 });
 
 function updateUIForUser() {
@@ -156,7 +168,8 @@ function updateUIForUser() {
         if (authButtons) authButtons.style.display = 'none';
         if (userInfo) {
             userInfo.style.display = 'flex';
-            document.getElementById('user-name').textContent = currentUser.name || currentUser.email;
+            const userNameEl = document.getElementById('user-name');
+            if (userNameEl) userNameEl.textContent = currentUser.name || currentUser.email;
         }
 
         const isAdminOrMod = currentUser.role === 'admin' || currentUser.role === 'moderator';
@@ -195,7 +208,6 @@ async function loadNews() {
         }
 
         // OPTIMIZATION: Limit to latest 50 items to save Firestore reads
-        // Previously it was loading ALL news (e.g. 1000 items = 1000 reads per page load)
         const snapshot = await db.collection('news').orderBy('date', 'desc').limit(50).get();
         allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
@@ -211,15 +223,17 @@ async function loadNews() {
         updateTicker(allNews);
     } catch (error) {
         console.error("Error loading news:", error);
-        if (error.code === 'permission-denied') {
-            document.getElementById('newsGrid').innerHTML = `
+        const grid = document.getElementById('newsGrid');
+        if (grid && error.code === 'permission-denied') {
+            grid.innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
                     <i class="fas fa-database fa-2x" style="color: var(--text-muted);"></i>
                     <p style="margin-top: 10px; color: var(--text-muted);">Məqalələri yükləmək mümkün olmadı. (Database Permission Error)</p>
                     <p style="font-size: 0.9em; color: #666; margin-top:5px;">Firebase Qaydaları (Firestore Rules) oxumağa icazə vermir.</p>
                 </div>
             `;
-            document.getElementById('featuredContainer').innerHTML = ''; // Clear featured
+            const featuredContainer = document.getElementById('featuredContainer');
+            if (featuredContainer) featuredContainer.innerHTML = ''; // Clear featured
         }
     }
 }
@@ -298,18 +312,20 @@ function renderNews(list, featured = null) {
         // Add side items
         const sideItems = list.filter(n => n.id !== featured.id).slice(0, 2);
         const sideContainer = featuredContainer.querySelector('.featured-side');
-        sideItems.forEach(item => {
-            sideContainer.innerHTML += `
-                <div class="side-card" onclick="window.location.href='${getNewsLink(item)}'" style="cursor: pointer;">
-                    <img class="side-image" src="${item.imageUrl || 'https://via.placeholder.com/180x250?text=No+Image'}" alt="${item.title}">
-                    <div class="side-content">
-                        <span class="mini-cat">${item.category}</span>
-                        <h3 class="side-title">${item.title}</h3>
-                        <span class="mini-date">${formatDate(item.date)}</span>
+        if (sideContainer) {
+            sideItems.forEach(item => {
+                sideContainer.innerHTML += `
+                    <div class="side-card" onclick="window.location.href='${getNewsLink(item)}'" style="cursor: pointer;">
+                        <img class="side-image" src="${item.imageUrl || 'https://via.placeholder.com/180x250?text=No+Image'}" alt="${item.title}">
+                        <div class="side-content">
+                            <span class="mini-cat">${item.category}</span>
+                            <h3 class="side-title">${item.title}</h3>
+                            <span class="mini-date">${formatDate(item.date)}</span>
+                        </div>
                     </div>
-                </div>
-            `;
-        });
+                `;
+            });
+        }
     }
 
     // Render Grid (All items)
@@ -337,7 +353,7 @@ function renderNews(list, featured = null) {
                 <h3 class="card-title">${item.title}</h3>
                 <p class="card-excerpt">${item.excerpt || ''}</p>
                 <div class="card-footer">
-                    <a href="${getNewsLink(item)}" class="read-more">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
+                    <a href="${getNewsLink(item)}" class="read-more">Ətraallı oxu <i class="fas fa-arrow-right"></i></a>
                     <div class="share-inline" style="display:flex; gap:8px; margin-left:8px;">
                         <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
                         <button title="Telegram" onclick="shareArticle('telegram','${location.origin}${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
@@ -376,9 +392,6 @@ function updateTicker(list) {
     container.style.animation = 'none'; // Reset trigger
     container.offsetHeight; // Trigger reflow
     container.style.animation = 'ticker-scroll 40s linear infinite';
-    
-    // 4. Remove any JS fallback logic if it exists (Clean slate)
-    // No JS animation loop needed. CSS keyframes handle it.
 }
 
 function formatDate(dateStr) {
@@ -425,7 +438,7 @@ function buildIndexDescription(list) {
     return s || 'Təhsilə dair faydalı məqalələr və izahlar.';
 }
 function setIndexSeo(list) {
-    var url = location.origin + '/news';
+    var url = location.origin + '/bloq';
     var title = 'Bloq və Məqalələr – İmtahan Platforması';
     var desc = buildIndexDescription(list || []);
     var image = 'https://imtahan.site/assets/logo.png';
@@ -457,11 +470,11 @@ function setIndexSeo(list) {
     var website = {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "url": location.origin + "/news",
+        "url": location.origin + "/bloq",
         "name": "İmtahan Bloq",
         "potentialAction": {
             "@type": "SearchAction",
-            "target": location.origin + "/news?q={search_term_string}",
+            "target": location.origin + "/bloq?q={search_term_string}",
             "query-input": "required name=search_term_string"
         }
     };
@@ -478,7 +491,7 @@ function setIndexSeo(list) {
     var blog = {
         "@context": "https://schema.org",
         "@type": "Blog",
-        "url": location.origin + "/news",
+        "url": location.origin + "/bloq",
         "name": "İmtahan Bloq",
         "blogPost": (list || []).slice(0, 10).map(n => ({
             "@type": "BlogPosting",
@@ -583,6 +596,7 @@ window.editNews = function(id) {
 
 function renderTags() {
     const container = document.getElementById('tagList');
+    if (!container) return;
     container.innerHTML = '';
     currentTags.forEach((tag, index) => {
         container.innerHTML += `
@@ -619,9 +633,6 @@ window.toggleFeatured = async function(id, currentStatus) {
     }
     
     try {
-        // Unfeature all others if we want single featured? 
-        // For now just toggle this one.
-        // Actually, let's reset others if we are setting to true, to have only one main featured
         if (!currentStatus) {
             const batch = db.batch();
             allNews.forEach(n => {
@@ -636,9 +647,7 @@ window.toggleFeatured = async function(id, currentStatus) {
             isFeatured: !currentStatus
         });
         
-        // Cache təmizlə
         clearAllNewsCaches();
-        
         loadNews();
     } catch (error) {
         alert('Xəta: ' + error.message);
@@ -660,7 +669,8 @@ window.execCmd = function(command, value = null) {
 
 window.removeCoverImage = function() {
     document.getElementById('newsImage').value = '';
-    document.getElementById('fileInput').value = ''; 
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) fileInput.value = ''; 
     updateImagePreview();
 }
 
@@ -669,6 +679,8 @@ window.updateImagePreview = function() {
     const preview = document.getElementById('imagePreview');
     const removeBtn = document.getElementById('removeImageBtn');
     
+    if (!preview) return;
+
     // Clear previous img
     const existingImg = preview.querySelector('img');
     if (existingImg) existingImg.remove();
@@ -685,11 +697,13 @@ window.updateImagePreview = function() {
         img.style.borderRadius = '12px';
         
         preview.appendChild(img);
-        preview.querySelector('.image-preview-placeholder').style.opacity = '0';
+        const placeholder = preview.querySelector('.image-preview-placeholder');
+        if (placeholder) placeholder.style.opacity = '0';
         
         if (removeBtn) removeBtn.style.display = 'flex';
     } else {
-        preview.querySelector('.image-preview-placeholder').style.opacity = '1';
+        const placeholder = preview.querySelector('.image-preview-placeholder');
+        if (placeholder) placeholder.style.opacity = '1';
         if (removeBtn) removeBtn.style.display = 'none';
     }
 }
@@ -697,7 +711,6 @@ window.updateImagePreview = function() {
 window.handleFileSelect = function(event) {
     const file = event.target.files[0];
     if (file) {
-        // Şəkil sıxılma funksiyası (Max 800px, 0.7 keyfiyyət) və Firebase Storage-a yükləmə
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
@@ -738,8 +751,6 @@ window.handleFileSelect = function(event) {
 
 async function uploadCoverToStorage(dataUrl) {
     try {
-        // Firestore limiti yoxlanışı (təxminən 1MB) – vizual üçün keçid;
-        // Storage-a yükləyəcəyimiz üçün limit problem deyil, amma çox böyük faylları xəbərdar edək
         if (dataUrl.length > 3_000_000) {
             alert("Şəkil çox böyükdür. Zəhmət olmasa daha kiçik fayl seçin.");
             return;
@@ -747,15 +758,12 @@ async function uploadCoverToStorage(dataUrl) {
         const unique = Date.now() + '-' + Math.random().toString(36).slice(2);
         const ref = storage.ref(`covers/${unique}.jpg`);
         const metadata = { contentType: 'image/jpeg', cacheControl: 'public,max-age=31536000' };
-        // Base64 data_url yüklənir
         const snapshot = await ref.putString(dataUrl, 'data_url', metadata);
         const url = await snapshot.ref.getDownloadURL();
-        // Form dəyərini real HTTPS URL ilə doldur
         document.getElementById('newsImage').value = url;
         updateImagePreview();
     } catch (err) {
         alert("Şəkili yükləmək mümkün olmadı: " + err.message);
-        // Uğursuz olarsa, ən azından lokal göstəriş üçün base64 istifadə et
         try {
             document.getElementById('newsImage').value = dataUrl;
             updateImagePreview();
@@ -771,7 +779,6 @@ window.handleEditorImageUpload = function(event) {
             const img = new Image();
             img.src = e.target.result;
             img.onload = async function() {
-                // Editor şəkilləri üçün daha kiçik ölçü
                 const canvas = document.createElement('canvas');
                 const MAX_WIDTH = 1000;
                 const MAX_HEIGHT = 1000;
@@ -794,7 +801,6 @@ window.handleEditorImageUpload = function(event) {
                 ctx.drawImage(img, 0, 0, width, height);
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
                 
-                // Storage-a yüklə və məzmunun içinə HTTPS URL ilə daxil et
                 try {
                     const unique = Date.now() + '-' + Math.random().toString(36).slice(2);
                     const ref = storage.ref(`editor/${unique}.jpg`);
@@ -805,7 +811,6 @@ window.handleEditorImageUpload = function(event) {
                     document.execCommand('insertImage', false, url);
                     saveSelection();
                 } catch (err) {
-                    // Uğursuz olarsa, base64 ilə daxil et
                     restoreSelection();
                     document.execCommand('insertImage', false, dataUrl);
                     saveSelection();
@@ -826,13 +831,13 @@ window.saveSelection = function() {
 
 window.restoreSelection = function() {
     const editor = document.getElementById('richEditor');
+    if (!editor) return;
     editor.focus();
     if (savedSelectionRange) {
         const sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(savedSelectionRange);
     } else {
-        // If no selection, move to end
         const range = document.createRange();
         range.selectNodeContents(editor);
         range.collapse(false);
@@ -848,28 +853,26 @@ window.toggleHtmlMode = function() {
     const htmlEditor = document.getElementById('htmlEditor');
     const btn = document.getElementById('htmlModeBtn');
     
+    if (!richEditor || !htmlEditor || !btn) return;
+
     isHtmlMode = !isHtmlMode;
     
     if (isHtmlMode) {
-        // Switch to HTML
         htmlEditor.value = richEditor.innerHTML;
         richEditor.style.display = 'none';
         htmlEditor.style.display = 'block';
         btn.innerHTML = '<i class="fas fa-eye"></i> Visual';
-        btn.style.color = '#10b981'; // Green for visual mode
-        // Disable toolbar buttons
+        btn.style.color = '#10b981'; 
         document.querySelectorAll('.toolbar-btn:not(#htmlModeBtn), .editor-select, .editor-color').forEach(el => {
             el.style.opacity = '0.5';
             el.style.pointerEvents = 'none';
         });
     } else {
-        // Switch to Visual
         richEditor.innerHTML = htmlEditor.value;
         htmlEditor.style.display = 'none';
         richEditor.style.display = 'block';
         btn.innerHTML = '<i class="fas fa-code"></i> HTML';
         btn.style.color = 'var(--primary)';
-        // Enable toolbar buttons
         document.querySelectorAll('.toolbar-btn, .editor-select, .editor-color').forEach(el => {
             el.style.opacity = '1';
             el.style.pointerEvents = 'auto';
@@ -877,7 +880,6 @@ window.toggleHtmlMode = function() {
     }
 }
 
-// Toast notification helper
 window.showToast = function(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
@@ -899,13 +901,11 @@ window.showToast = function(message, type = 'success') {
     toast.innerHTML = message;
     document.body.appendChild(toast);
     
-    // Animate in
     setTimeout(() => {
         toast.style.transform = 'translateY(0)';
         toast.style.opacity = '1';
     }, 10);
     
-    // Remove after 3 seconds
     setTimeout(() => {
         toast.style.transform = 'translateY(100px)';
         toast.style.opacity = '0';
@@ -913,13 +913,11 @@ window.showToast = function(message, type = 'success') {
     }, 3000);
 }
 
-// Form Submit
 window.handleNewsSubmit = async function(event) {
     event.preventDefault();
     
     const title = document.getElementById('newsTitle').value;
     
-    // Get content based on mode
     let content;
     if (isHtmlMode) {
         content = document.getElementById('htmlEditor').value;
@@ -961,20 +959,15 @@ window.handleNewsSubmit = async function(event) {
     };
     
     try {
-        let createdId = null;
         if (currentEditingId) {
-            delete newsData.date; // Don't overwrite create date
+            delete newsData.date; 
             delete newsData.views;
             delete newsData.isFeatured;
-            // Biz slug-ı silmirik, əksinə əgər başlıq dəyişibsə slug-ı da yeniləyirik
-            // Və ya ən azından slug sahəsinin olduğundan əmin oluruq
             await db.collection('news').doc(currentEditingId).update(newsData);
         } else {
-            const ref = await db.collection('news').add(newsData);
-            createdId = ref.id;
+            await db.collection('news').add(newsData);
         }
         
-        // Cache təmizlə ki, yeni məlumat yüklənsin
         sessionStorage.removeItem('news_list_cache');
         sessionStorage.removeItem('trend_news_cache');
 
@@ -982,43 +975,34 @@ window.handleNewsSubmit = async function(event) {
         loadNews();
         showToast('Məqalə uğurla yadda saxlanıldı');
 
-        // SEO Yeniləmə (Google və Sitemap üçün)
         const isAdminOrMod = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
         if (isAdminOrMod) {
-            console.log("SEO yeniləmə başladılır...");
             try {
-                // Bizim yeni endpoint-i çağırırıq
                 const seoResponse = await fetch('/api/admin/update-seo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
                 const seoData = await seoResponse.json();
-                console.log("SEO Cavab:", seoData);
                 if (seoData.success) {
                     showToast('SEO və Sitemap uğurla yeniləndi');
-                } else {
-                    showToast('SEO yenilənməsində xəta baş verdi', 'error');
                 }
-            } catch (err) {
-                console.warn('SEO yeniləmə alınmadı:', err.message);
-                showToast('SEO yenilənməsi alınmadı', 'error');
-            }
+            } catch (err) {}
         }
-        } catch (e) {
-            showToast('Xəta: ' + e.message, 'error');
-        }
+    } catch (e) {
+        showToast('Xəta: ' + e.message, 'error');
     }
+}
 
-// Slug Fixer for Admins
 window.fixAllSlugs = async function() {
     if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) {
         alert('Bu əməliyyat üçün admin olmalısınız.');
         return;
     }
     
-    if (!confirm('Bütün məqalələrin slug-larını yoxlayıb düzəltmək istəyirsiniz? (Bu, Firestore-da bir neçə Write əməliyyatı edəcək)')) return;
+    if (!confirm('Bütün məqalələrin slug-larını yoxlayıb düzəltmək istəyirsiniz?')) return;
     
     const btn = document.getElementById('fixSlugsBtn');
+    if (!btn) return;
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşlənir...';
     btn.disabled = true;
@@ -1053,13 +1037,14 @@ window.fixAllSlugs = async function() {
     }
 }
 
-// Category Management
 window.openCategoryModal = function() {
     renderCategoryList();
-    document.getElementById('categoryManagerModal').classList.add('active');
+    const modal = document.getElementById('categoryManagerModal');
+    if (modal) modal.classList.add('active');
 }
 window.closeCategoryModal = function() {
-    document.getElementById('categoryManagerModal').classList.remove('active');
+    const modal = document.getElementById('categoryManagerModal');
+    if (modal) modal.classList.remove('active');
 }
 
 function renderCategoryList() {
@@ -1080,6 +1065,7 @@ function renderCategoryList() {
 
 window.addCategory = async function() {
     const input = document.getElementById('newCategoryInput');
+    if (!input) return;
     const val = input.value.trim();
     if (val && !categories.includes(val)) {
         categories.push(val);
@@ -1101,33 +1087,34 @@ async function saveCategories() {
     if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) return;
     try {
         await db.collection('settings').doc('news_categories').set({ list: categories });
-        loadCategories(); // Reload to update selects
+        loadCategories(); 
     } catch (e) {
         console.error(e);
     }
 }
 
-// Login (Simplified)
-window.openLoginModal = () => document.getElementById('loginModal').classList.add('active');
-window.closeLoginModal = () => document.getElementById('loginModal').classList.remove('active');
+window.openLoginModal = () => {
+    const modal = document.getElementById('loginModal');
+    if (modal) modal.classList.add('active');
+};
+window.closeLoginModal = () => {
+    const modal = document.getElementById('loginModal');
+    if (modal) modal.classList.remove('active');
+};
 window.logout = () => auth.signOut().then(() => window.location.reload());
 window.handleLogin = async (e) => {
     e.preventDefault();
     const loginInput = document.getElementById('loginEmail').value;
     const pass = document.getElementById('loginPassword').value;
     
-    // Check if input is username or email
     let email = loginInput;
     if (!loginInput.includes('@')) {
-        // Assume username, fetch email from Firestore users collection
         try {
             const userSnapshot = await db.collection('users').where('username', '==', loginInput).limit(1).get();
             if (!userSnapshot.empty) {
                 email = userSnapshot.docs[0].data().email;
             }
         } catch (error) {
-            console.error("Error fetching user by username:", error);
-            // If permission denied, we can't lookup username. Warn user.
             if (error.code === 'permission-denied') {
                 alert("İstifadəçi adı ilə giriş üçün sistem icazəsi yoxdur. Zəhmət olmasa email ünvanınızla daxil olun.");
                 return;
@@ -1137,37 +1124,25 @@ window.handleLogin = async (e) => {
 
     auth.signInWithEmailAndPassword(email, pass).then(() => {
         closeLoginModal();
-        // UI updates automatically via auth listener
     }).catch(err => alert(err.message));
 }
 
-// Color Palette Logic
 window.toggleColorPalette = function() {
     const palette = document.getElementById('colorPalette');
     if (!palette) return;
-    
-    if (palette.classList.contains('active')) {
-        palette.classList.remove('active');
-    } else {
-        palette.classList.add('active');
-    }
+    palette.classList.toggle('active');
 }
 
-// Close palette when clicking outside
 document.addEventListener('click', function(e) {
     const palette = document.getElementById('colorPalette');
     const btn = e.target.closest('button[onclick="toggleColorPalette()"]');
-    
-    // Check if palette exists and is active
     if (palette && palette.classList.contains('active')) {
-        // If click is not inside palette and not on the toggle button
         if (!palette.contains(e.target) && !btn) {
             palette.classList.remove('active');
         }
     }
 });
 
-// All News Page Logic
 window.initializeAllNewsPage = function() {
     isAllNewsPage = true;
     lastVisibleDoc = null;
@@ -1185,20 +1160,18 @@ window.loadMoreNews = async function() {
 
     try {
         let query = db.collection('news').orderBy('date', 'desc').limit(12);
-
         if (lastVisibleDoc) {
             query = query.startAfter(lastVisibleDoc);
         }
 
         const snapshot = await query.get();
-        
         if (snapshot.empty) {
             if (btn) {
                 btn.textContent = 'Başqa məqalə yoxdur';
                 btn.disabled = true;
-                // If it's the first load and empty
                 if (!lastVisibleDoc) {
-                     document.getElementById('all-news-grid').innerHTML = '<p style="text-align:center; grid-column:1/-1;">Hələ ki məqalə yoxdur.</p>';
+                     const grid = document.getElementById('all-news-grid');
+                     if (grid) grid.innerHTML = '<p style="text-align:center; grid-column:1/-1;">Hələ ki məqalə yoxdur.</p>';
                 }
             }
             return;
@@ -1206,16 +1179,13 @@ window.loadMoreNews = async function() {
 
         lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
         const newItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
         renderAllNewsGrid(newItems);
 
-        if (snapshot.docs.length < 12) {
-            if (btn) {
+        if (btn) {
+            if (snapshot.docs.length < 12) {
                 btn.textContent = 'Son';
                 btn.disabled = true;
-            }
-        } else {
-            if (btn) {
+            } else {
                 btn.textContent = 'Daha çox göstər';
                 btn.disabled = false;
             }
@@ -1232,7 +1202,6 @@ function renderAllNewsGrid(list) {
     if (!grid) return;
 
     list.forEach(item => {
-        const isAdminOrMod = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
         const card = document.createElement('div');
         card.className = 'news-card';
         card.innerHTML = `
@@ -1250,9 +1219,9 @@ function renderAllNewsGrid(list) {
                 <div class="news-footer">
                     <a href="${getNewsLink(item)}" class="read-more" style="color:var(--primary); text-decoration:none; font-weight:600;">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
                     <div class="share-inline" style="display:flex; gap:8px; margin-left:8px;">
-                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}${getNewsLink(item)}','${item.title}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
-                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}${getNewsLink(item)}','${item.title}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
-                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}${getNewsLink(item)}','${item.title}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
+                        <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
+                        <button title="Telegram" onclick="shareArticle('telegram','${location.origin}${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>
+                        <button title="Linki kopyala" onclick="shareArticle('copy','${location.origin}${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#6b7280; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fas fa-link"></i></button>
                     </div>
                 </div>
             </div>

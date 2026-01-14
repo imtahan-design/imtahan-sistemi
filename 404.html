@@ -4,43 +4,8 @@
     <meta charset="utf-8">
     <title>Yönləndirilir...</title>
     <script>
-        // GitHub Pages SPA Redirect Logic
-        (function() {
-            var path = window.location.pathname;
-            
-            if (path === '/bloq' || path === '/bloq/') {
-                window.location.replace('/bloq/index.html');
-                return;
-            }
-            
-            if (path.indexOf('/bloq/') === 0) {
-                var partsB = path.split('/').filter(function(p) { return !!p; });
-                var slugB = partsB[partsB.length - 1];
-                if (slugB && slugB !== 'index.html' && slugB !== 'view.html' && slugB !== 'bloq') {
-                    var newUrlB = '/news/view.html?slug=' + encodeURIComponent(slugB);
-                    window.location.replace(newUrlB);
-                    return;
-                }
-            }
-            
-            // Əgər link /news/ ilə başlayırsa və fayl tapılmayıbsa (404),
-            // deməli bu xəbər linkidir (məs: /news/maraqli-xeber-slug)
-            if (path.includes('/news/')) {
-                // Slug-ı çıxarırıq (boş olmayan sonuncu hissə)
-                var parts = path.split('/').filter(function(p) { return !!p; });
-                var slug = parts[parts.length - 1];
-                
-                // view.html faylına yönləndiririk, slug-ı parametr kimi ötürürük
-                if (slug && slug !== 'index.html' && slug !== 'view.html' && slug !== 'news') {
-                    var newUrl = '/news/view.html?slug=' + encodeURIComponent(slug);
-                    window.location.replace(newUrl);
-                    return;
-                }
-            }
-            
-            // Digər 404 halları üçün ana səhifəyə qaytar
-            window.location.replace('/');
-        })();
+        // Simple 404 redirect to home
+        window.location.replace('/');
     </script>
 </head>
 <body>

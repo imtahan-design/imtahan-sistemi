@@ -29,7 +29,7 @@ app.get('/health', (req, res) => {
     res.json({ status: 'online', instagram: isLoggedIn ? 'connected' : 'disconnected' });
 });
 
-app.get('/news/:slug', (req, res) => {
+app.get(['/news/:slug', '/bloq/:slug', '/blog/:slug'], (req, res) => {
     res.sendFile(path.join(__dirname, 'news', 'view.html'));
 });
 
@@ -644,13 +644,13 @@ app.post('/api/rss/add', async (req, res) => {
             const cat = x.category ? `<category>${x.category}</category>` : '';
             return `<item><title><![CDATA[${x.title}]]></title><link>${x.link}</link><description><![CDATA[${x.description}]]></description>${cat}<pubDate>${x.pubDate}</pubDate><guid>${x.guid}</guid>${enclosure}</item>`;
         }).join('');
-        const rss = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>İmtahan.site Xəbər</title><link>https://imtahan.site/news</link><description>Son xəbərlər</description><language>az</language><lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`;
+        const rss = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>İmtahan.site Xəbər</title><link>https://imtahan.site/bloq</link><description>Son xəbərlər</description><language>az</language><lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`;
         fs.writeFileSync(path.join(__dirname, 'rss.xml'), rss + rssItems + '</channel></rss>', 'utf-8');
 
         // Build/refresh sitemap.xml dynamically from RSS store
         const baseUrls = [
             { loc: 'https://imtahan.site/', changefreq: 'daily', priority: '1.0' },
-            { loc: 'https://imtahan.site/news', changefreq: 'hourly', priority: '0.9' },
+            { loc: 'https://imtahan.site/bloq', changefreq: 'hourly', priority: '0.9' },
             { loc: 'https://imtahan.site/index.html', changefreq: 'weekly', priority: '0.8' }
         ];
         const seen = new Set(baseUrls.map(b => b.loc));

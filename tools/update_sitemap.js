@@ -46,8 +46,7 @@ async function generateSitemap() {
         // Static pages
         const staticPages = [
             { loc: 'https://imtahan.site/', priority: '1.0', changefreq: 'daily' },
-            { loc: 'https://imtahan.site/bloq', priority: '0.9', changefreq: 'hourly' },
-            { loc: 'https://imtahan.site/index.html', priority: '0.8', changefreq: 'weekly' }
+            { loc: 'https://imtahan.site/bloq', priority: '0.9', changefreq: 'hourly' }
         ];
 
         staticPages.forEach(page => {
