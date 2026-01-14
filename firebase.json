@@ -15,12 +15,22 @@
         "type": 301
       },
       {
+        "source": "/news/",
+        "destination": "/bloq",
+        "type": 301
+      },
+      {
         "source": "/news/:path*",
         "destination": "/bloq/:path*",
         "type": 301
       },
       {
         "source": "/blog",
+        "destination": "/bloq",
+        "type": 301
+      },
+      {
+        "source": "/blog/",
         "destination": "/bloq",
         "type": 301
       },
