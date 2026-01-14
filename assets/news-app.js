@@ -808,7 +808,15 @@ window.handleEditorImageUpload = async function(event) {
             ctx.drawImage(img, 0, 0, width, height);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
             
+            // 1. Şəkli dərhal müvəqqəti (base64) olaraq yerləşdiririk
+            restoreSelection();
+            const loadingId = 'img-loading-' + Date.now();
+            const tempImgHtml = `<img id="${loadingId}" src="${dataUrl}" style="max-width:100%; height:auto; display:block; margin:15px auto; border-radius:12px; opacity:0.7;">`;
+            document.execCommand('insertHTML', false, tempImgHtml + '<p><br></p>');
+            saveSelection();
+
             try {
+                // 2. Arxa fonda Firebase-ə yükləyirik
                 const unique = Date.now() + '-' + Math.random().toString(36).slice(2);
                 const ref = storage.ref(`editor/${unique}.jpg`);
                 const metadata = { contentType: 'image/jpeg', cacheControl: 'public,max-age=31536000' };
@@ -816,13 +824,23 @@ window.handleEditorImageUpload = async function(event) {
                 const snapshot = await ref.putString(dataUrl, 'data_url', metadata);
                 const url = await snapshot.ref.getDownloadURL();
                 
-                restoreSelection();
-                const imgHtml = `<img src="${url}" style="max-width:100%; height:auto; display:block; margin:15px auto; border-radius:12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">`;
-                document.execCommand('insertHTML', false, imgHtml + '<p><br></p>');
-                saveSelection();
+                // 3. Yükləmə uğurlu olsa, müvəqqəti şəkli real URL ilə əvəz edirik
+                const finalImg = document.getElementById(loadingId);
+                if (finalImg) {
+                    finalImg.src = url;
+                    finalImg.removeAttribute('id');
+                    finalImg.style.opacity = '1';
+                    finalImg.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                }
             } catch (err) {
-                console.error("Upload error:", err);
-                alert("Şəkli yükləmək mümkün olmadı. Zəhmət olmasa Firebase CORS ayarlarını yoxlayın. Xəta: " + err.message);
+                console.error("Firebase Upload Error (using Base64 fallback):", err);
+                // Xəta olsa, şəkli base64 olaraq saxla (artıq yerləşdirilib)
+                const finalImg = document.getElementById(loadingId);
+                if (finalImg) {
+                    finalImg.removeAttribute('id');
+                    finalImg.style.opacity = '1';
+                }
+                // İstifadəçiyə sakitcə bildiriş (konsolda)
             }
         };
     };
