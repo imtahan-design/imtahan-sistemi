@@ -573,7 +573,7 @@
                               </label>
                               <button type="button" class="toolbar-btn" onclick="toggleHtmlMode()" id="htmlModeBtn" title="HTML Rejimi" style="margin-left: auto; color: var(--primary); width: auto; padding: 0 8px;"><i class="fas fa-code"></i> HTML</button>
                           </div>
-                          <div id="richEditor" class="rich-editor" contenteditable="true"></div>
+                          <div id="richEditor" class="rich-editor" contenteditable="true" onblur="saveSelection()" onkeyup="saveSelection()" onclick="saveSelection()"></div>
                           <textarea id="htmlEditor" class="rich-editor" style="display:none; font-family: monospace; white-space: pre; overflow: auto;"></textarea>
                       </div>
                   </div>

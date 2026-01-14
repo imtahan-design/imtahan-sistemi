@@ -656,6 +656,7 @@ window.toggleFeatured = async function(id, currentStatus) {
 
 // Editor Functions
 window.execCmd = function(command, value = null) {
+    saveSelection(); // Selection-ı yadda saxla
     if (command === 'createLink') {
         const url = prompt('Linkin URL-ni daxil edin:', 'https://');
         if (url) {
@@ -771,54 +772,66 @@ async function uploadCoverToStorage(dataUrl) {
     }
 }
 
-window.handleEditorImageUpload = function(event) {
+window.handleEditorImageUpload = async function(event) {
     const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = async function() {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 1000;
-                const MAX_HEIGHT = 1000;
-                let width = img.width;
-                let height = img.height;
-                if (width > height) {
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-                } else {
-                    if (height > MAX_HEIGHT) {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
-                    }
-                }
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                
-                try {
-                    const unique = Date.now() + '-' + Math.random().toString(36).slice(2);
-                    const ref = storage.ref(`editor/${unique}.jpg`);
-                    const metadata = { contentType: 'image/jpeg', cacheControl: 'public,max-age=31536000' };
-                    const snapshot = await ref.putString(dataUrl, 'data_url', metadata);
-                    const url = await snapshot.ref.getDownloadURL();
-                    restoreSelection();
-                    document.execCommand('insertImage', false, url);
-                    saveSelection();
-                } catch (err) {
-                    restoreSelection();
-                    document.execCommand('insertImage', false, dataUrl);
-                    saveSelection();
-                }
-            };
-        };
-        reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Şəkil seçilən kimi selection-ı yoxla, yoxdursa editorun sonuna qoy
+    const editor = document.getElementById('richEditor');
+    const sel = window.getSelection();
+    if (!sel.rangeCount || !editor.contains(sel.anchorNode)) {
+        restoreSelection(); 
     }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = async function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 1000;
+            const MAX_HEIGHT = 1000;
+            let width = img.width;
+            let height = img.height;
+            if (width > height) {
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+            } else {
+                if (height > MAX_HEIGHT) {
+                    width *= MAX_HEIGHT / height;
+                    height = MAX_HEIGHT;
+                }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            
+            try {
+                const unique = Date.now() + '-' + Math.random().toString(36).slice(2);
+                const ref = storage.ref(`editor/${unique}.jpg`);
+                const metadata = { contentType: 'image/jpeg', cacheControl: 'public,max-age=31536000' };
+                const snapshot = await ref.putString(dataUrl, 'data_url', metadata);
+                const url = await snapshot.ref.getDownloadURL();
+                
+                restoreSelection();
+                document.execCommand('insertImage', false, url);
+                // Şəkildən sonra boşluq qoy ki, yazmağa davam etmək asan olsun
+                document.execCommand('insertHTML', false, '<p><br></p>');
+                saveSelection();
+            } catch (err) {
+                console.error("Upload error:", err);
+                restoreSelection();
+                document.execCommand('insertImage', false, dataUrl);
+                document.execCommand('insertHTML', false, '<p><br></p>');
+                saveSelection();
+            }
+        };
+    };
+    reader.readAsDataURL(file);
     event.target.value = '';
 }
 
