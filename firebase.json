@@ -46,7 +46,7 @@
         "destination": "/bloq/view.html"
       },
       {
-        "source": "**",
+        "source": "/!(news|blog|bloq)/**",
         "destination": "/index.html"
       }
     ]
