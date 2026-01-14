@@ -4,11 +4,27 @@
     <meta charset="utf-8">
     <title>Yönləndirilir...</title>
     <script>
-        // Simple 404 redirect to home
-        window.location.replace('/');
+        // Check if we should redirect legacy paths
+        const path = window.location.pathname.toLowerCase();
+        if (path.startsWith('/news') || path.startsWith('/blog')) {
+            const newPath = path.replace(/^\/(news|blog)/, '/bloq');
+            window.location.replace(newPath);
+        } else {
+            // Otherwise redirect to home after a delay or just show 404
+            // For now, let's keep it simple but helpful
+            setTimeout(() => {
+                if (window.location.pathname !== '/') {
+                    window.location.replace('/');
+                }
+            }, 3000);
+        }
     </script>
 </head>
 <body>
-    <p>Səhifə yönləndirilir...</p>
+    <div style="text-align: center; margin-top: 50px; font-family: sans-serif;">
+        <h1>404 - Səhifə tapılmadı</h1>
+        <p>Görünür axtardığınız səhifə artıq mövcud deyil.</p>
+        <p>Yönləndirilirsiniz... Və ya <a href="/">ana səhifəyə keçin</a></p>
+    </div>
 </body>
 </html>
