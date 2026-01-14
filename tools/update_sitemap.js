@@ -120,18 +120,58 @@ async function generateSitemap() {
     <meta name="twitter:description" content="${description}">
     <meta name="twitter:image" content="${imageUrl}">
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      "headline": "${data.title.replace(/"/g, '\\"')}",
-      "description": "${description.replace(/"/g, '\\"')}",
-      "image": ["${imageUrl}"],
-      "datePublished": "${publishedISO}",
-      "author": {
-        "@type": "Organization",
-        "name": "İmtahan Bloq"
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "${data.title.replace(/"/g, '\\"')}",
+        "description": "${description.replace(/"/g, '\\"')}",
+        "image": ["${imageUrl}"],
+        "datePublished": "${publishedISO}",
+        "dateModified": "${modifiedISO}",
+        "author": {
+          "@type": "Organization",
+          "name": "İmtahan Bloq",
+          "url": "https://imtahan.site"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "İmtahan Bloq",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://imtahan.site/assets/logo.png"
+          }
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "${canonical}"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Ana Səhifə",
+            "item": "https://imtahan.site/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Bloq",
+            "item": "https://imtahan.site/bloq"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "${data.title.replace(/"/g, '\\"')}",
+            "item": "${canonical}"
+          }
+        ]
       }
-    }
+    ]
     </script>`;
 
                     htmlContent = htmlContent.replace(/<title>.*?<\/title>/, seoTags);

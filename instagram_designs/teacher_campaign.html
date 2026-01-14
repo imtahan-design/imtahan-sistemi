@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="az">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Müəllim Kampaniyası - Instagram</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; margin: 0; padding: 40px; color: #f8fafc; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; font-weight: 800; color: #38bdf8; margin: 0; }
+        .header p { color: #94a3b8; margin-top: 10px; }
+        .grid { display: flex; flex-direction: column; gap: 40px; }
+        .card { background: #1e293b; border-radius: 24px; padding: 30px; display: flex; gap: 30px; align-items: center; border: 1px solid #334155; }
+        .preview { width: 500px; height: 500px; background: #000; border-radius: 16px; overflow: hidden; flex-shrink: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        .preview canvas { width: 100%; height: 100%; }
+        .info { flex: 1; }
+        .info h2 { font-size: 24px; color: #f1f5f9; margin-bottom: 15px; }
+        .caption { background: #0f172a; padding: 20px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: #cbd5e1; margin-bottom: 20px; border-left: 4px solid #38bdf8; }
+        .actions { display: flex; gap: 15px; }
+        .btn { padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-primary { background: #38bdf8; color: #0f172a; }
+        .btn-primary:hover { background: #7dd3fc; }
+        .btn-secondary { background: #334155; color: #f8fafc; }
+        .btn-secondary:hover { background: #475569; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Müəllim Özəl Kampaniyası</h1>
+            <p>İnstagram üçün yüksək keyfiyyətli dizaynlar</p>
+        </div>
+        <div class="grid" id="grid"></div>
+    </div>
+
+    <script>
+        const W = 1080, H = 1080;
+
+        function drawAI(ctx) {
+            // Background
+            const g = ctx.createLinearGradient(0, 0, W, H);
+            g.addColorStop(0, '#0f172a');
+            g.addColorStop(1, '#1e1b4b');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, H);
+
+            // Tech pattern
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.1)';
+            ctx.lineWidth = 2;
+            for(let i=0; i<W; i+=100) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(W, i); ctx.stroke();
+            }
+
+            // Main Text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 110px Segoe UI';
+            ctx.fillText('1 SANİYƏDƏ', 80, 300);
+            
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillText('100 SUAL!', 80, 420);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '700 50px Segoe UI';
+            ctx.fillText('Süni İntellektlə sınaq hazırlamaq', 80, 550);
+            ctx.fillText('artıq xəyal deyil.', 80, 620);
+
+            // Feature Box
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
+            ctx.roundRect ? ctx.fill(ctx.roundRect(80, 750, 920, 200, 30)) : ctx.fillRect(80, 750, 920, 200);
+            
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '800 60px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText('imtahan.site/muellim', 540, 870);
+            
+            // Logo
+            ctx.textAlign = 'left';
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.font = '900 40px Segoe UI';
+            ctx.fillText('IMTAHAN.SITE', 80, 100);
+        }
+
+        function drawSecurity(ctx) {
+            // Background
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(0, 0, W, H);
+
+            // Red glow
+            const g = ctx.createRadialGradient(540, 540, 100, 540, 540, 600);
+            g.addColorStop(0, 'rgba(220, 38, 38, 0.1)');
+            g.addColorStop(1, 'transparent');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, H);
+
+            // Shield Icon (Simple Path)
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 15;
+            ctx.beginPath();
+            ctx.moveTo(540, 150);
+            ctx.lineTo(800, 250);
+            ctx.lineTo(800, 450);
+            ctx.quadraticCurveTo(800, 650, 540, 750);
+            ctx.quadraticCurveTo(280, 650, 280, 450);
+            ctx.lineTo(280, 250);
+            ctx.closePath();
+            ctx.stroke();
+
+            // Text
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 90px Segoe UI';
+            ctx.fillText('SINAQLARINIZ', 540, 400);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillText('OĞURLANMASIN!', 540, 510);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '700 45px Segoe UI';
+            ctx.fillText('Şifrəli giriş sistemi ilə sınaqlarınız', 540, 650);
+            ctx.fillText('yalnız sizin icazənizlə açılır.', 540, 720);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 40px Segoe UI';
+            ctx.fillText('IMTAHAN.SITE', 540, 950);
+        }
+
+        function drawTime(ctx) {
+            // Background
+            ctx.fillStyle = '#064e3b';
+            ctx.fillRect(0, 0, W, H);
+
+            // Clock graphic elements
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 40;
+            ctx.beginPath(); ctx.arc(540, 540, 400, 0, Math.PI*2); ctx.stroke();
+
+            // Text
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 100px Segoe UI';
+            ctx.fillText('MÜƏLLİM,', 540, 380);
+            ctx.fillStyle = '#10b981';
+            ctx.fillText('VAXTIN SƏNƏ QALSIN!', 540, 500);
+
+            ctx.fillStyle = '#a7f3d0';
+            ctx.font = '700 40px Segoe UI';
+            ctx.fillText('Avtomatik yoxlama və analiz sistemi ilə', 540, 650);
+            ctx.fillText('hər gün 2 saat qənaət edin.', 540, 710);
+
+            // CTA
+            ctx.fillStyle = '#10b981';
+            ctx.fillRect(240, 800, 600, 100);
+            ctx.fillStyle = '#064e3b';
+            ctx.font = '800 50px Segoe UI';
+            ctx.fillText('İNDİ SINA!', 540, 868);
+        }
+
+        function drawAnalysis(ctx) {
+            // Background
+            ctx.fillStyle = '#1e1b4b';
+            ctx.fillRect(0, 0, W, H);
+
+            // Bar chart elements
+            ctx.fillStyle = '#6366f1';
+            ctx.fillRect(150, 600, 120, -300);
+            ctx.fillStyle = '#818cf8';
+            ctx.fillRect(320, 600, 120, -450);
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(490, 600, 120, -250);
+            ctx.fillStyle = '#a855f7';
+            ctx.fillRect(660, 600, 120, -500);
+            ctx.fillStyle = '#ec4899';
+            ctx.fillRect(830, 600, 120, -350);
+
+            // Text
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 90px Segoe UI';
+            ctx.fillText('DƏRİN ANALİZ,', 80, 200);
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillText('DƏQİQ NƏTİCƏ!', 80, 310);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '700 45px Segoe UI';
+            ctx.fillText('Hər şagirdin zəif və güclü tərəflərini', 80, 750);
+            ctx.fillText('süni intellektlə anında müəyyən edin.', 80, 820);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '900 40px Segoe UI';
+            ctx.fillText('IMTAHAN.SITE', 80, 100);
+        }
+
+        function drawAllInOne(ctx) {
+            // Background
+            const g = ctx.createLinearGradient(0, 0, 0, H);
+            g.addColorStop(0, '#0f172a');
+            g.addColorStop(1, '#334155');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, H);
+
+            // Title
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '900 80px Segoe UI';
+            ctx.fillText('BÜTÜN İMKANLAR', 540, 180);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('BİR PLATFORMADA!', 540, 280);
+
+            // Features List
+            const features = [
+                '🤖 AI ilə Saniyələr içində Sual Hazırlama',
+                '🛡️ Şifrəli və Təhlükəsiz Sınaq Girişi',
+                '⚡ Avtomatik Yoxlama və Anında Nəticə',
+                '📊 Şagirdlərin Mövzu üzrə Dərin Analizi',
+                '🕒 Vaxta Qənaət və Real-Vaxt Statistikalar'
+            ];
+
+            ctx.textAlign = 'left';
+            ctx.font = '700 42px Segoe UI';
+            features.forEach((f, i) => {
+                const y = 420 + (i * 100);
+                // Glass effect row
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.roundRect ? ctx.fill(ctx.roundRect(80, y-55, 920, 85, 15)) : ctx.fillRect(80, y-55, 920, 85);
+                
+                ctx.fillStyle = '#f1f5f9';
+                ctx.fillText(f, 120, y);
+            });
+
+            // Bottom CTA
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '900 50px Segoe UI';
+            ctx.fillText('MÜƏLLİMLƏR ÜÇÜN QEYDİYYAT PULSUZDUR!', 540, 980);
+        }
+
+        const posts = [
+            {
+                title: 'AI Sual Hazırlama',
+                draw: drawAI,
+                caption: '🤖 Müəllimlər üçün inqilab! \n\nArtıq sınaq hazırlamaq üçün saatlarla vaxt itirməyə ehtiyac yoxdur. imtahan.site-ın Süni İntellekt sistemi saniyələr içində mövzuya uyğun suallar yaradır. \n\n✅ 1 saniyədə 100 sual\n✅ Mövzuya uyğun seçim\n✅ Hazır şablonlar\n\n🔗 Link profildə! #muellim #tehsil #imtahan #ai'
+            },
+            {
+                title: 'Şifrəli Sınaq Sistemi',
+                draw: drawSecurity,
+                caption: '🛡️ Sınaqlarınızın təhlükəsizliyi bizim üçün önəmlidir!\n\nŞifrəli sınaq xüsusiyyəti ilə hazırladığınız testləri yalnız şifrəni verdiyiniz şagirdlər işləyə bilər. Sualların kənara sızmasına son! \n\n✅ Şifrəli giriş\n✅ Şagird limiti\n✅ IP nəzarəti\n\n🔗 İndi qoşulun: imtahan.site #tehlukesizlik #imtahan #muellimler'
+            },
+            {
+                title: 'Vaxta Qənaət',
+                draw: drawTime,
+                caption: '⏰ Vaxtınız sizə və ailənizə qalsın!\n\nKağız yığınlarından və əllə yoxlamaqdan bezmisiniz? imtahan.site bütün nəticələri anında yoxlayır və sizə ətraflı analiz təqdim edir.\n\n✅ Avtomatik yoxlama\n✅ Zəif tərəflərin analizi\n✅ Real-vaxt nəticələr\n\n🚀 Müəllimlər üçün qeydiyyat PULSUZDUR! #vaxt #muellim #onlaynimtahan'
+            },
+            {
+                title: 'Nəticələrin Analizi',
+                draw: drawAnalysis,
+                caption: '📊 Şagirdlərinizi daha yaxşı tanıyın!\n\nSüni intellekt dəstəkli analiz sistemimiz hər bir şagirdin hansı mövzuda çətinlik çəkdiyini sizə anında göstərir. \n\n✅ Mövzu bazlı analiz\n✅ İnkişaf qrafikləri\n✅ Fərdi tövsiyələr\n\n🔗 Ətraflı: imtahan.site/muellim #analiz #tehsil #muellim #inkisaf'
+            },
+            {
+                title: 'Bütün Funksiyalar (Summary)',
+                draw: drawAllInOne,
+                caption: '🚀 Müəllimlərin Rəqəmsal Qalası: imtahan.site!\n\nBir müəllimə lazım olan bütün alətlər artıq bir yerdə toplanıb. Həm vaxtınıza qənaət edin, həm də tədris keyfiyyətini artırın.\n\n🌟 AI Sual Bankı\n🌟 Şifrəli Sınaqlar\n🌟 Avtomatik Yoxlama\n🌟 Dərin Analiz\n🌟 Real-vaxt Statistika\n\n🎁 Müəllimlər üçün istifadə tamamilə PULSUZDUR! \n\n🔗 Qeydiyyat üçün profilimizdəki linkə daxil olun. #muellim #tehsil #mekteb #imtahan #azerbaycan #innovasiya'
+            }
+        ];
+
+        function render() {
+            const grid = document.getElementById('grid');
+            posts.forEach((p, i) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                const preview = document.createElement('div');
+                preview.className = 'preview';
+                const canvas = document.createElement('canvas');
+                canvas.width = W;
+                canvas.height = H;
+                p.draw(canvas.getContext('2d'));
+                preview.appendChild(canvas);
+
+                const info = document.createElement('div');
+                info.className = 'info';
+                info.innerHTML = `
+                    <h2>${p.title}</h2>
+                    <div class="caption" id="cap-${i}">${p.caption}</div>
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="download(${i})">PNG Yüklə</button>
+                        <button class="btn btn-secondary" onclick="copy(${i})">Mətni Kopyala</button>
+                    </div>
+                `;
+
+                card.appendChild(preview);
+                card.appendChild(info);
+                grid.appendChild(card);
+            });
+        }
+
+        function download(i) {
+            const canvas = document.querySelectorAll('canvas')[i];
+            const link = document.createElement('a');
+            link.download = `imtahan-site-post-${i+1}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function copy(i) {
+            const text = document.getElementById(`cap-${i}`).innerText;
+            navigator.clipboard.writeText(text);
+            alert('Mətn kopyalandı!');
+        }
+
+        render();
+    </script>
+</body>
+</html>

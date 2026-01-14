@@ -30,7 +30,7 @@ app.get('/health', (req, res) => {
 });
 
 app.get(['/news/:slug', '/bloq/:slug', '/blog/:slug'], (req, res) => {
-    res.sendFile(path.join(__dirname, 'news', 'view.html'));
+    res.sendFile(path.join(__dirname, 'bloq', 'view.html'));
 });
 
 // TELEGRAM BOT API ENDPOINTS

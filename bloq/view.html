@@ -700,6 +700,11 @@
         const urlParams = new URLSearchParams(window.location.search);
         let id = urlParams.get('id');
         let slug = urlParams.get('slug'); 
+        
+        if (slug) {
+            slug = slugify(decodeURIComponent(slug)).trim();
+        }
+        
         diag.log("Params extracted:", { id, slug });
         
         if (!id && !slug) {
@@ -708,9 +713,13 @@
             
             // URL /bloq/slug formatında olanda 'bloq' hissəsini çıxırıq
             if (parts.length >= 2 && parts[0] === 'bloq') {
-                slug = parts[1];
+                slug = parts[1].split('?')[0].split('#')[0];
             } else if (parts.length === 1 && parts[0] !== 'bloq') {
-                slug = parts[0];
+                slug = parts[0].split('?')[0].split('#')[0];
+            }
+            
+            if (slug) {
+                slug = slugify(decodeURIComponent(slug)).trim();
             }
             
             if (slug && (slug === 'view.html' || slug === 'index.html' || slug === 'bloq')) {

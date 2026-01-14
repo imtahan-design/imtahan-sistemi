@@ -353,7 +353,7 @@ function renderNews(list, featured = null) {
                 <h3 class="card-title">${item.title}</h3>
                 <p class="card-excerpt">${item.excerpt || ''}</p>
                 <div class="card-footer">
-                    <a href="${getNewsLink(item)}" class="read-more">Ətraallı oxu <i class="fas fa-arrow-right"></i></a>
+                    <a href="${getNewsLink(item)}" class="read-more">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
                     <div class="share-inline" style="display:flex; gap:8px; margin-left:8px;">
                         <button title="WhatsApp" onclick="shareArticle('whatsapp','${location.origin}${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#25D366; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-whatsapp"></i></button>
                         <button title="Telegram" onclick="shareArticle('telegram','${location.origin}${getNewsLink(item)}','${item.title.replace(/'/g, "\\'")}')" style="background:#229ED9; color:white; border:none; border-radius:8px; padding:6px 8px; cursor:pointer;"><i class="fab fa-telegram"></i></button>

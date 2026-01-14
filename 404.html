@@ -9,6 +9,13 @@
         if (path.startsWith('/news') || path.startsWith('/blog')) {
             const newPath = path.replace(/^\/(news|blog)/, '/bloq');
             window.location.replace(newPath);
+        } else if (path.startsWith('/bloq/')) {
+            // Əgər /bloq/ ilə başlayırsa və 404-dürsə, deməli rewrite işləməyib və ya fayl yoxdur.
+            // Bu halda birbaşa view.html-ə yönləndirməyə çalışaq
+            const slug = path.split('/')[2];
+            if (slug) {
+                window.location.replace('/bloq/view.html?slug=' + slug);
+            }
         } else {
             // Otherwise redirect to home after a delay or just show 404
             // For now, let's keep it simple but helpful
