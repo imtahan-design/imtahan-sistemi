@@ -776,10 +776,19 @@ window.handleEditorImageUpload = async function(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Şəkil seçilən kimi selection-ı yoxla, yoxdursa editorun sonuna qoy
+    console.log("Image upload started for editor...");
+
+    // Editoru tap
     const editor = document.getElementById('richEditor');
+    if (!editor) {
+        console.error("Editor not found!");
+        return;
+    }
+
+    // Əgər kursor editorun daxilində deyilsə, axırıncı yadda qalan yerə qaytar
     const sel = window.getSelection();
     if (!sel.rangeCount || !editor.contains(sel.anchorNode)) {
+        console.log("Selection not in editor, restoring...");
         restoreSelection(); 
     }
 
@@ -789,10 +798,11 @@ window.handleEditorImageUpload = async function(event) {
         img.src = e.target.result;
         img.onload = async function() {
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 1000;
-            const MAX_HEIGHT = 1000;
+            const MAX_WIDTH = 1200; // Bir az böyütdüm
+            const MAX_HEIGHT = 1200;
             let width = img.width;
             let height = img.height;
+            
             if (width > height) {
                 if (width > MAX_WIDTH) {
                     height *= MAX_WIDTH / width;
@@ -804,35 +814,48 @@ window.handleEditorImageUpload = async function(event) {
                     height = MAX_HEIGHT;
                 }
             }
+            
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            
+            // Keyfiyyəti bir az artırdım
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
             
             try {
                 const unique = Date.now() + '-' + Math.random().toString(36).slice(2);
                 const ref = storage.ref(`editor/${unique}.jpg`);
-                const metadata = { contentType: 'image/jpeg', cacheControl: 'public,max-age=31536000' };
+                const metadata = { 
+                    contentType: 'image/jpeg', 
+                    cacheControl: 'public,max-age=31536000' 
+                };
+                
+                console.log("Uploading to Firebase Storage...");
                 const snapshot = await ref.putString(dataUrl, 'data_url', metadata);
                 const url = await snapshot.ref.getDownloadURL();
+                console.log("Upload successful, URL:", url);
                 
                 restoreSelection();
-                document.execCommand('insertImage', false, url);
-                // Şəkildən sonra boşluq qoy ki, yazmağa davam etmək asan olsun
-                document.execCommand('insertHTML', false, '<p><br></p>');
+                
+                // insertImage əvəzinə insertHTML daha etibarlıdır və stil vermək olur
+                const imgHtml = `<img src="${url}" style="max-width:100%; height:auto; display:block; margin:15px auto; border-radius:12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">`;
+                document.execCommand('insertHTML', false, imgHtml + '<p><br></p>');
+                
                 saveSelection();
+                console.log("Image inserted into editor.");
             } catch (err) {
                 console.error("Upload error:", err);
                 restoreSelection();
-                document.execCommand('insertImage', false, dataUrl);
-                document.execCommand('insertHTML', false, '<p><br></p>');
+                // Xəta olsa belə base64 olaraq yerləşdir (müvəqqəti həll kimi)
+                const imgHtml = `<img src="${dataUrl}" style="max-width:100%; height:auto; display:block; margin:15px auto; border-radius:12px;">`;
+                document.execCommand('insertHTML', false, imgHtml + '<p><br></p>');
                 saveSelection();
             }
         };
     };
     reader.readAsDataURL(file);
-    event.target.value = '';
+    event.target.value = ''; // Eyni şəkli təkrar seçə bilsin deyə
 }
 
 window.saveSelection = function() {
