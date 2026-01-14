@@ -776,29 +776,19 @@ window.handleEditorImageUpload = async function(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    console.log("Image upload started for editor...");
-
-    // Editoru tap
     const editor = document.getElementById('richEditor');
-    if (!editor) {
-        console.error("Editor not found!");
-        return;
-    }
+    if (!editor) return;
 
-    // Əgər kursor editorun daxilində deyilsə, axırıncı yadda qalan yerə qaytar
-    const sel = window.getSelection();
-    if (!sel.rangeCount || !editor.contains(sel.anchorNode)) {
-        console.log("Selection not in editor, restoring...");
-        restoreSelection(); 
-    }
-
+    // Şəkil yüklənərkən istifadəçiyə bildiriş verək
+    const loadingId = 'img-loading-' + Date.now();
+    
     const reader = new FileReader();
     reader.onload = function(e) {
         const img = new Image();
         img.src = e.target.result;
         img.onload = async function() {
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 1200; // Bir az böyütdüm
+            const MAX_WIDTH = 1200;
             const MAX_HEIGHT = 1200;
             let width = img.width;
             let height = img.height;
@@ -819,43 +809,50 @@ window.handleEditorImageUpload = async function(event) {
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
             
-            // Keyfiyyəti bir az artırdım
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-            
+            // 1. Şəkli dərhal müvəqqəti (base64) olaraq yerləşdiririk
+            restoreSelection();
+            const tempImgHtml = `<img id="${loadingId}" src="${dataUrl}" style="max-width:100%; height:auto; display:block; margin:15px auto; border-radius:12px; opacity:0.5; filter: grayscale(1);">`;
+            document.execCommand('insertHTML', false, tempImgHtml + '<p><br></p>');
+            saveSelection();
+
             try {
+                // 2. Arxa fonda Firebase-ə yükləyirik
                 const unique = Date.now() + '-' + Math.random().toString(36).slice(2);
                 const ref = storage.ref(`editor/${unique}.jpg`);
-                const metadata = { 
-                    contentType: 'image/jpeg', 
-                    cacheControl: 'public,max-age=31536000' 
-                };
+                const metadata = { contentType: 'image/jpeg' };
                 
-                console.log("Uploading to Firebase Storage...");
                 const snapshot = await ref.putString(dataUrl, 'data_url', metadata);
                 const url = await snapshot.ref.getDownloadURL();
-                console.log("Upload successful, URL:", url);
                 
-                restoreSelection();
-                
-                // insertImage əvəzinə insertHTML daha etibarlıdır və stil vermək olur
-                const imgHtml = `<img src="${url}" style="max-width:100%; height:auto; display:block; margin:15px auto; border-radius:12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">`;
-                document.execCommand('insertHTML', false, imgHtml + '<p><br></p>');
-                
-                saveSelection();
-                console.log("Image inserted into editor.");
+                // 3. Yükləmə uğurlu olsa, müvəqqəti şəkli real URL ilə əvəz edirik
+                const finalImg = document.getElementById(loadingId);
+                if (finalImg) {
+                    finalImg.src = url;
+                    finalImg.style.opacity = '1';
+                    finalImg.style.filter = 'none';
+                    finalImg.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                    finalImg.removeAttribute('id');
+                }
             } catch (err) {
-                console.error("Upload error:", err);
-                restoreSelection();
-                // Xəta olsa belə base64 olaraq yerləşdir (müvəqqəti həll kimi)
-                const imgHtml = `<img src="${dataUrl}" style="max-width:100%; height:auto; display:block; margin:15px auto; border-radius:12px;">`;
-                document.execCommand('insertHTML', false, imgHtml + '<p><br></p>');
-                saveSelection();
+                console.error("Firebase CORS or Upload Error:", err);
+                // Xəta olsa, şəkli base64 olaraq saxla (istifadəçi işinə davam edə bilsin)
+                const finalImg = document.getElementById(loadingId);
+                if (finalImg) {
+                    finalImg.style.opacity = '1';
+                    finalImg.style.filter = 'none';
+                    finalImg.removeAttribute('id');
+                }
+                // İstifadəçini məlumatlandır (CORS xətası haqqında)
+                if (err.message.includes('CORS')) {
+                    alert("Diqqət: Firebase CORS xətası baş verdi. Şəkil müvəqqəti olaraq mətndə saxlanıldı, lakin daimi olaraq serverə yüklənmədi. Zəhmət olmasa Firebase CORS ayarlarını yoxlayın.");
+                }
             }
         };
     };
     reader.readAsDataURL(file);
-    event.target.value = ''; // Eyni şəkli təkrar seçə bilsin deyə
+    event.target.value = '';
 }
 
 window.saveSelection = function() {
