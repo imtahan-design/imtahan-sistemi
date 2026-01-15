@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloq və Məqalələr – İmtahan Platforması</title>
+  <meta name="description" content="İmtahan Bloqu: təhsil, imtahan hazırlığı, faydalı məqalələr və izahlar.">
+  <link rel="canonical" href="https://imtahan.site/bloq">
+  <meta property="og:title" content="Bloq və Məqalələr – İmtahan Platforması">
+  <meta property="og:description" content="İmtahan Bloqu: təhsil, imtahan hazırlığı, faydalı məqalələr və izahlar.">
+  <meta property="og:image" content="https://imtahan.site/assets/logo.png">
+  <meta property="og:url" content="https://imtahan.site/bloq">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Bloq və Məqalələr – İmtahan Platforması">
+  <meta name="twitter:description" content="İmtahan Bloqu: təhsil, imtahan hazırlığı, faydalı məqalələr və izahlar.">
+  <meta name="twitter:image" content="https://imtahan.site/assets/logo.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "name": "İmtahan Bloq",
+    "description": "İmtahan Bloqu: təhsil, imtahan hazırlığı, faydalı məqalələr və izahlar.",
+    "url": "https://imtahan.site/bloq",
+    "publisher": {
+      "@type": "Organization",
+      "name": "İmtahan",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://imtahan.site/assets/logo.png"
+      }
+    }
+  }
+  </script>
+  <link rel="shortcut icon" href="/assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #ec4899;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --bg-body: #f3f4f6;
+      --bg-card: #ffffff;
+      --border: #e5e7eb;
+      --radius: 16px;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .navbar {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 1rem 0;
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+    .nav-logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--gradient-1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+    }
+    .nav-logo-text h1 { font-size: 1.25rem; font-weight: 700; line-height: 1.2; }
+    .nav-logo-text span { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+    .nav-btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn-secondary { color: var(--text-muted); background: transparent; }
+    .nav-btn-secondary:hover { color: var(--primary); background: var(--primary-light); }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-links a { text-decoration: none; }
+
+    .filters-container { width: 100%; margin: 0 0 40px; padding: 0; position: relative; z-index: 10; }
+    .filters-card { background: white; border-radius: 20px; padding: 20px; box-shadow: var(--shadow-lg); display: flex; gap: 16px; align-items: center; flex-wrap: wrap; border: 1px solid var(--border); }
+    .search-wrapper { flex: 1; min-width: 250px; position: relative; }
+    .search-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .search-input { width: 100%; padding: 12px 16px 12px 44px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.95rem; transition: all 0.2s; outline: none; }
+    .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); }
+    .filter-select { padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.95rem; outline: none; cursor: pointer; background: white; min-width: 180px; }
+    .filter-select:focus { border-color: var(--primary); }
+    .admin-controls { display: none; margin-left: auto; }
+    .admin-controls.active { display: flex; }
+    .btn-add { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+    .btn-add:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+    .featured-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+        margin-bottom: 40px;
+        height: 500px;
+    }
+    .featured-main {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        height: 100%;
+        box-shadow: var(--shadow-lg);
+        cursor: pointer;
+    }
+    .featured-main img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s;
+    }
+    .featured-main:hover img {
+        transform: scale(1.05);
+    }
+    .featured-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        padding: 40px;
+        color: white;
+    }
+    .featured-badge {
+        background: var(--primary);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: inline-block;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+    }
+    .featured-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-bottom: 12px;
+    }
+    .featured-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .featured-side {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        height: 100%;
+    }
+    .side-card {
+        background: white;
+        border-radius: 16px;
+        padding: 0;
+        display: flex;
+        gap: 0;
+        align-items: stretch;
+        border: 1px solid var(--border);
+        transition: all 0.3s;
+        flex: 1;
+        cursor: pointer;
+        overflow: hidden;
+    }
+    .side-card:hover {
+        transform: translateX(-5px);
+        border-color: var(--primary-light);
+        box-shadow: var(--shadow-md);
+    }
+    .side-image {
+        width: 45%;
+        height: 100%;
+        min-height: 100%;
+        border-radius: 0;
+        object-fit: cover;
+    }
+    .side-content { 
+        flex: 1; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center; 
+        padding: 24px; 
+    }
+    .side-cat {
+        font-size: 0.75rem;
+        color: var(--primary);
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .side-title {
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1.4;
+        margin-bottom: 8px;
+        color: var(--text-main);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .side-date {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .news-section { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
+    .news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; }
+    
+    .news-card { 
+        background: white; 
+        border-radius: 20px; 
+        overflow: hidden; 
+        border: 1px solid var(--border); 
+        transition: all 0.3s; 
+        height: 100%; 
+        display: flex; 
+        flex-direction: column; 
+        position: relative; 
+    }
+    .news-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-lg); border-color: var(--primary-light); }
+    .card-image-wrapper { 
+        position: relative; 
+        height: 220px; 
+        overflow: hidden; 
+        width: 100%;
+    }
+    .card-image-wrapper img { 
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover; 
+        transition: transform 0.5s; 
+    }
+    .news-card:hover .card-image-wrapper img { transform: scale(1.05); }
+    .card-badge { 
+        position: absolute; 
+        top: 16px; 
+        left: 16px; 
+        background: rgba(255,255,255,0.95); 
+        backdrop-filter: blur(4px); 
+        padding: 6px 12px; 
+        border-radius: 8px; 
+        font-size: 0.75rem; 
+        font-weight: 700; 
+        color: var(--primary); 
+        text-transform: uppercase; 
+        letter-spacing: 0.5px; 
+        z-index: 2;
+    }
+    .card-content { padding: 24px; flex: 1; display: flex; flex-direction: column; }
+    .card-meta { display: flex; gap: 12px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; align-items: center; }
+    .meta-item { display: flex; align-items: center; gap: 6px; }
+    .meta-item i { color: var(--primary); font-size: 0.9rem; }
+    .card-title { 
+        font-size: 1.25rem; 
+        font-weight: 700; 
+        line-height: 1.4; 
+        margin-bottom: 12px; 
+        color: var(--text-main); 
+        display: -webkit-box; 
+        -webkit-line-clamp: 2; 
+        -webkit-box-orient: vertical; 
+        overflow: hidden; 
+    }
+    .card-excerpt { 
+        font-size: 0.95rem; 
+        color: var(--text-muted); 
+        line-height: 1.6; 
+        margin-bottom: 20px; 
+        display: -webkit-box; 
+        -webkit-line-clamp: 3; 
+        -webkit-box-orient: vertical; 
+        overflow: hidden; 
+        flex: 1; 
+    }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }
+    .read-more { color: var(--primary); font-weight: 600; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+    .read-more:hover { gap: 8px; }
+    .news-actions { display: flex; gap: 8px; }
+    .action-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: white; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .action-btn:hover { background: var(--primary-light); color: var(--primary); border-color: transparent; }
+
+    .news-ticker-container {
+        background: #1f2937; color: white; display: flex; align-items: center; overflow: hidden; height: 40px; position: relative; border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .ticker-label {
+        background: #ef4444; color: white; padding: 0 16px; height: 100%; display: flex; align-items: center; font-weight: 700; font-size: 0.85rem; z-index: 2; box-shadow: 2px 0 10px rgba(0,0,0,0.2); white-space: nowrap; text-transform: uppercase;
+    }
+    .ticker-wrapper { flex: 1; overflow: hidden; position: relative; height: 100%; display: flex; align-items: center; }
+    .ticker-content { display: flex; white-space: nowrap; animation: ticker-scroll 40s linear infinite; padding-left: 0; }
+    .ticker-item { display: inline-block; padding: 0 20px; font-size: 0.9rem; color: #e5e7eb; text-decoration: none; transition: color 0.2s; border-right: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+    .ticker-item:hover { color: #ef4444; }
+    .ticker-wrapper:hover .ticker-content { animation-play-state: paused; }
+    @keyframes ticker-scroll {
+        0% { transform: translate3d(0, 0, 0); }
+        100% { transform: translate3d(-50%, 0, 0); }
+    }
+
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .modal.active { display: flex; opacity: 1; pointer-events: auto; }
+    .modal-content { background: white; width: 90%; max-width: 600px; border-radius: 24px; padding: 30px; position: relative; transform: translateY(20px); transition: transform 0.3s; max-height: 90vh; overflow-y: auto; }
+    .modal.active .modal-content { transform: translateY(0); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .modal-title { font-size: 1.5rem; font-weight: 700; }
+    .close-modal { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; }
+    .form-input, .form-textarea, .form-select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; font-family: inherit; }
+    .form-input:focus, .form-textarea:focus { border-color: var(--primary); }
+    .btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn-submit:hover { background: var(--primary-dark); }
+
+    .cms-container { display: grid; grid-template-columns: 1fr 300px; gap: 24px; }
+    .editor-toolbar { display: flex; gap: 8px; padding: 8px; background: #f9fafb; border: 1px solid var(--border); border-bottom: none; border-radius: 12px 12px 0 0; flex-wrap: wrap; }
+    .toolbar-btn { background: white; border: 1px solid var(--border); border-radius: 6px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); }
+    .toolbar-btn:hover { color: var(--primary); border-color: var(--primary); }
+    .rich-editor { min-height: 300px; border: 1px solid var(--border); border-radius: 0 0 12px 12px; padding: 20px; outline: none; overflow-y: auto; }
+    .rich-editor img { max-width: 100%; border-radius: 8px; }
+
+    .news-footer { background: #1f2937; color: var(--text-muted); text-align: center; padding: 40px 24px; margin-top: 80px; }
+    .news-footer p { color: #9ca3af; }
+
+    .newsletter-section { background: var(--gradient-1); color: white; padding: 60px 24px; margin: 60px 0; text-align: center; border-radius: 24px; }
+    .newsletter-content { max-width: 600px; margin: 0 auto; }
+    .newsletter-content h2 { font-size: 2rem; margin-bottom: 16px; }
+    .newsletter-form { display: flex; gap: 10px; margin-top: 30px; flex-wrap: wrap; justify-content: center; }
+    .newsletter-form input { padding: 12px 20px; border-radius: 12px; border: none; min-width: 250px; outline: none; }
+    .newsletter-form button { background: #1f2937; color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 600; cursor: pointer; }
+
+    .tag-container { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: white; min-height: 48px; }
+    .tag-chip { background: var(--primary-light); color: var(--primary); padding: 4px 10px; border-radius: 100px; font-size: 0.8rem; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    .tag-remove { cursor: pointer; font-size: 1rem; opacity: 0.6; }
+    .tag-remove:hover { opacity: 1; }
+
+    @media (max-width: 768px) {
+        .nav-container { padding: 0 16px; }
+        .news-section { padding: 0 16px; margin: 20px auto; }
+        .news-grid { grid-template-columns: 1fr; gap: 20px; }
+        
+        .nav-logo-text h1 { font-size: 1rem; }
+        .nav-logo-text span { display: none; }
+        .hero-title { font-size: 2rem; }
+        .filters-card { flex-direction: column; align-items: stretch; gap: 12px; }
+        .filter-select { width: 100%; }
+        .cms-container { grid-template-columns: 1fr; }
+        
+        .featured-grid { grid-template-columns: 1fr; height: auto; gap: 20px; }
+        .featured-main { height: 250px; }
+        .featured-title { font-size: 1.25rem; }
+        .featured-overlay { padding: 16px; }
+        
+        .featured-side { gap: 12px; }
+        .side-card { padding: 10px; gap: 12px; height: auto; align-items: center; }
+        .side-image { width: 80px; height: 80px; min-height: 80px; border-radius: 12px; }
+        .side-content { padding: 0; }
+        .side-title { font-size: 0.9rem; margin-bottom: 4px; -webkit-line-clamp: 2; }
+        .side-cat { font-size: 0.7rem; margin-bottom: 2px; }
+        .side-date { font-size: 0.75rem; }
+        
+        .news-ticker-container { height: 50px; flex-direction: row; }
+        .ticker-label { display: none !important; }
+        .ticker-wrapper { height: 100%; width: 100%; background: #1f2937; }
+        
+        .side-title {
+          font-size: 0.9rem;
+          margin-bottom: 4px;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          line-height: 1.4;
+          white-space: normal;
+        }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">
+        <div class="nav-logo-icon"><i class="fas fa-graduation-cap"></i></div>
+        <div class="nav-logo-text">
+          <h1>İmtahan <span>Bloq</span></h1>
+          <span>Təhsil, inkişaf və uğur üçün faydalı məqalələr</span>
+        </div>
+      </a>
+      
+      <div style="display: flex; align-items: center; gap: 8px;">
+          <div id="auth-buttons">
+              <button class="nav-btn nav-btn-secondary" onclick="openLoginModal()">Daxil ol</button>
+          </div>
+          <div id="user-info" style="display:none; align-items:center; gap:5px;">
+              <span id="user-name" style="font-weight:600;">User</span>
+              <button class="nav-btn nav-btn-secondary" style="padding: 8px 12px;" onclick="firebase.auth().signOut()"><i class="fas fa-sign-out-alt"></i></button>
+          </div>
+          <a href="/" class="nav-btn nav-btn-secondary" style="margin-left: 0; padding: 8px 12px;">
+            <i class="fas fa-arrow-left" style="margin-right: 5px;"></i> Ana Səhifə
+          </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="news-ticker-container">
+      <div class="ticker-label"><i class="fas fa-bolt" style="margin-right:8px;"></i> Son Məqalələr</div>
+      <div class="ticker-wrapper">
+         <div class="ticker-content" id="newsTickerContent">
+            <span style="padding:0 20px;">Məqalələr yüklənir...</span>
+         </div>
+      </div>
+  </div>
+
+  <main class="news-section">
+      <div id="featuredContainer" style="margin-bottom: 60px;"></div>
+
+      <div class="filters-container">
+              <div class="filters-card">
+                  <div class="search-wrapper">
+                      <i class="fas fa-search"></i>
+                      <input type="text" id="newsSearch" class="search-input" placeholder="Məqalə axtar...">
+                  </div>
+                  <select id="categoryFilter" class="filter-select">
+                      <option value="all">Bütün kateqoriyalar</option>
+                  </select>
+                  <select id="sortFilter" class="filter-select">
+                      <option value="newest">Ən yeni</option>
+                      <option value="oldest">Ən köhnə</option>
+                  </select>
+                  <div id="adminControls" class="admin-controls">
+                      <button class="btn-add" onclick="openAddNewsModal()"><i class="fas fa-plus"></i> <span class="desktop-only">Yeni Məqalə</span></button>
+                      <button id="fixSlugsBtn" class="btn-add" style="background:#f59e0b; margin-left:8px;" onclick="fixAllSlugs()"><i class="fas fa-wrench"></i> <span class="desktop-only">Slugs</span></button>
+                      <button class="btn-add" style="background:#10b981; margin-left:8px;" onclick="openCategoryModal()"><i class="fas fa-list"></i> <span class="desktop-only">Kateqoriyalar</span></button>
+                  </div>
+              </div>
+          </div>
+
+          <div class="news-grid" id="newsGrid"></div>
+  </main>
+
+  <section class="newsletter-section">
+      <div class="newsletter-content">
+          <h2>Məqalələri Qaçırmayın</h2>
+          <p>Həftəlik ən vacib məqalələri email ünvanınıza göndərək.</p>
+          <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Abunə olduğunuz üçün təşəkkürlər!');">
+              <input type="email" placeholder="Email ünvanınız" required>
+              <button type="submit">Abunə Ol</button>
+          </form>
+      </div>
+  </section>
+
+  <footer class="news-footer">
+    <div style="margin-bottom: 20px;">
+        <a href="https://www.instagram.com/ixeberler" target="_blank" style="color: #e1306c; text-decoration: none; font-size: 1.2rem; display: inline-flex; align-items: center; gap: 8px; font-weight: 600;">
+            <i class="fab fa-instagram" style="font-size: 1.5rem;"></i> ixeberler
+        </a>
+    </div>
+    <p>&copy; 2026 İmtahan. Bütün hüquqlar qorunur.</p>
+  </footer>
+
+  <div class="modal" id="newsModal">
+      <div class="modal-content" style="max-width: 900px;">
+          <div class="modal-header">
+              <h3 class="modal-title" id="modalTitle">Yeni Məqalə</h3>
+              <button class="close-modal" onclick="closeNewsModal()"><i class="fas fa-times"></i></button>
+          </div>
+          <form id="newsForm" onsubmit="handleNewsSubmit(event)">
+              <input type="hidden" id="newsId">
+              <div class="form-group">
+                  <label class="form-label">Başlıq</label>
+                  <input type="text" id="newsTitle" class="form-input" required>
+              </div>
+              <div class="form-group">
+                  <label class="form-label">URL Slug</label>
+                  <input type="text" id="newsSlug" class="form-input" placeholder="məs: 2026-suni-intellekt-sirleri" autocomplete="off">
+              </div>
+              
+              <div class="cms-container">
+                  <div class="cms-main">
+                      <div class="form-group">
+                          <label class="form-label">Məzmun</label>
+                          <div class="editor-toolbar">
+                              <select class="toolbar-btn" onchange="execCmd('fontName', this.value); this.value='';" title="Şrift Növü" style="width: auto; min-width: 120px;">
+                                  <option value="" disabled selected>Şrift Seçin</option>
+                                  <option value="Arial">Arial</option>
+                                  <option value="Arial Black">Arial Black</option>
+                                  <option value="Comic Sans MS">Comic Sans MS</option>
+                                  <option value="Courier New">Courier New</option>
+                                  <option value="Georgia">Georgia</option>
+                                  <option value="Helvetica">Helvetica</option>
+                                  <option value="Impact">Impact</option>
+                                  <option value="Tahoma">Tahoma</option>
+                                  <option value="Times New Roman">Times New Roman</option>
+                                  <option value="Trebuchet MS">Trebuchet MS</option>
+                                  <option value="Verdana">Verdana</option>
+                              </select>
+                              <select class="toolbar-btn" onchange="execCmd('fontSize', this.value); this.value='';" title="Şrift Ölçüsü" style="width: auto; min-width: 80px;">
+                                  <option value="" disabled selected>Ölçü</option>
+                                  <option value="1">10px</option>
+                                  <option value="2">13px</option>
+                                  <option value="3">16px</option>
+                                  <option value="4">18px</option>
+                                  <option value="5">24px</option>
+                                  <option value="6">32px</option>
+                                  <option value="7">48px</option>
+                              </select>
+                              <div class="toolbar-btn" style="position:relative; width:34px; overflow:hidden;" title="Mətn Rəngi">
+                                  <input type="color" onchange="execCmd('foreColor', this.value)" style="position:absolute; top:-5px; left:-5px; width:50px; height:50px; border:none; cursor:pointer; padding: 0;">
+                                  <i class="fas fa-palette" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); pointer-events:none;"></i>
+                              </div>
+                              <div style="width: 1px; height: 24px; background: #ddd; margin: 0 4px;"></div>
+                              
+                              <button type="button" class="toolbar-btn" onclick="execCmd('bold')" title="Qalın"><i class="fas fa-bold"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('italic')" title="Maili"><i class="fas fa-italic"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('underline')" title="Altıxətli"><i class="fas fa-underline"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('justifyLeft')" title="Sola"><i class="fas fa-align-left"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('justifyCenter')" title="Mərkəzə"><i class="fas fa-align-center"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('justifyRight')" title="Sağa"><i class="fas fa-align-right"></i></button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('formatBlock', 'H3')" title="Başlıq H3">H3</button>
+                              <button type="button" class="toolbar-btn" onclick="execCmd('createLink')" title="Link Əlavə Et"><i class="fas fa-link"></i></button>
+                              <label class="toolbar-btn" style="margin-bottom:0;" title="Şəkil əlavə et">
+                                  <i class="fas fa-image"></i>
+                                  <input type="file" style="display:none;" accept="image/*" onchange="handleEditorImageUpload(event)">
+                              </label>
+                              <button type="button" class="toolbar-btn" onclick="toggleHtmlMode()" id="htmlModeBtn" title="HTML Rejimi" style="margin-left: auto; color: var(--primary); width: auto; padding: 0 8px;"><i class="fas fa-code"></i> HTML</button>
+                          </div>
+                          <div id="richEditor" class="rich-editor" contenteditable="true" onblur="saveSelection()" onkeyup="saveSelection()" onclick="saveSelection()"></div>
+                          <textarea id="htmlEditor" class="rich-editor" style="display:none; font-family: monospace; white-space: pre; overflow: auto;"></textarea>
+                      </div>
+                  </div>
+                  <div class="cms-sidebar">
+                      <div class="form-group">
+                          <label class="form-label">Qısa Məlumat (Excerpt)</label>
+                          <textarea id="newsExcerpt" class="form-textarea" style="min-height:80px;"></textarea>
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label">Kateqoriya</label>
+                          <select id="newsCategory" class="form-select"></select>
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label">Oxuma Vaxtı (dəq)</label>
+                          <input type="number" id="newsReadTime" class="form-input" value="3" min="1">
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label">Əsas Şəkil</label>
+                          <div id="imagePreview" style="width:100%; height:150px; background:#f3f4f6; border-radius:12px; position:relative; overflow:hidden; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="document.getElementById('fileInput').click()">
+                              <div class="image-preview-placeholder" style="text-align:center; color:var(--text-muted);">
+                                  <i class="fas fa-cloud-upload-alt fa-2x"></i>
+                                  <span style="display:block; font-size:0.8rem; margin-top:5px;">Şəkil seçin</span>
+                              </div>
+                              <button type="button" id="removeImageBtn" onclick="event.stopPropagation(); removeCoverImage()" style="display:none; position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.5); color:white; border:none; border-radius:50%; width:24px; height:24px; align-items:center; justify-content:center; cursor:pointer;"><i class="fas fa-times"></i></button>
+                          </div>
+                          <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
+                          <input type="hidden" id="newsImage">
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label">Teqlər</label>
+                          <input type="text" id="tagInput" class="form-input" placeholder="Vergül/; və Enter ilə toplu əlavə et...">
+                          <div id="tagList" class="tag-container" style="margin-top:8px;"></div>
+                      </div>
+                  </div>
+              </div>
+
+              <div style="margin-top:24px;">
+                  <button type="submit" class="btn-submit">Yadda Saxla</button>
+              </div>
+          </form>
+      </div>
+  </div>
+
+  <div class="modal" id="categoryManagerModal">
+      <div class="modal-content" style="max-width: 600px;">
+          <div class="modal-header">
+              <h3 class="modal-title">Kateqoriyaları İdarə Et</h3>
+              <button class="close-modal" onclick="closeCategoryModal()"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body">
+              <div class="form-group">
+                  <label class="form-label">Yeni Kateqoriya</label>
+                  <input type="text" id="newCategoryInput" class="form-input" placeholder="məs: Məsləhətlər">
+              </div>
+              <div style="display:flex; gap:8px; margin-bottom:16px;">
+                  <button class="btn-add" style="background:#10b981;" onclick="addCategory()"><i class="fas fa-plus"></i> Əlavə et</button>
+                  <button class="nav-btn nav-btn-secondary" onclick="closeCategoryModal()">Bağla</button>
+              </div>
+              <div id="categoryList" style="display:flex; flex-direction:column; gap:8px;"></div>
+          </div>
+      </div>
+  </div>
+
+  <div class="modal" id="loginModal">
+       <div class="modal-content" style="max-width: 400px; text-align: center;">
+           <h3>Daxil Ol</h3>
+           <p style="margin-bottom: 20px;">Email və şifrə ilə giriş</p>
+           <form onsubmit="handleLogin(event)">
+               <input type="text" id="loginEmail" class="form-input" placeholder="Email və ya istifadəçi adı" style="margin-bottom:10px;" required>
+               <input type="password" id="loginPassword" class="form-input" placeholder="Şifrə" style="margin-bottom:10px;" required>
+               <button type="submit" class="btn-submit">Daxil ol</button>
+           </form>
+           <button style="margin-top:10px; background:transparent; border:none; color:var(--text-muted); cursor:pointer;" onclick="closeLoginModal()">Bağla</button>
+       </div>
+  </div>
+
+  <script src="/assets/news-app.js"></script>
+</body>
+</html>

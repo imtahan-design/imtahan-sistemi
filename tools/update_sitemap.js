@@ -48,6 +48,26 @@ function toISODate(value) {
     }
 }
 
+function slugify(str) {
+    return (str || '')
+        .toLowerCase()
+        .replace(/ğ/g,'g').replace(/ə/g,'e').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c').replace(/ş/g,'s').replace(/ü/g,'u')
+        .replace(/[^a-z0-9\s-]/g,'')
+        .trim()
+        .replace(/\s+/g,'-')
+        .replace(/-+/g,'-')
+        .slice(0, 120);
+}
+
+function getNewsLink(item) {
+    if (!item) return '#';
+    const slug = item.slug || (item.title ? slugify(item.title) : null);
+    if (slug) {
+        return '/bloq/' + slug;
+    }
+    return '/bloq/view.html?id=' + item.id;
+}
+
 async function generateSitemap() {
     console.log("Fetching news from Firestore...");
     
@@ -56,6 +76,101 @@ async function generateSitemap() {
         const snapshot = await getDocs(q);
         
         console.log(`Found ${snapshot.size} articles.`);
+
+        // --- NEW: Generate bloq/index.html from template ---
+        try {
+            const templatePath = path.resolve(__dirname, '../bloq/index.template.html');
+            if (fs.existsSync(templatePath)) {
+                let indexHtml = fs.readFileSync(templatePath, 'utf8');
+                const allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // 1. Featured Section
+                let featured = allNews.find(n => n.isFeatured);
+                if (!featured && allNews.length > 0) {
+                    // Simple fallback to latest if no views data or isFeatured
+                    featured = allNews[0]; 
+                }
+
+                let featuredHtml = '';
+                if (featured) {
+                    const sideItems = allNews.filter(n => n.id !== featured.id).slice(0, 2);
+                    let sideHtml = '';
+                    sideItems.forEach(item => {
+                        sideHtml += `
+                            <div class="side-card" onclick="window.location.href='${getNewsLink(item)}'" style="cursor: pointer;">
+                                <img class="side-image" src="${item.imageUrl || 'https://via.placeholder.com/180x250?text=No+Image'}" alt="${item.title}">
+                                <div class="side-content">
+                                    <span class="mini-cat">${item.category || 'Bloq'}</span>
+                                    <h3 class="side-title">${item.title}</h3>
+                                    <span class="mini-date">${formatDate(item.date)}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    featuredHtml = `
+                        <div class="featured-grid">
+                            <div class="featured-main" onclick="window.location.href='${getNewsLink(featured)}'" style="cursor: pointer;">
+                                <img src="${featured.imageUrl || 'https://via.placeholder.com/800x500?text=No+Image'}" alt="${featured.title}">
+                                <div class="featured-overlay">
+                                    <span class="featured-badge">${featured.category || 'Bloq'}</span>
+                                    <h2 class="featured-title">${featured.title}</h2>
+                                    <div class="featured-meta">
+                                        <span><i class="far fa-calendar"></i> ${formatDate(featured.date)}</span>
+                                        <span><i class="far fa-clock"></i> ${featured.readTime || 3} dəq</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="featured-side">
+                                ${sideHtml}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 2. Grid Section (Latest 20)
+                let gridHtml = '';
+                allNews.slice(0, 20).forEach(item => {
+                    gridHtml += `
+                        <div class="news-card">
+                            <div class="card-image-wrapper bg-gradient-${Math.floor(Math.random()*4)+1}">
+                                ${item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%; height:100%; object-fit:cover;" alt="${item.title}">` : `<i class="fas fa-graduation-cap card-icon"></i>`}
+                                <span class="card-badge">${item.category || 'Bloq'}</span>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-meta">
+                                    <div class="meta-item"><i class="far fa-calendar"></i> ${formatDate(item.date)}</div>
+                                    <div class="meta-item"><i class="far fa-clock"></i> ${item.readTime || 3} dəq</div>
+                                </div>
+                                <h3 class="card-title">${item.title}</h3>
+                                <p class="card-excerpt">${item.excerpt || ''}</p>
+                                <div class="card-footer">
+                                    <a href="${getNewsLink(item)}" class="read-more">Ətraflı oxu <i class="fas fa-arrow-right"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // Inject into template
+                // Note: We use simple string replacement assuming standard ID attributes
+                if (featuredHtml) {
+                    indexHtml = indexHtml.replace('<div id="featuredContainer" style="margin-bottom: 60px;"></div>', `<div id="featuredContainer" style="margin-bottom: 60px;">${featuredHtml}</div>`);
+                }
+                if (gridHtml) {
+                    indexHtml = indexHtml.replace('<div class="news-grid" id="newsGrid"></div>', `<div class="news-grid" id="newsGrid">${gridHtml}</div>`);
+                }
+
+                const indexPath = path.resolve(__dirname, '../bloq/index.html');
+                fs.writeFileSync(indexPath, indexHtml);
+                console.log("Generated bloq/index.html with static content.");
+            } else {
+                console.warn("Template bloq/index.template.html not found, skipping index generation.");
+            }
+        } catch (e) {
+            console.error("Error generating bloq/index.html:", e);
+        }
+        // -----------------------------------------------------
 
         let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
         xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
