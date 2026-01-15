@@ -238,6 +238,8 @@ async function generateSitemap() {
                         console.warn(`Warning: Article "${data.title}" has a Base64 or invalid image URL. Using default logo for SEO metadata.`);
                         imageUrl = 'https://imtahan.site/assets/logo.png';
                     }
+                    // Display image should prefer the raw value (including Base64 or relative paths) for on-page rendering
+                    const displayImage = (rawImageUrl && rawImageUrl.trim().length > 0) ? rawImageUrl : imageUrl;
                     const canonical = `https://imtahan.site/bloq/${data.slug}`;
 
                     const publishedISO = toISODate(data.date) || new Date().toISOString();
@@ -349,8 +351,8 @@ async function generateSitemap() {
                     );
                     
                     // 6. Inject Image
-                    if (imageUrl) {
-                         htmlContent = htmlContent.replace('<img id="newsCover" class="article-image" style="display: none;">', `<img id="newsCover" class="article-image" src="${imageUrl}" alt="${data.title}">`);
+                    if (displayImage) {
+                         htmlContent = htmlContent.replace('<img id="newsCover" class="article-image" style="display: none;">', `<img id="newsCover" class="article-image" src="${displayImage}" alt="${data.title}">`);
                     }
                     
                     // 7. Inject Content
