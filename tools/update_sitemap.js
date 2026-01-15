@@ -22,12 +22,29 @@ const db = getFirestore(app);
 function formatDate(dateStr) {
     if (!dateStr) return '';
     try {
+        if (dateStr && typeof dateStr.toDate === 'function') {
+            dateStr = dateStr.toDate();
+        }
         const date = new Date(dateStr);
         if (isNaN(date.getTime())) return dateStr; 
         const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun', 'İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr'];
         return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
     } catch (e) {
         return dateStr || '';
+    }
+}
+
+function toISODate(value) {
+    try {
+        if (!value) return null;
+        if (typeof value.toDate === 'function') {
+            return value.toDate().toISOString();
+        }
+        const d = new Date(value);
+        if (isNaN(d.getTime())) return null;
+        return d.toISOString();
+    } catch {
+        return null;
     }
 }
 
@@ -92,22 +109,24 @@ async function generateSitemap() {
                         .trim()
                         .replace(/"/g, '&quot;')
                         .substring(0, 160);
-                    let imageUrl = data.imageUrl || 'https://imtahan.site/assets/logo.png';
-                    if (imageUrl.startsWith('assets/')) {
-                        imageUrl = 'https://imtahan.site/' + imageUrl;
-                    } else if (!imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
-                        imageUrl = 'https://imtahan.site/assets/logo.png';
+                    const rawImageUrl = (typeof data.imageUrl === 'string') ? data.imageUrl : '';
+                    let imageUrl = 'https://imtahan.site/assets/logo.png';
+                    if (rawImageUrl.startsWith('http://') || rawImageUrl.startsWith('https://')) {
+                        imageUrl = rawImageUrl;
+                    } else if (rawImageUrl.startsWith('assets/')) {
+                        imageUrl = 'https://imtahan.site/' + rawImageUrl;
                     }
                     const canonical = `https://imtahan.site/bloq/${data.slug}`;
 
-                    const publishedISO = (data.date ? new Date(data.date).toISOString() : new Date().toISOString());
-                    const modifiedISO = publishedISO;
+                    const publishedISO = toISODate(data.date) || new Date().toISOString();
+                    const modifiedISO = toISODate(data.updatedAt) || publishedISO;
                     const section = data.category || 'Bloq';
                     const tags = Array.isArray(data.tags) ? data.tags : [];
                     const articleTagMeta = tags.map(t => `<meta property="article:tag" content="${String(t).trim().replace(/"/g, '&quot;')}">`).join('\n    ');
                     const seoTags = `<base href="/">
     <title>${title}</title>
     <meta name="description" content="${description}">
+    <meta name="robots" content="index,follow">
     <link rel="canonical" href="${canonical}">
     <meta property="og:title" content="${title}">
     <meta property="og:description" content="${description}">
@@ -224,11 +243,7 @@ async function generateSitemap() {
             }
 
             let lastMod = new Date().toISOString();
-            if (data.date) {
-                try {
-                    lastMod = new Date(data.date).toISOString();
-                } catch(e) {}
-            }
+            lastMod = toISODate(data.updatedAt) || toISODate(data.date) || lastMod;
 
             xml += '  <url>\n';
             xml += `    <loc>${url}</loc>\n`;
