@@ -1,0 +1,196 @@
+
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz Upload Tool</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .log { background: #f0f0f0; padding: 10px; height: 300px; overflow-y: scroll; border: 1px solid #ccc; font-family: monospace; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Kütləvi Sual Yükləmə Aləti</h1>
+    <p>1. <code>parsed_questions_full.json</code> faylını seçin.</p>
+    <p>2. "Yükləməyə Başla" düyməsini sıxın.</p>
+    
+    <div id="authSection">
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Parol">
+        <button onclick="login()">Daxil ol</button>
+    </div>
+    <div id="uploadSection" style="display:none;">
+        <div style="border: 1px solid red; padding: 10px; margin-bottom: 20px; background: #fff0f0;">
+            <h3>Təmizlik Bölməsi</h3>
+            <p>Yalnız bu gün yüklənən (source: 'bulk_upload_1280') sualları silər. Köhnə suallara toxunmur.</p>
+            <button onclick="deleteLastUpload()" style="background: red; color: white;">Son Yüklənənləri Sil</button>
+        </div>
+        
+        <h3>Yeni Yükləmə</h3>
+        <input type="file" id="fileInput" accept=".json">
+        <br><br>
+        <button onclick="startUpload()" id="uploadBtn" disabled>Yükləməyə Başla</button>
+    </div>
+    <br><br>
+    <div id="status">Gözlənilir...</div>
+    <div id="progress">0 / 0</div>
+    <div class="log" id="logArea"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, writeBatch, doc, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAak_eY0WNpY7cqAEuWEBG9wBDhg1NPw_0",
+            authDomain: "imtahansistemi-17659.firebaseapp.com",
+            projectId: "imtahansistemi-17659",
+            storageBucket: "imtahansistemi-17659.firebasestorage.app",
+            messagingSenderId: "715396853166",
+            appId: "1:715396853166:web:9829b853e5e572de4d2c3f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let questionsData = null;
+
+        window.login = function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            signInWithEmailAndPassword(auth, email, password)
+                .then(() => log("Giriş uğurlu!", "success"))
+                .catch(e => log("Giriş xətası: " + e.message, "error"));
+        }
+        
+        window.deleteLastUpload = async function() {
+            if (!confirm("Əminsiniz? Yalnız 'bulk_upload_1280' mənbəli suallar silinəcək.")) return;
+            
+            log("Silinmə prosesi başladı... Suallar axtarılır...", "warning");
+            
+            const q = query(collection(db, "public_questions"), where("source", "==", "bulk_upload_1280"));
+            const snapshot = await getDocs(q);
+            
+            if (snapshot.empty) {
+                log("Silinəcək heç nə tapılmadı.", "warning");
+                return;
+            }
+            
+            log(`${snapshot.size} sual tapıldı. Silinir...`, "warning");
+            
+            const batchSize = 400;
+            const docs = snapshot.docs;
+            let deletedCount = 0;
+            
+            for (let i = 0; i < docs.length; i += batchSize) {
+                const batch = writeBatch(db);
+                const chunk = docs.slice(i, i + batchSize);
+                
+                chunk.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                deletedCount += chunk.length;
+                log(`${deletedCount} sual silindi...`);
+            }
+            
+            log("TƏMİZLİK BİTDİ! İndi yeni faylı yükləyə bilərsiniz.", "success");
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('uploadSection').style.display = 'block';
+                log("İstifadəçi: " + user.email);
+            }
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    questionsData = JSON.parse(e.target.result);
+                    document.getElementById('uploadBtn').disabled = false;
+                    log(`Fayl oxundu: ${questionsData.length} sual tapıldı.`);
+                    document.getElementById('progress').innerText = `0 / ${questionsData.length}`;
+                } catch (err) {
+                    log("JSON Xətası: " + err.message, "error");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        window.startUpload = async function() {
+            if (!questionsData) return;
+            
+            // Login check (əgər lazım olsa)
+            // auth.currentUser yoxdursa login tələb oluna bilər, amma indilik açıqdırsa işləyəcək.
+            // Təhlükəsizlik üçün admin olmalısınız.
+            
+            const btn = document.getElementById('uploadBtn');
+            btn.disabled = true;
+            btn.innerText = "Yüklənir...";
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            // Batch upload (Firestore limits: 500 writes per batch)
+            const BATCH_SIZE = 400; 
+            const total = questionsData.length;
+
+            for (let i = 0; i < total; i += BATCH_SIZE) {
+                const batch = writeBatch(db);
+                const chunk = questionsData.slice(i, i + BATCH_SIZE);
+                
+                chunk.forEach(q => {
+                    // Lazımsız sahələri təmizlə
+                    const docData = {
+                        text: q.text,
+                        options: q.options,
+                        correctVariantId: q.correctVariantId,
+                        explanation: q.explanation || "",
+                        tags: q.tags || ["general"],
+                        type: "text",
+                        createdAt: new Date().toISOString(),
+                        source: "bulk_upload_1280"
+                    };
+                    
+                    const newRef = doc(collection(db, "public_questions"));
+                    batch.set(newRef, docData);
+                });
+
+                try {
+                    await batch.commit();
+                    successCount += chunk.length;
+                    log(`${successCount} sual yükləndi...`, "success");
+                    document.getElementById('progress').innerText = `${successCount} / ${total}`;
+                } catch (err) {
+                    failCount += chunk.length;
+                    log(`Batch xətası (${i}-${i+BATCH_SIZE}): ${err.message}`, "error");
+                    console.error(err);
+                }
+            }
+
+            log(`BİTDİ! Uğurlu: ${successCount}, Xəta: ${failCount}`, successCount > 0 ? "success" : "error");
+            btn.innerText = "Yükləmə Bitdi";
+        };
+
+        function log(msg, type = "") {
+            const div = document.createElement('div');
+            div.innerText = msg;
+            if (type) div.className = type;
+            const logArea = document.getElementById('logArea');
+            logArea.appendChild(div);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+    </script>
+</body>
+</html>

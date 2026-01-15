@@ -1,0 +1,288 @@
+[
+  {
+    "text": "Dövlət qulluqçusu olaraq, müraciətçi sənədlərin birində qohumunuzun imzasını görürsünüz. Qohumunuz işin sürətləndirilməsi üçün vasitəçilik etməyinizi xahiş edir. Siz necə davranardınız?",
+    "options": [
+      {
+        "id": "a",
+        "text": "İşi normal qaydada, lakin prioritet kimi nəzərdən keçirərdim."
+      },
+      {
+        "id": "b",
+        "text": "Qohumluq əlaqəsini rəhbərinizə bildirərək, işi başqa məsul işçiyə ötürərdim."
+      },
+      {
+        "id": "c",
+        "text": "İşi qanunla müəyyən edilmiş müddətdə və qaydada həll edər, lakin qohumluğu əsas götürməzdim."
+      },
+      {
+        "id": "d",
+        "text": "Müraciəti əsassız hesab edərək rədd edərdim."
+      }
+    ],
+    "tags": [
+      "dövlət qulluğu",
+      "situasiya"
+    ],
+    "type": "text",
+    "createdAt": "2026-01-15T12:29:18.911Z",
+    "correctVariantId": "b",
+    "explanation": "\"Dövlət qulluqçularının etik davranış qaydaları haqqında\" Qanuna və \"Korrupsiyaya qarşı mübarizə\" Qanununa görə, qohumluq münasibətləri konflikt maraqları yarada bilər. Belə hallarda işdən kənarlaşmaq və vəziyyəti rəhbərliyə bildirmək tələb olunur."
+  },
+  {
+    "text": "Nazirliyin daxili qaydalarında müəyyən edilmiş müddət 14 gün olmasına baxmayaraq, rəhbəriniz müəyyən bir vətəndaş müraciətini 3 gün ərzində həll etməyinizi əmr edir. Sizin hərəkətiniz necə olardı?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Rəhbərin göstərişini yerinə yetirərdim."
+      },
+      {
+        "id": "b",
+        "text": "Rəhbərə qanuni müddəti xatırladıb, sənədi normal qaydada yerinə yetirərdim."
+      },
+      {
+        "id": "c",
+        "text": "Müraciəti həll etməyib, başqa işlə məşğul olardım."
+      },
+      {
+        "id": "d",
+        "text": "Rəhbərin əmrinə şərti olaraq \"təcili\" qeydi ilə razılaşardım."
+      }
+    ],
+    "tags": [
+      "dövlət qulluğu",
+      "situasiya"
+    ],
+    "type": "text",
+    "createdAt": "2026-01-15T12:29:18.927Z",
+    "correctVariantId": "b",
+    "explanation": "\"Normativ hüquqi aktlar haqqında\" Konstitusiya Qanununa və \"Vətəndaşların müraciətləri haqqında\" Qanuna görə, normativ aktlarla (daxili qayda) müəyyən edilmiş prosedurlara əməl etmək vacibdir. Rəhbərin qanuna zidd göstərişi yerinə yetirilməməlidir."
+  },
+  {
+    "text": "İş yerinizdə baş verən normativ aktın pozulması faktını aşkar etdiniz. Bu, dərhal təhlükə yaratmır, lakin sistemli xarakter daşıyır. Siz nə edərdiniz?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Bağlılıq göstərib, kollektivə \"çıxış etməzdim\"."
+      },
+      {
+        "id": "b",
+        "text": "Birbaşa Ali Baş Prokurorluğa məlumat verərdim."
+      },
+      {
+        "id": "c",
+        "text": "Vəziyyəti birbaşa yuxarı rəhbərliyə və ya müvafiq nəzarət orqanına rəsmi şəkildə bildirərdim."
+      },
+      {
+        "id": "d",
+        "text": "Anonim şəkildə KİV-lərə məlumat ötürərdim."
+      }
+    ],
+    "tags": [
+      "dövlət qulluğu",
+      "situasiya"
+    ],
+    "type": "text",
+    "createdAt": "2026-01-15T12:29:18.927Z",
+    "correctVariantId": "c",
+    "explanation": "\"Korrupsiyaya qarşı mübarizə haqqında\" Qanun dövlət qulluqçusuna belə hallarda daxili xəbərdarlıq (whistleblowing) mexanizmindən istifadə etmək hüququ və vəzifəsi verir. İlk addım rəsmi daxili kanallardan istifadə etməkdir."
+  },
+  {
+    "text": "\"Vətəndaşların müraciətləri haqqında\" Qanuna görə, müraciətə cavab vermək üçün müddət nə qədərdir?",
+    "options": [
+      {
+        "id": "a",
+        "text": "7 gün"
+      },
+      {
+        "id": "b",
+        "text": "15 gün"
+      },
+      {
+        "id": "c",
+        "text": "30 gün"
+      },
+      {
+        "id": "d",
+        "text": "45 gün"
+      }
+    ],
+    "tags": [
+      "dövlət qulluğu"
+    ],
+    "type": "text",
+    "createdAt": "2026-01-15T12:29:18.927Z",
+    "correctVariantId": "c",
+    "explanation": "Qanunun 15-ci maddəsinə görə, müraciətə 30 gün ərzində cavab verilməlidir."
+  },
+  {
+    "text": "\"Məlumat əldə etmək haqqında\" Qanuna görə, məlumat sorğusuna cavab vermək müddəti nə qədərdir?",
+    "options": [
+      {
+        "id": "a",
+        "text": "7 iş günü"
+      },
+      {
+        "id": "b",
+        "text": "10 iş günü"
+      },
+      {
+        "id": "c",
+        "text": "15 iş günü"
+      },
+      {
+        "id": "d",
+        "text": "30 iş günü"
+      }
+    ],
+    "tags": [
+      "dövlət qulluğu"
+    ],
+    "type": "text",
+    "createdAt": "2026-01-15T12:29:18.927Z",
+    "correctVariantId": "a",
+    "explanation": "Qanunun 6-cı maddəsinə görə, məlumat sorğusuna cavab 7 iş günü ərzində verilməlidir."
+  },
+  {
+    "text": "\"Dövlət dili haqqında\" Qanuna görə, dövlət orqanlarının rəsmi yazışmaları hansı dildə aparılır?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Azərbaycan dilində"
+      },
+      {
+        "id": "b",
+        "text": "İngilis dilində"
+      },
+      {
+        "id": "c",
+        "text": "Rus dilində"
+      },
+      {
+        "id": "d",
+        "text": "İstənilən dildə"
+      }
+    ],
+    "tags": [
+      "dövlət qulluğu"
+    ],
+    "type": "text",
+    "createdAt": "2026-01-15T12:29:18.927Z",
+    "correctVariantId": "a",
+    "explanation": "Qanunun 2-ci maddəsinə görə, dövlət orqanlarının rəsmi yazışmaları Azərbaycan dilində aparılır."
+  },
+  {
+    "text": "Mülki Məcəlləyə görə, hüquqi şəxsin fəaliyyətinin dayandırılması hansı hallarda baş verir?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Yalnız məhkəmə qərarı ilə"
+      },
+      {
+        "id": "b",
+        "text": "Təsisçilərin qərarı, müddətin bitməsi və ya məhkəmə qərarı ilə"
+      },
+      {
+        "id": "c",
+        "text": "Yalnız vergi orqanlarının qərarı ilə"
+      },
+      {
+        "id": "d",
+        "text": "Avtomatik olaraq"
+      }
+    ],
+    "tags": [
+      "dövlət qulluğu"
+    ],
+    "type": "text",
+    "createdAt": "2026-01-15T12:29:18.927Z",
+    "correctVariantId": "b",
+    "explanation": "Məcəllənin 56-cı maddəsinə görə, hüquqi şəxsin fəaliyyəti təsisçilərin qərarı, fəaliyyət müddətinin bitməsi, məhkəmə qərarı və ya qanunla nəzərdə tutulan digər hallarda dayandırıla bilər."
+  },
+  {
+    "text": "Dövlət qulluqçusu xaricdə təhsil aldığı müddətdə, təhsil haqqını ödəyən şəxs daha sonra onun rəsmi qərarı ilə mənfəət əldə edir. Korrupsiya faktı sayılarmı?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Xeyr, çünki təhsil haqqı keçmişdə ödənilib."
+      },
+      {
+        "id": "b",
+        "text": "Bəli, əgər təhsil haqqının ödənilməsi ilə sonrakı qərar arasında əlaqə sübut olunarsa."
+      },
+      {
+        "id": "c",
+        "text": "Yalnız əgər təhsil haqqı rüşvət kimi ödənilibsə."
+      },
+      {
+        "id": "d",
+        "text": "Xeyr, çünki qərar qanunidir."
+      }
+    ],
+    "tags": [
+      "dövlət qulluğu",
+      "situasiya"
+    ],
+    "type": "text",
+    "createdAt": "2026-01-15T12:29:18.927Z",
+    "correctVariantId": "b",
+    "explanation": "“Korrupsiyaya qarşı mübarizə haqqında” Azərbaycan Respublikasının Qanununun 1.1.1-ci bəndinə görə, korrupsiya yalnız birbaşa əvəz mübadiləsi deyil, həm dəgələcəkdə fayda gözləntisi ilə verilən imtiyazları əhatə edə bilər."
+  },
+  {
+    "text": "Dövlət qurumu, informasiya tələbinə cavab olaraq, məlumatın bir hissəsini verir, digər hissəsini isə “daxili iş qaydasına aid olduğu üçün” vermir. Bu qanunidirmi?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Bəli, daxili iş qaydası məlumatı məxfidir."
+      },
+      {
+        "id": "b",
+        "text": "Xeyr, “daxili iş qaydası” məxfilik əsası deyil."
+      },
+      {
+        "id": "c",
+        "text": "Yalnız əgər məlumat təhlükəsizlik məqsədlərinə xidmət edirsə, qanunidir."
+      },
+      {
+        "id": "d",
+        "text": "Yalnız həmin məlumat qanunla məxfi elan edilibsə, qanunidir."
+      }
+    ],
+    "tags": [
+      "dövlət qulluğu",
+      "analitik"
+    ],
+    "type": "text",
+    "createdAt": "2026-01-15T12:29:18.927Z",
+    "correctVariantId": "b",
+    "explanation": "“Məlumat azadlığı haqqında” Azərbaycan Respublikasının Qanununun 3.1.6-cı bəndində məxfi məlumatın növləri sadalanıb.“Daxili iş qaydası” bu siyahıya daxil deyil."
+  },
+  {
+    "text": "İşçi həftə sonu (şənbə) işləyib. İşəgötürən ona əvəz istirahat günü vermək əvəzinə, iş saatlarını ikiqat ödəyir. Bu halda hansı tələb yerinə yetirilir?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Hər iki tələb yerinə yetirilir."
+      },
+      {
+        "id": "b",
+        "text": "Yalnız əmək haqqı ödənilməsi kifayətdir."
+      },
+      {
+        "id": "c",
+        "text": "Yalnız əvəz istirahat günü verilməsi kifayətdir."
+      },
+      {
+        "id": "d",
+        "text": "Heç biri; həftə sonu işləmək üçün işçinin əvvəlcədən razılığı tələb olunur."
+      }
+    ],
+    "tags": [
+      "dövlət qulluğu",
+      "çətin"
+    ],
+    "type": "text",
+    "createdAt": "2026-01-15T12:29:18.927Z",
+    "correctVariantId": "c",
+    "explanation": "Azərbaycan Respublikasının Əmək Məcəlləsinin 108-ci maddəsinə görə, işçi istirahat günü işlədikdə, onaəvəz olunmayan istirahat günü verilməlidir. İkiqat ödəniş yalnız bayram günlərində iş üçün nəzərdə tutulub."
+  }
+]

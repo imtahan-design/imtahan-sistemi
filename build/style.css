@@ -4349,3 +4349,15 @@ nav {
     }
 }
 
+
+/* Qlobal Bloq ?kil Düz?lisi - ?kill?rin k?silm?sinin qarsisini alir */
+.blog-content img, 
+.related-img, 
+.post-detail img,
+.blog-card img {
+    object-fit: contain !important;
+    background-color: #f8f9fa !important;
+    height: auto !important;
+    max-height: 450px !important;
+    width: 100% !important;
+}
