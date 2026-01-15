@@ -487,7 +487,7 @@
                 <div class="article-category" id="newsCategory">Gündəm</div>
                 <h1 class="article-title" id="newsTitle">Azərbaycan-Ermənistan Sülh Sazişi 2026: Nə Dəyişəcək?</h1>
                 <div class="article-meta" id="newsMeta">
-                            <span><i class="far fa-calendar"></i> 14 Yanvar 2026</span>
+                            <span><i class="far fa-calendar"></i> 15 Yanvar 2026</span>
                             <span><i class="far fa-clock"></i> 3 dəq</span>
                             <span><i class="far fa-eye"></i> 18</span>
                         </div>
@@ -967,8 +967,15 @@ Sülh münasibətləri təhsildə də yeni fürsətlər açır. Məsələn, beyn
             // URL /bloq/slug formatında olanda 'bloq' hissəsini çıxırıq
             if (parts.length >= 2 && parts[0] === 'bloq') {
                 slug = parts[1].split('?')[0].split('#')[0];
+                // .html uzantısını təmizləyək ki, Firestore 'slug' sahəsi ilə üst-üstə düşsün
+                if (slug.endsWith('.html')) {
+                    slug = slug.slice(0, -5);
+                }
             } else if (parts.length === 1 && parts[0] !== 'bloq') {
                 slug = parts[0].split('?')[0].split('#')[0];
+                if (slug.endsWith('.html')) {
+                    slug = slug.slice(0, -5);
+                }
             }
             
             if (slug) {
@@ -1041,6 +1048,8 @@ Sülh münasibətləri təhsildə də yeni fürsətlər açır. Məsələn, beyn
                         </div>
                     </div>
                 `;
+                // Ticker ilişməsin deyə fallback render-i işlədək
+                try { renderTicker(getInitialData()); } catch(_) {}
             }
         }, 20000);
 

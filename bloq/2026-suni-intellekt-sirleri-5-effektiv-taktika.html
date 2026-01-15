@@ -812,8 +812,15 @@
             // URL /bloq/slug formatında olanda 'bloq' hissəsini çıxırıq
             if (parts.length >= 2 && parts[0] === 'bloq') {
                 slug = parts[1].split('?')[0].split('#')[0];
+                // .html uzantısını təmizləyək ki, Firestore 'slug' sahəsi ilə üst-üstə düşsün
+                if (slug.endsWith('.html')) {
+                    slug = slug.slice(0, -5);
+                }
             } else if (parts.length === 1 && parts[0] !== 'bloq') {
                 slug = parts[0].split('?')[0].split('#')[0];
+                if (slug.endsWith('.html')) {
+                    slug = slug.slice(0, -5);
+                }
             }
             
             if (slug) {
@@ -886,6 +893,8 @@
                         </div>
                     </div>
                 `;
+                // Ticker ilişməsin deyə fallback render-i işlədək
+                try { renderTicker(getInitialData()); } catch(_) {}
             }
         }, 20000);
 
