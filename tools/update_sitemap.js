@@ -69,10 +69,15 @@ async function generateSitemap() {
                 
                 // --- STATİK SƏHİFƏ GENERASİYASI (SEO üçün) ---
                 try {
-                    const slugDir = path.resolve(__dirname, '../bloq', data.slug);
-                    if (!fs.existsSync(slugDir)) {
-                        fs.mkdirSync(slugDir, { recursive: true });
+                    // Köhnə qovluq strukturunu təmizləyirik (əgər varsa)
+                    const oldSlugDir = path.resolve(__dirname, '../bloq', data.slug);
+                    if (fs.existsSync(oldSlugDir) && fs.lstatSync(oldSlugDir).isDirectory()) {
+                        fs.rmSync(oldSlugDir, { recursive: true, force: true });
                     }
+
+                    // Yeni: bloq/slug.html faylı yaradırıq (bloq/slug/index.html əvəzinə)
+                    // Bu, Firebase Hosting "cleanUrls" ilə daha yaxşı işləyir.
+                    const slugFile = path.resolve(__dirname, '../bloq', `${data.slug}.html`);
                     
                     // view.html-i şablon kimi istifadə edirik
                     const templatePath = path.resolve(__dirname, '../bloq/view.html');
@@ -209,7 +214,7 @@ async function generateSitemap() {
                         htmlContent = htmlContent.replace('<div class="article-tags" id="newsTags"></div>', `<div class="article-tags" id="newsTags">${tagsHtml}</div>`);
                     }
 
-                    fs.writeFileSync(path.join(slugDir, 'index.html'), htmlContent);
+                    fs.writeFileSync(slugFile, htmlContent);
                     // console.log(`Generated static page for: ${data.slug}`);
                 } catch (err) {
                     console.error(`Error generating static page for ${data.slug}:`, err.message);
