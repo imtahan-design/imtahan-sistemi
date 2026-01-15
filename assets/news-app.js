@@ -389,9 +389,13 @@ function updateTicker(list) {
     // 3. Reset Styles for CSS Animation
     container.style.display = 'flex';
     container.style.width = 'max-content';
-    container.style.animation = 'none'; // Reset trigger
-    container.offsetHeight; // Trigger reflow
-    container.style.animation = 'ticker-scroll 40s linear infinite';
+    
+    // Optimize reflow: Use requestAnimationFrame to avoid blocking main thread
+    requestAnimationFrame(() => {
+        container.style.animation = 'none'; // Reset trigger
+        void container.offsetHeight; // Trigger reflow
+        container.style.animation = 'ticker-scroll 40s linear infinite';
+    });
 }
 
 function formatDate(dateStr) {
