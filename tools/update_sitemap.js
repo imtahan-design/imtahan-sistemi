@@ -335,9 +335,18 @@ async function generateSitemap() {
                     // 4. Inject Category
                     htmlContent = htmlContent.replace('<div class="article-category" id="newsCategory"></div>', `<div class="article-category" id="newsCategory">${data.category || 'Bloq'}</div>`);
                     
-                    // 5. Inject Date
+                    // 5. Inject Date & Meta
                     const dateStr = formatDate(data.date);
-                    htmlContent = htmlContent.replace('<div class="article-meta" id="newsMeta"></div>', `<div class="article-meta" id="newsMeta"><i class="fas fa-calendar-alt" style="margin-right:8px"></i> ${dateStr}</div>`);
+                    const readTime = data.readTime || 3;
+                    const views = data.views || 0;
+                    
+                    htmlContent = htmlContent.replace('<div class="article-meta" id="newsMeta"></div>', 
+                        `<div class="article-meta" id="newsMeta">
+                            <span><i class="far fa-calendar"></i> ${dateStr}</span>
+                            <span><i class="far fa-clock"></i> ${readTime} dəq</span>
+                            <span><i class="far fa-eye"></i> ${views}</span>
+                        </div>`
+                    );
                     
                     // 6. Inject Image
                     if (imageUrl) {
