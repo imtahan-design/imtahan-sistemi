@@ -204,7 +204,7 @@
     .article-title { font-size: 2.5rem; font-weight: 800; line-height: 1.2; margin-bottom: 16px; color: var(--text-main); letter-spacing: -0.02em; padding: 0 20px; }
     .article-meta { display: flex; justify-content: center; gap: 20px; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; align-items: center; }
     .article-category { color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.85rem; margin-bottom: 10px; display: inline-block; }
-    .article-image { width: 100%; height: 450px; object-fit: cover; border-radius: 16px; margin-bottom: 40px; background: #f3f4f6; box-shadow: var(--shadow-md); }
+    .article-image { width: 100%; height: auto; max-height: 600px; object-fit: contain; border-radius: 16px; margin-bottom: 40px; background: #f3f4f6; box-shadow: var(--shadow-md); }
     
     .article-content { 
         font-family: 'Merriweather', serif; 
@@ -429,7 +429,7 @@
 
         /* Article Mobile */
         .article-title { font-size: 1.8rem; padding: 0 10px; }
-        .article-image { height: 250px; }
+        .article-image { max-height: 350px; }
         .article-content { padding: 0 16px; font-size: 1rem; }
         .article-meta { flex-direction: column; gap: 8px; }
 
