@@ -226,10 +226,17 @@ async function generateSitemap() {
                         .substring(0, 160);
                     const rawImageUrl = (typeof data.imageUrl === 'string') ? data.imageUrl : '';
                     let imageUrl = 'https://imtahan.site/assets/logo.png';
+                    
+                    // Base64 check: If image is Base64, do NOT use it for SEO/Social metadata (it breaks them)
+                    // Use it only if it's a real URL
                     if (rawImageUrl.startsWith('http://') || rawImageUrl.startsWith('https://')) {
                         imageUrl = rawImageUrl;
                     } else if (rawImageUrl.startsWith('assets/')) {
                         imageUrl = 'https://imtahan.site/' + rawImageUrl;
+                    } else if (rawImageUrl.length > 500) {
+                        // Likely Base64 or invalid, fallback to logo for metadata
+                        console.warn(`Warning: Article "${data.title}" has a Base64 or invalid image URL. Using default logo for SEO metadata.`);
+                        imageUrl = 'https://imtahan.site/assets/logo.png';
                     }
                     const canonical = `https://imtahan.site/bloq/${data.slug}`;
 
