@@ -19,19 +19,19 @@
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
   
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js" defer></script>
   
   <style>
     :root {
       --primary: #6366f1;
-      --primary-dark: #4f46e5;
+      --primary-dark: #4338ca;
       --primary-light: #e0e7ff;
       --secondary: #ec4899;
       --text-main: #1f2937;
-      --text-muted: #6b7280;
+      --text-muted: #525252;
       --bg-body: #f3f4f6;
       --bg-card: #ffffff;
       --border: #e5e7eb;
@@ -101,7 +101,7 @@
       gap: 8px;
     }
     .nav-btn-secondary { color: var(--text-muted); background: transparent; }
-    .nav-btn-secondary:hover { color: var(--primary); background: var(--primary-light); }
+    .nav-btn-secondary:hover { color: var(--primary-dark); background: var(--primary-light); }
     .nav-links { display: flex; gap: 8px; }
     .nav-links a { text-decoration: none; }
 
@@ -128,7 +128,7 @@
     .article-header { padding: 40px 0 20px; text-align: center; }
     .article-title { font-size: 2.5rem; font-weight: 800; line-height: 1.2; margin-bottom: 16px; color: var(--text-main); letter-spacing: -0.02em; padding: 0 20px; }
     .article-meta { display: flex; justify-content: center; gap: 20px; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; align-items: center; }
-    .article-category { color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.85rem; margin-bottom: 10px; display: inline-block; }
+    .article-category { color: var(--primary-dark); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.85rem; margin-bottom: 10px; display: inline-block; }
     .article-image { width: 100%; height: auto; max-height: 600px; object-fit: contain; border-radius: 16px; margin-bottom: 40px; background: #f3f4f6; box-shadow: var(--shadow-md); }
     
     .article-content { 
@@ -166,7 +166,7 @@
         gap: 10px;
     }
     
-    .widget-title i { color: var(--primary); }
+    .widget-title i { color: var(--primary-dark); }
     
     .mini-card {
         display: flex;
@@ -178,7 +178,7 @@
     }
     .mini-card:last-child { margin-bottom: 0; }
     .mini-card:hover { transform: translateX(5px); }
-    .mini-card:hover .mini-head { color: var(--primary); }
+    .mini-card:hover .mini-head { color: var(--primary-dark); }
     
     .mini-img {
         width: 80px;
@@ -190,7 +190,7 @@
     }
     
     .mini-content { flex: 1; }
-    .mini-cat { font-size: 0.7rem; color: var(--primary); font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 4px; }
+    .mini-cat { font-size: 0.7rem; color: var(--primary-dark); font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 4px; }
     .mini-head { font-size: 0.9rem; font-weight: 600; line-height: 1.4; color: var(--text-main); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transition: color 0.2s; }
     .mini-date { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; display: block; }
 
@@ -225,7 +225,7 @@
         background: #eee;
     }
     .related-content { padding: 20px; flex: 1; display: flex; flex-direction: column; }
-    .related-cat { color: var(--primary); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; display: block; }
+    .related-cat { color: var(--primary-dark); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; display: block; }
     .related-head { font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; line-height: 1.4; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .related-date { color: var(--text-muted); font-size: 0.85rem; margin-top: auto; }
 
@@ -259,7 +259,7 @@
     
     .article-tags { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); }
     .tag { background: #f3f4f6; color: #4b5563; padding: 6px 14px; border-radius: 100px; font-size: 0.9rem; text-decoration: none; transition: all 0.2s; font-family: 'Inter', sans-serif; }
-    .tag:hover { background: var(--primary-light); color: var(--primary); }
+    .tag:hover { background: var(--primary-light); color: var(--primary-dark); }
 
     /* Share Buttons */
     .share-container {
@@ -289,7 +289,7 @@
     }
 
     .ticker-label {
-        background: #ef4444;
+        background: #d92d2d;
         color: white;
         padding: 0 16px;
         height: 100%;
@@ -505,10 +505,21 @@
     };
 
     // Initialize Firebase
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+    let db;
+    function initFirebase() {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            // Enable offline persistence for better performance on mobile
+            firebase.firestore().enablePersistence().catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    console.warn('Persistence failed: Multiple tabs open');
+                } else if (err.code == 'unimplemented') {
+                    console.warn('Persistence failed: Browser not supported');
+                }
+            });
+        }
+        db = firebase.firestore();
     }
-    const db = firebase.firestore();
 
     // Helper functions (copied from news-app.js for standalone view)
     const LOCAL_NEWS_KEY = 'imtahan_news_local';
@@ -708,12 +719,36 @@
         let id = urlParams.get('id');
         let slug = urlParams.get('slug'); 
         
+        const articleBody = document.getElementById('articleBody');
+        const isPreRendered = articleBody && articleBody.style.display === 'block';
+        const preRenderedId = articleBody ? articleBody.getAttribute('data-id') : null;
+
         if (slug) {
             slug = slugify(decodeURIComponent(slug)).trim();
         }
         
-        diag.log("Params extracted:", { id, slug });
+        diag.log("Params extracted:", { id, slug, isPreRendered, preRenderedId });
         
+        // If pre-rendered, we can immediately start loading related/trend
+        if (isPreRendered) {
+            const cat = document.getElementById('newsCategory').textContent;
+            const currentId = id || preRenderedId;
+            loadRelatedNews(cat, currentId);
+            loadTrendNews(currentId);
+            
+            // Still handle view increment if we have an ID
+            if (currentId && typeof db !== 'undefined') {
+                try {
+                    db.collection('news').doc(currentId).update({
+                        views: firebase.firestore.FieldValue.increment(1)
+                    });
+                    diag.log("Views incremented (pre-rendered path)");
+                } catch(e) { diag.log("View increment error", e.message); }
+            }
+            // We can stop here for the main article content
+            if (!urlParams.has('force_reload')) return;
+        }
+
         if (!id && !slug) {
             const parts = window.location.pathname.split('/').filter(p => !!p);
             diag.log("Path parts for slug extraction:", parts);
@@ -788,7 +823,7 @@
             loadTrendNews();
         }
 
-        // Global timeout for Firestore
+        // Global timeout for Firestore - reduced for better UX
         const loadingTimeout = setTimeout(() => {
             if (document.getElementById('loading').style.display !== 'none') {
                 diag.log("TIMEOUT: Firestore taking too long.");
@@ -797,15 +832,15 @@
                         <i class="fas fa-wifi-slash" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
                         <p style="color: #666; font-size: 18px;">Bağlantı zəifdir və ya xəbər tapılmadı.</p>
                         <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
-                            <a href="javascript:location.reload()" style="padding:10px 20px; background:var(--primary); color:white; border-radius:5px; text-decoration:none;">Yenidən yoxla</a>
-                            <a href="/bloq" style="padding:10px 20px; background:#f3f4f6; color:var(--text-main); border-radius:5px; text-decoration:none;">Bloqa qayıt</a>
+                            <a href="javascript:location.reload()" style="padding:10px 20px; background:var(--primary-dark); color:white; border-radius:12px; text-decoration:none; font-weight:600;">Yenidən yoxla</a>
+                            <a href="/bloq" style="padding:10px 20px; background:#f3f4f6; color:var(--text-main); border-radius:12px; text-decoration:none; font-weight:600;">Bloqa qayıt</a>
                         </div>
                     </div>
                 `;
-                // Ticker ilişməsin deyə fallback render-i işlədək
+                // Fallback render
                 try { renderTicker(getInitialData()); } catch(_) {}
             }
-        }, 20000);
+        }, 10000); // 10 seconds is more reasonable for mobile than 20s
 
         try {
             let articleData = null;
@@ -894,7 +929,7 @@
                     <div style="text-align:center; padding: 40px;">
                         <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
                         <p style="color: #666; font-size: 18px;">Məqalə tapılmadı və ya silinib.</p>
-                        <a href="/bloq" style="display:inline-block; margin-top:20px; padding:10px 20px; background:var(--primary); color:white; border-radius:5px; text-decoration:none;">Bloqa qayıt</a>
+                        <a href="/bloq" style="display:inline-block; margin-top:20px; padding:10px 20px; background:var(--primary-dark); color:white; border-radius:12px; text-decoration:none; font-weight:600;">Bloqa qayıt</a>
                     </div>
                 `;
                 return;
@@ -952,6 +987,7 @@
                 const img = document.getElementById('newsCover');
                 if (img) {
                     img.src = item.imageUrl;
+                    img.alt = item.title || 'Məqalə şəkli';
                     img.style.display = 'block';
                 }
             }
@@ -1039,7 +1075,7 @@
                 filteredRelated.forEach(item => {
                     grid.innerHTML += `
                         <a href="${getNewsLink(item)}" class="related-card" style="text-decoration: none;">
-                            ${item.imageUrl ? `<img src="${item.imageUrl}" class="related-img" onerror="this.insertAdjacentHTML('beforebegin','<div class=&quot;related-img&quot; style=&quot;background: var(--gradient-1)&quot;></div>'); this.remove();">` : `<div class="related-img" style="background: var(--gradient-1)"></div>`}
+                            ${item.imageUrl ? `<img src="${item.imageUrl}" class="related-img" alt="${item.title}" onerror="this.insertAdjacentHTML('beforebegin','<div class=&quot;related-img&quot; style=&quot;background: var(--gradient-1)&quot;></div>'); this.remove();">` : `<div class="related-img" style="background: var(--gradient-1)"></div>`}
                             <div class="related-content">
                                 <span class="related-cat">${item.category}</span>
                                 <h4 class="related-head">${item.title}</h4>
@@ -1115,7 +1151,7 @@
                     trends.forEach(item => {
                         grid.innerHTML += `
                             <a href="${getNewsLink(item)}" class="mini-card">
-                                ${item.imageUrl ? `<img src="${item.imageUrl}" class="mini-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM2MzY2ZjEiLz48L3N2Zz4='">` : `<div class="mini-img" style="background: var(--gradient-2)"></div>`}
+                                ${item.imageUrl ? `<img src="${item.imageUrl}" class="mini-img" alt="${item.title}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM2MzY2ZjEiLz48L3N2Zz4='">` : `<div class="mini-img" style="background: var(--gradient-2)"></div>`}
                                 <div class="mini-content">
                                     <span class="mini-cat">${item.category}</span>
                                     <h4 class="mini-head">${item.title}</h4>
@@ -1140,7 +1176,7 @@
                 trends.forEach(item => {
                     grid.innerHTML += `
                             <a href="${getNewsLink(item)}" class="mini-card">
-                                ${item.imageUrl ? `<img src="${item.imageUrl}" class="mini-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM2MzY2ZjEiLz48L3N2Zz4='">` : `<div class="mini-img" style="background: var(--gradient-2)"></div>`}
+                                ${item.imageUrl ? `<img src="${item.imageUrl}" class="mini-img" alt="${item.title}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM2MzY2ZjEiLz48L3N2Zz4='">` : `<div class="mini-img" style="background: var(--gradient-2)"></div>`}
                                 <div class="mini-content">
                                     <span class="mini-cat">${item.category}</span>
                                     <h4 class="mini-head">${item.title}</h4>
@@ -1178,12 +1214,15 @@
         // Double content for seamless loop
         tickerContent.innerHTML = itemsHtml + itemsHtml;
 
-        // Apply CSS Animation
+        // Apply CSS Animation without forced reflow
         tickerContent.style.display = 'flex';
         tickerContent.style.width = 'max-content';
         tickerContent.style.animation = 'none'; 
-        tickerContent.offsetHeight; // Reflow
-        tickerContent.style.animation = 'ticker-scroll 40s linear infinite';
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                tickerContent.style.animation = 'ticker-scroll 40s linear infinite';
+            });
+        });
     }
 
     function escapeHtml(text) {
@@ -1230,7 +1269,10 @@
         ];
     }
 
-    document.addEventListener('DOMContentLoaded', loadArticle);
+    document.addEventListener('DOMContentLoaded', () => {
+        initFirebase();
+        loadArticle();
+    });
   </script>
 </body>
 </html>

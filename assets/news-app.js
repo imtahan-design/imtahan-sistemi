@@ -390,11 +390,12 @@ function updateTicker(list) {
     container.style.display = 'flex';
     container.style.width = 'max-content';
     
-    // Optimize reflow: Use requestAnimationFrame to avoid blocking main thread
+    // Optimize reflow: Use double requestAnimationFrame to avoid forced reflow (offsetHeight)
+    container.style.animation = 'none'; 
     requestAnimationFrame(() => {
-        container.style.animation = 'none'; // Reset trigger
-        void container.offsetHeight; // Trigger reflow
-        container.style.animation = 'ticker-scroll 40s linear infinite';
+        requestAnimationFrame(() => {
+            container.style.animation = 'ticker-scroll 40s linear infinite';
+        });
     });
 }
 

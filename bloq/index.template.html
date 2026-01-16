@@ -33,22 +33,27 @@
   }
   </script>
   <link rel="shortcut icon" href="/assets/logo.png" type="image/png">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.gstatic.com">
+  <link rel="preconnect" href="https://imtahansistemi-17659.firebaseapp.com">
+  <link rel="preconnect" href="https://firestore.googleapis.com">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
   
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js" defer></script>
 
   <style>
     :root {
       --primary: #6366f1;
-      --primary-dark: #4f46e5;
+      --primary-dark: #4338ca;
       --primary-light: #e0e7ff;
       --secondary: #ec4899;
       --text-main: #1f2937;
-      --text-muted: #6b7280;
+      --text-muted: #525252;
       --bg-body: #f3f4f6;
       --bg-card: #ffffff;
       --border: #e5e7eb;
@@ -118,7 +123,7 @@
       gap: 8px;
     }
     .nav-btn-secondary { color: var(--text-muted); background: transparent; }
-    .nav-btn-secondary:hover { color: var(--primary); background: var(--primary-light); }
+    .nav-btn-secondary:hover { color: var(--primary-dark); background: var(--primary-light); }
     .nav-links { display: flex; gap: 8px; }
     .nav-links a { text-decoration: none; }
 
@@ -169,7 +174,7 @@
         color: white;
     }
     .featured-badge {
-        background: var(--primary);
+        background: var(--primary-dark);
         color: white;
         padding: 6px 14px;
         border-radius: 8px;
@@ -232,7 +237,7 @@
     }
     .side-cat {
         font-size: 0.75rem;
-        color: var(--primary);
+        color: var(--primary-dark);
         font-weight: 700;
         text-transform: uppercase;
         margin-bottom: 6px;
@@ -292,7 +297,7 @@
         border-radius: 8px; 
         font-size: 0.75rem; 
         font-weight: 700; 
-        color: var(--primary); 
+        color: var(--primary-dark); 
         text-transform: uppercase; 
         letter-spacing: 0.5px; 
         z-index: 2;
@@ -300,7 +305,7 @@
     .card-content { padding: 24px; flex: 1; display: flex; flex-direction: column; }
     .card-meta { display: flex; gap: 12px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; align-items: center; }
     .meta-item { display: flex; align-items: center; gap: 6px; }
-    .meta-item i { color: var(--primary); font-size: 0.9rem; }
+    .meta-item i { color: var(--primary-dark); font-size: 0.9rem; }
     .card-title { 
         font-size: 1.25rem; 
         font-weight: 700; 
@@ -324,17 +329,17 @@
         flex: 1; 
     }
     .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }
-    .read-more { color: var(--primary); font-weight: 600; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+    .read-more { color: var(--primary-dark); font-weight: 600; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
     .read-more:hover { gap: 8px; }
     .news-actions { display: flex; gap: 8px; }
     .action-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: white; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-    .action-btn:hover { background: var(--primary-light); color: var(--primary); border-color: transparent; }
+    .action-btn:hover { background: var(--primary-light); color: var(--primary-dark); border-color: transparent; }
 
     .news-ticker-container {
         background: #1f2937; color: white; display: flex; align-items: center; overflow: hidden; height: 40px; position: relative; border-bottom: 1px solid rgba(255,255,255,0.1);
     }
     .ticker-label {
-        background: #ef4444; color: white; padding: 0 16px; height: 100%; display: flex; align-items: center; font-weight: 700; font-size: 0.85rem; z-index: 2; box-shadow: 2px 0 10px rgba(0,0,0,0.2); white-space: nowrap; text-transform: uppercase;
+        background: #d92d2d; color: white; padding: 0 16px; height: 100%; display: flex; align-items: center; font-weight: 700; font-size: 0.85rem; z-index: 2; box-shadow: 2px 0 10px rgba(0,0,0,0.2); white-space: nowrap; text-transform: uppercase;
     }
     .ticker-wrapper { flex: 1; overflow: hidden; position: relative; height: 100%; display: flex; align-items: center; }
     .ticker-content { display: flex; white-space: nowrap; animation: ticker-scroll 40s linear infinite; padding-left: 0; }
@@ -469,10 +474,10 @@
                       <i class="fas fa-search"></i>
                       <input type="text" id="newsSearch" class="search-input" placeholder="Məqalə axtar...">
                   </div>
-                  <select id="categoryFilter" class="filter-select">
+                  <select id="categoryFilter" class="filter-select" aria-label="Kateqoriya üzrə filtrlə">
                       <option value="all">Bütün kateqoriyalar</option>
                   </select>
-                  <select id="sortFilter" class="filter-select">
+                  <select id="sortFilter" class="filter-select" aria-label="Sıralama">
                       <option value="newest">Ən yeni</option>
                       <option value="oldest">Ən köhnə</option>
                   </select>

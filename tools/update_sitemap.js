@@ -68,6 +68,21 @@ function getNewsLink(item) {
     return '/bloq/view.html?id=' + item.id;
 }
 
+// Helper to clean image URLs and avoid Base64 bloat
+function getCleanImageUrl(url, fallback = 'https://via.placeholder.com/800x500?text=No+Image') {
+    if (!url) return fallback;
+    if (typeof url !== 'string') return fallback;
+    
+    // If it's a real URL or a small Base64 (under 2KB), it's fine
+    if (url.startsWith('http') || url.startsWith('assets/') || url.length < 2048) {
+        return url;
+    }
+    
+    // If it's a large Base64, return fallback to avoid HTML bloat
+    console.warn(`Large Base64 image detected (${Math.round(url.length/1024)}KB). Using fallback to keep HTML small.`);
+    return fallback;
+}
+
 async function generateSitemap() {
     console.log("Fetching news from Firestore...");
     
@@ -96,9 +111,10 @@ async function generateSitemap() {
                     const sideItems = allNews.filter(n => n.id !== featured.id).slice(0, 2);
                     let sideHtml = '';
                     sideItems.forEach(item => {
+                        const cleanImg = getCleanImageUrl(item.imageUrl, 'https://via.placeholder.com/180x250?text=No+Image');
                         sideHtml += `
                             <div class="side-card" onclick="window.location.href='${getNewsLink(item)}'" style="cursor: pointer;">
-                                <img class="side-image" src="${item.imageUrl || 'https://via.placeholder.com/180x250?text=No+Image'}" alt="${item.title}">
+                                <img class="side-image" src="${cleanImg}" alt="${item.title}" loading="lazy">
                                 <div class="side-content">
                                     <span class="mini-cat">${item.category || 'Bloq'}</span>
                                     <h3 class="side-title">${item.title}</h3>
@@ -108,10 +124,11 @@ async function generateSitemap() {
                         `;
                     });
 
+                    const featuredImg = getCleanImageUrl(featured.imageUrl, 'https://via.placeholder.com/800x500?text=No+Image');
                     featuredHtml = `
                         <div class="featured-grid">
                             <div class="featured-main" onclick="window.location.href='${getNewsLink(featured)}'" style="cursor: pointer;">
-                                <img src="${featured.imageUrl || 'https://via.placeholder.com/800x500?text=No+Image'}" alt="${featured.title}">
+                                <img src="${featuredImg}" alt="${featured.title}" fetchpriority="high">
                                 <div class="featured-overlay">
                                     <span class="featured-badge">${featured.category || 'Bloq'}</span>
                                     <h2 class="featured-title">${featured.title}</h2>
@@ -131,10 +148,11 @@ async function generateSitemap() {
                 // 2. Grid Section (Latest 20)
                 let gridHtml = '';
                 allNews.slice(0, 20).forEach(item => {
+                    const cleanImg = getCleanImageUrl(item.imageUrl, 'https://via.placeholder.com/400x250?text=No+Image');
                     gridHtml += `
                         <div class="news-card">
                             <div class="card-image-wrapper bg-gradient-${Math.floor(Math.random()*4)+1}">
-                                ${item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%; height:100%; object-fit:cover;" alt="${item.title}">` : `<i class="fas fa-graduation-cap card-icon"></i>`}
+                                ${item.imageUrl ? `<img src="${cleanImg}" style="width:100%; height:100%; object-fit:cover;" alt="${item.title}" loading="lazy">` : `<i class="fas fa-graduation-cap card-icon"></i>`}
                                 <span class="card-badge">${item.category || 'Bloq'}</span>
                             </div>
                             <div class="card-content">
@@ -239,7 +257,8 @@ async function generateSitemap() {
                         imageUrl = 'https://imtahan.site/assets/logo.png';
                     }
                     // Display image should prefer the raw value (including Base64 or relative paths) for on-page rendering
-                    const displayImage = (rawImageUrl && rawImageUrl.trim().length > 0) ? rawImageUrl : imageUrl;
+                    // But we clean it to avoid HTML bloat if it's a huge Base64
+                    const displayImage = getCleanImageUrl(rawImageUrl, imageUrl);
                     const canonical = `https://imtahan.site/bloq/${data.slug}`;
 
                     const publishedISO = toISODate(data.date) || new Date().toISOString();
@@ -329,7 +348,7 @@ async function generateSitemap() {
                     htmlContent = htmlContent.replace('<div id="loading" style="text-align: center; padding: 60px;">', '<div id="loading" style="display: none;">');
                     
                     // 2. Show article body container
-                    htmlContent = htmlContent.replace('<div id="articleBody" style="display: none;">', '<div id="articleBody" style="display: block;">');
+                    htmlContent = htmlContent.replace('<div id="articleBody" style="display: none;">', `<div id="articleBody" style="display: block;" data-id="${doc.id}">`);
                     
                     // 3. Inject Title
                     htmlContent = htmlContent.replace('<h1 class="article-title" id="newsTitle"></h1>', `<h1 class="article-title" id="newsTitle">${data.title}</h1>`);
@@ -352,7 +371,7 @@ async function generateSitemap() {
                     
                     // 6. Inject Image
                     if (displayImage) {
-                         htmlContent = htmlContent.replace('<img id="newsCover" class="article-image" style="display: none;">', `<img id="newsCover" class="article-image" src="${displayImage}" alt="${data.title}">`);
+                         htmlContent = htmlContent.replace('<img id="newsCover" class="article-image" style="display: none;">', `<img id="newsCover" class="article-image" src="${displayImage}" alt="${data.title}" fetchpriority="high">`);
                     }
                     
                     // 7. Inject Content
