@@ -69,18 +69,11 @@ function getNewsLink(item) {
 }
 
 // Helper to clean image URLs and avoid Base64 bloat
-function getCleanImageUrl(url, fallback = 'https://via.placeholder.com/800x500?text=No+Image') {
+function getCleanImageUrl(url, fallback = 'https://imtahan.site/assets/logo.png') {
     if (!url) return fallback;
     if (typeof url !== 'string') return fallback;
-    
-    // If it's a real URL or a small Base64 (under 2KB), it's fine
-    if (url.startsWith('http') || url.startsWith('assets/') || url.length < 2048) {
-        return url;
-    }
-    
-    // If it's a large Base64, return fallback to avoid HTML bloat
-    console.warn(`Large Base64 image detected (${Math.round(url.length/1024)}KB). Using fallback to keep HTML small.`);
-    return fallback;
+    // Base64 limitini ləğv edirik - istifadəçi şəkillərin görünməsini istəyir
+    return url;
 }
 
 async function generateSitemap() {
@@ -92,12 +85,25 @@ async function generateSitemap() {
         
         console.log(`Found ${snapshot.size} articles.`);
 
+        const allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // --- NEW: Generate Ticker once for all pages ---
+        let tickerHtml = '';
+        const tickerNews = allNews.slice(0, 10);
+        tickerNews.forEach(item => {
+            const catBadge = item.category ? `<span style="color:var(--secondary); font-weight:bold; margin-right:5px;">[${item.category.toUpperCase()}]</span>` : '';
+            tickerHtml += `<a href="${getNewsLink(item)}" class="ticker-item">${catBadge}${item.title}</a>`;
+        });
+        // Double it for seamless loop
+        if (tickerHtml) {
+            tickerHtml = tickerHtml + tickerHtml;
+        }
+
         // --- NEW: Generate bloq/index.html from template ---
         try {
             const templatePath = path.resolve(__dirname, '../bloq/index.template.html');
             if (fs.existsSync(templatePath)) {
                 let indexHtml = fs.readFileSync(templatePath, 'utf8');
-                const allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
                 // 1. Featured Section
                 let featured = allNews.find(n => n.isFeatured);
@@ -111,7 +117,7 @@ async function generateSitemap() {
                     const sideItems = allNews.filter(n => n.id !== featured.id).slice(0, 2);
                     let sideHtml = '';
                     sideItems.forEach(item => {
-                        const cleanImg = getCleanImageUrl(item.imageUrl, 'https://via.placeholder.com/180x250?text=No+Image');
+                        const cleanImg = getCleanImageUrl(item.imageUrl);
                         sideHtml += `
                             <div class="side-card" onclick="window.location.href='${getNewsLink(item)}'" style="cursor: pointer;">
                                 <img class="side-image" src="${cleanImg}" alt="${item.title}" loading="lazy">
@@ -124,7 +130,7 @@ async function generateSitemap() {
                         `;
                     });
 
-                    const featuredImg = getCleanImageUrl(featured.imageUrl, 'https://via.placeholder.com/800x500?text=No+Image');
+                    const featuredImg = getCleanImageUrl(featured.imageUrl, 'https://imtahan.site/assets/logo.png');
                     featuredHtml = `
                         <div class="featured-grid">
                             <div class="featured-main" onclick="window.location.href='${getNewsLink(featured)}'" style="cursor: pointer;">
@@ -148,7 +154,7 @@ async function generateSitemap() {
                 // 2. Grid Section (Latest 20)
                 let gridHtml = '';
                 allNews.slice(0, 20).forEach(item => {
-                    const cleanImg = getCleanImageUrl(item.imageUrl, 'https://via.placeholder.com/400x250?text=No+Image');
+                    const cleanImg = getCleanImageUrl(item.imageUrl, 'https://imtahan.site/assets/logo.png');
                     gridHtml += `
                         <div class="news-card">
                             <div class="card-image-wrapper bg-gradient-${Math.floor(Math.random()*4)+1}">
@@ -171,12 +177,14 @@ async function generateSitemap() {
                 });
 
                 // Inject into template
-                // Note: We use simple string replacement assuming standard ID attributes
                 if (featuredHtml) {
                     indexHtml = indexHtml.replace('<div id="featuredContainer" style="margin-bottom: 60px;"></div>', `<div id="featuredContainer" style="margin-bottom: 60px;">${featuredHtml}</div>`);
                 }
                 if (gridHtml) {
                     indexHtml = indexHtml.replace('<div class="news-grid" id="newsGrid"></div>', `<div class="news-grid" id="newsGrid">${gridHtml}</div>`);
+                }
+                if (tickerHtml) {
+                    indexHtml = indexHtml.replace(/<div[^>]*id="newsTickerContent"[^>]*>([\s\S]*?)<\/div>/, `<div class="ticker-content" id="newsTickerContent">${tickerHtml}</div>`);
                 }
 
                 const indexPath = path.resolve(__dirname, '../bloq/index.html');
@@ -219,15 +227,18 @@ async function generateSitemap() {
                 
                 // --- STATİK SƏHİFƏ GENERASİYASI (SEO üçün) ---
                 try {
-                    // Köhnə qovluq strukturunu təmizləyirik (əgər varsa)
-                    const oldSlugDir = path.resolve(__dirname, '../bloq', data.slug);
-                    if (fs.existsSync(oldSlugDir) && fs.lstatSync(oldSlugDir).isDirectory()) {
-                        fs.rmSync(oldSlugDir, { recursive: true, force: true });
+                    // Fizika qovluq və index.html yaradırıq (Pretty URL dəstəyi üçün)
+                    const slugDir = path.resolve(__dirname, '../bloq', data.slug);
+                    if (!fs.existsSync(slugDir)) {
+                        fs.mkdirSync(slugDir, { recursive: true });
                     }
-
-                    // Yeni: bloq/slug.html faylı yaradırıq (bloq/slug/index.html əvəzinə)
-                    // Bu, Firebase Hosting "cleanUrls" ilə daha yaxşı işləyir.
-                    const slugFile = path.resolve(__dirname, '../bloq', `${data.slug}.html`);
+                    const slugFile = path.join(slugDir, 'index.html');
+                    
+                    // Əgər köhnə .html faylı varsa, onu silirik
+                    const oldHtmlFile = path.resolve(__dirname, '../bloq', `${data.slug}.html`);
+                    if (fs.existsSync(oldHtmlFile)) {
+                        fs.unlinkSync(oldHtmlFile);
+                    }
                     
                     // view.html-i şablon kimi istifadə edirik
                     const templatePath = path.resolve(__dirname, '../bloq/view.html');
@@ -251,13 +262,14 @@ async function generateSitemap() {
                         imageUrl = rawImageUrl;
                     } else if (rawImageUrl.startsWith('assets/')) {
                         imageUrl = 'https://imtahan.site/' + rawImageUrl;
-                    } else if (rawImageUrl.length > 500) {
-                        // Likely Base64 or invalid, fallback to logo for metadata
-                        console.warn(`Warning: Article "${data.title}" has a Base64 or invalid image URL. Using default logo for SEO metadata.`);
+                    } else if (rawImageUrl.length > 2097152) {
+                        // SEO metadata üçün 2MB limit (çox böyük Base64 meta-teqləri qırır)
+                        console.warn(`Warning: Article "${data.title}" has an extremely large Base64 image (>2MB). Using default logo for SEO metadata.`);
                         imageUrl = 'https://imtahan.site/assets/logo.png';
+                    } else if (rawImageUrl.length > 0) {
+                        // Use the original image (even if Base64) for SEO if it's not too huge
+                        imageUrl = rawImageUrl;
                     }
-                    // Display image should prefer the raw value (including Base64 or relative paths) for on-page rendering
-                    // But we clean it to avoid HTML bloat if it's a huge Base64
                     const displayImage = getCleanImageUrl(rawImageUrl, imageUrl);
                     const canonical = `https://imtahan.site/bloq/${data.slug}`;
 
@@ -383,6 +395,11 @@ async function generateSitemap() {
                     if (tags.length > 0) {
                         const tagsHtml = tags.map(tag => `<a href="/bloq" class="tag">#${tag}</a>`).join('');
                         htmlContent = htmlContent.replace('<div class="article-tags" id="newsTags"></div>', `<div class="article-tags" id="newsTags">${tagsHtml}</div>`);
+                    }
+
+                    // 9. Inject Ticker
+                    if (tickerHtml) {
+                        htmlContent = htmlContent.replace(/<div[^>]*id="newsTickerContent"[^>]*>([\s\S]*?)<\/div>/, `<div class="ticker-content" id="newsTickerContent">${tickerHtml}</div>`);
                     }
 
                     fs.writeFileSync(slugFile, htmlContent);

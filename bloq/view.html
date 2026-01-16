@@ -720,29 +720,47 @@
         let slug = urlParams.get('slug'); 
         
         const articleBody = document.getElementById('articleBody');
-        const isPreRendered = articleBody && articleBody.style.display === 'block';
+        // More robust check for pre-rendered state
+        const isPreRendered = articleBody && (articleBody.style.display === 'block' || articleBody.getAttribute('data-id'));
         const preRenderedId = articleBody ? articleBody.getAttribute('data-id') : null;
+        
+        const currentId = id || preRenderedId;
 
         if (slug) {
             slug = slugify(decodeURIComponent(slug)).trim();
         }
         
-        diag.log("Params extracted:", { id, slug, isPreRendered, preRenderedId });
+        diag.log("Params extracted:", { id, slug, isPreRendered, preRenderedId, currentId });
         
         // If pre-rendered, we can immediately start loading related/trend
         if (isPreRendered) {
-            const cat = document.getElementById('newsCategory').textContent;
-            const currentId = id || preRenderedId;
+            const catElem = document.getElementById('newsCategory');
+            const cat = catElem ? catElem.textContent : 'Bloq';
             loadRelatedNews(cat, currentId);
             loadTrendNews(currentId);
             
+            // Wait for db if it's not ready yet (max 10 seconds)
+            let waitCount = 0;
+            while ((typeof db === 'undefined' || typeof firebase === 'undefined') && waitCount < 100) {
+                await new Promise(r => setTimeout(r, 100));
+                waitCount++;
+            }
+
             // Still handle view increment if we have an ID
             if (currentId && typeof db !== 'undefined') {
                 try {
+                    // Update Firestore
                     db.collection('news').doc(currentId).update({
                         views: firebase.firestore.FieldValue.increment(1)
-                    });
-                    diag.log("Views incremented (pre-rendered path)");
+                    }).then(() => {
+                        diag.log("Views incremented successfully");
+                        // UI-da rəqəmi də dərhal artıraq ki, istifadəçi görsün
+                        const viewElem = document.querySelector('#newsMeta span:last-child');
+                        if (viewElem) {
+                            const currentViews = parseInt(viewElem.textContent.replace(/\D/g,'')) || 0;
+                            viewElem.innerHTML = `<i class="far fa-eye"></i> ${currentViews + 1}`;
+                        }
+                    }).catch(e => diag.log("View increment promise error", e.message));
                 } catch(e) { diag.log("View increment error", e.message); }
             }
             // We can stop here for the main article content

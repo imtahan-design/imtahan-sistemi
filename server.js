@@ -29,7 +29,22 @@ app.get('/health', (req, res) => {
     res.json({ status: 'online', instagram: isLoggedIn ? 'connected' : 'disconnected' });
 });
 
-app.get(['/news/:slug', '/bloq/:slug', '/blog/:slug'], (req, res) => {
+app.get(['/news/:slug', '/bloq/:slug', '/blog/:slug'], (req, res, next) => {
+    const slug = req.params.slug;
+    
+    // 1. Statik faylı yoxla (Prioritet 1)
+    const staticHtmlPath = path.join(__dirname, 'bloq', slug, 'index.html');
+    if (fs.existsSync(staticHtmlPath)) {
+        return res.sendFile(staticHtmlPath);
+    }
+
+    // 2. Köhnə struktur (flat files) (Prioritet 2)
+    const flatHtmlPath = path.join(__dirname, 'bloq', `${slug}.html`);
+    if (fs.existsSync(flatHtmlPath)) {
+        return res.sendFile(flatHtmlPath);
+    }
+
+    // 3. Fallback: Dynamic view.html (əgər statik fayl yoxdursa)
     res.sendFile(path.join(__dirname, 'bloq', 'view.html'));
 });
 

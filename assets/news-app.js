@@ -378,7 +378,7 @@ function updateTicker(list) {
     // 1. Prepare items HTML
     const itemsHtml = list.slice(0, 10).map(n => `
         <a href="${getNewsLink(n)}" class="ticker-item">
-            ${n.category ? `<span style="color:#f87171; font-weight:bold; margin-right:5px; font-size:0.85em;">[${n.category.toUpperCase()}]</span>` : ''}
+            ${n.category ? `<span style="color:var(--secondary); font-weight:bold; margin-right:5px; font-size:0.85em;">[${n.category.toUpperCase()}]</span>` : ''}
             ${n.title}
         </a>
     `).join('');
