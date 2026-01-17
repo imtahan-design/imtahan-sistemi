@@ -285,9 +285,6 @@
                 <div class="header-actions animate-up">
                     <h2>Müəllim Paneli</h2>
                     <div class="flex gap-2">
-                        <button onclick="showPublicQuestions()" class="btn-primary" style="background: var(--success-color); border-color: var(--success-hover);">
-                            <i class="fas fa-share-alt"></i> Sual Paylaş
-                        </button>
                         <button id="btn-show-teacher-reports" onclick="showTeacherReports()" class="btn-primary" style="background: var(--warning-color); border-color: var(--warning-hover);">
                             <i class="fas fa-flag"></i> Şikayətlər <span id="teacher-reports-count" class="ml-1 bg-white text-warning-dark px-1.5 rounded-full text-[10px] hidden">0</span>
                         </button>
@@ -486,25 +483,13 @@
                                     </button>
                                 </div>
                                 <script>
-                                    // OCR only function wrapper
                                     function generateAIQuestionsOCR() {
                                         const aiCount = document.getElementById('ai-question-count');
-                                        if(aiCount) aiCount.value = '0'; // OCR mode
+                                        if (aiCount) {
+                                            aiCount.value = '0';
+                                        }
                                         generateAIQuestions();
                                     }
-
-                                    // Sync limit badges
-                                    setTimeout(() => {
-                                        const limitEl = document.getElementById('ai-file-remaining-limit');
-                                        const bulkLimitEl = document.getElementById('bulk-file-remaining-limit');
-                                        if(limitEl && bulkLimitEl) {
-                                            bulkLimitEl.innerText = limitEl.innerText;
-                                            const observer = new MutationObserver(() => {
-                                                bulkLimitEl.innerText = limitEl.innerText;
-                                            });
-                                            observer.observe(limitEl, { childList: true, subtree: true, characterData: true });
-                                        }
-                                    }, 1000);
                                 </script>
                             </div>
                         </div>
@@ -538,7 +523,6 @@
                                     <div class="q-count-selector">
                                         <label>Sual sayı:</label>
                                         <select id="ai-question-count" class="text-main">
-                                            <option value="0">0 (Yalnız fayldan oxu)</option>
                                             <option value="5">5 sual</option>
                                             <option value="10" selected>10 sual</option>
                                             <option value="15">15 sual</option>
@@ -560,7 +544,7 @@
                                 <div class="ai-usage-info" id="ai-usage-info">
                                     <span class="limit-badge"><i class="fas fa-clock"></i> Gözləmə: <strong id="ai-cooldown-timer">0</strong>s</span>
                                     <span class="limit-badge"><i class="fas fa-list-ol"></i> Sual: <strong id="ai-remaining-limit">5</strong>/5</span>
-                                    <span class="limit-badge" style="display:none"><i class="fas fa-file-upload"></i> Fayl: <strong id="ai-file-remaining-limit">3</strong>/3</span>
+                                    
                                 </div>
                                 <div id="ai-loading" class="ai-loading hidden">
                                     <div class="spinner"></div>
