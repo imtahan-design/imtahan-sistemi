@@ -556,8 +556,8 @@ function parseQuestionsFromText(raw, defaultCategory) {
 
     const out = [];
     const optRegex = /^\s*([A-E])[\)\.\-]\s*(.+)$/i;
-    // Cavab regex-i yeniləndi: artıq qalan mətni görməzdən gəlir
-    const ansRegex = /(cavab|doğru cavab|düzgün cavab|correct|answer)\s*[:\-]\s*(.+)$/i;
+    // Cavab regex-i yeniləndi: daha geniş formatları dəstəkləyir və kolon opsionaldır
+    const ansRegex = /^\s*(?:düzgün\s+)?(?:cavab|correct|answer|doğru\s+cavab|izahlı\s+cavab)\s*[:\-]?\s*(.+)$/i;
     const linesAll = text.split('\n').map(l => l.trim());
     let cur = null;
     const pushCur = () => {
@@ -607,7 +607,7 @@ function parseQuestionsFromText(raw, defaultCategory) {
             continue;
         }
         if (mAns) {
-            const val = mAns[2].trim();
+            const val = mAns[1].trim();
             // Yalnız variant hərfini götür (məs: "C) Mətn..." -> "C")
             const lm = val.match(/^([A-E])[\)\.]*\s*(.*)$/i);
             if (lm) {
@@ -651,9 +651,11 @@ function parseQuestionsFromText(raw, defaultCategory) {
             if (m) options.push(normalizeText(m[2]));
         }
         let correctIndex = -1;
-        const ansLine = lines.find(l => /cavab|doğru cavab|düzgün cavab/i.test(l));
+        const ansLine = lines.find(l => /^(?:düzgün\s+)?(?:cavab|correct|answer|doğru\s+cavab)/i.test(l));
         if (ansLine) {
-            const lm = ansLine.match(/([A-E])/i);
+            // Label-dən sonrakı hissəni götür ki, label daxilindəki hərfləri (məs: "D"üzgün) götürməsin
+            const afterLabel = ansLine.replace(/^(?:düzgün\s+)?(?:cavab|correct|answer|doğru\s+cavab)\s*[:\-]?\s*/i, '');
+            const lm = afterLabel.match(/([A-E])/i);
             if (lm) correctIndex = (lm[1].toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0));
         }
         let explanation = '';
