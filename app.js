@@ -2723,7 +2723,7 @@ window.parseBulkQuestions = function() {
         lines.forEach((line) => {
             // İzah və ya Cavab sətirlərini yoxlayırıq (Regex ilə daha dəqiqdir)
             const ansRegex = /^\s*(?:düzgün\s+)?(?:cavab|correct|answer|doğru\s+cavab|izahlı\s+cavab)\s*[:\-]?\s*(.+)$/i;
-            const expRegex = /^(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i;
+            const expRegex = /^\s*(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]?\s*(.*)$/i;
             
             const mAns = line.match(ansRegex);
             const mExp = line.match(expRegex);
@@ -2746,7 +2746,7 @@ window.parseBulkQuestions = function() {
                     // Qalan hissədə izah varmı?
                     const rest = lm[2].trim();
                     if (rest) {
-                        const expInRest = rest.match(/(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i);
+                        const expInRest = rest.match(/(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]?\s*(.*)$/i);
                         if (expInRest) {
                             explanation = expInRest[2].trim();
                             collectingExplanation = true;
@@ -6021,7 +6021,7 @@ window.parseAdminBulkQuestions = function() {
         lines.forEach((line) => {
             // İzah və ya Cavab sətirlərini yoxlayırıq (Regex ilə daha dəqiqdir)
             const ansRegex = /^\s*(?:düzgün\s+)?(?:cavab|correct|answer|doğru\s+cavab|izahlı\s+cavab)\s*[:\-]?\s*(.+)$/i;
-            const expRegex = /^(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i;
+            const expRegex = /^\s*(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]?\s*(.*)$/i;
             
             const mAns = line.match(ansRegex);
             const mExp = line.match(expRegex);
@@ -6044,7 +6044,7 @@ window.parseAdminBulkQuestions = function() {
                     // Qalan hissədə izah varmı?
                     const rest = lm[2].trim();
                     if (rest) {
-                        const expInRest = rest.match(/(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i);
+                        const expInRest = rest.match(/(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]?\s*(.*)$/i);
                         if (expInRest) {
                             explanation = expInRest[2].trim();
                             collectingExplanation = true;

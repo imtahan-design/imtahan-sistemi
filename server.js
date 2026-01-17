@@ -615,7 +615,7 @@ function parseQuestionsFromText(raw, defaultCategory) {
                 
                 // Qalan hissədə izah varmı?
                 const rest = lm[2].trim();
-                const expInRest = rest.match(/(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i);
+                const expInRest = rest.match(/(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]?\s*(.*)$/i);
                 if (expInRest) {
                     cur.explanation = expInRest[2].trim();
                 }
@@ -626,7 +626,7 @@ function parseQuestionsFromText(raw, defaultCategory) {
             continue;
         }
         // İzah regex-i yeniləndi: "izahı" və "izahlı cavab" əlavə edildi
-        const expMatch = l.match(/^(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i);
+        const expMatch = l.match(/^\s*(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]?\s*(.*)$/i);
         if (expMatch) {
             cur.explanation = expMatch[2].trim();
             continue;
@@ -661,7 +661,7 @@ function parseQuestionsFromText(raw, defaultCategory) {
         let explanation = '';
         const expLine = lines.find(l => /izah|şərh|açıqlama|explanation/i.test(l));
         if (expLine) {
-            const em = expLine.match(/(?:izah|şərh|açıqlama|explanation)\s*[:\-]\s*(.+)$/i);
+            const em = expLine.match(/(?:izah|şərh|açıqlama|explanation)\s*[:\-]?\s*(.+)$/i);
             explanation = em ? normalizeText(em[1]) : normalizeText(expLine);
         }
         if (!question || options.length < 2) continue;
