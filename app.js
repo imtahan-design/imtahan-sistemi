@@ -2721,32 +2721,35 @@ window.parseBulkQuestions = function() {
         let collectingExplanation = false;
         
         lines.forEach((line) => {
+            // İzah və ya Cavab sətirlərini yoxlayırıq (Regex ilə daha dəqiqdir)
+            const isAnswerLine = /^(?:cavab|doğru)\s*:/i.test(line);
+            const isExplanationLine = /^[iİ]zah\s*:/i.test(line);
             const variantMatch = line.match(/^[A-J][\s.)\-:]{1,3}/i);
-            const isAnswerLine = line.toLowerCase().startsWith('cavab:') || line.toLowerCase().startsWith('doğru:');
-            const isExplanationLine = line.toLowerCase().startsWith('izah:');
             
+            // Ayırıcı sətirləri (---) və boş sətirləri keçirik
+            if (line.startsWith('---') || line.startsWith('===')) return;
+
             if (variantMatch && !collectingExplanation) {
                 collectingOptions = true;
                 options.push(line.substring(variantMatch[0].length).trim());
             } else if (isAnswerLine) {
                 collectingOptions = false;
                 collectingExplanation = false;
-                const parts = line.split(':');
-                if (parts.length > 1) {
-                    const ansChar = parts[1].trim().toUpperCase();
-                    if (ansChar.length > 0) {
-                        const charCode = ansChar.charCodeAt(0);
-                        if (charCode >= 65 && charCode <= 90) { // A-Z
-                            correctIndex = charCode - 65;
-                        } else if (!isNaN(ansChar)) {
-                            correctIndex = parseInt(ansChar);
-                        }
+                const match = line.match(/^(?:cavab|doğru)\s*:\s*([A-J\d]+)/i);
+                if (match && match[1]) {
+                    const ansChar = match[1].trim().toUpperCase();
+                    const charCode = ansChar.charCodeAt(0);
+                    if (charCode >= 65 && charCode <= 90) { // A-Z
+                        correctIndex = charCode - 65;
+                    } else if (!isNaN(ansChar)) {
+                        correctIndex = parseInt(ansChar);
                     }
                 }
             } else if (isExplanationLine) {
                 collectingOptions = false;
                 collectingExplanation = true;
-                explanation = line.substring(5).trim();
+                // "İzah:" sözünü və ondan sonrakı boşluğu təmizləyirik
+                explanation = line.replace(/^[iİ]zah\s*:\s*/i, '').trim();
             } else if (collectingExplanation) {
                 explanation += (explanation ? "\n" : "") + line;
             } else if (!collectingOptions) {
@@ -2756,10 +2759,10 @@ window.parseBulkQuestions = function() {
         
         if (questionText && (options.length > 0 || explanation)) {
             questions.push({
-                text: questionText,
+                text: questionText.trim(),
                 options: options,
                 correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0,
-                explanation: explanation
+                explanation: explanation.trim()
             });
         }
     });
@@ -6005,32 +6008,35 @@ window.parseAdminBulkQuestions = function() {
         let collectingExplanation = false;
         
         lines.forEach((line) => {
+            // İzah və ya Cavab sətirlərini yoxlayırıq (Regex ilə daha dəqiqdir)
+            const isAnswerLine = /^(?:cavab|doğru)\s*:/i.test(line);
+            const isExplanationLine = /^[iİ]zah\s*:/i.test(line);
             const variantMatch = line.match(/^[A-J][\s.)\-:]{1,3}/i);
-            const isAnswerLine = line.toLowerCase().startsWith('cavab:') || line.toLowerCase().startsWith('doğru:');
-            const isExplanationLine = line.toLowerCase().startsWith('izah:');
             
+            // Ayırıcı sətirləri (---) və boş sətirləri keçirik
+            if (line.startsWith('---') || line.startsWith('===')) return;
+
             if (variantMatch && !collectingExplanation) {
                 collectingOptions = true;
                 options.push(line.substring(variantMatch[0].length).trim());
             } else if (isAnswerLine) {
                 collectingOptions = false;
                 collectingExplanation = false;
-                const parts = line.split(':');
-                if (parts.length > 1) {
-                    const ansChar = parts[1].trim().toUpperCase();
-                    if (ansChar.length > 0) {
-                        const charCode = ansChar.charCodeAt(0);
-                        if (charCode >= 65 && charCode <= 90) { // A-Z
-                            correctIndex = charCode - 65;
-                        } else if (!isNaN(ansChar)) {
-                            correctIndex = parseInt(ansChar);
-                        }
+                const match = line.match(/^(?:cavab|doğru)\s*:\s*([A-J\d]+)/i);
+                if (match && match[1]) {
+                    const ansChar = match[1].trim().toUpperCase();
+                    const charCode = ansChar.charCodeAt(0);
+                    if (charCode >= 65 && charCode <= 90) { // A-Z
+                        correctIndex = charCode - 65;
+                    } else if (!isNaN(ansChar)) {
+                        correctIndex = parseInt(ansChar);
                     }
                 }
             } else if (isExplanationLine) {
                 collectingOptions = false;
                 collectingExplanation = true;
-                explanation = line.substring(5).trim();
+                // "İzah:" sözünü və ondan sonrakı boşluğu təmizləyirik
+                explanation = line.replace(/^[iİ]zah\s*:\s*/i, '').trim();
             } else if (collectingExplanation) {
                 explanation += (explanation ? "\n" : "") + line;
             } else if (!collectingOptions) {
@@ -6040,10 +6046,10 @@ window.parseAdminBulkQuestions = function() {
         
         if (questionText && options.length > 0) {
             questions.push({
-                text: questionText,
+                text: questionText.trim(),
                 options: options,
                 correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0,
-                explanation: explanation
+                explanation: explanation.trim()
             });
         }
     });
