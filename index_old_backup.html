@@ -70,9 +70,6 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js" defer></script>
-    <style>
-
-    </style>
 </head>
 <body>
     <div id="app">
@@ -84,11 +81,8 @@
             </div>
         </div>
 
-
-
-
-            <!-- Navigation -->
-            <nav id="navbar">
+        <!-- Navigation -->
+        <nav id="navbar">
             <div class="logo" onclick="showDashboard()">
                 <div class="logo-icon">
                     <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -206,8 +200,6 @@
                 </div>
             </div>
         </div>
-        
-
         
         <!-- Auth Pages -->
         <section id="auth-section" class="hidden">
@@ -423,7 +415,7 @@
                         <!-- Bulk Entry -->
                         <div id="method-bulk" class="method-content hidden">
                             <div class="bulk-info">
-                                <p><i class="fas fa-keyboard"></i> <strong>Mətn Girişi:</strong> Sualları aşağıdakı formatda yapışdırın:</p>
+                                <p><i class="fas fa-info-circle"></i> Sualları aşağıdakı formatda yapışdırın:</p>
                                 <div class="format-example">
                                     1. Birinci sual mətni?<br>
                                     A) Variant 1<br>
@@ -439,86 +431,48 @@
                                 <p class="bulk-warning-red"><i class="fas fa-check-double"></i> Mətni suallara çevirə basdıqdan sonra sualların mətnini və variantlarını yenidən gözdən keçirin!</p>
                             </div>
                             <textarea id="bulk-questions-text" placeholder="Sualları buraya yapışdırın..." class="text-main"></textarea>
-                            <button onclick="parseBulkQuestions()" class="btn-success w-full" style="margin-bottom: 30px;">
+                            <button onclick="parseBulkQuestions()" class="btn-success w-full">
                                 <i class="fas fa-magic"></i> Mətni Suallara Çevir
                             </button>
-
-                            <!-- File Processing Section (Moved from top to bottom) -->
-                            <div class="bulk-file-section" style="margin-top: 30px; padding-top: 30px; border-top: 2px dashed rgba(var(--primary-rgb), 0.2);">
-                                <h4 style="font-size: 1.1rem; color: var(--primary-color); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-weight: 700;">
-                                    <i class="fas fa-file-import"></i> Fayldan Sual Köçür (OCR)
-                                </h4>
-                                
-                                <div class="ai-limits-info" style="margin-bottom: 15px; background: rgba(var(--primary-rgb), 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(var(--primary-rgb), 0.1);">
-                                    <div class="limit-item" style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; color: var(--text-main); font-weight: 500;">
-                                        <i class="fas fa-file-alt" style="color: var(--primary-color);"></i>
-                                        <span>Gündəlik <strong>3 fayl</strong> emalı (Maks. 10MB, 20 səhifə)</span>
-                                    </div>
-                                    <div class="limit-item" style="display: flex; align-items: center; gap: 10px; color: var(--text-main); font-weight: 500;">
-                                        <i class="fas fa-file-upload" style="color: var(--success-color);"></i>
-                                        <span>Qalan limitiniz: <strong id="bulk-file-remaining-limit" style="color: var(--primary-color); font-size: 1.1rem;">3</strong>/3</span>
-                                    </div>
-                                </div>
-
-                                <div class="image-upload-area" id="ai-image-drop-area" style="background: var(--bg-color); border: 2px dashed rgba(var(--primary-rgb), 0.3); border-radius: 16px; padding: 30px; transition: all 0.3s ease;">
-                                    <input type="file" id="ai-question-image" accept="image/*,.pdf" class="hidden" onchange="handleAIImageSelect(this)">
-                                    <div class="upload-placeholder" onclick="document.getElementById('ai-question-image').click()" style="cursor: pointer; text-align: center;">
-                                        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 15px;">
-                                            <i class="fas fa-file-pdf" style="font-size: 2.5rem; color: #ff4757;"></i>
-                                            <i class="fas fa-file-image" style="font-size: 2.5rem; color: #374151;"></i>
-                                        </div>
-                                        <p style="font-weight: 600; color: var(--text-main); margin-bottom: 5px;">Sualların şəklini və ya PDF faylını yükləyin</p>
-                                        <p style="font-size: 0.85rem; color: var(--text-muted);">Fayldakı yazılar avtomatik oxunaraq yuxarıdakı xanaya köçürüləcək</p>
-                                        <span id="selected-image-name" class="hidden" style="display: block; margin-top: 10px; padding: 5px 12px; background: var(--primary-soft); color: var(--primary-color); border-radius: 20px; font-size: 0.85rem; font-weight: 600;"></span>
-                                    </div>
-                                    <button id="btn-remove-ai-image" class="btn-icon hidden" onclick="removeSelectedAIImage()" title="Şəkli sil" style="position: absolute; top: 10px; right: 10px; background: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: #ff4757; border: 1px solid #eee;">
-                                        <i class="fas fa-times-circle"></i>
-                                    </button>
-                                </div>
-
-                                <div class="ai-controls" style="margin-top: 20px; display: flex; justify-content: flex-end;">
-                                    <!-- Emal növü seçimi silindi (User request) -->
-                                    <button onclick="generateAIQuestionsOCR()" id="btn-process-file" class="btn-ai-generate" style="width: auto; padding: 0 35px; height: 50px; border-radius: 12px; background: var(--primary-color); color: white; font-weight: 600; display: flex; align-items: center; gap: 10px; border: none; cursor: pointer; transition: all 0.3s ease;">
-                                        <i class="fas fa-cogs"></i> Faylı Oxu və Köçür
-                                    </button>
-                                </div>
-                                <script>
-                                    // OCR only function wrapper
-                                    function generateAIQuestionsOCR() {
-                                        const aiCount = document.getElementById('ai-question-count');
-                                        if(aiCount) aiCount.value = '0'; // OCR mode
-                                        generateAIQuestions();
-                                    }
-
-                                    // Sync limit badges
-                                    setTimeout(() => {
-                                        const limitEl = document.getElementById('ai-file-remaining-limit');
-                                        const bulkLimitEl = document.getElementById('bulk-file-remaining-limit');
-                                        if(limitEl && bulkLimitEl) {
-                                            bulkLimitEl.innerText = limitEl.innerText;
-                                            const observer = new MutationObserver(() => {
-                                                bulkLimitEl.innerText = limitEl.innerText;
-                                            });
-                                            observer.observe(limitEl, { childList: true, subtree: true, characterData: true });
-                                        }
-                                    }, 1000);
-                                </script>
-                            </div>
                         </div>
 
                         <!-- AI Generation -->
                         <div id="method-ai" class="method-content hidden">
                             <div class="ai-info">
-                                    <p><i class="fas fa-robot"></i> <strong>Süni İntellekt</strong> vasitəsilə mətndən və ya xüsusi tapşırıq əsasında suallar hazırlayın.</p>
-                                    
-                                    <div class="ai-how-it-works animate-up" style="display: block; width: 100%;">
-                                    <div class="work-step" style="max-width: 100%; width: 100%; display: flex; align-items: center; gap: 20px; padding: 20px; background: rgba(var(--primary-rgb), 0.05); border: 1px solid rgba(var(--primary-rgb), 0.1); border-radius: 16px;">
-                                        <div class="step-icon" style="width: 60px; height: 60px; min-width: 60px;">
-                                            <i class="fas fa-keyboard" style="font-size: 1.5rem;"></i>
+                                <p><i class="fas fa-robot"></i> <strong>Süni İntellekt</strong> vasitəsilə mətndən və ya xüsusi tapşırıq əsasında suallar hazırlayın.</p>
+                                
+                                <div class="ai-limits-info">
+                                    <div class="limit-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Hər əməliyyat arası <strong>60 saniyə</strong> gözləmə</span>
+                                    </div>
+                                    <div class="limit-item">
+                                        <i class="fas fa-calendar-day"></i>
+                                        <span>Gündəlik <strong>5 dəfə</strong> sual yaratma limiti</span>
+                                    </div>
+                                    <div class="limit-item">
+                                        <i class="fas fa-file-alt"></i>
+                                        <span>Gündəlik <strong>3 fayl</strong> emalı (Maks. 10MB, 20 səhifə)</span>
+                                    </div>
+                                </div>
+
+                                <div class="ai-how-it-works animate-up">
+                                    <div class="work-step">
+                                        <div class="step-icon">
+                                            <i class="fas fa-keyboard"></i>
                                         </div>
                                         <div class="step-content">
-                                            <h4 style="margin-bottom: 5px; color: var(--primary-color);">Mətn və ya Tapşırıq</h4>
-                                            <p style="margin: 0; font-size: 0.95rem;">Daxil etdiyiniz mətni və ya tapşırığı (məs: "Azərbaycanın 8-ci sinif Biologiya dərsliyi üzrə KSQ sualları hazırla") süni intellekt analiz edərək yeni suallar hazırlayır.</p>
+                                            <h4>Mətn və ya Tapşırıq</h4>
+                                            <p>Daxil etdiyiniz mətni və ya tapşırığı (məs: "Azərbaycanın 8-ci sinif Biologiya dərsliyi üzrə KSQ sualları hazırla") süni intellekt analiz edərək yeni suallar hazırlayır.</p>
+                                        </div>
+                                    </div>
+                                    <div class="work-step">
+                                        <div class="step-icon">
+                                            <i class="fas fa-file-import"></i>
+                                        </div>
+                                        <div class="step-content">
+                                            <h4>Fayl Emalı</h4>
+                                            <p>PDF və ya şəkildəki testləri rəqəmsal formata çevirir və ya həmin suallar əsasında yeni testlər yaradır.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -528,9 +482,23 @@
                                 </p>
                                 <div class="ai-input-group">
                                     <label><i class="fas fa-keyboard"></i> Mətn və ya Tapşırıq:</label>
-                                    <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni və ya tapşırığı buraya daxil edin..." class="text-main"></textarea>
+                                    <textarea id="ai-context-text" placeholder="Sualların hazırlanması üçün əsas götürüləcək mətni və ya tapşırığı buraya daxil edin və ya aşağıdan sualların şəklini/PDF faylını yükləyin..." class="text-main"></textarea>
                                 </div>
-
+                                <div class="ai-input-group">
+                                    <label><i class="fas fa-file-import"></i> Fayl Emalı:</label>
+                                    <div class="image-upload-area" id="ai-image-drop-area">
+                                        <input type="file" id="ai-question-image" accept="image/*,.pdf" class="hidden" onchange="handleAIImageSelect(this)">
+                                        <div class="upload-placeholder" onclick="document.getElementById('ai-question-image').click()">
+                                            <i class="fas fa-file-pdf text-danger mr-2"></i>
+                                            <i class="fas fa-file-image"></i>
+                                            <p>Sualların şəklini və ya PDF faylını yükləyin</p>
+                                            <span id="selected-image-name" class="hidden"></span>
+                                        </div>
+                                        <button id="btn-remove-ai-image" class="btn-icon hidden" onclick="removeSelectedAIImage()" title="Şəkli sil">
+                                            <i class="fas fa-times-circle"></i>
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="ai-controls">
                                     <div class="q-count-selector">
                                         <label>Sual sayı:</label>
@@ -557,7 +525,7 @@
                                 <div class="ai-usage-info" id="ai-usage-info">
                                     <span class="limit-badge"><i class="fas fa-clock"></i> Gözləmə: <strong id="ai-cooldown-timer">0</strong>s</span>
                                     <span class="limit-badge"><i class="fas fa-list-ol"></i> Sual: <strong id="ai-remaining-limit">5</strong>/5</span>
-                                    <span class="limit-badge" style="display:none"><i class="fas fa-file-upload"></i> Fayl: <strong id="ai-file-remaining-limit">3</strong>/3</span>
+                                    <span class="limit-badge"><i class="fas fa-file-upload"></i> Fayl: <strong id="ai-file-remaining-limit">3</strong>/3</span>
                                 </div>
                                 <div id="ai-loading" class="ai-loading hidden">
                                     <div class="spinner"></div>
@@ -1844,21 +1812,113 @@
             }
         }
 
+        // URL Handler for Simplified Home Page Integration
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const action = urlParams.get('action');
+            const dashboard = urlParams.get('dashboard');
+            const aiPrompt = urlParams.get('ai_prompt');
 
+            // Wait for App & Firebase to be ready
+            let attempts = 0;
+            const maxAttempts = 50; // 10 seconds (50 * 200ms)
 
+            const checkAppReady = setInterval(() => {
+                attempts++;
+                
+                // Check if Firebase Auth and key app functions are ready
+                const isFirebaseReady = typeof firebase !== 'undefined' && firebase.auth();
+                const isAppReady = typeof window.showCreatePrivateQuiz === 'function';
 
+                if (isFirebaseReady && isAppReady) {
+                    clearInterval(checkAppReady);
+                    
+                    firebase.auth().onAuthStateChanged(function(user) {
+                        if (user) {
+                            // Dashboard Redirect
+                            if (dashboard === 'true' || action === 'dashboard') {
+                                if (typeof showTeacherDashboard === 'function') showTeacherDashboard();
+                            }
+                            
+                            // Reports Redirect
+                            if (action === 'reports') {
+                                if (typeof showTeacherDashboard === 'function') {
+                                    showTeacherDashboard();
+                                    // Try to switch to reports tab
+                                    setTimeout(() => {
+                                        const reportsBtn = document.getElementById('btn-show-teacher-reports');
+                                        if(reportsBtn) reportsBtn.click();
+                                    }, 800);
+                                }
+                            }
 
+                            // Manual Quiz Creation Redirect
+                            if (action === 'create_manual') {
+                                showCreatePrivateQuiz();
+                            }
 
-
-
-
-
+                            // AI Quiz Creation Redirect
+                            if (action === 'create_quiz' && aiPrompt) {
+                                showCreatePrivateQuiz();
+                                
+                                // Automate AI Prompt Insertion
+                                // We need to wait for the modal/section to be fully visible
+                                let aiAttempts = 0;
+                                const automateAI = setInterval(() => {
+                                    aiAttempts++;
+                                    const aiBtn = document.querySelector('button[onclick*="showAiGenerator"]'); // Assuming button exists
+                                    // Or try to find the AI toggle/button by text content if ID/onclick is unknown
+                                    // Based on app.js analysis, we need to find how AI is triggered. 
+                                    // But since I cannot see inside 'showCreatePrivateQuiz' fully, I'll try generic approach.
                                     
-
-
-
-
-
+                                    // Fallback: Check if there is an input for topic in the main form or a button to open AI
+                                    // Looking at app.js snippet, there is 'ai-loading' div, so AI is integrated.
+                                    
+                                    // Let's try to find the button that opens AI modal
+                                    const buttons = Array.from(document.querySelectorAll('button'));
+                                    const targetBtn = buttons.find(b => b.textContent.includes('Süni İntellekt') || b.textContent.includes('AI') || (b.onclick && b.onclick.toString().includes('Ai')));
+                                    
+                                    if (targetBtn) {
+                                        clearInterval(automateAI);
+                                        targetBtn.click();
+                                        
+                                        // Now wait for input
+                                        setTimeout(() => {
+                                            const aiInput = document.querySelector('input[placeholder*="mövzu"], textarea[placeholder*="mövzu"], #ai-topic-input');
+                                            if (aiInput) {
+                                                aiInput.value = decodeURIComponent(aiPrompt);
+                                                aiInput.focus();
+                                                // Optional: Trigger generation automatically
+                                                // const generateBtn = ...
+                                            }
+                                        }, 500);
+                                    } else if (aiAttempts > 20) {
+                                        clearInterval(automateAI);
+                                        // Fallback UI if automation fails
+                                        const reminder = document.createElement('div');
+                                        reminder.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #4f46e5; color: white; padding: 20px; border-radius: 15px; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: slideIn 0.5s ease; max-width: 300px;';
+                                        reminder.innerHTML = `
+                                            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:10px;">
+                                                <h4 style="margin:0; font-size:16px;">Süni İntellekt Tapşırığı</h4>
+                                                <button onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:white; cursor:pointer; font-size:18px;">&times;</button>
+                                            </div>
+                                            <p style="margin:0 0 15px 0; font-size:14px; opacity:0.9;">Mövzu: <strong>${decodeURIComponent(aiPrompt)}</strong></p>
+                                            <div style="display:flex; gap:10px;">
+                                                <button onclick="navigator.clipboard.writeText('${decodeURIComponent(aiPrompt)}'); this.innerText='Kopyalandı!'" style="flex:1; background: white; color: #4f46e5; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-weight:600; font-size:13px;">Kopyala</button>
+                                            </div>
+                                        `;
+                                        document.body.appendChild(reminder);
+                                    }
+                                }, 500);
+                            }
+                        }
+                    });
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkAppReady);
+                    console.error("App initialization timeout");
+                }
+            }, 200);
+        });
     </script>
 
     <script src="app.js?v=6.7" defer></script>

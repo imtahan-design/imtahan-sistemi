@@ -8,6 +8,7 @@
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <style>
@@ -57,6 +58,15 @@
             <span style="color:#64748b">Admin Panel (Serverə qoşulur)</span>
         </div>
         <div style="display:flex; align-items:center; gap:12px;">
+            <div id="user-info" style="display:none; align-items:center; gap:8px; background:white; padding:8px 12px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                <i class="fas fa-user-circle" style="color:var(--primary);"></i>
+                <span id="user-email" style="font-size:0.9rem; font-weight:600;">user@email.com</span>
+                <button onclick="logout()" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:1.1rem;" title="Çıxış"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+            <button id="btn-login" class="save-btn" style="background:var(--primary);" onclick="showLoginModal()">
+                <i class="fas fa-sign-in-alt"></i> Daxil Ol
+            </button>
+            
             <div id="status-indicator" class="server-status">
                 <i class="fas fa-circle-xmark"></i> Server Offline (Serveri işə salın)
             </div>
@@ -103,6 +113,18 @@
                     <p>Xəbərlər yüklənir...</p>
                 </div>
             </div>
+        </div>
+        
+        <!-- SEARCH & EDIT SECTION -->
+        <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <h3>🔍 Sual Axtar və Düzəliş Et</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="text" id="search-q-text" placeholder="Axtarılacaq sual mətni (və ya hissəsi)..." style="flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <button onclick="searchQuestion()" id="btn-search-question" class="save-btn" style="background: #8b5cf6; min-width: 120px;">
+                    <i class="fas fa-search"></i> Axtar
+                </button>
+            </div>
+            <div id="search-results" style="display: grid; gap: 20px;"></div>
         </div>
     </div>
 
@@ -218,6 +240,24 @@
   </div>
 </div>
 
+<!-- Login Modal -->
+<div id="login-modal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">🔑 Admin Girişi</h3>
+        <p style="color:#666; font-size:0.9rem;">Düzəliş etmək üçün hesabınıza daxil olun.</p>
+        <div class="form-group">
+            <input type="email" id="login-email" placeholder="Email" style="width:100%; padding:12px;">
+        </div>
+        <div class="form-group">
+            <input type="password" id="login-password" placeholder="Şifrə" style="width:100%; padding:12px;">
+        </div>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
+            <button onclick="closeLoginModal()" class="save-btn" style="background:#cbd5e1; color:#333;">Ləğv et</button>
+            <button onclick="performLogin()" class="save-btn" style="background:var(--primary);">Daxil Ol</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // Firebase Configuration
     const firebaseConfig = {
@@ -254,6 +294,60 @@
     }
 
     // Serverin işlək olduğunu yoxlayaq
+    // Auth State Observer
+    firebase.auth().onAuthStateChanged((user) => {
+        const loginBtn = document.getElementById('btn-login');
+        const userInfo = document.getElementById('user-info');
+        const userEmail = document.getElementById('user-email');
+
+        if (user) {
+            loginBtn.style.display = 'none';
+            userInfo.style.display = 'flex';
+            userEmail.textContent = user.email;
+            console.log("User logged in:", user.email);
+        } else {
+            loginBtn.style.display = 'block';
+            userInfo.style.display = 'none';
+            console.log("User logged out");
+        }
+    });
+
+    function showLoginModal() {
+        document.getElementById('login-modal').style.display = 'flex';
+    }
+
+    function closeLoginModal() {
+        document.getElementById('login-modal').style.display = 'none';
+    }
+
+    async function performLogin() {
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-password').value;
+        
+        if (!email || !pass) {
+            alert('Email və şifrəni daxil edin!');
+            return;
+        }
+
+        try {
+            await firebase.auth().signInWithEmailAndPassword(email, pass);
+            closeLoginModal();
+            alert('✅ Uğurla daxil oldunuz!');
+        } catch (error) {
+            console.error(error);
+            alert('❌ Giriş xətası: ' + error.message);
+        }
+    }
+
+    async function logout() {
+        try {
+            await firebase.auth().signOut();
+            alert('Çıxış edildi.');
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     async function checkServer() {
         const status = document.getElementById('status-indicator');
         try {
@@ -738,6 +832,148 @@
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalText;
+        }
+    }
+
+    // --- SUAL AXTARIŞ VƏ DÜZƏLİŞ SİSTEMİ ---
+    async function searchQuestion() {
+        const searchText = document.getElementById('search-q-text').value.trim();
+        const resultsDiv = document.getElementById('search-results');
+        const btn = document.getElementById('btn-search-question');
+        
+        if (!searchText) {
+            alert("Axtarış üçün mətn daxil edin!");
+            return;
+        }
+
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Axtarılır...';
+        btn.disabled = true;
+        resultsDiv.innerHTML = '';
+
+        try {
+            // Bütün kateqoriyaları gətir
+            const snapshot = await db.collection('categories').get();
+            let foundCount = 0;
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.questions && Array.isArray(data.questions)) {
+                    data.questions.forEach((q, index) => {
+                        // Sual mətni və ya variantlarda axtarış
+                        const qText = q.text || q.question || "";
+                        const options = q.options || [];
+                        const matchText = (qText + " " + options.join(" ")).toLowerCase();
+                        
+                        if (matchText.includes(searchText.toLowerCase())) {
+                            renderQuestionEditor(doc.id, index, q, data.name, resultsDiv);
+                            foundCount++;
+                        }
+                    });
+                }
+            });
+
+            if (foundCount === 0) {
+                resultsDiv.innerHTML = '<div style="padding:10px; color: #64748b;">Heç bir nəticə tapılmadı.</div>';
+            }
+        } catch (error) {
+            console.error("Axtarış xətası:", error);
+            alert("Axtarış zamanı xəta baş verdi: " + error.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    function renderQuestionEditor(docId, index, q, categoryName, container) {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.style.border = '1px solid #e2e8f0';
+        div.style.padding = '15px';
+        
+        // Correct index/option id handling
+        let currentCorrect = 0;
+        if (q.correctIndex !== undefined) currentCorrect = q.correctIndex;
+        else if (q.correct_option_id !== undefined) currentCorrect = q.correct_option_id;
+
+        const qText = q.text || q.question || "";
+        const opts = q.options || ["", "", "", ""];
+
+        div.innerHTML = `
+            <div style="margin-bottom:10px; font-weight:bold; color:#2563eb;">
+                ${categoryName} - Sual #${index + 1}
+            </div>
+            <div class="form-group">
+                <label>Sual:</label>
+                <textarea id="edit-q-${docId}-${index}" rows="2" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px;">${qText}</textarea>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div class="form-group"><label style="font-size:0.8rem; color:#666; margin-bottom:2px;">A (Sol-Yuxarı)</label><input id="edit-opt0-${docId}-${index}" value="${opts[0] || ''}" placeholder="A"></div>
+                <div class="form-group"><label style="font-size:0.8rem; color:#666; margin-bottom:2px;">B (Sağ-Yuxarı)</label><input id="edit-opt1-${docId}-${index}" value="${opts[1] || ''}" placeholder="B"></div>
+                <div class="form-group"><label style="font-size:0.8rem; color:#666; margin-bottom:2px;">C (Sol-Aşağı)</label><input id="edit-opt2-${docId}-${index}" value="${opts[2] || ''}" placeholder="C"></div>
+                <div class="form-group"><label style="font-size:0.8rem; color:#666; margin-bottom:2px;">D (Sağ-Aşağı)</label><input id="edit-opt3-${docId}-${index}" value="${opts[3] || ''}" placeholder="D"></div>
+            </div>
+            <div class="form-group">
+                <label>Düzgün cavab:</label>
+                <select id="edit-correct-${docId}-${index}" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; background:white;">
+                    <option value="0" ${currentCorrect == 0 ? 'selected' : ''}>A (Sol-Yuxarı)</option>
+                    <option value="1" ${currentCorrect == 1 ? 'selected' : ''}>B (Sağ-Yuxarı)</option>
+                    <option value="2" ${currentCorrect == 2 ? 'selected' : ''}>C (Sol-Aşağı)</option>
+                    <option value="3" ${currentCorrect == 3 ? 'selected' : ''}>D (Sağ-Aşağı)</option>
+                </select>
+            </div>
+             <div class="form-group">
+                <label>İzah:</label>
+                <textarea id="edit-expl-${docId}-${index}" rows="2" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px;">${q.explanation || ""}</textarea>
+            </div>
+            <button onclick="saveQuestionEdit('${docId}', ${index})" class="save-btn" style="background:#059669; width:100%;">
+                <i class="fas fa-save"></i> Yadda Saxla
+            </button>
+        `;
+        container.appendChild(div);
+    }
+
+    async function saveQuestionEdit(docId, index) {
+        if(!confirm("Dəyişiklikləri yadda saxlamaq istədiyinizə əminsiniz?")) return;
+
+        const qText = document.getElementById(`edit-q-${docId}-${index}`).value;
+        const opt0 = document.getElementById(`edit-opt0-${docId}-${index}`).value;
+        const opt1 = document.getElementById(`edit-opt1-${docId}-${index}`).value;
+        const opt2 = document.getElementById(`edit-opt2-${docId}-${index}`).value;
+        const opt3 = document.getElementById(`edit-opt3-${docId}-${index}`).value;
+        const correct = parseInt(document.getElementById(`edit-correct-${docId}-${index}`).value);
+        const expl = document.getElementById(`edit-expl-${docId}-${index}`).value;
+
+        try {
+            const payload = {
+                docId: docId,
+                index: index,
+                questionData: {
+                    text: qText,
+                    question: qText,
+                    options: [opt0, opt1, opt2, opt3],
+                    correctIndex: correct,
+                    correct_option_id: correct,
+                    explanation: expl
+                }
+            };
+
+            const response = await apiFetch('/api/admin/update-question', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert("✅ Düzəliş yadda saxlandı!");
+            } else {
+                throw new Error(result.message || "Naməlum xəta");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("❌ Xəta: " + e.message);
         }
     }
 </script>

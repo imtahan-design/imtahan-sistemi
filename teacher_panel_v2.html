@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Müəllim Paneli - Sadə və Rahat</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #16a34a;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Top Header */
+        header {
+            width: 100%;
+            background: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
+        p.subtitle { margin: 5px 0 0 0; color: var(--secondary); font-size: 0.9rem; }
+
+        /* Main Menu - Action Cards */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 20px;
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        .action-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .action-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.1);
+        }
+
+        .action-card i {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .action-card h2 { margin: 0; font-size: 1.25rem; }
+        .action-card p { color: var(--secondary); font-size: 0.9rem; margin-top: 8px; }
+
+        /* View Section */
+        .section {
+            display: none;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section.active { display: block; }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Simple Form */
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-main {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .btn-main:hover { background: #1d4ed8; }
+
+        /* Help Box */
+        .help-box {
+            background: #eff6ff;
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+            color: #1e40af;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <h1>Müəllim Paneli</h1>
+            <p class="subtitle">Nə etmək istəyirsiniz? Aşağıdan birini seçin.</p>
+        </div>
+    </header>
+
+    <div class="container" id="main-menu">
+        <div class="action-grid">
+            <!-- Sual Əlavə Et -->
+            <div class="action-card" onclick="openSection('add-question-section')">
+                <i class="fas fa-plus-circle" style="color: #16a34a;"></i>
+                <h2>Yeni Sual Paylaş</h2>
+                <p>Bazaya yeni test sualı əlavə edin.</p>
+            </div>
+
+            <!-- AI Sual Yarat -->
+            <div class="action-card" onclick="openSection('ai-section')">
+                <i class="fas fa-robot" style="color: #8b5cf6;"></i>
+                <h2>AI ilə Sual Yarat</h2>
+                <p>Süni intellekt vasitəsilə mətndən suallar hazırlayın.</p>
+            </div>
+
+            <!-- Sual Düzəlt -->
+            <div class="action-card" onclick="openSection('search-section')">
+                <i class="fas fa-search"></i>
+                <h2>Sualda Səhv Düzəlt</h2>
+                <p>Mövcud sualları tapın və redaktə edin.</p>
+            </div>
+
+            <!-- Xəbər Yaz -->
+            <div class="action-card" onclick="openSection('news-section')">
+                <i class="fas fa-edit"></i>
+                <h2>Xəbər Paylaş</h2>
+                <p>Sayta yeni elan və ya xəbər əlavə edin.</p>
+            </div>
+
+            <!-- Telegram Test -->
+            <div class="action-card" onclick="openSection('telegram-section')">
+                <i class="fab fa-telegram-plane"></i>
+                <h2>Telegrama Test Göndər</h2>
+                <p>Kanala dərhal test sessiyası başladın.</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; color: var(--secondary); font-size: 0.8rem; margin-top: 20px;">
+            Daxil olub: <strong>admin@imtahan.site</strong> | <a href="#" style="color: var(--primary);">Çıxış</a>
+        </div>
+    </div>
+
+    <!-- SECTIONS -->
+    <div class="container">
+        <!-- Add Question Section -->
+        <div id="add-question-section" class="section">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i> Geri qayıt</button>
+            <h2>📝 Yeni Sual Əlavə Et</h2>
+            <div class="help-box">
+                <i class="fas fa-magic"></i>
+                <span>Sualı və variantları yazın, düzgün cavabı qeyd edib "Bazaya Yaz" düyməsini sıxın.</span>
+            </div>
+            
+            <div class="form-group">
+                <label>Sualın Mətni</label>
+                <textarea id="q-text" rows="3" placeholder="Sualı bura yazın..."></textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div class="form-group">
+                    <label>A variantı (Sol-Yuxarı)</label>
+                    <input type="text" id="q-opt0" placeholder="Variant A">
+                </div>
+                <div class="form-group">
+                    <label>B variantı (Sağ-Yuxarı)</label>
+                    <input type="text" id="q-opt1" placeholder="Variant B">
+                </div>
+                <div class="form-group">
+                    <label>C variantı (Sol-Aşağı)</label>
+                    <input type="text" id="q-opt2" placeholder="Variant C">
+                </div>
+                <div class="form-group">
+                    <label>D variantı (Sağ-Aşağı)</label>
+                    <input type="text" id="q-opt3" placeholder="Variant D">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>Düzgün Cavab</label>
+                    <select id="q-correct">
+                        <option value="0">A variantı</option>
+                        <option value="1">B variantı</option>
+                        <option value="2">C variantı</option>
+                        <option value="3">D variantı</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Kateqoriya</label>
+                    <input type="text" id="q-category" placeholder="Məs: Dövlət Qulluğu" value="Ümumi">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>İzah (Könüllü)</label>
+                <input type="text" id="q-explanation" placeholder="Sualın izahı (cavabdan sonra görünür)">
+            </div>
+
+            <button class="btn-main" onclick="saveManualQuestion()">Bazaya Yaz</button>
+        </div>
+
+        <!-- AI Section -->
+        <div id="ai-section" class="section">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i> Geri qayıt</button>
+            <h2>🤖 AI ilə Sual Hazırla</h2>
+            <div class="help-box">
+                <i class="fas fa-sparkles"></i>
+                <span>Mövzu mətni daxil edin və AI sizin üçün test sualları yaratsın (Gündəlik limit: 5).</span>
+            </div>
+            
+            <div class="form-group">
+                <label>Mövzu Mətni və ya Konspekt</label>
+                <textarea id="ai-context" rows="6" placeholder="Məsələn: Azərbaycanın coğrafi mövqeyi haqqında 5 sual hazırla..."></textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div class="form-group">
+                    <label>Sual Sayı</label>
+                    <select id="ai-count">
+                        <option value="3">3 Sual</option>
+                        <option value="5" selected>5 Sual</option>
+                        <option value="10">10 Sual</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Çətinlik Səviyyəsi</label>
+                    <select id="ai-difficulty">
+                        <option value="easy">Asan</option>
+                        <option value="medium" selected>Orta</option>
+                        <option value="hard">Çətin</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn-main" id="btn-ai-generate" onclick="generateAIQuestionsLocal()">
+                <i class="fas fa-wand-magic-sparkles"></i> Sualları Hazırla
+            </button>
+
+            <div id="ai-results" style="margin-top: 30px; display: none;">
+                <h3>Hazırlanmış Suallar</h3>
+                <div id="ai-questions-list"></div>
+                <button class="btn-main" style="margin-top: 20px; background: var(--success);" onclick="saveAIQuestions()">Hər Şey Doğrudur, Bazaya Yaz</button>
+            </div>
+        </div>
+
+        <!-- News Section -->
+        <div id="news-section" class="section">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i> Geri qayıt</button>
+            <h2>📝 Yeni Xəbər Paylaş</h2>
+            <div class="help-box">
+                <i class="fas fa-info-circle"></i>
+                <span>Burada yazdığınız xəbər həm saytda, həm də Google axtarışlarında görünəcək.</span>
+            </div>
+            <div class="form-group">
+                <label>Xəbərin Başlığı</label>
+                <input type="text" placeholder="Qısa və aydın başlıq yazın...">
+            </div>
+            <div class="form-group">
+                <label>Xəbərin Mətni</label>
+                <textarea rows="6" placeholder="Xəbər haqqında ətraflı məlumat..."></textarea>
+            </div>
+            <button class="btn-main">Paylaş</button>
+        </div>
+
+        <!-- Search Section -->
+        <div id="search-section" class="section">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i> Geri qayıt</button>
+            <h2>🔍 Sual Axtar və Düzəlt</h2>
+            <div class="help-box">
+                <i class="fas fa-lightbulb"></i>
+                <span>Sualın mətnindən bir neçə söz yazın ki, onu tapa bilək.</span>
+            </div>
+            <div class="form-group">
+                <input type="text" placeholder="Axtarılacaq sual...">
+            </div>
+            <button class="btn-main" style="background: var(--secondary);">Tap</button>
+            
+            <div style="margin-top: 30px; text-align: center; color: #94a3b8;">
+                <p>Nəticələr burada görünəcək...</p>
+            </div>
+        </div>
+
+        <!-- Telegram Section -->
+        <div id="telegram-section" class="section">
+            <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i> Geri qayıt</button>
+            <h2>🚀 Telegramda Test Başlat</h2>
+            <div class="help-box">
+                <i class="fas fa-bolt"></i>
+                <span>Bu düyməyə basdıqda kanalda dərhal yeni testlər paylaşılacaq.</span>
+            </div>
+            <div class="form-group">
+                <label>Neçə ədəd sual paylaşılsın?</label>
+                <select>
+                    <option value="10">10 Sual</option>
+                    <option value="20">20 Sual</option>
+                    <option value="30" selected>30 Sual</option>
+                    <option value="50">50 Sual</option>
+                </select>
+            </div>
+            <button class="btn-main" style="background: #229ED9;">Testləri Göndər</button>
+        </div>
+    </div>
+
+    <script>
+        function openSection(id) {
+            document.getElementById('main-menu').style.display = 'none';
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function goBack() {
+            document.getElementById('main-menu').style.display = 'block';
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        }
+
+        // AI Sual Yaratma Simulyasiyası (Test üçün)
+        async function generateAIQuestionsLocal() {
+            const context = document.getElementById('ai-context').value.trim();
+            const btn = document.getElementById('btn-ai-generate');
+            
+            if (!context) {
+                alert('Zəhmət olmasa mövzu mətni daxil edin.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Hazırlanır...';
+
+            // Simulyasiya üçün 2 saniyə gözləyirik
+            setTimeout(() => {
+                const resultsDiv = document.getElementById('ai-results');
+                const listDiv = document.getElementById('ai-questions-list');
+                listDiv.innerHTML = '';
+
+                // Nümunə suallar yaradırıq (Test üçün)
+                const mockQuestions = [
+                    { text: "Azərbaycanın paytaxtı haradır?", options: ["Gəncə", "Bakı", "Sumqayıt", "Naxçıvan"], correct: 1 },
+                    { text: "Azərbaycanın ən böyük gölü hansıdır?", options: ["Göy-göl", "Sarısu", "Xəzər dənizi", "Araz"], correct: 2 }
+                ];
+
+                mockQuestions.forEach((q, idx) => {
+                    const qDiv = document.createElement('div');
+                    qDiv.style.padding = '15px';
+                    qDiv.style.borderBottom = '1px solid #eee';
+                    qDiv.innerHTML = `
+                        <p><strong>${idx + 1}. ${q.text}</strong></p>
+                        <ul style="list-style: none; padding: 0;">
+                            ${q.options.map((opt, i) => `<li style="color: ${i === q.correct ? 'green' : 'black'}">${String.fromCharCode(65 + i)}) ${opt} ${i === q.correct ? '✓' : ''}</li>`).join('')}
+                        </ul>
+                    `;
+                    listDiv.appendChild(qDiv);
+                });
+
+                resultsDiv.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Yenidən Hazırla';
+                alert('Süni intellekt sualları hazırladı! (Test rejimi)');
+            }, 2000);
+        }
+
+        function saveAIQuestions() {
+            alert('Suallar uğurla bazaya yazıldı! (Test rejimi)');
+            goBack();
+        }
+
+        function saveManualQuestion() {
+            const text = document.getElementById('q-text').value;
+            if(!text) {
+                alert('Sual mətnini daxil edin!');
+                return;
+            }
+            alert('Sual uğurla bazaya əlavə edildi!');
+            goBack();
+        }
+    </script>
+</body>
+</html>

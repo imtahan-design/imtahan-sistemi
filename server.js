@@ -11,11 +11,31 @@ const mammoth = require('mammoth');
 const { IgApiClient } = require('instagram-private-api');
 const telegramBot = require('./telegram_bot'); // Telegram Bot əlavə edildi
 const { exec, spawn } = require('child_process');
+const { initializeApp } = require('firebase/app');
+const { getFirestore, collection, getDocs, doc, getDoc, updateDoc } = require('firebase/firestore');
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.static(path.join(__dirname, '.')));
+
+// Firebase Configuration (Matching telegram_bot.js)
+const firebaseConfig = {
+    apiKey: "AIzaSyAak_eY0WNpY7cqAEuWEBG9wBDhg1NPw_0",
+    authDomain: "imtahansistemi-17659.firebaseapp.com",
+    projectId: "imtahansistemi-17659",
+    storageBucket: "imtahansistemi-17659.firebasestorage.app",
+    messagingSenderId: "715396853166",
+    appId: "1:715396853166:web:9829b853e5e572de4d2c3f"
+};
+let fbApp, db;
+try {
+    fbApp = initializeApp(firebaseConfig);
+    db = getFirestore(fbApp);
+    console.log("✅ Firebase initialized in server.js");
+} catch (e) {
+    console.warn("Firebase init warning:", e.message);
+}
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -179,6 +199,47 @@ app.post('/api/telegram/add-question', (req, res) => {
         res.json({ success: true, message: 'Sual bazaya əlavə edildi!' });
     } else {
         res.status(500).json({ success: false, message: 'Sualı yadda saxlamaq mümkün olmadı.' });
+    }
+});
+
+// Admin: Sualı Firestore-da yenilə
+app.post('/api/admin/update-question', async (req, res) => {
+    try {
+        const { docId, index, questionData } = req.body;
+        
+        if (!docId || index == null || !questionData) {
+            return res.status(400).json({ success: false, message: 'Çatışmayan məlumatlar.' });
+        }
+
+        if (!db) return res.status(503).json({ success: false, message: 'Database qoşulmayıb.' });
+
+        const docRef = doc(db, 'categories', docId);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+            return res.status(404).json({ success: false, message: 'Kateqoriya tapılmadı.' });
+        }
+
+        const data = docSnap.data();
+        const questions = data.questions || [];
+
+        if (index < 0 || index >= questions.length) {
+            return res.status(400).json({ success: false, message: 'Sual indeksi səhvdir.' });
+        }
+
+        // Sualı yenilə
+        questions[index] = {
+            ...questions[index],
+            ...questionData,
+            updatedAt: new Date().toISOString()
+        };
+
+        await updateDoc(docRef, { questions: questions });
+        
+        res.json({ success: true, message: 'Sual uğurla yeniləndi.' });
+    } catch (error) {
+        console.error("Update Question Error:", error);
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 

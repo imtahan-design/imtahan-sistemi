@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İmtahan.site - Yeni Ana Səhifə Konsepti</title>
+    
+    <!-- Dependencies -->
+    <link rel="stylesheet" href="style.css?v=6.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js" defer></script>
+    
+    <!-- App Script -->
+    <script src="app.js?v=6.7" defer></script>
+
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* Minimal Header */
+        .simple-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: white;
+            opacity: 0.9;
+            text-decoration: none;
+        }
+
+        .brand-logo svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* Auth Container */
+        .nav-auth-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .auth-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .auth-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .auth-btn.primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        }
+
+        /* Hero Section */
+        .hero-centered {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            max-width: 800px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 50px;
+            max-width: 600px;
+        }
+
+        /* Smart Input Launcher */
+        .smart-input-wrapper {
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            margin-bottom: 60px;
+        }
+
+        .smart-input {
+            width: 100%;
+            background: var(--card-bg);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 25px;
+            padding-right: 60px;
+            border-radius: 20px;
+            color: white;
+            font-size: 1.1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .smart-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 10px 40px rgba(79, 70, 229, 0.2);
+        }
+
+        .action-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 10px;
+            transition: transform 0.2s;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        /* Quick Action Cards */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .action-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 20px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .action-card:hover {
+            background: var(--card-bg);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(79, 70, 229, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            margin: 0;
+        }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 0;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="simple-header">
+        <a href="#" class="brand-logo">
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="200" height="200" rx="40" fill="#4f46e5" fill-opacity="0.1"/>
+                <path d="M70 100 L90 120 L130 80" stroke="#4f46e5" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            imtahan.site
+        </a>
+
+        <div class="nav-auth-container" id="dynamic-auth-ui">
+            <!-- Dynamically filled by script -->
+            <button onclick="window.location.href='index.html'" class="auth-btn">
+                <i class="fas fa-sign-in-alt"></i> Giriş / Əsas Sayt
+            </button>
+        </div>
+    </header>
+
+    <main class="hero-centered">
+        <h1 class="hero-title">
+            Sual hazırlamaq heç vaxt bu qədər asan olmayıb
+        </h1>
+        <p class="hero-subtitle">
+            Sadəcə mövzunu yazın, qalanını Süni İntellekt həll etsin.
+        </p>
+
+        <div class="smart-input-wrapper">
+            <input type="text" 
+                   class="smart-input" 
+                   id="ai-prompt-input" 
+                   placeholder="Mövzunu bura yazın (məs: İsim, Fizika qanunları...)"
+                   onkeypress="if(event.key === 'Enter') handleSmartAction()">
+            <button class="action-btn" onclick="handleSmartAction()">
+                <i class="fas fa-magic"></i>
+            </button>
+        </div>
+
+        <div class="quick-actions">
+            <div onclick="redirectAction('create_manual')" class="action-card">
+                <div class="card-icon"><i class="fas fa-plus"></i></div>
+                <h3 class="card-title">Əl ilə Sınaq Yarat</h3>
+                <p class="card-desc">Sual bankından və ya öz suallarınızla test tərtib edin.</p>
+            </div>
+
+            <div onclick="redirectAction('reports')" class="action-card">
+                <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+                <h3 class="card-title">Nəticələr və Hesabatlar</h3>
+                <p class="card-desc">Şagirdlərinizin imtahan nəticələrini və statistikasını izləyin.</p>
+            </div>
+
+            <div onclick="redirectAction('dashboard')" class="action-card">
+                <div class="card-icon"><i class="fas fa-th-large"></i></div>
+                <h3 class="card-title">İdarəetmə Paneli</h3>
+                <p class="card-desc">Sınaqları aktivləşdirin, şagirdləri idarə edin.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Needed for Auth/Modals to work if we want full functionality here, 
+         but for a "concept" file that redirects to index.html with params, 
+         we can keep it simple. -->
+    
+    <!-- However, to support login HERE, we need the auth section. 
+         But reusing index.html's auth logic in a new file is complex because of ID conflicts if we copy-paste.
+         For this concept, I'll redirect to index.html with actions. -->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check auth state for header
+            const simpleAuthContainer = document.getElementById('dynamic-auth-ui');
+            
+            const waitForFirebase = setInterval(() => {
+                if (typeof firebase !== 'undefined' && firebase.auth()) {
+                    clearInterval(waitForFirebase);
+                    
+                    firebase.auth().onAuthStateChanged(function(user) {
+                        if (user) {
+                            simpleAuthContainer.innerHTML = `
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="color: white; font-weight: 500; font-size: 0.9rem;">${user.displayName || (user.email ? user.email.split('@')[0] : 'İstifadəçi')}</span>
+                                    <button onclick="redirectAction('dashboard')" class="auth-btn primary" title="Müəllim Paneli" style="padding: 8px 15px;">
+                                        <i class="fas fa-chalkboard-teacher"></i>
+                                    </button>
+                                </div>
+                            `;
+                        } else {
+                            simpleAuthContainer.innerHTML = `
+                                <button onclick="window.location.href='index.html'" class="auth-btn">
+                                    <i class="fas fa-sign-in-alt"></i> Giriş
+                                </button>
+                                <button onclick="window.location.href='index.html'" class="auth-btn primary">
+                                    <i class="fas fa-rocket"></i> Başla
+                                </button>
+                            `;
+                        }
+                    });
+                }
+            }, 500);
+        });
+
+        function handleSmartAction() {
+            const prompt = document.getElementById('ai-prompt-input').value;
+            if (!prompt.trim()) return;
+
+            // Redirect to index.html with special params
+            // This is how we "solve" the redirection - by intentionally redirecting 
+            // from this concept page to the main app with instructions.
+            const url = `index.html?action=create_quiz&ai_prompt=${encodeURIComponent(prompt)}`;
+            window.location.href = url;
+        }
+
+        function redirectAction(action) {
+            window.location.href = `index.html?action=${action}`;
+        }
+    </script>
+</body>
+</html>
