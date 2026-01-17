@@ -2722,8 +2722,11 @@ window.parseBulkQuestions = function() {
         
         lines.forEach((line) => {
             // İzah və ya Cavab sətirlərini yoxlayırıq (Regex ilə daha dəqiqdir)
-            const isAnswerLine = /^(?:cavab|doğru)\s*:/i.test(line);
-            const isExplanationLine = /^[iİ]zah\s*:/i.test(line);
+            const ansRegex = /^\s*(?:düzgün\s+)?(?:cavab|correct|answer|doğru\s+cavab|izahlı\s+cavab)\s*[:\-]?\s*(.+)$/i;
+            const expRegex = /^(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i;
+            
+            const mAns = line.match(ansRegex);
+            const mExp = line.match(expRegex);
             const variantMatch = line.match(/^[A-J][\s.)\-:]{1,3}/i);
             
             // Ayırıcı sətirləri (---) və boş sətirləri keçirik
@@ -2732,24 +2735,32 @@ window.parseBulkQuestions = function() {
             if (variantMatch && !collectingExplanation) {
                 collectingOptions = true;
                 options.push(line.substring(variantMatch[0].length).trim());
-            } else if (isAnswerLine) {
+            } else if (mAns) {
                 collectingOptions = false;
                 collectingExplanation = false;
-                const match = line.match(/^(?:cavab|doğru)\s*:\s*([A-J\d]+)/i);
-                if (match && match[1]) {
-                    const ansChar = match[1].trim().toUpperCase();
-                    const charCode = ansChar.charCodeAt(0);
-                    if (charCode >= 65 && charCode <= 90) { // A-Z
-                        correctIndex = charCode - 65;
-                    } else if (!isNaN(ansChar)) {
-                        correctIndex = parseInt(ansChar);
+                const val = mAns[1].trim();
+                const lm = val.match(/^([A-J])[\)\.]*\s*(.*)$/i);
+                if (lm) {
+                    correctIndex = lm[1].toUpperCase().charCodeAt(0) - 65;
+                    
+                    // Qalan hissədə izah varmı?
+                    const rest = lm[2].trim();
+                    if (rest) {
+                        const expInRest = rest.match(/(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i);
+                        if (expInRest) {
+                            explanation = expInRest[2].trim();
+                            collectingExplanation = true;
+                        }
                     }
+                } else {
+                    // Əgər variant tapılmadısa, mətnə görə axtar
+                    const idx = options.findIndex(o => o.toLowerCase().includes(val.toLowerCase()) || val.toLowerCase().includes(o.toLowerCase()));
+                    if (idx >= 0) correctIndex = idx;
                 }
-            } else if (isExplanationLine) {
+            } else if (mExp) {
                 collectingOptions = false;
                 collectingExplanation = true;
-                // "İzah:" sözünü və ondan sonrakı boşluğu təmizləyirik
-                explanation = line.replace(/^[iİ]zah\s*:\s*/i, '').trim();
+                explanation = mExp[2].trim();
             } else if (collectingExplanation) {
                 explanation += (explanation ? "\n" : "") + line;
             } else if (!collectingOptions) {
@@ -6009,8 +6020,11 @@ window.parseAdminBulkQuestions = function() {
         
         lines.forEach((line) => {
             // İzah və ya Cavab sətirlərini yoxlayırıq (Regex ilə daha dəqiqdir)
-            const isAnswerLine = /^(?:cavab|doğru)\s*:/i.test(line);
-            const isExplanationLine = /^[iİ]zah\s*:/i.test(line);
+            const ansRegex = /^\s*(?:düzgün\s+)?(?:cavab|correct|answer|doğru\s+cavab|izahlı\s+cavab)\s*[:\-]?\s*(.+)$/i;
+            const expRegex = /^(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i;
+            
+            const mAns = line.match(ansRegex);
+            const mExp = line.match(expRegex);
             const variantMatch = line.match(/^[A-J][\s.)\-:]{1,3}/i);
             
             // Ayırıcı sətirləri (---) və boş sətirləri keçirik
@@ -6019,24 +6033,32 @@ window.parseAdminBulkQuestions = function() {
             if (variantMatch && !collectingExplanation) {
                 collectingOptions = true;
                 options.push(line.substring(variantMatch[0].length).trim());
-            } else if (isAnswerLine) {
+            } else if (mAns) {
                 collectingOptions = false;
                 collectingExplanation = false;
-                const match = line.match(/^(?:cavab|doğru)\s*:\s*([A-J\d]+)/i);
-                if (match && match[1]) {
-                    const ansChar = match[1].trim().toUpperCase();
-                    const charCode = ansChar.charCodeAt(0);
-                    if (charCode >= 65 && charCode <= 90) { // A-Z
-                        correctIndex = charCode - 65;
-                    } else if (!isNaN(ansChar)) {
-                        correctIndex = parseInt(ansChar);
+                const val = mAns[1].trim();
+                const lm = val.match(/^([A-J])[\)\.]*\s*(.*)$/i);
+                if (lm) {
+                    correctIndex = lm[1].toUpperCase().charCodeAt(0) - 65;
+                    
+                    // Qalan hissədə izah varmı?
+                    const rest = lm[2].trim();
+                    if (rest) {
+                        const expInRest = rest.match(/(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i);
+                        if (expInRest) {
+                            explanation = expInRest[2].trim();
+                            collectingExplanation = true;
+                        }
                     }
+                } else {
+                    // Əgər variant tapılmadısa, mətnə görə axtar
+                    const idx = options.findIndex(o => o.toLowerCase().includes(val.toLowerCase()) || val.toLowerCase().includes(o.toLowerCase()));
+                    if (idx >= 0) correctIndex = idx;
                 }
-            } else if (isExplanationLine) {
+            } else if (mExp) {
                 collectingOptions = false;
                 collectingExplanation = true;
-                // "İzah:" sözünü və ondan sonrakı boşluğu təmizləyirik
-                explanation = line.replace(/^[iİ]zah\s*:\s*/i, '').trim();
+                explanation = mExp[2].trim();
             } else if (collectingExplanation) {
                 explanation += (explanation ? "\n" : "") + line;
             } else if (!collectingOptions) {
