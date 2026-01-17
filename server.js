@@ -243,6 +243,148 @@ app.post('/api/admin/update-question', async (req, res) => {
     }
 });
 
+// Admin: Sualı Firestore və Telegram botundan sil
+app.post('/api/admin/delete-question', async (req, res) => {
+    try {
+        const { docId, index, questionData } = req.body;
+        
+        if (!docId || index == null) {
+            return res.status(400).json({ success: false, message: 'Çatışmayan məlumatlar.' });
+        }
+
+        // Əgər manual sualdırsa (questions.json)
+        if (docId === 'manual') {
+            if (telegramBot && typeof telegramBot.deleteQuestionByContent === 'function') {
+                const ok = telegramBot.deleteQuestionByContent(questionData);
+                if (ok) {
+                    return res.json({ success: true, message: 'Manual sual uğurla silindi.' });
+                }
+            }
+            return res.status(500).json({ success: false, message: 'Manual sualı silmək mümkün olmadı.' });
+        }
+
+        if (!db) return res.status(503).json({ success: false, message: 'Database qoşulmayıb.' });
+
+        const docRef = doc(db, 'categories', docId);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+            return res.status(404).json({ success: false, message: 'Kateqoriya tapılmadı.' });
+        }
+
+        const data = docSnap.data();
+        const questions = data.questions || [];
+
+        if (index < 0 || index >= questions.length) {
+            return res.status(400).json({ success: false, message: 'Sual indeksi səhvdir.' });
+        }
+
+        // Silinəcək sualı götür (Telegram botundan silmək üçün)
+        const deletedQuestion = questions[index];
+
+        // Sualı massivdən sil
+        questions.splice(index, 1);
+
+        // Firestore-u yenilə
+        await updateDoc(docRef, { questions: questions });
+
+        // Telegram botunun cache-indən və questions.json-dan sil
+        if (telegramBot && typeof telegramBot.deleteQuestionByContent === 'function') {
+            const botQ = {
+                question: deletedQuestion.text || deletedQuestion.question || "",
+                options: deletedQuestion.options || [],
+                correct_option_id: deletedQuestion.correctIndex !== undefined ? deletedQuestion.correctIndex : deletedQuestion.correct_option_id
+            };
+            telegramBot.deleteQuestionByContent(botQ);
+        }
+        
+        res.json({ success: true, message: 'Sual uğurla silindi.' });
+    } catch (error) {
+        console.error("Delete Question Error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Admin: Manual sualları gətir (questions.json)
+app.get('/api/admin/manual-questions', (req, res) => {
+    try {
+        const qPath = path.join(__dirname, 'questions.json');
+        if (!fs.existsSync(qPath)) return res.json([]);
+        const raw = fs.readFileSync(qPath);
+        const questions = JSON.parse(raw);
+        res.json(questions);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Admin: Bütün suallarda axtarış (Firestore + Manual)
+app.get('/api/admin/search-questions', async (req, res) => {
+    try {
+        const query = (req.query.q || "").toLowerCase().trim();
+        if (!query) return res.json({ success: true, results: [] });
+
+        const results = [];
+
+        // 1. Firestore-dan axtar
+        if (db) {
+            try {
+                const categoriesSnap = await getDocs(collection(db, 'categories'));
+                categoriesSnap.forEach(catDoc => {
+                    const catData = catDoc.data();
+                    const catName = catData.name || "Adsız Kateqoriya";
+                    const questions = catData.questions || [];
+                    
+                    questions.forEach((q, index) => {
+                        const qText = (q.text || q.question || "").toLowerCase();
+                        const options = (q.options || []).join(" ").toLowerCase();
+                        
+                        if (qText.includes(query) || options.includes(query)) {
+                            results.push({
+                                source: 'firestore',
+                                docId: catDoc.id,
+                                index: index,
+                                categoryName: catName,
+                                question: q
+                            });
+                        }
+                    });
+                });
+            } catch (e) {
+                console.error("Firestore search error:", e);
+            }
+        }
+
+        // 2. Manual suallarda axtar
+        try {
+            const qPath = path.join(__dirname, 'questions.json');
+            if (fs.existsSync(qPath)) {
+                const manualQs = JSON.parse(fs.readFileSync(qPath));
+                manualQs.forEach((q, index) => {
+                    const qText = (q.text || q.question || "").toLowerCase();
+                    const options = (q.options || []).join(" ").toLowerCase();
+                    
+                    if (qText.includes(query) || options.includes(query)) {
+                        results.push({
+                            source: 'manual',
+                            docId: 'manual',
+                            index: index,
+                            categoryName: 'Manual (questions.json)',
+                            question: q
+                        });
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Manual search error:", e);
+        }
+
+        res.json({ success: true, results });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 function normalizeText(s) {
     if (!s) return '';
     return s.replace(/\s+/g, ' ').trim();
@@ -414,6 +556,7 @@ function parseQuestionsFromText(raw, defaultCategory) {
 
     const out = [];
     const optRegex = /^\s*([A-E])[\)\.\-]\s*(.+)$/i;
+    // Cavab regex-i yeniləndi: artıq qalan mətni görməzdən gəlir
     const ansRegex = /(cavab|doğru cavab|düzgün cavab|correct|answer)\s*[:\-]\s*(.+)$/i;
     const linesAll = text.split('\n').map(l => l.trim());
     let cur = null;
@@ -465,18 +608,27 @@ function parseQuestionsFromText(raw, defaultCategory) {
         }
         if (mAns) {
             const val = mAns[2].trim();
-            const lm = val.match(/^([A-E])/i);
+            // Yalnız variant hərfini götür (məs: "C) Mətn..." -> "C")
+            const lm = val.match(/^([A-E])[\)\.]*\s*(.*)$/i);
             if (lm) {
                 cur.correct_option_id = lm[1].toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
+                
+                // Qalan hissədə izah varmı?
+                const rest = lm[2].trim();
+                const expInRest = rest.match(/(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i);
+                if (expInRest) {
+                    cur.explanation = expInRest[2].trim();
+                }
             } else {
                 const idx = cur.options.findIndex(o => toAsciiAz(o).includes(toAsciiAz(val)) || toAsciiAz(val).includes(toAsciiAz(o)));
                 if (idx >= 0) cur.correct_option_id = idx;
             }
             continue;
         }
-        if (/^(izah|şərh|açıqlama|explanation)\s*[:\-]/i.test(l)) {
-            const em = l.replace(/^(izah|şərh|açıqlama|explanation)\s*[:\-]\s*/i, '');
-            cur.explanation = em;
+        // İzah regex-i yeniləndi: "izahı" və "izahlı cavab" əlavə edildi
+        const expMatch = l.match(/^(izah|izahı|izahlı cavab|şərh|açıqlama|explanation)\s*[:\-]\s*(.*)$/i);
+        if (expMatch) {
+            cur.explanation = expMatch[2].trim();
             continue;
         }
         if (cur.options.length === 0 && !/\?\s*$/.test(cur.question)) {
