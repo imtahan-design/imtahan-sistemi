@@ -2732,10 +2732,7 @@ window.parseBulkQuestions = function() {
             // Ayırıcı sətirləri (---) və boş sətirləri keçirik
             if (line.startsWith('---') || line.startsWith('===')) return;
 
-            if (variantMatch && !collectingExplanation) {
-                collectingOptions = true;
-                options.push(line.substring(variantMatch[0].length).trim());
-            } else if (mAns) {
+            if (mAns) {
                 collectingOptions = false;
                 collectingExplanation = false;
                 const val = mAns[1].trim();
@@ -2761,6 +2758,9 @@ window.parseBulkQuestions = function() {
                 collectingOptions = false;
                 collectingExplanation = true;
                 explanation = mExp[2].trim();
+            } else if (variantMatch && !collectingExplanation) {
+                collectingOptions = true;
+                options.push(line.substring(variantMatch[0].length).trim());
             } else if (collectingExplanation) {
                 explanation += (explanation ? "\n" : "") + line;
             } else if (!collectingOptions) {
@@ -6030,10 +6030,7 @@ window.parseAdminBulkQuestions = function() {
             // Ayırıcı sətirləri (---) və boş sətirləri keçirik
             if (line.startsWith('---') || line.startsWith('===')) return;
 
-            if (variantMatch && !collectingExplanation) {
-                collectingOptions = true;
-                options.push(line.substring(variantMatch[0].length).trim());
-            } else if (mAns) {
+            if (mAns) {
                 collectingOptions = false;
                 collectingExplanation = false;
                 const val = mAns[1].trim();
@@ -6059,6 +6056,9 @@ window.parseAdminBulkQuestions = function() {
                 collectingOptions = false;
                 collectingExplanation = true;
                 explanation = mExp[2].trim();
+            } else if (variantMatch && !collectingExplanation) {
+                collectingOptions = true;
+                options.push(line.substring(variantMatch[0].length).trim());
             } else if (collectingExplanation) {
                 explanation += (explanation ? "\n" : "") + line;
             } else if (!collectingOptions) {
