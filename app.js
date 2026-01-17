@@ -2457,6 +2457,10 @@ window.addManualQuestionForm = function() {
                 <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin..."></textarea>
             </div>
         </div>
+        <div class="manual-q-explanation-row">
+            <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
+            <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin..."></textarea>
+        </div>
         <div class="manual-options-grid" id="options_grid_${uniqueId}">
             <div class="grid-cols-full bg-warning-light border-warning border-dashed p-3 rounded-md mb-3 text-warning-dark font-bold flex items-center gap-3">
                 <i class="fas fa-exclamation-triangle text-xl"></i>
@@ -2698,73 +2702,93 @@ window.parseBulkQuestions = function() {
     const text = document.getElementById('bulk-questions-text').value;
     if (!text.trim()) return showNotification('Zəhmət olmasa mətni daxil edin.', 'error');
     
-    // Simple parser for:
-    // 1. Question?
-    // A) Opt 1
-    // B) Opt 2
-    // C) Opt 3
-    // D) Opt 4
-    
     const questions = [];
-    const blocks = text.split(/\n\s*\n/); // Split by empty lines
+    // Daha etibarlı şəkildə sual bloklarına bölürük
+    // Blok "Sual X" və ya sətir başındakı nömrə ilə başlayır
+    const rawBlocks = text.split(/(?=^\s*(?:Sual\s+\d+|\d+[\s.)]))/mi);
     
-    blocks.forEach(block => {
+    rawBlocks.forEach(block => {
+        if (!block.trim()) return;
+        
         const lines = block.split('\n').map(l => l.trim()).filter(l => l);
-        if (lines.length < 3) return;
+        if (lines.length < 2) return;
         
-        const questionText = lines[0].replace(/^\d+[\s.)]*/, ''); // Remove leading numbers
-        const options = [];
+        let questionText = "";
+        let options = [];
         let correctIndex = 0;
+        let explanation = "";
+        let collectingOptions = false;
+        let collectingExplanation = false;
         
-        lines.slice(1).forEach(line => {
+        lines.forEach((line) => {
             const variantMatch = line.match(/^[A-J][\s.)\-:]{1,3}/i);
-            if (variantMatch) {
+            const isAnswerLine = line.toLowerCase().startsWith('cavab:') || line.toLowerCase().startsWith('doğru:');
+            const isExplanationLine = line.toLowerCase().startsWith('izah:');
+            
+            if (variantMatch && !collectingExplanation) {
+                collectingOptions = true;
                 options.push(line.substring(variantMatch[0].length).trim());
-            } else if (line.toLowerCase().includes('doğru:') || line.toLowerCase().includes('cavab:')) {
+            } else if (isAnswerLine) {
+                collectingOptions = false;
+                collectingExplanation = false;
                 const parts = line.split(':');
                 if (parts.length > 1) {
                     const ansChar = parts[1].trim().toUpperCase();
-                    correctIndex = ansChar.charCodeAt(0) - 65; 
+                    if (ansChar.length > 0) {
+                        const charCode = ansChar.charCodeAt(0);
+                        if (charCode >= 65 && charCode <= 90) { // A-Z
+                            correctIndex = charCode - 65;
+                        } else if (!isNaN(ansChar)) {
+                            correctIndex = parseInt(ansChar);
+                        }
+                    }
                 }
+            } else if (isExplanationLine) {
+                collectingOptions = false;
+                collectingExplanation = true;
+                explanation = line.substring(5).trim();
+            } else if (collectingExplanation) {
+                explanation += (explanation ? "\n" : "") + line;
+            } else if (!collectingOptions) {
+                questionText += (questionText ? "\n" : "") + line;
             }
         });
         
-        if (questionText && options.length > 0) {
+        if (questionText && (options.length > 0 || explanation)) {
             questions.push({
                 text: questionText,
                 options: options,
-                correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0
+                correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0,
+                explanation: explanation
             });
         }
     });
     
     if (questions.length > 0) {
-        // Convert bulk to manual forms for review
         const list = document.getElementById('manual-questions-list');
         const currentCount = document.querySelectorAll('.manual-question-item').length;
         
-        const timeType = document.getElementById('private-quiz-time-type').value;
-    const isTotalTime = timeType === 'total';
-    
-    // Hide individual question time inputs if total time is selected
-    const timeInputClass = isTotalTime ? 'hidden' : '';
+        const timeTypeEl = document.getElementById('private-quiz-time-type');
+        const timeType = timeTypeEl ? timeTypeEl.value : 'none';
+        const isTimeHidden = (timeType === 'total' || timeType === 'none');
 
-    questions.forEach((q, idx) => {
-        const uniqueId = Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000);
-        const div = document.createElement('div');
-        div.className = 'manual-question-item';
-        div.innerHTML = `
-            <div class="manual-q-header">
-                <div class="manual-q-title">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Sual ${currentCount + idx + 1}</span>
-                </div>
-                <div class="manual-q-actions">
-                    <div class="time-input-group ${timeInputClass}">
-                        <i class="far fa-clock"></i>
-                        <input type="number" class="manual-q-time" value="${q.time || ''}" placeholder="Def">
-                        <span>san</span>
+        questions.forEach((q, idx) => {
+            const uniqueId = Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000);
+            const div = document.createElement('div');
+            div.className = 'manual-question-item animate-up';
+            div.setAttribute('data-id', uniqueId);
+            div.innerHTML = `
+                <div class="manual-q-header">
+                    <div class="manual-q-title">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Sual ${currentCount + idx + 1}</span>
                     </div>
+                    <div class="manual-q-actions">
+                        <div class="time-input-group ${isTimeHidden ? 'hidden' : ''}">
+                            <i class="far fa-clock"></i>
+                            <input type="number" class="manual-q-time" placeholder="Def">
+                            <span>san</span>
+                        </div>
                         <button onclick="this.closest('.manual-question-item').remove(); updateQuestionCount();" class="delete-q-btn" title="Sualı sil">
                             <i class="fas fa-trash-alt"></i>
                         </button>
@@ -2779,14 +2803,14 @@ window.parseBulkQuestions = function() {
                             </div>
                             <label class="image-upload-label" id="label_${uniqueId}">
                                 <i class="fas fa-cloud-upload-alt"></i>
-                                <span>Şəkil Əlavə Et və ya Sürüklə</span>
+                                <span>Şəkil Əlavə Et</span>
                                 <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
                             </label>
                             <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
                         </div>
 
                         <div class="manual-q-video-box" id="video_box_${uniqueId}">
-                            <div class="video-upload-label" onclick="toggleVideoOptions('${uniqueId}')">
+                            <div class="video-upload-label" onclick="toggleVideoOptions('${uniqueId}', event)">
                                 <i class="fas fa-video"></i>
                                 <span>Video İzah</span>
                             </div>
@@ -2802,6 +2826,11 @@ window.parseBulkQuestions = function() {
                             
                             <input type="file" id="video_file_${uniqueId}" accept="video/*" class="hidden" onchange="handleVideoUpload(this, '${uniqueId}')">
                             
+                            <div class="video-progress hidden" id="video_progress_${uniqueId}">
+                                <div class="video-bar" id="video_bar_${uniqueId}"></div>
+                            </div>
+                            <div class="video-status hidden" id="video_status_${uniqueId}"></div>
+
                             <div class="video-preview-container hidden" id="video_preview_${uniqueId}">
                                 <button type="button" class="remove-video-btn" onclick="removeQuestionVideo('${uniqueId}')">
                                     <i class="fas fa-times"></i>
@@ -2816,7 +2845,11 @@ window.parseBulkQuestions = function() {
                         <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin...">${q.text}</textarea>
                     </div>
                 </div>
-                <div class="manual-options-grid">
+                <div class="manual-q-explanation-row">
+                    <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
+                    <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin...">${q.explanation || ''}</textarea>
+                </div>
+                <div class="manual-options-grid" id="options_grid_${uniqueId}">
                     ${q.options.map((opt, i) => `
                         <div class="manual-option-input">
                             <div class="option-radio-wrapper">
@@ -2826,18 +2859,35 @@ window.parseBulkQuestions = function() {
                             <input type="text" class="manual-opt" value="${opt}" placeholder="Variant ${i + 1}">
                         </div>
                     `).join('')}
+                    ${q.options.length === 0 ? `
+                        <div class="manual-option-input">
+                            <div class="option-radio-wrapper">
+                                <input type="radio" name="correct_${uniqueId}" value="0" checked id="opt_${uniqueId}_0">
+                                <label for="opt_${uniqueId}_0"></label>
+                            </div>
+                            <input type="text" class="manual-opt" placeholder="A variantı">
+                        </div>
+                        <div class="manual-option-input">
+                            <div class="option-radio-wrapper">
+                                <input type="radio" name="correct_${uniqueId}" value="1" id="opt_${uniqueId}_1">
+                                <label for="opt_${uniqueId}_1"></label>
+                            </div>
+                            <input type="text" class="manual-opt" placeholder="B variantı">
+                        </div>
+                    ` : ''}
                 </div>
+                <button onclick="addManualOption('${uniqueId}')" class="btn-add-option">
+                    <i class="fas fa-plus"></i> Variant Əlavə Et
+                </button>
             `;
             list.appendChild(div);
             initDragAndDrop(uniqueId);
         });
         
-        // Clear textarea after success
         document.getElementById('bulk-questions-text').value = '';
-        
         switchQuestionTab('manual');
         updateQuestionCount();
-        showNotification(`${questions.length} sual uğurla köçürüldü. İndi yoxlayıb yadda saxlaya bilərsiniz.`, 'success');
+        showNotification(`${questions.length} sual uğurla köçürüldü.`, 'success');
     } else {
         showNotification('Heç bir sual tapılmadı. Zəhmət olmasa formatı yoxlayın.', 'error');
     }
@@ -5937,26 +5987,54 @@ window.parseAdminBulkQuestions = function() {
     if (!text.trim()) return showNotification('Zəhmət olmasa mətni daxil edin.', 'error');
     
     const questions = [];
-    const blocks = text.split(/\n\s*\n/);
+    // Enhanced split: support "Sual 1", "Sual 2" or just "1.", "2."
+    const rawBlocks = text.split(/(?=^\s*(?:Sual\s+\d+|\d+[\s.)]))/mi);
     
-    blocks.forEach(block => {
+    rawBlocks.forEach(block => {
+        if (!block.trim()) return;
+        
         const lines = block.split('\n').map(l => l.trim()).filter(l => l);
         if (lines.length < 3) return;
         
-        const questionText = lines[0].replace(/^\d+[\s.)]*/, '');
-        const options = [];
+        let questionText = "";
+        let options = [];
         let correctIndex = 0;
+        let explanation = "";
         
-        lines.slice(1).forEach(line => {
+        let collectingOptions = false;
+        let collectingExplanation = false;
+        
+        lines.forEach((line) => {
             const variantMatch = line.match(/^[A-J][\s.)\-:]{1,3}/i);
-            if (variantMatch) {
+            const isAnswerLine = line.toLowerCase().startsWith('cavab:') || line.toLowerCase().startsWith('doğru:');
+            const isExplanationLine = line.toLowerCase().startsWith('izah:');
+            
+            if (variantMatch && !collectingExplanation) {
+                collectingOptions = true;
                 options.push(line.substring(variantMatch[0].length).trim());
-            } else if (line.toLowerCase().includes('doğru:') || line.toLowerCase().includes('cavab:')) {
+            } else if (isAnswerLine) {
+                collectingOptions = false;
+                collectingExplanation = false;
                 const parts = line.split(':');
                 if (parts.length > 1) {
                     const ansChar = parts[1].trim().toUpperCase();
-                    correctIndex = ansChar.charCodeAt(0) - 65;
+                    if (ansChar.length > 0) {
+                        const charCode = ansChar.charCodeAt(0);
+                        if (charCode >= 65 && charCode <= 90) { // A-Z
+                            correctIndex = charCode - 65;
+                        } else if (!isNaN(ansChar)) {
+                            correctIndex = parseInt(ansChar);
+                        }
+                    }
                 }
+            } else if (isExplanationLine) {
+                collectingOptions = false;
+                collectingExplanation = true;
+                explanation = line.substring(5).trim();
+            } else if (collectingExplanation) {
+                explanation += (explanation ? "\n" : "") + line;
+            } else if (!collectingOptions) {
+                questionText += (questionText ? "\n" : "") + line;
             }
         });
         
@@ -5964,15 +6042,14 @@ window.parseAdminBulkQuestions = function() {
             questions.push({
                 text: questionText,
                 options: options,
-                correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0
+                correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0,
+                explanation: explanation
             });
         }
     });
     
     if (questions.length > 0) {
         const list = document.getElementById('admin-questions-list');
-        // Clear or append? Usually, bulk import into a list is meant to populate the manual review.
-        // Let's clear and switch to manual tab for review.
         list.innerHTML = '';
         
         questions.forEach((q, idx) => {
@@ -6014,6 +6091,10 @@ window.parseAdminBulkQuestions = function() {
                             <input type="text" class="manual-opt" value="${opt}" placeholder="${String.fromCharCode(65 + i)} variantı">
                         </div>
                     `).join('')}
+                </div>
+                <div class="manual-q-explanation-row">
+                    <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
+                    <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin...">${q.explanation || ''}</textarea>
                 </div>
             `;
             list.appendChild(div);
@@ -6163,6 +6244,7 @@ window.saveAdminQuestions = async function() {
     for (const item of questionItems) {
         const text = item.querySelector('.manual-q-text').value.trim();
         const image = item.querySelector('.manual-q-img-data').value;
+        const explanation = item.querySelector('.manual-q-explanation') ? item.querySelector('.manual-q-explanation').value.trim() : '';
         const optionInputs = item.querySelectorAll('.manual-opt');
         const correctRadio = item.querySelector('input[type="radio"]:checked');
         
@@ -6188,7 +6270,8 @@ window.saveAdminQuestions = async function() {
             text,
             image,
             options,
-            correctIndex: parseInt(correctRadio.value)
+            correctIndex: parseInt(correctRadio.value),
+            explanation: explanation
         });
     }
 
@@ -6296,6 +6379,10 @@ window.editCategoryQuestion = function(qId) {
     
     const radios = item.querySelectorAll('input[type="radio"]');
     if (radios[q.correctIndex]) radios[q.correctIndex].checked = true;
+    
+    // İzahı doldur
+    const explanationInput = item.querySelector('.manual-q-explanation');
+    if (explanationInput) explanationInput.value = q.explanation || '';
     
     // Yadda saxla düyməsinin mətnini dəyiş
     const saveBtn = document.querySelector('.btn-save');
