@@ -5749,6 +5749,10 @@ window.saveAnonymousName = function() {
     sendComment(); // Try sending again
 }
 
+let adminQuestionViewState = {
+    topCount: 5
+};
+
 function openCategory(id) {
     activeCategoryId = id;
     const cat = categories.find(c => c.id === id);
@@ -5774,6 +5778,7 @@ function openCategory(id) {
             startBtn.textContent = "Testə Başla";
         }
 
+        adminQuestionViewState.topCount = 5; // Reset view state
         renderQuestions();
     } else {
         // Əgər admin deyilsə, testi başlama modalını göstər və ya dashboard-a qaytar
@@ -5787,29 +5792,67 @@ function renderQuestions() {
     list.innerHTML = '';
     const cat = categories.find(c => c.id === activeCategoryId);
     
-    if (cat.questions.length === 0) {
+    if (!cat || !cat.questions || cat.questions.length === 0) {
         list.innerHTML = '<p class="text-center text-muted">Hələ sual yoxdur.</p>';
         return;
     }
 
-    cat.questions.forEach((q, index) => {
-        const div = document.createElement('div');
-        div.className = 'question-item';
-        div.dataset.id = q.id; 
-        div.innerHTML = `
-            <div class="q-content-wrapper">
-                <div class="q-text-main">
-                    <strong>${index + 1}.</strong> ${q.text.substring(0, 50)}${q.text.length > 50 ? '...' : ''}
-                    ${q.image ? '<i class="fas fa-image" title="Şəkilli sual"></i>' : ''}
+    const total = cat.questions.length;
+    const topCount = adminQuestionViewState.topCount;
+    const bottomCount = 5;
+
+    // Helper to render a list of questions
+    const renderList = (qs) => {
+        qs.forEach(q => {
+            const div = document.createElement('div');
+            div.className = 'question-item';
+            div.dataset.id = q.id; 
+            div.innerHTML = `
+                <div class="q-content-wrapper">
+                    <div class="q-text-main">
+                        <strong>${q.originalIndex + 1}.</strong> ${q.text.substring(0, 50)}${q.text.length > 50 ? '...' : ''}
+                        ${q.image ? '<i class="fas fa-image" title="Şəkilli sual"></i>' : ''}
+                    </div>
                 </div>
-            </div>
-            <div class="q-actions">
-                <button onclick="editCategoryQuestion(${q.id})" class="edit-cat-btn" title="Düzəliş et"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteQuestion(${q.id})" title="Sualı sil"><i class="fas fa-trash"></i></button>
-            </div>
-        `;
-        list.appendChild(div);
-    });
+                <div class="q-actions">
+                    <button onclick="editCategoryQuestion('${q.id}')" class="edit-cat-btn" title="Düzəliş et"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteQuestion('${q.id}')" title="Sualı sil"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    };
+
+    if (total <= topCount + bottomCount) {
+        // Show all if total is small
+        renderList(cat.questions.map((q, i) => ({...q, originalIndex: i})));
+    } else {
+        // Show top chunk
+        const topChunk = cat.questions.slice(0, topCount).map((q, i) => ({...q, originalIndex: i}));
+        renderList(topChunk);
+
+        // Show "Load More" button if there is a gap
+        if (topCount < total - bottomCount) {
+            const remaining = total - bottomCount - topCount;
+            const btnDiv = document.createElement('div');
+            btnDiv.className = 'text-center my-4 p-2';
+            btnDiv.innerHTML = `
+                <button onclick="loadMoreAdminQuestions()" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition shadow-sm">
+                    <i class="fas fa-chevron-down"></i> Daha çox göstər (${remaining} gizli)
+                </button>
+            `;
+            list.appendChild(btnDiv);
+        }
+
+        // Show bottom chunk
+        const bottomChunk = cat.questions.slice(total - bottomCount).map((q, i) => ({...q, originalIndex: total - bottomCount + i}));
+        renderList(bottomChunk);
+    }
+}
+
+window.loadMoreAdminQuestions = function() {
+    adminQuestionViewState.topCount += 5;
+    renderQuestions();
 }
 
 window.generateAdminAIQuestions = async function() {
@@ -6350,14 +6393,49 @@ window.saveAdminQuestions = async function() {
         }
         if (!correctRadio) {
             showNotification('Bütün suallar üçün düzgün variantı seçin!', 'error');
+            item.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
+
+        const correctIndex = parseInt(correctRadio.value);
+        
+        // --- KEYFİYYƏT NƏZARƏTİ (Start) ---
+        const correctText = options[correctIndex];
+        // Note: Existing logic assumes radio value matches options index. 
+        // If options were filtered for empty strings, this might be risky, but we follow existing pattern.
+        
+        if (correctText) {
+            const wrongTexts = options.filter((_, i) => i !== correctIndex);
+
+            // Kriteriya 1: "Yalnız" patterni
+            const allWrongYalniz = wrongTexts.every(t => t.toLowerCase().startsWith('yalnız'));
+            const correctYalniz = correctText.toLowerCase().startsWith('yalnız');
+            
+            if (allWrongYalniz && !correctYalniz && wrongTexts.length > 0) {
+                showNotification('Sual keyfiyyət standartına cavab vermir: Bütün səhv variantlar "Yalnız" ilə başlayır, düzgün variant isə yox. Zəhmət olmasa variantları dəyişdirin.', 'error');
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                item.style.border = "2px solid red";
+                setTimeout(() => item.style.border = "", 5000);
+                return;
+            }
+
+            // Kriteriya 2: Uzunluq fərqi (> 2.5x)
+            const maxWrongLen = Math.max(...wrongTexts.map(t => t.length));
+            if (maxWrongLen > 0 && correctText.length > 2.5 * maxWrongLen) {
+                showNotification('Sual keyfiyyət standartına cavab vermir: Düzgün cavab səhv cavablardan həddindən artıq uzundur (>2.5x). Zəhmət olmasa variantları balanslaşdırın.', 'error');
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                item.style.border = "2px solid red";
+                setTimeout(() => item.style.border = "", 5000);
+                return;
+            }
+        }
+        // --- KEYFİYYƏT NƏZARƏTİ (End) ---
 
         newQuestionsData.push({
             text,
             image,
             options,
-            correctIndex: parseInt(correctRadio.value),
+            correctIndex: correctIndex,
             explanation: explanation
         });
     }
@@ -6417,7 +6495,7 @@ window.resetEditingState = function() {
 window.editCategoryQuestion = function(qId) {
     const cat = categories.find(c => c.id === activeCategoryId);
     if (!cat) return;
-    const q = cat.questions.find(item => item.id === qId);
+    const q = cat.questions.find(item => item.id == qId);
     if (!q) return;
 
     editingQuestionId = qId;
@@ -6482,11 +6560,11 @@ window.deleteQuestion = async function(qId) {
         if (!cat) return;
 
         // Sualın mətnini götürək (Dublikatlardan da silmək üçün)
-        const questionToDelete = cat.questions.find(q => q.id === qId);
+        const questionToDelete = cat.questions.find(q => q.id == qId);
         const questionText = questionToDelete ? questionToDelete.text : null;
 
         // 1. Aktiv kateqoriyadan sil
-        cat.questions = cat.questions.filter(q => q.id !== qId);
+        cat.questions = cat.questions.filter(q => q.id != qId);
         
         // 2. Ağıllı Silmə: Əgər bu sual eyni adda başqa dublikat kateqoriyalarda da varsa, ordan da sil
         // Bu, gələcəkdə "Bərpa Aləti"nin sildiyiniz sualı geri gətirməsinin qarşısını alır.
