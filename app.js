@@ -2704,8 +2704,8 @@ window.parseBulkQuestions = function() {
     
     const questions = [];
     // Daha etibarlı şəkildə sual bloklarına bölürük
-    // Blok "Sual X" və ya sətir başındakı nömrə ilə başlayır
-    const rawBlocks = text.split(/(?=^\s*(?:Sual\s+\d+|\d+[\s.)]))/mi);
+    // Blok "Sual X", "Sual:" və ya sətir başındakı nömrə ilə başlayır
+    const rawBlocks = text.split(/(?=^\s*(?:Sual\s*(?:[:\d])|\d+[\s.)]))/mi);
     
     rawBlocks.forEach(block => {
         if (!block.trim()) return;
@@ -6001,8 +6001,8 @@ window.parseAdminBulkQuestions = function() {
     if (!text.trim()) return showNotification('Zəhmət olmasa mətni daxil edin.', 'error');
     
     const questions = [];
-    // Enhanced split: support "Sual 1", "Sual 2" or just "1.", "2."
-    const rawBlocks = text.split(/(?=^\s*(?:Sual\s+\d+|\d+[\s.)]))/mi);
+    // Enhanced split: support "Sual 1", "Sual 2", "Sual:", or just "1.", "2."
+    const rawBlocks = text.split(/(?=^\s*(?:Sual\s*(?:[:\d])|\d+[\s.)]))/mi);
     
     rawBlocks.forEach(block => {
         if (!block.trim()) return;
