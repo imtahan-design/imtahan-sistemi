@@ -13,6 +13,11 @@
     "trailingSlash": false,
     "redirects": [
       {
+        "source": "/news/index.html",
+        "destination": "/bloq",
+        "type": 301
+      },
+      {
         "source": "/news",
         "destination": "/bloq",
         "type": 301

@@ -3548,6 +3548,55 @@ nav:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
+/* Verified Question Styles */
+.verified-q {
+    border-left: 4px solid #10b981 !important;
+    background: rgba(16, 185, 129, 0.05) !important;
+}
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #10b981;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.verify-btn {
+    background: #e2e8f0;
+    color: #64748b;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.verify-btn.active {
+    background: #10b981;
+    color: white;
+}
+
+.verify-btn:hover {
+    transform: scale(1.1);
+}
+
+.q-content-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.q-text-main {
+    flex: 1;
+}
+
+
 .image-upload-label, .video-upload-label {
     display: flex;
     flex-direction: column;

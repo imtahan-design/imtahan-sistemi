@@ -138,5 +138,11 @@ rules_version = '2';
        // Silmə və redaktə yalnız admin/moderator 
        allow update, delete: if isAdmin() || isModerator(); 
      } 
+ 
+     // --- 10. Global Config (Konfiqurasiya) --- 
+     match /config/main { 
+       allow read: if true; 
+       allow write: if isAdmin(); 
+     } 
    } 
  }

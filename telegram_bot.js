@@ -61,6 +61,19 @@ if (!token || !channelId) {
 
     // Firestore-dan Dövlət Qulluğu suallarını yüklə
     let civilCache = { items: [], ts: 0 };
+
+    function loadQuestions() {
+        try {
+            const qPath = path.join(__dirname, 'questions.json');
+            if (!fs.existsSync(qPath)) return [];
+            const raw = fs.readFileSync(qPath);
+            return JSON.parse(raw);
+        } catch (error) {
+            console.error("❌ questions.json oxuma xətası:", error);
+            return [];
+        }
+    }
+
     async function loadCivilServiceQuestions() {
         try {
             if (!db) return [];
@@ -103,7 +116,19 @@ if (!token || !channelId) {
                 questions = questions.concat(mapped);
             }
             civilCache = { items: questions, ts: now };
-            return questions;
+
+            // Manual əlavə edilmiş sualları da (questions.json) əlavə et
+            const manualQuestions = loadQuestions();
+            if (manualQuestions.length > 0) {
+                const mappedManual = manualQuestions.map(q => ({
+                    ...q,
+                    id: q.id || `manual_${fingerprint(q)}`,
+                    section: q.category || 'Manual'
+                }));
+                civilCache.items = civilCache.items.concat(mappedManual);
+            }
+
+            return civilCache.items;
         } catch (error) {
             console.error("❌ Firestore-dan sual yükləmə xətası:", error.message);
             return [];
@@ -453,6 +478,30 @@ if (!token || !channelId) {
         }
     }
 
+    function deleteQuestionByContent(questionData) {
+        try {
+            const fpToDelete = fingerprint(questionData);
+            let questions = loadQuestions();
+            const originalLength = questions.length;
+            
+            // questions.json-dan sil
+            questions = questions.filter(q => fingerprint(q) !== fpToDelete);
+            
+            if (questions.length !== originalLength) {
+                fs.writeFileSync(path.join(__dirname, 'questions.json'), JSON.stringify(questions, null, 2));
+                console.log("✅ Sual questions.json-dan silindi.");
+            }
+
+            // Cache-i təmizlə ki, Firestore-dan gələn suallar yenidən yüklənsin
+            civilCache = { items: [], ts: 0 };
+            
+            return true;
+        } catch (error) {
+            console.error("❌ Sualı silmək mümkün olmadı:", error);
+            return false;
+        }
+    }
+
     // Scheduler: 12:00, 14:00, 16:00, 18:00, 20:00, 22:00, 00:00
     let isBatchRunning = false;
     let cancelBatchRequested = false;
@@ -572,5 +621,5 @@ if (!token || !channelId) {
         cancelBatchRequested = true;
         return true;
     }
-    module.exports = { sendQuizBatch, addQuestion, getNextSchedule, sendApologyMessage, startQuizBatch, sendNews, setQuizCount, getQuizCount, stopQuizBatch, get isBatchRunning() { return isBatchRunning; } };
+    module.exports = { sendQuizBatch, addQuestion, deleteQuestionByContent, getNextSchedule, sendApologyMessage, startQuizBatch, sendNews, setQuizCount, getQuizCount, stopQuizBatch, get isBatchRunning() { return isBatchRunning; } };
 }

@@ -15,6 +15,13 @@ const PART_1 = "AIzaSyBnq5gW1jk_";
 const PART_2 = "7mNwt2UUboehr5R8DM1qsRM";
 let GEMINI_API_KEY = PART_1 + PART_2;
 
+// Google Analytics Helper
+window.trackEvent = function(eventName, params = {}) {
+    if (typeof gtag === 'function') {
+        gtag('event', eventName, params);
+    }
+};
+
 const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === ''
     ? "http://localhost:5000"
     : "https://imtahan-backend-7w71.onrender.com";
@@ -76,6 +83,31 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
+// Analytics Initialization
+async function initAnalytics() {
+    try {
+        if (!db) return;
+        const doc = await db.collection('config').doc('main').get();
+        if (doc.exists) {
+            const data = doc.data();
+            const gaId = data.google_analytics_id;
+            if (gaId && gaId.startsWith('G-')) {
+                if (document.querySelector(`script[src*="${gaId}"]`)) return;
+                const script = document.createElement('script');
+                script.async = true;
+                script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+                document.head.appendChild(script);
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                window.gtag = gtag;
+                gtag('js', new Date());
+                gtag('config', gaId, { 'send_page_view': true });
+                console.log('Google Analytics initialized:', gaId);
+            }
+        }
+    } catch (e) { console.warn('Analytics init failed:', e); }
+}
+
 // Initialize Firebase if config is valid
 let db;
 let auth;
@@ -97,6 +129,7 @@ try {
         
         // Track Visitor
         trackVisitor();
+        initAnalytics();
     } else {
         // Firebase config not set
     }
@@ -1595,6 +1628,11 @@ window.register = async function() {
             const success = await sendVerificationEmail(email, verificationCode, `${name} ${surname}`);
             
             if (success) {
+                // Google Analytics: Qeydiyyat Cəhdi (Müəllim)
+                trackEvent('registration_attempt', {
+                    'role': 'teacher'
+                });
+
                 showNotification(`${email} ünvanına təsdiq kodu göndərildi. Zəhmət olmasa emailinizi yoxlayın.`, 'success');
                 document.getElementById('verification-modal').classList.remove('hidden');
             } else {
@@ -1621,6 +1659,12 @@ window.register = async function() {
                 if (db) {
                     await db.collection('users').doc(uid).set(newUser);
                 }
+
+                // Google Analytics: Qeydiyyat Uğurlu (Tələbə)
+                trackEvent('sign_up', {
+                    'method': 'direct',
+                    'role': 'student'
+                });
 
                 showNotification('Qeydiyyat uğurludur!', 'success');
                 
@@ -1685,6 +1729,13 @@ window.confirmVerification = async function() {
 
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             showNotification('Email təsdiqləndi! Qeydiyyat uğurla tamamlandı.', 'success');
+            
+            // Google Analytics: Qeydiyyat Uğurlu (Müəllim)
+            trackEvent('sign_up', {
+                'method': 'email_verification',
+                'role': 'teacher'
+            });
+
             closeVerification();
             updateUI();
 
@@ -2457,6 +2508,10 @@ window.addManualQuestionForm = function() {
                 <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin..."></textarea>
             </div>
         </div>
+        <div class="manual-q-explanation-row">
+            <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
+            <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin..."></textarea>
+        </div>
         <div class="manual-options-grid" id="options_grid_${uniqueId}">
             <div class="grid-cols-full bg-warning-light border-warning border-dashed p-3 rounded-md mb-3 text-warning-dark font-bold flex items-center gap-3">
                 <i class="fas fa-exclamation-triangle text-xl"></i>
@@ -2698,73 +2753,107 @@ window.parseBulkQuestions = function() {
     const text = document.getElementById('bulk-questions-text').value;
     if (!text.trim()) return showNotification('Zəhmət olmasa mətni daxil edin.', 'error');
     
-    // Simple parser for:
-    // 1. Question?
-    // A) Opt 1
-    // B) Opt 2
-    // C) Opt 3
-    // D) Opt 4
-    
     const questions = [];
-    const blocks = text.split(/\n\s*\n/); // Split by empty lines
+    // Daha etibarlı şəkildə sual bloklarına bölürük
+    // Blok "Sual X", "Sual:" və ya sətir başındakı nömrə ilə başlayır
+    const rawBlocks = text.split(/(?=^\s*(?:Sual\s*(?:[:\d])|\d+[\s.)]))/mi);
     
-    blocks.forEach(block => {
+    rawBlocks.forEach(block => {
+        if (!block.trim()) return;
+        
         const lines = block.split('\n').map(l => l.trim()).filter(l => l);
-        if (lines.length < 3) return;
+        if (lines.length < 2) return;
         
-        const questionText = lines[0].replace(/^\d+[\s.)]*/, ''); // Remove leading numbers
-        const options = [];
+        let questionText = "";
+        let options = [];
         let correctIndex = 0;
+        let explanation = "";
+        let collectingOptions = false;
+        let collectingExplanation = false;
         
-        lines.slice(1).forEach(line => {
+        lines.forEach((line) => {
+            // İzah və ya Cavab sətirlərini yoxlayırıq (Regex ilə daha dəqiqdir)
+            const ansRegex = /^\s*(?:düzgün\s+)?(?:cavab|correct|answer|doğru\s+cavab|izahlı\s+cavab)\s*[:\-]?\s*(.+)$/i;
+            const expRegex = /^\s*(?:izah|izahı|izahlı\s+cavab|şərh|açıqlama|explanation|[iİ]zah|[iİ]zahı|[iİ]zahlı\s+cavab)\s*[:\-]?\s*(.*)$/i;
+            
+            const mAns = line.match(ansRegex);
+            const mExp = line.match(expRegex);
             const variantMatch = line.match(/^[A-J][\s.)\-:]{1,3}/i);
-            if (variantMatch) {
-                options.push(line.substring(variantMatch[0].length).trim());
-            } else if (line.toLowerCase().includes('doğru:') || line.toLowerCase().includes('cavab:')) {
-                const parts = line.split(':');
-                if (parts.length > 1) {
-                    const ansChar = parts[1].trim().toUpperCase();
-                    correctIndex = ansChar.charCodeAt(0) - 65; 
+            
+            // Ayırıcı sətirləri (---) və boş sətirləri keçirik
+            if (line.startsWith('---') || line.startsWith('===')) return;
+
+            if (mAns) {
+                collectingOptions = false;
+                collectingExplanation = false;
+                const val = mAns[1].trim();
+                const lm = val.match(/^([A-J])[\)\.]*\s*(.*)$/i);
+                if (lm) {
+                    correctIndex = lm[1].toUpperCase().charCodeAt(0) - 65;
+                    
+                    // Qalan hissədə izah varmı?
+                    const rest = lm[2].trim();
+                    if (rest) {
+                        const expInRest = rest.match(/(?:izah|izahı|izahlı\s+cavab|şərh|açıqlama|explanation|[iİ]zah|[iİ]zahı|[iİ]zahlı\s+cavab)\s*[:\-]?\s*(.*)$/i);
+                        if (expInRest) {
+                            explanation = expInRest[1].trim();
+                            collectingExplanation = true;
+                        }
+                    }
+                } else {
+                    // Əgər variant tapılmadısa, mətnə görə axtar
+                    const idx = options.findIndex(o => o.toLowerCase().includes(val.toLowerCase()) || val.toLowerCase().includes(o.toLowerCase()));
+                    if (idx >= 0) correctIndex = idx;
                 }
+            } else if (mExp) {
+                collectingOptions = false;
+                collectingExplanation = true;
+                explanation = mExp[1].trim();
+            } else if (variantMatch && !collectingExplanation) {
+                collectingOptions = true;
+                options.push(line.substring(variantMatch[0].length).trim());
+            } else if (collectingExplanation) {
+                explanation += (explanation ? "\n" : "") + line;
+            } else if (!collectingOptions) {
+                questionText += (questionText ? "\n" : "") + line;
             }
         });
         
-        if (questionText && options.length > 0) {
+        if (questionText && (options.length > 0 || explanation)) {
             questions.push({
-                text: questionText,
+                text: questionText.trim(),
                 options: options,
-                correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0
+                correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0,
+                explanation: explanation.trim()
             });
         }
     });
     
     if (questions.length > 0) {
-        // Convert bulk to manual forms for review
         const list = document.getElementById('manual-questions-list');
         const currentCount = document.querySelectorAll('.manual-question-item').length;
         
-        const timeType = document.getElementById('private-quiz-time-type').value;
-    const isTotalTime = timeType === 'total';
-    
-    // Hide individual question time inputs if total time is selected
-    const timeInputClass = isTotalTime ? 'hidden' : '';
+        const timeTypeEl = document.getElementById('private-quiz-time-type');
+        const timeType = timeTypeEl ? timeTypeEl.value : 'none';
+        const isTimeHidden = (timeType === 'total' || timeType === 'none');
 
-    questions.forEach((q, idx) => {
-        const uniqueId = Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000);
-        const div = document.createElement('div');
-        div.className = 'manual-question-item';
-        div.innerHTML = `
-            <div class="manual-q-header">
-                <div class="manual-q-title">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Sual ${currentCount + idx + 1}</span>
-                </div>
-                <div class="manual-q-actions">
-                    <div class="time-input-group ${timeInputClass}">
-                        <i class="far fa-clock"></i>
-                        <input type="number" class="manual-q-time" value="${q.time || ''}" placeholder="Def">
-                        <span>san</span>
+        questions.forEach((q, idx) => {
+            const uniqueId = Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000);
+            const div = document.createElement('div');
+            div.className = 'manual-question-item animate-up';
+            div.setAttribute('data-id', uniqueId);
+            div.innerHTML = `
+                <div class="manual-q-header">
+                    <div class="manual-q-title">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Sual ${currentCount + idx + 1}</span>
                     </div>
+                    <div class="manual-q-actions">
+                        <div class="time-input-group ${isTimeHidden ? 'hidden' : ''}">
+                            <i class="far fa-clock"></i>
+                            <input type="number" class="manual-q-time" placeholder="Def">
+                            <span>san</span>
+                        </div>
                         <button onclick="this.closest('.manual-question-item').remove(); updateQuestionCount();" class="delete-q-btn" title="Sualı sil">
                             <i class="fas fa-trash-alt"></i>
                         </button>
@@ -2779,14 +2868,14 @@ window.parseBulkQuestions = function() {
                             </div>
                             <label class="image-upload-label" id="label_${uniqueId}">
                                 <i class="fas fa-cloud-upload-alt"></i>
-                                <span>Şəkil Əlavə Et və ya Sürüklə</span>
+                                <span>Şəkil Əlavə Et</span>
                                 <input type="file" accept="image/*" onchange="handleQuestionImage(this, '${uniqueId}')" class="hidden">
                             </label>
                             <input type="hidden" class="manual-q-img-data" id="data_${uniqueId}">
                         </div>
 
                         <div class="manual-q-video-box" id="video_box_${uniqueId}">
-                            <div class="video-upload-label" onclick="toggleVideoOptions('${uniqueId}')">
+                            <div class="video-upload-label" onclick="toggleVideoOptions('${uniqueId}', event)">
                                 <i class="fas fa-video"></i>
                                 <span>Video İzah</span>
                             </div>
@@ -2802,6 +2891,11 @@ window.parseBulkQuestions = function() {
                             
                             <input type="file" id="video_file_${uniqueId}" accept="video/*" class="hidden" onchange="handleVideoUpload(this, '${uniqueId}')">
                             
+                            <div class="video-progress hidden" id="video_progress_${uniqueId}">
+                                <div class="video-bar" id="video_bar_${uniqueId}"></div>
+                            </div>
+                            <div class="video-status hidden" id="video_status_${uniqueId}"></div>
+
                             <div class="video-preview-container hidden" id="video_preview_${uniqueId}">
                                 <button type="button" class="remove-video-btn" onclick="removeQuestionVideo('${uniqueId}')">
                                     <i class="fas fa-times"></i>
@@ -2816,7 +2910,11 @@ window.parseBulkQuestions = function() {
                         <textarea class="manual-q-text" placeholder="Sualın mətnini bura daxil edin...">${q.text}</textarea>
                     </div>
                 </div>
-                <div class="manual-options-grid">
+                <div class="manual-q-explanation-row">
+                    <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
+                    <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin...">${q.explanation || ''}</textarea>
+                </div>
+                <div class="manual-options-grid" id="options_grid_${uniqueId}">
                     ${q.options.map((opt, i) => `
                         <div class="manual-option-input">
                             <div class="option-radio-wrapper">
@@ -2826,18 +2924,35 @@ window.parseBulkQuestions = function() {
                             <input type="text" class="manual-opt" value="${opt}" placeholder="Variant ${i + 1}">
                         </div>
                     `).join('')}
+                    ${q.options.length === 0 ? `
+                        <div class="manual-option-input">
+                            <div class="option-radio-wrapper">
+                                <input type="radio" name="correct_${uniqueId}" value="0" checked id="opt_${uniqueId}_0">
+                                <label for="opt_${uniqueId}_0"></label>
+                            </div>
+                            <input type="text" class="manual-opt" placeholder="A variantı">
+                        </div>
+                        <div class="manual-option-input">
+                            <div class="option-radio-wrapper">
+                                <input type="radio" name="correct_${uniqueId}" value="1" id="opt_${uniqueId}_1">
+                                <label for="opt_${uniqueId}_1"></label>
+                            </div>
+                            <input type="text" class="manual-opt" placeholder="B variantı">
+                        </div>
+                    ` : ''}
                 </div>
+                <button onclick="addManualOption('${uniqueId}')" class="btn-add-option">
+                    <i class="fas fa-plus"></i> Variant Əlavə Et
+                </button>
             `;
             list.appendChild(div);
             initDragAndDrop(uniqueId);
         });
         
-        // Clear textarea after success
         document.getElementById('bulk-questions-text').value = '';
-        
         switchQuestionTab('manual');
         updateQuestionCount();
-        showNotification(`${questions.length} sual uğurla köçürüldü. İndi yoxlayıb yadda saxlaya bilərsiniz.`, 'success');
+        showNotification(`${questions.length} sual uğurla köçürüldü.`, 'success');
     } else {
         showNotification('Heç bir sual tapılmadı. Zəhmət olmasa formatı yoxlayın.', 'error');
     }
@@ -5221,6 +5336,12 @@ window.dislikeQuestion = async function(qId) {
 window.checkPublicAnswer = function(questionId, selectedIdx, correctIdx) {
     const optionsContainer = document.getElementById(`pub-options-${questionId}`);
     if (optionsContainer.classList.contains('answered')) return;
+    
+    // Google Analytics: İctimai Sual Cavablandı
+    trackEvent('public_question_answer', {
+        'question_id': questionId,
+        'is_correct': selectedIdx === correctIdx
+    });
 
     const items = optionsContainer.querySelectorAll('.pub-opt-item');
     items.forEach((item, idx) => {
@@ -5674,11 +5795,13 @@ function renderQuestions() {
     cat.questions.forEach((q, index) => {
         const div = document.createElement('div');
         div.className = 'question-item';
-        div.dataset.id = q.id; // Add data-id for searching
+        div.dataset.id = q.id; 
         div.innerHTML = `
-            <div>
-                <strong>${index + 1}.</strong> ${q.text.substring(0, 50)}${q.text.length > 50 ? '...' : ''}
-                ${q.image ? '<i class="fas fa-image" title="Şəkilli sual"></i>' : ''}
+            <div class="q-content-wrapper">
+                <div class="q-text-main">
+                    <strong>${index + 1}.</strong> ${q.text.substring(0, 50)}${q.text.length > 50 ? '...' : ''}
+                    ${q.image ? '<i class="fas fa-image" title="Şəkilli sual"></i>' : ''}
+                </div>
             </div>
             <div class="q-actions">
                 <button onclick="editCategoryQuestion(${q.id})" class="edit-cat-btn" title="Düzəliş et"><i class="fas fa-edit"></i></button>
@@ -5937,42 +6060,83 @@ window.parseAdminBulkQuestions = function() {
     if (!text.trim()) return showNotification('Zəhmət olmasa mətni daxil edin.', 'error');
     
     const questions = [];
-    const blocks = text.split(/\n\s*\n/);
+    // Enhanced split: support "Sual 1", "Sual 2", "Sual:", or just "1.", "2."
+    const rawBlocks = text.split(/(?=^\s*(?:Sual\s*(?:[:\d])|\d+[\s.)]))/mi);
     
-    blocks.forEach(block => {
+    rawBlocks.forEach(block => {
+        if (!block.trim()) return;
+        
         const lines = block.split('\n').map(l => l.trim()).filter(l => l);
         if (lines.length < 3) return;
         
-        const questionText = lines[0].replace(/^\d+[\s.)]*/, '');
-        const options = [];
+        let questionText = "";
+        let options = [];
         let correctIndex = 0;
+        let explanation = "";
         
-        lines.slice(1).forEach(line => {
+        let collectingOptions = false;
+        let collectingExplanation = false;
+        
+        lines.forEach((line) => {
+            // İzah və ya Cavab sətirlərini yoxlayırıq (Regex ilə daha dəqiqdir)
+            const ansRegex = /^\s*(?:düzgün\s+)?(?:cavab|correct|answer|doğru\s+cavab|izahlı\s+cavab)\s*[:\-]?\s*(.+)$/i;
+            const expRegex = /^\s*(?:izah|izahı|izahlı\s+cavab|şərh|açıqlama|explanation|[iİ]zah|[iİ]zahı|[iİ]zahlı\s+cavab)\s*[:\-]?\s*(.*)$/i;
+            
+            const mAns = line.match(ansRegex);
+            const mExp = line.match(expRegex);
             const variantMatch = line.match(/^[A-J][\s.)\-:]{1,3}/i);
-            if (variantMatch) {
-                options.push(line.substring(variantMatch[0].length).trim());
-            } else if (line.toLowerCase().includes('doğru:') || line.toLowerCase().includes('cavab:')) {
-                const parts = line.split(':');
-                if (parts.length > 1) {
-                    const ansChar = parts[1].trim().toUpperCase();
-                    correctIndex = ansChar.charCodeAt(0) - 65;
+            
+            // Ayırıcı sətirləri (---) və boş sətirləri keçirik
+            if (line.startsWith('---') || line.startsWith('===')) return;
+
+            if (mAns) {
+                collectingOptions = false;
+                collectingExplanation = false;
+                const val = mAns[1].trim();
+                const lm = val.match(/^([A-J])[\)\.]*\s*(.*)$/i);
+                if (lm) {
+                    correctIndex = lm[1].toUpperCase().charCodeAt(0) - 65;
+                    
+                    // Qalan hissədə izah varmı?
+                    const rest = lm[2].trim();
+                    if (rest) {
+                        const expInRest = rest.match(/(?:izah|izahı|izahlı\s+cavab|şərh|açıqlama|explanation|[iİ]zah|[iİ]zahı|[iİ]zahlı\s+cavab)\s*[:\-]?\s*(.*)$/i);
+                        if (expInRest) {
+                            explanation = expInRest[1].trim();
+                            collectingExplanation = true;
+                        }
+                    }
+                } else {
+                    // Əgər variant tapılmadısa, mətnə görə axtar
+                    const idx = options.findIndex(o => o.toLowerCase().includes(val.toLowerCase()) || val.toLowerCase().includes(o.toLowerCase()));
+                    if (idx >= 0) correctIndex = idx;
                 }
+            } else if (mExp) {
+                collectingOptions = false;
+                collectingExplanation = true;
+                explanation = mExp[1].trim();
+            } else if (variantMatch && !collectingExplanation) {
+                collectingOptions = true;
+                options.push(line.substring(variantMatch[0].length).trim());
+            } else if (collectingExplanation) {
+                explanation += (explanation ? "\n" : "") + line;
+            } else if (!collectingOptions) {
+                questionText += (questionText ? "\n" : "") + line;
             }
         });
         
         if (questionText && options.length > 0) {
             questions.push({
-                text: questionText,
+                text: questionText.trim(),
                 options: options,
-                correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0
+                correctIndex: correctIndex >= 0 && correctIndex < options.length ? correctIndex : 0,
+                explanation: explanation.trim()
             });
         }
     });
     
     if (questions.length > 0) {
         const list = document.getElementById('admin-questions-list');
-        // Clear or append? Usually, bulk import into a list is meant to populate the manual review.
-        // Let's clear and switch to manual tab for review.
         list.innerHTML = '';
         
         questions.forEach((q, idx) => {
@@ -6014,6 +6178,10 @@ window.parseAdminBulkQuestions = function() {
                             <input type="text" class="manual-opt" value="${opt}" placeholder="${String.fromCharCode(65 + i)} variantı">
                         </div>
                     `).join('')}
+                </div>
+                <div class="manual-q-explanation-row">
+                    <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
+                    <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin...">${q.explanation || ''}</textarea>
                 </div>
             `;
             list.appendChild(div);
@@ -6163,6 +6331,7 @@ window.saveAdminQuestions = async function() {
     for (const item of questionItems) {
         const text = item.querySelector('.manual-q-text').value.trim();
         const image = item.querySelector('.manual-q-img-data').value;
+        const explanation = item.querySelector('.manual-q-explanation') ? item.querySelector('.manual-q-explanation').value.trim() : '';
         const optionInputs = item.querySelectorAll('.manual-opt');
         const correctRadio = item.querySelector('input[type="radio"]:checked');
         
@@ -6188,7 +6357,8 @@ window.saveAdminQuestions = async function() {
             text,
             image,
             options,
-            correctIndex: parseInt(correctRadio.value)
+            correctIndex: parseInt(correctRadio.value),
+            explanation: explanation
         });
     }
 
@@ -6297,6 +6467,10 @@ window.editCategoryQuestion = function(qId) {
     const radios = item.querySelectorAll('input[type="radio"]');
     if (radios[q.correctIndex]) radios[q.correctIndex].checked = true;
     
+    // İzahı doldur
+    const explanationInput = item.querySelector('.manual-q-explanation');
+    if (explanationInput) explanationInput.value = q.explanation || '';
+    
     // Yadda saxla düyməsinin mətnini dəyiş
     const saveBtn = document.querySelector('.btn-save');
     saveBtn.innerHTML = '<i class="fas fa-save"></i> Dəyişikliyi Yadda Saxla';
@@ -6358,6 +6532,12 @@ window.startQuiz = function() {
     
     if (categoryTitle) categoryTitle.textContent = cat.name;
     
+    // Sual sayını müəyyən edin mətnini bərpa et
+    const infoText = document.querySelector('.quiz-setup-content p');
+    if (infoText) {
+        infoText.innerHTML = `Sual sayını müəyyən edin (Cəmi: ${cat.questions.length})`;
+    }
+    
     // Reset radio selection to 15 (default)
     const radios = document.querySelectorAll('input[name="question-count"]');
     radios.forEach(r => {
@@ -6379,7 +6559,7 @@ window.confirmStartQuiz = function() {
     const selectedCountValue = document.querySelector('input[name="question-count"]:checked').value;
     let finalQuestions = [];
     
-    // Shuffle all questions
+    // Bütün sualları qarışdır (Təsdiqlənmə statusundan asılı olmayaraq)
     const shuffledAll = [...cat.questions].sort(() => 0.5 - Math.random());
 
     const count = parseInt(selectedCountValue);
@@ -6395,6 +6575,12 @@ window.confirmStartQuiz = function() {
         userAnswers: new Array(finalQuestions.length).fill(-1),
         questionTimes: new Array(finalQuestions.length).fill(cat.time)
     };
+
+    trackEvent('start_quiz', {
+        category: cat.name,
+        category_id: cat.id,
+        question_count: finalQuestions.length
+    });
 
     // Səhifə fokusunu itirəndə blur tətbiq etmək (İstifadəçinin istəyi ilə ləğv edildi)
     /*
@@ -6688,6 +6874,13 @@ function showResult() {
     currentQuiz.score = correct; // Update final score
     const accuracy = Math.round((correct / total) * 100) || 0;
     
+    trackEvent('finish_quiz', {
+        category: currentQuiz.categoryId,
+        score: correct,
+        total: total,
+        accuracy: accuracy
+    });
+
     document.getElementById('score-text').textContent = `${accuracy}%`;
     document.getElementById('correct-count').textContent = correct;
     document.getElementById('wrong-count').textContent = wrong;

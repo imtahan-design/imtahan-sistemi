@@ -203,8 +203,8 @@ async function generateSitemap() {
 
         // Static pages
         const staticPages = [
-            { loc: 'https://imtahan.site/', priority: '1.0', changefreq: 'daily' },
-            { loc: 'https://imtahan.site/bloq', priority: '0.9', changefreq: 'hourly' }
+            { loc: 'https://imtahan.site', priority: '1.0', changefreq: 'daily' },
+            { loc: 'https://imtahan.site/bloq/', priority: '0.9', changefreq: 'hourly' }
         ];
 
         staticPages.forEach(page => {
@@ -223,7 +223,7 @@ async function generateSitemap() {
             // Kanonik format: /bloq/slug
             // 404 xətası olmaması üçün aşağıda fiziki qovluq və index.html yaradılır.
             if (data.slug) {
-                url = `https://imtahan.site/bloq/${data.slug}`;
+                url = `https://imtahan.site/bloq/${data.slug}/`;
                 
                 // --- STATİK SƏHİFƏ GENERASİYASI (SEO üçün) ---
                 try {
@@ -271,7 +271,7 @@ async function generateSitemap() {
                         imageUrl = rawImageUrl;
                     }
                     const displayImage = getCleanImageUrl(rawImageUrl, imageUrl);
-                    const canonical = `https://imtahan.site/bloq/${data.slug}`;
+                    const canonical = `https://imtahan.site/bloq/${data.slug}/`;
 
                     const publishedISO = toISODate(data.date) || new Date().toISOString();
                     const modifiedISO = toISODate(data.updatedAt) || publishedISO;
@@ -334,7 +334,7 @@ async function generateSitemap() {
             "@type": "ListItem",
             "position": 1,
             "name": "Ana Səhifə",
-            "item": "https://imtahan.site/"
+            "item": "https://imtahan.site"
           },
           {
             "@type": "ListItem",

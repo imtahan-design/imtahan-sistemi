@@ -144,19 +144,24 @@
                     </p>
                 </div>
                 
-                <h3>⚙️ Telegram Konfiqurasiya</h3>
+                <h3>⚙️ Konfiqurasiya</h3>
                 <div class="form-group">
-                    <label>Bot Token</label>
+                    <label>Telegram Bot Token</label>
                     <input type="text" id="tg-token" placeholder="TELEGRAM_BOT_TOKEN">
                 </div>
                 <div class="form-group">
-                    <label>Kanal ID</label>
+                    <label>Telegram Kanal ID</label>
                     <input type="text" id="tg-channel" placeholder="@kanal_adi və ya ID">
                 </div>
-                <button id="btn-save-tg-config" class="save-btn" style="background:#0ea5e9; width:100%; margin-bottom: 10px;" onclick="saveTelegramConfig()">
+                <div class="form-group" style="margin-top: 15px; border-top: 1px solid #e2e8f0; paddingTop: 15px;">
+                    <label>Google Analytics ID</label>
+                    <input type="text" id="ga-id" placeholder="G-XXXXXXXXXX">
+                    <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">* Dəyişiklik edildikdən sonra səhifə yenilənməlidir.</p>
+                </div>
+                <button id="btn-save-config" class="save-btn" style="background:#0ea5e9; width:100%; margin-bottom: 10px;" onclick="saveConfig()">
                     <i class="fas fa-save"></i> Konfiqurasiyanı Saxla
                 </button>
-                <div id="tg-config-status" style="font-size:0.9rem; color:#64748b; margin-bottom: 20px;"></div>
+                <div id="config-status" style="font-size:0.9rem; color:#64748b; margin-bottom: 20px;"></div>
                 
                 <div class="form-group">
                     <label>Sual sayı</label>
@@ -284,13 +289,16 @@
             try {
                 const resp = await fetch(base + path, init);
                 if (resp) {
-                    if (resp.ok || resp.status === 200) return resp;
+                    // Əgər 404 və ya başqa xəta olsa belə, əgər bu bizim serverdirsə, davam edirik
+                    if (resp.ok) return resp;
                     lastResp = resp;
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.warn(`Fetch failed for ${base}:`, e);
+            }
         }
         if (lastResp) return lastResp;
-        throw new Error('Serverlə əlaqə qurmaq mümkün olmadı');
+        throw new Error('Serverlə əlaqə qurmaq mümkün olmadı. Zəhmət olmasa terminalda "node server.js" komandasının işlədiyini yoxlayın.');
     }
 
     // Serverin işlək olduğunu yoxlayaq
@@ -691,37 +699,82 @@
         qcInput.addEventListener('input', (e) => updateQuizCountViews(e.target.value));
         updateQuizCountViews(qcInput.value);
     }
-    async function saveTelegramConfig() {
-        const btn = document.getElementById('btn-save-tg-config');
-        const status = document.getElementById('tg-config-status');
+    // Configuration Logic
+    async function loadConfig() {
+        if (!db) return;
+        
+        try {
+            const doc = await db.collection('config').doc('main').get();
+            if (doc.exists) {
+                const data = doc.data();
+                if(document.getElementById('tg-token')) document.getElementById('tg-token').value = data.telegram_bot_token || '';
+                if(document.getElementById('tg-channel')) document.getElementById('tg-channel').value = data.telegram_channel_id || '';
+                if(document.getElementById('ga-id')) document.getElementById('ga-id').value = data.google_analytics_id || '';
+            }
+        } catch (error) {
+            console.error("Config load error:", error);
+        }
+    }
+
+    // Initial load
+    window.addEventListener('load', loadConfig);
+
+    async function saveConfig() {
+        const btn = document.getElementById('btn-save-config');
+        const status = document.getElementById('config-status');
         const token = document.getElementById('tg-token').value.trim();
         const channelId = document.getElementById('tg-channel').value.trim();
+        const gaId = document.getElementById('ga-id') ? document.getElementById('ga-id').value.trim() : '';
+        
         const original = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saxlanır...';
-        status.textContent = '';
+        status.innerHTML = '';
+        
         try {
+            // 1. Save to Firestore
+            if (db) {
+                await db.collection('config').doc('main').set({
+                    telegram_bot_token: token,
+                    telegram_channel_id: channelId,
+                    google_analytics_id: gaId,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+
+            // 2. Update Local Server (Telegram Bot)
             const payload = { quizCount: parseInt(document.getElementById('quiz-count').value || '30', 10) };
             if (token) payload.token = token;
             if (channelId) payload.channelId = channelId;
-            const resp = await apiFetch('/api/admin/telegram-config', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await resp.json();
-            if (data && data.success) {
-                status.textContent = 'Saxlandı. Dəyişikliklərin tam tətbiqi üçün serveri yenidən başladın.';
-            } else {
-                status.textContent = 'Xəta: ' + (data.message || 'Naməlum');
+            
+            // Only call API if we are likely connected to the local server
+            // But we can try anyway
+            try {
+                const resp = await apiFetch('/api/admin/telegram-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+                if (!data || !data.success) {
+                    console.warn('Local server config update failed:', data);
+                }
+            } catch(e) {
+                console.warn('Local server not reachable for config update');
             }
+
+            status.innerHTML = '<span style="color: green;"><i class="fas fa-check"></i> Saxlandı!</span>';
         } catch (e) {
-            status.textContent = 'Xəta: ' + e.message;
+            console.error(e);
+            status.innerHTML = '<span style="color: red;">Xəta: ' + e.message + '</span>';
         } finally {
             btn.disabled = false;
             btn.innerHTML = original;
         }
     }
+
+    // Legacy support alias
+    async function saveTelegramConfig() { saveConfig(); }
 
     async function startQuiz(count) {
         const btn = document.getElementById('btn-start-quiz');
@@ -852,29 +905,20 @@
         resultsDiv.innerHTML = '';
 
         try {
-            // Bütün kateqoriyaları gətir
-            const snapshot = await db.collection('categories').get();
-            let foundCount = 0;
+            const response = await apiFetch(`/api/admin/search-questions?q=${encodeURIComponent(searchText)}`);
+            const data = await response.json();
 
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.questions && Array.isArray(data.questions)) {
-                    data.questions.forEach((q, index) => {
-                        // Sual mətni və ya variantlarda axtarış
-                        const qText = q.text || q.question || "";
-                        const options = q.options || [];
-                        const matchText = (qText + " " + options.join(" ")).toLowerCase();
-                        
-                        if (matchText.includes(searchText.toLowerCase())) {
-                            renderQuestionEditor(doc.id, index, q, data.name, resultsDiv);
-                            foundCount++;
-                        }
+            if (data.success) {
+                const results = data.results || [];
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<div style="padding:10px; color: #64748b;">Heç bir nəticə tapılmadı.</div>';
+                } else {
+                    results.forEach(res => {
+                        renderQuestionEditor(res.docId, res.index, res.question, res.categoryName, resultsDiv);
                     });
                 }
-            });
-
-            if (foundCount === 0) {
-                resultsDiv.innerHTML = '<div style="padding:10px; color: #64748b;">Heç bir nəticə tapılmadı.</div>';
+            } else {
+                throw new Error(data.message || "Axtarış zamanı xəta baş verdi.");
             }
         } catch (error) {
             console.error("Axtarış xətası:", error);
@@ -884,6 +928,9 @@
             btn.disabled = false;
         }
     }
+
+    // Sual məlumatlarını müvəqqəti saxlamaq üçün
+    const questionDataCache = {};
 
     function renderQuestionEditor(docId, index, q, categoryName, container) {
         const div = document.createElement('div');
@@ -898,6 +945,14 @@
 
         const qText = q.text || q.question || "";
         const opts = q.options || ["", "", "", ""];
+
+        // Məlumatı keşdə saxla
+        const qKey = `${docId}_${index}`;
+        questionDataCache[qKey] = {
+            question: qText,
+            options: opts,
+            correct_option_id: currentCorrect
+        };
 
         div.innerHTML = `
             <div style="margin-bottom:10px; font-weight:bold; color:#2563eb;">
@@ -926,9 +981,14 @@
                 <label>İzah:</label>
                 <textarea id="edit-expl-${docId}-${index}" rows="2" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px;">${q.explanation || ""}</textarea>
             </div>
-            <button onclick="saveQuestionEdit('${docId}', ${index})" class="save-btn" style="background:#059669; width:100%;">
-                <i class="fas fa-save"></i> Yadda Saxla
-            </button>
+            <div style="display:flex; gap:10px;">
+                <button onclick="saveQuestionEdit('${docId}', ${index})" class="save-btn" style="background:#059669; flex:1;">
+                    <i class="fas fa-save"></i> Yadda Saxla
+                </button>
+                <button onclick="deleteQuestion('${docId}', ${index})" class="save-btn" style="background:#ef4444; width:120px;">
+                    <i class="fas fa-trash-alt"></i> Sil
+                </button>
+            </div>
         `;
         container.appendChild(div);
     }
@@ -974,6 +1034,41 @@
         } catch (e) {
             console.error(e);
             alert("❌ Xəta: " + e.message);
+        }
+    }
+
+    async function deleteQuestion(docId, index) {
+        if(!confirm("⚠️ Diqqət! Bu sualı silmək istədiyinizə əminsiniz?\n\nSual həm bazadan, həm də Telegram botunun siyahısından birdəfəlik silinəcək.")) return;
+
+        const qKey = `${docId}_${index}`;
+        const qData = questionDataCache[qKey];
+
+        try {
+            const response = await apiFetch('/api/admin/delete-question', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ docId, index, questionData: qData })
+            });
+
+            // Yanıtın JSON olub olmadığını yoxla
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                const result = await response.json();
+                if (result.success) {
+                    alert("✅ Sual uğurla silindi!");
+                    searchQuestion();
+                } else {
+                    alert("❌ Xəta: " + (result.message || "Naməlum xəta"));
+                }
+            } else {
+                // Əgər JSON deyilsə (məsələn 404 HTML səhifəsi)
+                const text = await response.text();
+                console.error("Server non-JSON response:", text);
+                alert("❌ Server xətası: Server düzgün cavab qaytarmadı (bəlkə server yenidən başladılmalıdır?)");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("❌ Silinmə zamanı xəta: " + e.message);
         }
     }
 </script>
