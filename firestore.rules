@@ -39,10 +39,10 @@ rules_version = '2';
      } 
  
      // --- 2. Categories (Kateqoriyalar) --- 
-     match /categories/{catId} { 
-       allow read: if true; 
-       allow write: if isTeacher() || isModerator(); 
-     } 
+    match /categories/{catId} { 
+      allow read: if true; 
+      allow write: if isTeacher() || isModerator(); 
+    } 
  
      // --- 3. Private Quizzes (Şəxsi Testlər) --- 
      match /private_quizzes/{quizId} { 

@@ -531,6 +531,74 @@ async function loadData() {
         if (db) db.collection('categories').doc('public_general').set(publicGeneral);
         hasChanged = true;
     }
+
+    // Seed Special Exams (Prokurorluq, Hakimlik, Vəkillik)
+    const specialSeeds = [
+        { id: 'special_prokurorluq', name: 'Prokurorluq üzrə sınaq', isSpecial: true, time: 180, description: 'Prokurorluq orqanlarına qəbul' },
+        { id: 'special_hakimlik', name: 'Hakimlik üzrə sınaq', isSpecial: true, time: 240, description: 'Hakimlərin Seçki Komitəsi imtahanı' },
+        { id: 'special_vekillik', name: 'Vəkillik üzrə sınaq', isSpecial: true, time: 180, description: 'Vəkillər Kollegiyasına qəbul' }
+    ];
+
+    specialSeeds.forEach(seed => {
+        const exists = categories.find(c => c.id === seed.id || c.name === seed.name);
+        if (!exists) {
+            const newCat = { 
+                id: seed.id, 
+                name: seed.name, 
+                time: seed.time, 
+                questions: [], 
+                parentId: null,
+                isSpecial: true,
+                description: seed.description
+            };
+            categories.push(newCat);
+            if (db) {
+                // Use set with merge to be safe, though set overwrites by default
+                db.collection('categories').doc(seed.id).set(newCat)
+                    .then(() => console.log(`Created special cat: ${seed.name}`))
+                    .catch(e => console.error(`Error creating ${seed.name}:`, e));
+            }
+            hasChanged = true;
+        } else if (seed.id === 'special_prokurorluq') {
+            // Ensure isPool flag is set if we have loaded it from somewhere else manually
+            // But actually we want to load the JSON file if available
+        }
+    });
+
+        // Check for special_pool.json and upload if needed (Admin helper)
+    if (db) { // Run in any environment if DB is connected
+        fetch('special_pool.json').then(res => {
+            if (res.ok) return res.json();
+            throw new Error('No pool file');
+        }).then(data => {
+             console.log("Found special_pool.json, checking if upload needed...");
+             const remoteCat = categories.find(c => c.id === 'special_prokurorluq');
+             
+             // Check if we need to update the pool (if it's empty OR if we have a force update flag or different size)
+             // We can check if remote questions count != local pool count
+             if (remoteCat && (!remoteCat.questions || remoteCat.questions.length !== data.questions.length)) {
+                 console.log("Updating special pool to Firestore (Size mismatch)...");
+                 const poolData = {
+                     questions: data.questions,
+                     lastUpdated: Date.now(),
+                     isPool: true
+                 };
+                 // Local update
+                 remoteCat.questions = data.questions;
+                 remoteCat.isPool = true;
+                 renderCategories(); // Update UI
+                 
+                 // Remote update
+                 db.collection('categories').doc('special_prokurorluq').update(poolData)
+                    .then(() => {
+                        console.log("Special Pool Uploaded Successfully!");
+                        alert("Xüsusi Sınaq Hovuzu (400 sual) uğurla yükləndi!");
+                    })
+                    .catch(e => console.error("Pool upload failed:", e));
+             }
+        }).catch(e => { /* ignore if file not found */ });
+    }
+
     if (hasChanged) {
         saveCategories();
     }
@@ -653,30 +721,159 @@ async function loadData() {
     const initialCount = categories.length;
     categories = categories.filter(c => c.name !== 'İngilis' && String(c.id) !== 'english_demo');
     
-    /* Dərslik avtomatik yaranma bağlandı
-    // Ensure "Dərslik" category and its subcategories exist
-    let derslik = categories.find(c => c.name === 'Dərslik');
-    if (!derslik) {
-        derslik = { id: 'derslik_' + Date.now(), name: 'Dərslik', time: 45, questions: [], parentId: null };
-        categories.push(derslik);
-    }
-    
-    let biologiya = categories.find(c => c.name === 'Biologiya' && c.parentId === derslik.id);
-    if (!biologiya) {
-        biologiya = { id: 'bio_' + Date.now(), name: 'Biologiya', time: 45, questions: [], parentId: derslik.id };
-        categories.push(biologiya);
-    }
-    
-    let kimya = categories.find(c => c.name === 'Kimya' && c.parentId === derslik.id);
-    if (!kimya) {
-        kimya = { id: 'kimya_' + Date.now(), name: 'Kimya', time: 45, questions: [], parentId: derslik.id };
-        categories.push(kimya);
-    }
+    // Generate Prokurorluq Exam from Special Pool
+    window.generateProkurorluqExam = function(categoryId) {
+        // Auth Check
+        if (!currentUser) {
+            alert("Xüsusi sınaqları işləmək üçün zəhmət olmasa qeydiyyatdan keçin və ya daxil olun!");
+            window.location.href = '#login'; // Assuming this triggers login modal or page
+            showLoginModal(); // Explicit call if available
+            return;
+        }
 
-    if (categories.length !== initialCount || !derslik || !biologiya || !kimya) {
-        saveCategories();
-    }
-    */
+        const cat = categories.find(c => c.id === categoryId);
+        if (!cat) {
+            alert("Kateqoriya tapılmadı!");
+            return;
+        }
+
+        // Check if pool is ready
+        if (!cat.isPool || !cat.questions || cat.questions.length < 100) {
+            alert("Xüsusi Sınaq Hovuzu hələ hazır deyil! Zəhmət olmasa adminin sualları yükləməsini gözləyin.");
+            return;
+        }
+
+        const SCHEMA = [
+            { name: 'Cinayət Məcəlləsi', count: 20 },
+            { name: 'Cinayət-Prosessual Məcəlləsi', count: 20 },
+            { name: 'Konstitusiya', count: 6 },
+            { name: 'Normativ hüquqi aktlar', count: 3 },
+            { name: 'İnzibati Xətalar Məcəlləsi', count: 5 },
+            { name: 'Mülki Məcəllə', count: 2 },
+            { name: 'Mülki-Prosessual Məcəllə', count: 2 },
+            { name: 'Əmək Məcəlləsi', count: 2 },
+            { name: 'Prokurorluq haqqında', count: 8 },
+            { name: 'Prokurorluq orqanlarında qulluq', count: 6 },
+            { name: 'Korrupsiyaya qarşı mübarizə', count: 4 }, // Reduced to 4 to keep total 80
+            { name: 'Polis haqqında', count: 1 },
+            { name: 'Avropa İnsan Hüquqları Konvensiyası', count: 1 }
+        ];
+
+        let examQuestions = [];
+        let usedIds = new Set(); // Global used IDs for this exam generation
+        
+        // Anti-repeat check (if logged in)
+        // We fetch exam_history for this user and this exam type
+        let excludeIds = new Set();
+        
+        const generate = (historyIds = []) => {
+             historyIds.forEach(id => excludeIds.add(id));
+             
+             // Track used similarity groups in THIS exam to avoid similar questions
+             let usedSimilarityGroups = new Set();
+
+             for (const item of SCHEMA) {
+                // Filter pool by subject
+                const subjectPool = cat.questions.filter(q => q.subjectName === item.name || (item.name.includes('Konvensiya') && q.subjectName && (q.subjectName.includes('Konvensiya') || q.subjectName.includes('İnsan hüquqları'))));
+                
+                // Filter out questions used in history
+                let available = subjectPool.filter(q => !excludeIds.has(q.id));
+                
+                // If not enough, prioritize oldest history? For now, just fallback to all subject pool
+                if (available.length < item.count) {
+                    console.warn(`Not enough UNUSED questions for ${item.name}. Reusing...`);
+                    available = subjectPool; 
+                }
+                
+                if (available.length < item.count) {
+                    console.warn(`Still not enough questions for ${item.name} in pool.`);
+                    examQuestions = [...examQuestions, ...available];
+                    continue;
+                }
+
+                // Shuffle
+                const shuffled = available.sort(() => 0.5 - Math.random());
+                
+                // Select with Similarity Check
+                let selectedCount = 0;
+                let subjectSelected = [];
+                
+                for (const q of shuffled) {
+                    if (selectedCount >= item.count) break;
+                    
+                    // Similarity Check
+                    if (q.similarityGroupId) {
+                        if (usedSimilarityGroups.has(q.similarityGroupId)) {
+                            // Skip this question as a similar one is already in exam
+                            console.log(`Skipping similar question ${q.id} (Group: ${q.similarityGroupId})`);
+                            continue;
+                        }
+                    }
+
+                    subjectSelected.push(q);
+                    if (q.similarityGroupId) usedSimilarityGroups.add(q.similarityGroupId);
+                    selectedCount++;
+                }
+                
+                // If stricter check resulted in too few questions, fill with remaining (ignoring similarity)
+                if (selectedCount < item.count) {
+                     console.warn(`Similarity constraint prevented filling ${item.name}. Relaxing...`);
+                     for (const q of shuffled) {
+                         if (selectedCount >= item.count) break;
+                         if (!subjectSelected.includes(q)) {
+                             subjectSelected.push(q);
+                             selectedCount++;
+                         }
+                     }
+                }
+
+                examQuestions = [...examQuestions, ...subjectSelected];
+            }
+            
+            // Shuffle final exam questions
+            examQuestions.sort(() => 0.5 - Math.random());
+
+            // Prepare exam object
+            const examData = {
+                id: 'exam_' + Date.now(),
+                categoryId: categoryId,
+                questions: examQuestions,
+                startTime: Date.now(),
+                duration: cat.time * 60, // seconds
+                title: cat.name,
+                examType: 'special_prokurorluq' // Tag for history
+            };
+
+            // Save to local storage for the view page
+            localStorage.setItem('currentDimExam', JSON.stringify(examData));
+            
+            // Redirect
+            window.location.href = 'dim_view.html';
+        };
+        
+        if (currentUser && db) {
+            db.collection('exam_history')
+                .where('userId', '==', currentUser.id)
+                .where('examType', '==', 'special_prokurorluq')
+                .get()
+                .then(snapshot => {
+                    const ids = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.questionIds && Array.isArray(data.questionIds)) {
+                            ids.push(...data.questionIds);
+                        }
+                    });
+                    generate(ids);
+                })
+                .catch(err => {
+                    console.error("Error fetching history:", err);
+                    generate([]);
+                });
+        } else {
+            generate([]);
+        }
+    };
 
 // Təkmilləşdirilmiş error handling sistemi
 const errorHandler = {
@@ -4563,7 +4760,11 @@ async function renderHistory() {
 
 function renderCategories() {
     const grid = document.getElementById('categories-grid');
+    const specialGrid = document.getElementById('special-exams-grid');
+    const specialTitle = document.getElementById('special-exams-title');
+
     grid.innerHTML = '';
+    if (specialGrid) specialGrid.innerHTML = '';
     
     // Filter categories by parentId
     const filteredCategories = categories.filter(cat => cat.parentId === currentParentId);
@@ -4576,10 +4777,14 @@ function renderCategories() {
         const parent = categories.find(c => c.id === currentParentId);
         title.textContent = parent ? parent.name : 'Kateqoriyalar';
         backBtn.classList.remove('hidden');
+        if (specialTitle) specialTitle.classList.add('hidden');
     } else {
         title.textContent = 'Mövcud İmtahanlar';
         backBtn.classList.add('hidden');
+        if (specialTitle) specialTitle.classList.remove('hidden');
     }
+
+    let hasSpecial = false;
 
     filteredCategories.forEach((cat, index) => {
         const div = document.createElement('div');
@@ -4599,9 +4804,9 @@ function renderCategories() {
         if (cat.name.toLowerCase().includes('dərslik')) icon = 'fa-graduation-cap';
         if (cat.name.toLowerCase().includes('tarix')) icon = 'fa-monument';
         if (cat.name.toLowerCase().includes('sinif')) icon = 'fa-school';
-        if (cat.name.toLowerCase().includes('biologiya')) icon = 'fa-dna';
-        if (cat.name.toLowerCase().includes('kimya')) icon = 'fa-flask';
-        if (cat.name.toLowerCase().includes('dərslik')) icon = 'fa-graduation-cap';
+        if (cat.name.toLowerCase().includes('prokuror')) icon = 'fa-landmark';
+        if (cat.name.toLowerCase().includes('hakim')) icon = 'fa-balance-scale';
+        if (cat.name.toLowerCase().includes('vəkil')) icon = 'fa-briefcase';
 
         // Check if it has subcategories
         const hasSub = categories.some(c => c.parentId === cat.id);
@@ -4613,19 +4818,165 @@ function renderCategories() {
             console.log(`XI Sinif tapıldı: ${cat.name}, ID: ${cat.id}, Sual: ${cat.questions ? cat.questions.length : 0}`);
         }
 
+        // Special Exam Logic
+        const isSpecial = cat.isSpecial || 
+                         cat.name.toLowerCase().includes('prokuror') || 
+                         cat.name.toLowerCase().includes('hakim') || 
+                         cat.name.toLowerCase().includes('vəkil');
+
         div.innerHTML = `
             <i class="fas ${icon}"></i>
             <h3>${escapeHtml(cat.name || '')}</h3>
             ${hasSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
                 ${hasSub ? `<button class="btn-secondary" onclick="enterCategory('${cat.id}')">Bölmələrə Bax</button>` : ''}
-                ${(hasQuestions || isXI) ? `<button class="btn-primary" onclick="startQuizCheck('${cat.id}')">Testə Başla</button>` : ''}
+                ${(hasQuestions || isXI) ? `<button class="btn-primary" onclick="${isSpecial ? `startSpecialQuiz('${cat.id}')` : `startQuizCheck('${cat.id}')`}">${isSpecial ? 'İmtahana Başla' : 'Testə Başla'}</button>` : ''}
                 ${cat.id === 'public_general' ? `<button class="btn-outline" onclick="openGlobalPublicQuestions()"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
                 ${!hasSub && !hasQuestions && !isXI && cat.id !== 'public_general' ? '<p class="text-muted text-xs italic">Tezliklə...</p>' : ''}
             </div>
         `;
-        grid.appendChild(div);
+        
+        if (isSpecial && !currentParentId && specialGrid) {
+             specialGrid.appendChild(div);
+             hasSpecial = true;
+        } else {
+             grid.appendChild(div);
+        }
     });
+    
+    if (!hasSpecial && specialTitle && !currentParentId) {
+        // Show title even if empty, as per user request to "create the section"
+        specialTitle.classList.remove('hidden');
+        if (specialGrid && specialGrid.children.length === 0) {
+            specialGrid.innerHTML = '<p class="text-muted italic" style="grid-column: 1/-1;">Hələlik xüsusi sınaq yoxdur.</p>';
+        }
+    }
+}
+
+
+// Prokurorluq Sınağı üçün Sxem
+const PROKURORLUQ_SCHEMA = [
+    { id: '1768674522030', count: 20, name: 'Cinayət Məcəlləsi' },
+    { id: '1768683898010', count: 20, name: 'Cinayət-Prosessual Məcəlləsi' },
+    { id: '1766934946320', count: 6, name: 'Konstitusiya' },
+    { id: '1768696058306', count: 3, name: 'Normativ hüquqi aktlar' },
+    { id: '1768735010552', count: 5, name: 'İnzibati Xətalar Məcəlləsi' },
+    { id: '1768750915800', count: 2, name: 'Mülki Məcəllə' },
+    { id: '1768737630088', count: 2, name: 'Mülki-Prosessual Məcəllə' },
+    { id: '1768745670510', count: 2, name: 'Əmək Məcəlləsi' },
+    { id: '1768696474731', count: 8, name: 'Prokurorluq haqqında' },
+    { id: '1768696605470', count: 6, name: 'Prokurorluq orqanlarında qulluq' },
+    { id: '1767194888783', count: 5, name: 'Korrupsiyaya qarşı mübarizə' }, // Konvensiya əvəzinə artırıldı
+    { id: '1768698786812', count: 1, name: 'Polis haqqında' }
+];
+
+async function generateProkurorluqExam() {
+    if (!currentUser) throw new Error("İmtahan üçün daxil olmalısınız.");
+    
+    // 1. İstifadəçinin tarixçəsini yüklə
+    let usedQuestionIds = new Set();
+    if (db) {
+        try {
+            const historySnapshot = await db.collection('exam_history')
+                .where('userId', '==', currentUser.id)
+                .where('examType', '==', 'prokurorluq')
+                .get();
+            
+            historySnapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.questionIds && Array.isArray(data.questionIds)) {
+                    data.questionIds.forEach(id => usedQuestionIds.add(id));
+                }
+            });
+            console.log(`User has seen ${usedQuestionIds.size} unique questions.`);
+        } catch (e) {
+            console.error("History fetch error:", e);
+        }
+    }
+
+    let examQuestions = [];
+    let log = [];
+
+    // 2. Hər kateqoriya üzrə sualları seç
+    for (const item of PROKURORLUQ_SCHEMA) {
+        // Kateqoriyanı tap (yaddaşdan və ya DB-dən)
+        let cat = categories.find(c => c.id === item.id);
+        
+        // Əgər yaddaşda yoxdursa və DB varsa, yüklə
+        if ((!cat || !cat.questions || cat.questions.length === 0) && db) {
+            try {
+                const doc = await db.collection('categories').doc(item.id).get();
+                if (doc.exists) {
+                    cat = { id: doc.id, ...doc.data() };
+                }
+            } catch (e) { console.error(`Error fetching cat ${item.id}:`, e); }
+        }
+
+        if (!cat || !cat.questions) {
+            log.push(`${item.name}: Kateqoriya tapılmadı!`);
+            continue;
+        }
+
+        // Sualları filtrlə (işlənmişləri çıxar)
+        const availableQuestions = cat.questions.filter(q => !usedQuestionIds.has(String(q.id)));
+        
+        if (availableQuestions.length < item.count) {
+            log.push(`${item.name}: Kifayət qədər yeni sual yoxdur (Tələb: ${item.count}, Var: ${availableQuestions.length}). Mövcud olanlar götürülür.`);
+        }
+
+        // Təsadüfi seç
+        const shuffled = availableQuestions.sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, item.count);
+        
+        examQuestions = [...examQuestions, ...selected];
+    }
+
+    if (examQuestions.length === 0) {
+        throw new Error("Sual bazası boşdur və ya bütün sualları işləmisiniz.");
+    }
+
+    // 3. İmtahan obyektini yarat
+    return {
+        id: 'generated_prokurorluq',
+        name: 'Prokurorluq üzrə sınaq',
+        time: 180, // 3 saat
+        questions: examQuestions,
+        isSpecial: true,
+        examType: 'prokurorluq', // For saving history later
+        createdAt: Date.now()
+    };
+}
+
+window.startSpecialQuiz = async function(catId) {
+    if (catId === 'special_prokurorluq') {
+        const btn = document.querySelector(`button[onclick*="'${catId}'"]`);
+        const originalText = btn ? btn.innerHTML : '';
+        if(btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Hazırlanır...';
+        }
+
+        try {
+            const generatedExam = await generateProkurorluqExam();
+            
+            // Yadda saxla
+            localStorage.setItem('generatedExamData', JSON.stringify(generatedExam));
+            localStorage.setItem('activeSpecialCategory', 'generated_prokurorluq');
+            
+            window.location.href = 'dim_view.html';
+        } catch (e) {
+            console.error(e);
+            alert('Sınaq yaradılarkən xəta: ' + e.message);
+            if(btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+        return;
+    }
+
+    localStorage.setItem('activeSpecialCategory', catId);
+    window.location.href = 'dim_view.html';
 }
 
 window.enterCategory = function(id) {
@@ -5749,6 +6100,10 @@ window.saveAnonymousName = function() {
     sendComment(); // Try sending again
 }
 
+let adminQuestionViewState = {
+    topCount: 5
+};
+
 function openCategory(id) {
     activeCategoryId = id;
     const cat = categories.find(c => c.id === id);
@@ -5774,6 +6129,7 @@ function openCategory(id) {
             startBtn.textContent = "Testə Başla";
         }
 
+        adminQuestionViewState.topCount = 5; // Reset view state
         renderQuestions();
     } else {
         // Əgər admin deyilsə, testi başlama modalını göstər və ya dashboard-a qaytar
@@ -5787,29 +6143,67 @@ function renderQuestions() {
     list.innerHTML = '';
     const cat = categories.find(c => c.id === activeCategoryId);
     
-    if (cat.questions.length === 0) {
+    if (!cat || !cat.questions || cat.questions.length === 0) {
         list.innerHTML = '<p class="text-center text-muted">Hələ sual yoxdur.</p>';
         return;
     }
 
-    cat.questions.forEach((q, index) => {
-        const div = document.createElement('div');
-        div.className = 'question-item';
-        div.dataset.id = q.id; 
-        div.innerHTML = `
-            <div class="q-content-wrapper">
-                <div class="q-text-main">
-                    <strong>${index + 1}.</strong> ${q.text.substring(0, 50)}${q.text.length > 50 ? '...' : ''}
-                    ${q.image ? '<i class="fas fa-image" title="Şəkilli sual"></i>' : ''}
+    const total = cat.questions.length;
+    const topCount = adminQuestionViewState.topCount;
+    const bottomCount = 5;
+
+    // Helper to render a list of questions
+    const renderList = (qs) => {
+        qs.forEach(q => {
+            const div = document.createElement('div');
+            div.className = 'question-item';
+            div.dataset.id = q.id; 
+            div.innerHTML = `
+                <div class="q-content-wrapper">
+                    <div class="q-text-main">
+                        <strong>${q.originalIndex + 1}.</strong> ${q.text.substring(0, 50)}${q.text.length > 50 ? '...' : ''}
+                        ${q.image ? '<i class="fas fa-image" title="Şəkilli sual"></i>' : ''}
+                    </div>
                 </div>
-            </div>
-            <div class="q-actions">
-                <button onclick="editCategoryQuestion(${q.id})" class="edit-cat-btn" title="Düzəliş et"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteQuestion(${q.id})" title="Sualı sil"><i class="fas fa-trash"></i></button>
-            </div>
-        `;
-        list.appendChild(div);
-    });
+                <div class="q-actions">
+                    <button onclick="editCategoryQuestion('${q.id}')" class="edit-cat-btn" title="Düzəliş et"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteQuestion('${q.id}')" title="Sualı sil"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    };
+
+    if (total <= topCount + bottomCount) {
+        // Show all if total is small
+        renderList(cat.questions.map((q, i) => ({...q, originalIndex: i})));
+    } else {
+        // Show top chunk
+        const topChunk = cat.questions.slice(0, topCount).map((q, i) => ({...q, originalIndex: i}));
+        renderList(topChunk);
+
+        // Show "Load More" button if there is a gap
+        if (topCount < total - bottomCount) {
+            const remaining = total - bottomCount - topCount;
+            const btnDiv = document.createElement('div');
+            btnDiv.className = 'text-center my-4 p-2';
+            btnDiv.innerHTML = `
+                <button onclick="loadMoreAdminQuestions()" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition shadow-sm">
+                    <i class="fas fa-chevron-down"></i> Daha çox göstər (${remaining} gizli)
+                </button>
+            `;
+            list.appendChild(btnDiv);
+        }
+
+        // Show bottom chunk
+        const bottomChunk = cat.questions.slice(total - bottomCount).map((q, i) => ({...q, originalIndex: total - bottomCount + i}));
+        renderList(bottomChunk);
+    }
+}
+
+window.loadMoreAdminQuestions = function() {
+    adminQuestionViewState.topCount += 5;
+    renderQuestions();
 }
 
 window.generateAdminAIQuestions = async function() {
@@ -6350,14 +6744,49 @@ window.saveAdminQuestions = async function() {
         }
         if (!correctRadio) {
             showNotification('Bütün suallar üçün düzgün variantı seçin!', 'error');
+            item.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
+
+        const correctIndex = parseInt(correctRadio.value);
+        
+        // --- KEYFİYYƏT NƏZARƏTİ (Start) ---
+        const correctText = options[correctIndex];
+        // Note: Existing logic assumes radio value matches options index. 
+        // If options were filtered for empty strings, this might be risky, but we follow existing pattern.
+        
+        if (correctText) {
+            const wrongTexts = options.filter((_, i) => i !== correctIndex);
+
+            // Kriteriya 1: "Yalnız" patterni
+            const allWrongYalniz = wrongTexts.every(t => t.toLowerCase().startsWith('yalnız'));
+            const correctYalniz = correctText.toLowerCase().startsWith('yalnız');
+            
+            if (allWrongYalniz && !correctYalniz && wrongTexts.length > 0) {
+                showNotification('Sual keyfiyyət standartına cavab vermir: Bütün səhv variantlar "Yalnız" ilə başlayır, düzgün variant isə yox. Zəhmət olmasa variantları dəyişdirin.', 'error');
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                item.style.border = "2px solid red";
+                setTimeout(() => item.style.border = "", 5000);
+                return;
+            }
+
+            // Kriteriya 2: Uzunluq fərqi (> 2.5x)
+            const maxWrongLen = Math.max(...wrongTexts.map(t => t.length));
+            if (maxWrongLen > 0 && correctText.length > 2.5 * maxWrongLen) {
+                showNotification('Sual keyfiyyət standartına cavab vermir: Düzgün cavab səhv cavablardan həddindən artıq uzundur (>2.5x). Zəhmət olmasa variantları balanslaşdırın.', 'error');
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                item.style.border = "2px solid red";
+                setTimeout(() => item.style.border = "", 5000);
+                return;
+            }
+        }
+        // --- KEYFİYYƏT NƏZARƏTİ (End) ---
 
         newQuestionsData.push({
             text,
             image,
             options,
-            correctIndex: parseInt(correctRadio.value),
+            correctIndex: correctIndex,
             explanation: explanation
         });
     }
@@ -6417,7 +6846,7 @@ window.resetEditingState = function() {
 window.editCategoryQuestion = function(qId) {
     const cat = categories.find(c => c.id === activeCategoryId);
     if (!cat) return;
-    const q = cat.questions.find(item => item.id === qId);
+    const q = cat.questions.find(item => item.id == qId);
     if (!q) return;
 
     editingQuestionId = qId;
@@ -6482,11 +6911,11 @@ window.deleteQuestion = async function(qId) {
         if (!cat) return;
 
         // Sualın mətnini götürək (Dublikatlardan da silmək üçün)
-        const questionToDelete = cat.questions.find(q => q.id === qId);
+        const questionToDelete = cat.questions.find(q => q.id == qId);
         const questionText = questionToDelete ? questionToDelete.text : null;
 
         // 1. Aktiv kateqoriyadan sil
-        cat.questions = cat.questions.filter(q => q.id !== qId);
+        cat.questions = cat.questions.filter(q => q.id != qId);
         
         // 2. Ağıllı Silmə: Əgər bu sual eyni adda başqa dublikat kateqoriyalarda da varsa, ordan da sil
         // Bu, gələcəkdə "Bərpa Aləti"nin sildiyiniz sualı geri gətirməsinin qarşısını alır.

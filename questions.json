@@ -1274,19 +1274,6 @@
     "explanation": "Dövlət orqanının rəhbəri vəzifəsi adətən Ali üzrə təsnif edilir."
   },
   {
-    "id": 102,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "dərc edildiyi gün",
-      "Dərhal",
-      "7 gün",
-      "1 il"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
-  },
-  {
     "id": 103,
     "category": "Dövlət Qulluğu (Təsnifat)",
     "question": "\"Şöbə müdiri\" vəzifəsi inzibati vəzifələrin hansı təsnifatına aiddir? (Nümunəvi)",
@@ -1638,19 +1625,6 @@
     "explanation": "Kargüzar, Sürücü vəzifəsi adətən Texniki üzrə təsnif edilir."
   },
   {
-    "id": 130,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "1 ay",
-      "1 il",
-      "dərc edildiyi gün",
-      "30 gün"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
-  },
-  {
     "id": 131,
     "category": "Dövlət Qulluğu (Təsnifat)",
     "question": "\"Sektor müdiri\" vəzifəsi inzibati vəzifələrin hansı təsnifatına aiddir? (Nümunəvi)",
@@ -1924,19 +1898,6 @@
     "explanation": "Rəhbər müavini, Aparat rəhbəri vəzifəsi adətən 1-ci təsnifat üzrə təsnif edilir."
   },
   {
-    "id": 152,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "1 ay",
-      "Dərhal",
-      "dərc edildiyi gün",
-      "30 gün"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
-  },
-  {
     "id": 153,
     "category": "Dövlət Qulluğu (Təsnifat)",
     "question": "\"Şöbə müdiri\" vəzifəsi inzibati vəzifələrin hansı təsnifatına aiddir? (Nümunəvi)",
@@ -2106,19 +2067,6 @@
     "explanation": "Kargüzar, Sürücü vəzifəsi adətən Texniki üzrə təsnif edilir."
   },
   {
-    "id": 166,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "dərc edildiyi gün",
-      "3 gün",
-      "1 il",
-      "10 gün"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
-  },
-  {
     "id": 167,
     "category": "Dövlət Qulluğu (Təsnifat)",
     "question": "\"Sektor müdiri\" vəzifəsi inzibati vəzifələrin hansı təsnifatına aiddir? (Nümunəvi)",
@@ -2234,19 +2182,6 @@
     ],
     "correct_option_id": 3,
     "explanation": "Kargüzar, Sürücü vəzifəsi adətən Texniki üzrə təsnif edilir."
-  },
-  {
-    "id": 176,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "dərc edildiyi gün",
-      "15 gün",
-      "10 gün",
-      "30 gün"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
   },
   {
     "id": 177,
@@ -2600,19 +2535,6 @@
     "explanation": "Sektor müdiri vəzifəsi adətən 3-cü təsnifat üzrə təsnif edilir."
   },
   {
-    "id": 204,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "Dərhal",
-      "1 ay",
-      "dərc edildiyi gün",
-      "10 gün"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
-  },
-  {
     "id": 205,
     "category": "Dövlət Qulluğu (Təsnifat)",
     "question": "\"Dövlət orqanının rəhbəri\" vəzifəsi inzibati vəzifələrin hansı təsnifatına aiddir? (Nümunəvi)",
@@ -2624,19 +2546,6 @@
     ],
     "correct_option_id": 2,
     "explanation": "Dövlət orqanının rəhbəri vəzifəsi adətən Ali üzrə təsnif edilir."
-  },
-  {
-    "id": 206,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "10 gün",
-      "dərc edildiyi gün",
-      "6 ay",
-      "1 il"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
   },
   {
     "id": 207,
@@ -3094,19 +3003,6 @@
     "explanation": "Kargüzar, Sürücü vəzifəsi adətən Texniki üzrə təsnif edilir."
   },
   {
-    "id": 242,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "3 gün",
-      "dərc edildiyi gün",
-      "10 gün",
-      "6 ay"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
-  },
-  {
     "id": 243,
     "category": "Dövlət Qulluğu (Təsnifat)",
     "question": "\"Şöbə müdiri\" vəzifəsi inzibati vəzifələrin hansı təsnifatına aiddir? (Nümunəvi)",
@@ -3250,19 +3146,6 @@
     "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
   },
   {
-    "id": 254,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Günel rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
-      "Mədəni davranış",
-      "Sadiqlik",
-      "Qanunçuluq"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
     "id": 255,
     "category": "Etik Davranış (Situasiya)",
     "question": "Situasiya: Nigar iş yoldaşları ilə yüksək tonla danışır və etik olmayan ifadələr işlədir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
@@ -3274,19 +3157,6 @@
     ],
     "correct_option_id": 3,
     "explanation": "Dövlət qulluqçusu bütün şəxslərlə münasibətdə nəzakətli və təmkinli olmalıdır."
-  },
-  {
-    "id": 256,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Rəşad rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
-      "İctimai etimad",
-      "Mədəni davranış",
-      "Məlumatdan istifadə"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
   },
   {
     "id": 257,
@@ -3406,19 +3276,6 @@
     "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
   },
   {
-    "id": 266,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Rəşad rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "İctimai etimad",
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
-      "Qərəzsizlik",
-      "Vicdanlı davranış"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
     "id": 267,
     "category": "Etik Davranış (Situasiya)",
     "question": "Situasiya: Rəşad rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
@@ -3442,19 +3299,6 @@
       "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi"
     ],
     "correct_option_id": 3,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
-    "id": 269,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Aysel rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
-      "Qanunçuluq",
-      "Sadiqlik",
-      "Qərəzsizlik"
-    ],
-    "correct_option_id": 0,
     "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
   },
   {
@@ -3497,19 +3341,6 @@
     "explanation": "Dövlət qulluqçusu bütün şəxslərlə münasibətdə nəzakətli və təmkinli olmalıdır."
   },
   {
-    "id": 273,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Günel rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Mədəni davranış",
-      "İctimai etimad",
-      "Məlumatdan istifadə",
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
     "id": 274,
     "category": "Etik Davranış (Situasiya)",
     "question": "Situasiya: Günel rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
@@ -3518,19 +3349,6 @@
       "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
       "Dövlət əmlakından istifadə",
       "Korrupsiyanın qarşısının alınması"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
-    "id": 275,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Rəşad rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Sadiqlik",
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
-      "Vicdanlı davranış",
-      "Mədəni davranış"
     ],
     "correct_option_id": 1,
     "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
@@ -3718,19 +3536,6 @@
     "explanation": "Dövlət qulluqçusu dövlət orqanının nüfuzunu qorumalıdır."
   },
   {
-    "id": 290,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Əli rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Vicdanlı davranış",
-      "İctimai etimad",
-      "Qərəzsizlik",
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
     "id": 291,
     "category": "Etik Davranış (Situasiya)",
     "question": "Situasiya: Rəşad rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
@@ -3848,19 +3653,6 @@
     "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
   },
   {
-    "id": 300,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Nigar rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Qanunçuluq",
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
-      "Vicdanlı davranış",
-      "Mədəni davranış"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
     "id": 301,
     "category": "Etik Davranış (Situasiya)",
     "question": "Situasiya: Rəşad iş yoldaşları ilə yüksək tonla danışır və etik olmayan ifadələr işlədir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
@@ -3908,19 +3700,6 @@
       "Qərəzsizlik",
       "Maddi və qeyri-maddi nemətlərin, imtiyazların və güzəştlərin əldə edilməsinə yol verilməməsi",
       "İctimai etimad"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
-    "id": 305,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Rəşad rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
-      "Qərəzsizlik",
-      "Məlumatdan istifadə",
-      "Vicdanlı davranış"
     ],
     "correct_option_id": 0,
     "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
@@ -4184,19 +3963,6 @@
     ],
     "correct_option_id": 1,
     "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
-    "id": 326,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Vəli bayramda vətəndaşdan 100 manat dəyərində bahalı saat hədiyyə qəbul edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Qanunçuluq",
-      "Sadiqlik",
-      "Hədiyyə almaqla əlaqədar məhdudiyyətlər",
-      "Qərəzsizlik"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Dövlət qulluqçusu xidməti vəzifələri ilə əlaqədar heç bir hədiyyə qəbul etməməlidir (qonaqpərvərlik istisna olmaqla)."
   },
   {
     "id": 327,
@@ -4602,19 +4368,6 @@
     "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
   },
   {
-    "id": 358,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Rəşad rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Məlumatdan istifadə",
-      "İctimai etimad",
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
-      "Sadiqlik"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
     "id": 359,
     "category": "Etik Davranış (Situasiya)",
     "question": "Situasiya: Rəşad rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
@@ -4823,19 +4576,6 @@
     "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
   },
   {
-    "id": 375,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Nigar rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Qanunçuluq",
-      "Mədəni davranış",
-      "Vicdanlı davranış",
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
     "id": 376,
     "category": "Etik Davranış (Situasiya)",
     "question": "Situasiya: Aysel rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
@@ -4912,19 +4652,6 @@
     ],
     "correct_option_id": 0,
     "explanation": "Dövlət qulluqçusu dövlət orqanının nüfuzunu qorumalıdır."
-  },
-  {
-    "id": 382,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Rəşad rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "İctimai etimad",
-      "Qərəzsizlik",
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
-      "Vicdanlı davranış"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
   },
   {
     "id": 383,
@@ -5044,19 +4771,6 @@
     "explanation": "Dövlət qulluqçusu qanunsuz maddi və qeyri-maddi nemətlər tələb etməməlidir."
   },
   {
-    "id": 392,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Rəşad bayramda vətəndaşdan 100 manat dəyərində bahalı saat hədiyyə qəbul edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "Qərəzsizlik",
-      "Mədəni davranış",
-      "Hədiyyə almaqla əlaqədar məhdudiyyətlər",
-      "Sadiqlik"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Dövlət qulluqçusu xidməti vəzifələri ilə əlaqədar heç bir hədiyyə qəbul etməməlidir (qonaqpərvərlik istisna olmaqla)."
-  },
-  {
     "id": 393,
     "category": "Etik Davranış (Situasiya)",
     "question": "Situasiya: Günel dövlət orqanının nüfuzuna xələl gətirə biləcək məlumatları sosial şəbəkədə paylaşır. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
@@ -5091,19 +4805,6 @@
       "Konfliktlərin qarşısının alınması",
       "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
       "İnsanların hüquq, azadlıq və qanuni maraqlarına hörmət"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
-  },
-  {
-    "id": 396,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Günel rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "İctimai etimad",
-      "Sadiqlik",
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
-      "Məlumatdan istifadə"
     ],
     "correct_option_id": 2,
     "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
@@ -6214,32 +5915,6 @@
     "explanation": "Qanuna əsasən, sınaq müddəti üçün müddət: 6 ay. 3 ay sınaq, 3 ay mentorluq"
   },
   {
-    "id": 507,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "30 gün",
-      "6 ay",
-      "dərc edildiyi gün",
-      "15 gün"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
-  },
-  {
-    "id": 508,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "10 gün",
-      "15 gün",
-      "1 il",
-      "dərc edildiyi gün"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
-  },
-  {
     "id": 509,
     "category": "Qanunvericilik (Müddətlər)",
     "question": "\"İnzibati İcraat\" qanunvericiliyinə əsasən, inzibati icraatın müddəti müddəti nə qədərdir?",
@@ -6355,19 +6030,6 @@
     ],
     "correct_option_id": 3,
     "explanation": "Qanuna əsasən, hərbi qulluqçuların müraciətlərinə baxılma üçün müddət: 15 gün. dərhal baxılmalıdır"
-  },
-  {
-    "id": 518,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "30 gün",
-      "1 il",
-      "3 gün",
-      "dərc edildiyi gün"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
   },
   {
     "id": 519,
@@ -6552,19 +6214,6 @@
     "explanation": "Qanuna əsasən, fəaliyyətin qiymətləndirilməsi üçün müddət: iln sonunda. təqvim ili başa çatdıqdan sonra"
   },
   {
-    "id": 533,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "Dərhal",
-      "30 gün",
-      "dərc edildiyi gün",
-      "10 gün"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
-  },
-  {
     "id": 534,
     "category": "Qanunvericilik (Müddətlər)",
     "question": "\"Vətəndaşların müraciətləri\" qanunvericiliyinə əsasən, hərbi qulluqçuların müraciətlərinə baxılma müddəti nə qədərdir?",
@@ -6576,19 +6225,6 @@
     ],
     "correct_option_id": 1,
     "explanation": "Qanuna əsasən, hərbi qulluqçuların müraciətlərinə baxılma üçün müddət: 15 gün. dərhal baxılmalıdır"
-  },
-  {
-    "id": 535,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "Dərhal",
-      "1 il",
-      "1 ay",
-      "dərc edildiyi gün"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
   },
   {
     "id": 536,
@@ -6643,19 +6279,6 @@
     "explanation": "Qanuna əsasən, maliyyə xarakterli məlumatların təqdim edilməsi üçün müddət: hər il. "
   },
   {
-    "id": 540,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "10 gün",
-      "7 gün",
-      "dərc edildiyi gün",
-      "1 ay"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
-  },
-  {
     "id": 541,
     "category": "Qanunvericilik (Müddətlər)",
     "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
@@ -6680,19 +6303,6 @@
     ],
     "correct_option_id": 1,
     "explanation": "Qanuna əsasən, maliyyə xarakterli məlumatların təqdim edilməsi üçün müddət: hər il. "
-  },
-  {
-    "id": 543,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "10 gün",
-      "30 gün",
-      "7 gün",
-      "dərc edildiyi gün"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
   },
   {
     "id": 544,
@@ -6758,32 +6368,6 @@
     ],
     "correct_option_id": 3,
     "explanation": "Qanuna əsasən, hərbi qulluqçuların müraciətlərinə baxılma üçün müddət: 15 gün. dərhal baxılmalıdır"
-  },
-  {
-    "id": 549,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "1 ay",
-      "6 ay",
-      "dərc edildiyi gün",
-      "30 gün"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
-  },
-  {
-    "id": 550,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "Dərhal",
-      "1 ay",
-      "7 gün",
-      "dərc edildiyi gün"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
   },
   {
     "id": 551,
@@ -6875,19 +6459,6 @@
     ],
     "correct_option_id": 2,
     "explanation": "Qanuna əsasən, informasiya sorğusuna cavab üçün müddət: 7 iş günü. "
-  },
-  {
-    "id": 558,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "15 gün",
-      "7 gün",
-      "3 gün",
-      "dərc edildiyi gün"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
   },
   {
     "id": 559,
@@ -7083,19 +6654,6 @@
     ],
     "correct_option_id": 2,
     "explanation": "Qanuna əsasən, sınaq müddəti üçün müddət: 6 ay. 3 ay sınaq, 3 ay mentorluq"
-  },
-  {
-    "id": 574,
-    "category": "Qanunvericilik (Müddətlər)",
-    "question": "\"Normativ hüquqi aktlar\" qanunvericiliyinə əsasən, Prezidentin fərmanlarının qüvvəyə minməsi müddəti nə qədərdir?",
-    "options": [
-      "15 gün",
-      "6 ay",
-      "10 gün",
-      "dərc edildiyi gün"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanuna əsasən, Prezidentin fərmanlarının qüvvəyə minməsi üçün müddət: dərc edildiyi gün. əgər aktda başqa müddət göstərilməyibsə"
   },
   {
     "id": 575,
@@ -8058,19 +7616,6 @@
     ],
     "correct_option_id": 0,
     "explanation": "Konstitusiyaya əsasən, bu səlahiyyət Konstitusiya Məhkəməsinə aiddir."
-  },
-  {
-    "id": 661,
-    "category": "Etik Davranış (Situasiya)",
-    "question": "Situasiya: Vəli rəhbərliyin qanuni göstərişini yerinə yetirməkdən imtina edir. \nBu halda dövlət qulluqçusu hansı etik davranış prinsipini pozmuşdur?",
-    "options": [
-      "İctimai etimad",
-      "Sadiqlik",
-      "Əmr, sərəncam və ya tapşırıqların yerinə yetirilməsi",
-      "Mədəni davranış"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Dövlət qulluqçusu rəhbərin qanuni əmrlərini yerinə yetirməyə borcludur."
   },
   {
     "id": 663,
@@ -16640,19 +16185,6 @@
     "explanation": "Qanunvericiliyə əsasən: Onlar öz qazancları, təqaüdləri və digər gəlirləri üzərində sərbəst sərəncam verə bilərlər"
   },
   {
-    "id": 2402,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Heç kim",
-      "Yalnız mətbuat işçiləri",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Məlumatı təsadüfən eşidən şəxslər"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2403,
     "category": "ÇƏTİN - Dövlət Dili haqqında Qanun",
     "question": "Azərbaycan Respublikasında dövlət dili haqqında qanuna görə, reklamlarda dövlət dilinin istifadəsi necə tənzimlənir?",
@@ -16874,19 +16406,6 @@
     "explanation": "Qanunvericiliyə əsasən: Dövlət dili mütləq istifadə olunmalı, digər dillər isə ondan sonra gəlməlidir"
   },
   {
-    "id": 2421,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Yalnız mətbuat işçiləri",
-      "Heç kim",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2422,
     "category": "ÇƏTİN - Normativ hüquqi aktlar (Maddə 1.0.25 - Diskresion səlahiyyətlər)",
     "question": "Normativ hüquqi aktlar haqqında Konstitusiya Qanununun 1.0.25-ci maddəsinə əsasən, 'diskresion səlahiyyətlər' nədir?",
@@ -17015,19 +16534,6 @@
     ],
     "correct_option_id": 3,
     "explanation": "Qanunvericiliyə əsasən: Aksept (razılıq) alınana qədər oferta geri götürüldükdə"
-  },
-  {
-    "id": 2432,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Heç kim",
-      "Yalnız mətbuat işçiləri"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
   },
   {
     "id": 2434,
@@ -17199,19 +16705,6 @@
     "explanation": "Qanunvericiliyə əsasən: Aksept (razılıq) alınana qədər oferta geri götürüldükdə"
   },
   {
-    "id": 2449,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Heç kim",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Yalnız mətbuat işçiləri"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2450,
     "category": "ÇƏTİN - Normativ hüquqi aktlar (Maddə 1.0.12 - Kolliziya)",
     "question": "Eyni hüquqi qüvvəyə malik olan normativ hüquqi aktlar arasında ziddiyyət (kolliziya) yarandıqda hansı akt tətbiq edilir?",
@@ -17314,19 +16807,6 @@
     ],
     "correct_option_id": 2,
     "explanation": "Qanunvericiliyə əsasən: Dövlət dili mütləq istifadə olunmalı, digər dillər isə ondan sonra gəlməlidir"
-  },
-  {
-    "id": 2459,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Heç kim",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Yalnız mətbuat işçiləri",
-      "Məlumatı təsadüfən eşidən şəxslər"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
   },
   {
     "id": 2460,
@@ -17535,19 +17015,6 @@
     ],
     "correct_option_id": 0,
     "explanation": "Qanunvericiliyə əsasən: Aksept (razılıq) alınana qədər oferta geri götürüldükdə"
-  },
-  {
-    "id": 2479,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Yalnız mətbuat işçiləri",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Heç kim"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
   },
   {
     "id": 2480,
@@ -17795,19 +17262,6 @@
     ],
     "correct_option_id": 0,
     "explanation": "Qanunvericiliyə əsasən: Müsabiqə yolu ilə vəzifə tutanlarla"
-  },
-  {
-    "id": 2505,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Yalnız mətbuat işçiləri",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Heç kim",
-      "Məlumatı təsadüfən eşidən şəxslər"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
   },
   {
     "id": 2507,
@@ -18096,19 +17550,6 @@
     "explanation": "Qanunvericiliyə əsasən: Daha sonra qüvvəyə minmiş akt"
   },
   {
-    "id": 2543,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Heç kim",
-      "Yalnız mətbuat işçiləri",
-      "Məlumatı təsadüfən eşidən şəxslər"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2544,
     "category": "ÇƏTİN - Mülki Məcəllə (Maddə 25 - Fəaliyyət qabiliyyəti)",
     "question": "Yetkinlik yaşına çatmayanların (14 yaşdan 18 yaşadək) fəaliyyət qabiliyyəti barədə hansı fikir DOĞRUDUR?",
@@ -18239,19 +17680,6 @@
     "explanation": "Qanunvericiliyə əsasən: Məcburi icra haqqında qanunvericiliyə uyğun olaraq"
   },
   {
-    "id": 2562,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Yalnız mətbuat işçiləri",
-      "Heç kim",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2564,
     "category": "ÇƏTİN - İnzibati İcraat (Maddə 81 - İcra)",
     "question": "İnzibati aktın icra edilməsi qaydasına əsasən, pul tələblərinin ödənilməsi haqqında inzibati akt könüllü icra edilmədikdə necə icra olunur?",
@@ -18302,19 +17730,6 @@
     ],
     "correct_option_id": 3,
     "explanation": "Qanunvericiliyə əsasən: İşçinin əmək funksiyası"
-  },
-  {
-    "id": 2570,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Yalnız mətbuat işçiləri",
-      "Heç kim",
-      "Məlumatı təsadüfən eşidən şəxslər"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
   },
   {
     "id": 2572,
@@ -18408,45 +17823,6 @@
     "explanation": "Qanunvericiliyə əsasən: Dövlət orqanının qanunvericiliklə müəyyən edilmiş hallarda ən məqsədəuyğun qərarı qəbul etmək hüququ"
   },
   {
-    "id": 2586,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Yalnız mətbuat işçiləri",
-      "Heç kim"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
-    "id": 2588,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Heç kim",
-      "Yalnız mətbuat işçiləri"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
-    "id": 2590,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Yalnız mətbuat işçiləri",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Heç kim"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2592,
     "category": "ÇƏTİN - Mülki Məcəllə (Maddə 25 - Fəaliyyət qabiliyyəti)",
     "question": "Yetkinlik yaşına çatmayanların (14 yaşdan 18 yaşadək) fəaliyyət qabiliyyəti barədə hansı fikir DOĞRUDUR?",
@@ -18471,19 +17847,6 @@
     ],
     "correct_option_id": 3,
     "explanation": "Qanunvericiliyə əsasən: Şikayət edilən orqanın qərarını ləğv etmək"
-  },
-  {
-    "id": 2596,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Yalnız mətbuat işçiləri",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Heç kim"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
   },
   {
     "id": 2600,
@@ -18785,19 +18148,6 @@
     "explanation": "Qanunvericiliyə əsasən: Müsabiqə yolu ilə vəzifə tutanlarla"
   },
   {
-    "id": 2643,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Heç kim",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Yalnız mətbuat işçiləri"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2646,
     "category": "ÇƏTİN - Normativ hüquqi aktlar (Maddə 1.0.12 - Kolliziya)",
     "question": "Eyni hüquqi qüvvəyə malik olan normativ hüquqi aktlar arasında ziddiyyət (kolliziya) yarandıqda hansı akt tətbiq edilir?",
@@ -18850,19 +18200,6 @@
     "explanation": "Qanunvericiliyə əsasən: Dövlət orqanının qanunvericiliklə müəyyən edilmiş hallarda ən məqsədəuyğun qərarı qəbul etmək hüququ"
   },
   {
-    "id": 2652,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Heç kim",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Yalnız mətbuat işçiləri",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2653,
     "category": "ÇƏTİN - Normativ hüquqi aktlar (Maddə 1.0.25 - Diskresion səlahiyyətlər)",
     "question": "Normativ hüquqi aktlar haqqında Konstitusiya Qanununun 1.0.25-ci maddəsinə əsasən, 'diskresion səlahiyyətlər' nədir?",
@@ -18874,19 +18211,6 @@
     ],
     "correct_option_id": 3,
     "explanation": "Qanunvericiliyə əsasən: Dövlət orqanının qanunvericiliklə müəyyən edilmiş hallarda ən məqsədəuyğun qərarı qəbul etmək hüququ"
-  },
-  {
-    "id": 2656,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Heç kim",
-      "Yalnız mətbuat işçiləri",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
   },
   {
     "id": 2657,
@@ -19030,19 +18354,6 @@
     ],
     "correct_option_id": 1,
     "explanation": "Qanunvericiliyə əsasən: Aksept (razılıq) alınana qədər oferta geri götürüldükdə"
-  },
-  {
-    "id": 2684,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Heç kim",
-      "Yalnız mətbuat işçiləri",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
   },
   {
     "id": 2686,
@@ -19331,19 +18642,6 @@
     "explanation": "Qanunvericiliyə əsasən: Daha sonra qüvvəyə minmiş akt"
   },
   {
-    "id": 2757,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Heç kim",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Yalnız mətbuat işçiləri"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2761,
     "category": "ÇƏTİN - Əmək Məcəlləsi (Sınaq müddəti)",
     "question": "Kimlərlə əmək müqaviləsi bağlanarkən sınaq müddəti MÜƏYYƏN EDİLMİR?",
@@ -19552,19 +18850,6 @@
     "explanation": "Qanunvericiliyə əsasən: Daha sonra qüvvəyə minmiş akt"
   },
   {
-    "id": 2812,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Yalnız mətbuat işçiləri",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Heç kim",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2813,
     "category": "ÇƏTİN - Ombudsman (Şikayətə baxılma)",
     "question": "İnsan hüquqları üzrə müvəkkil (Ombudsman) şikayəti qəbul etdikdən sonra hansı qərarı QƏBUL EDƏ BİLMƏZ?",
@@ -19708,19 +18993,6 @@
     "explanation": "Qanunvericiliyə əsasən: Aksept (razılıq) alınana qədər oferta geri götürüldükdə"
   },
   {
-    "id": 2869,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Heç kim",
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Yalnız mətbuat işçiləri"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2870,
     "category": "ÇƏTİN - Normativ hüquqi aktlar (Maddə 1.0.12 - Kolliziya)",
     "question": "Eyni hüquqi qüvvəyə malik olan normativ hüquqi aktlar arasında ziddiyyət (kolliziya) yarandıqda hansı akt tətbiq edilir?",
@@ -19851,19 +19123,6 @@
     "explanation": "Qanunvericiliyə əsasən: 1 il ərzində"
   },
   {
-    "id": 2931,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Yalnız mətbuat işçiləri",
-      "Heç kim"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
-  },
-  {
     "id": 2935,
     "category": "ÇƏTİN - Ombudsman (Şikayətə baxılma)",
     "question": "İnsan hüquqları üzrə müvəkkil (Ombudsman) şikayəti qəbul etdikdən sonra hansı qərarı QƏBUL EDƏ BİLMƏZ?",
@@ -19927,19 +19186,6 @@
     ],
     "correct_option_id": 1,
     "explanation": "Qanunvericiliyə əsasən: Onlar öz qazancları, təqaüdləri və digər gəlirləri üzərində sərbəst sərəncam verə bilərlər"
-  },
-  {
-    "id": 2975,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Yalnız mətbuat işçiləri",
-      "Heç kim",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Məlumatı təsadüfən eşidən şəxslər"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
   },
   {
     "id": 2977,
@@ -20018,19 +19264,6 @@
     ],
     "correct_option_id": 2,
     "explanation": "Qanunvericiliyə əsasən: Aktın icraçılarının siyahısı"
-  },
-  {
-    "id": 2992,
-    "category": "ÇƏTİN - Dövlət Sirri haqqında Qanun",
-    "question": "Dövlət sirrini təşkil edən məlumatların yayılmasına görə kimlər məsuliyyət daşıyır?",
-    "options": [
-      "Məlumatı təsadüfən eşidən şəxslər",
-      "Yalnız mətbuat işçiləri",
-      "Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər",
-      "Heç kim"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Qanunvericiliyə əsasən: Məlumatları etibar edilmiş və ya xidməti vəzifəsi ilə əlaqədar onlara məlum olmuş şəxslər"
   },
   {
     "id": 3005,
@@ -30210,318 +29443,6 @@
     ],
     "correct_option_id": 0,
     "explanation": "Mülki Məcəlləyə görə daşınmaz əmlak üzərində mülkiyyət hüququ yalnız Dövlət Reyestrində qeydiyyatdan keçdikdən sonra yaranır."
-  },
-  {
-    "id": 4901,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Prezident",
-      "Səlahiyyətlər dondurulur",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Konstitusiya Məhkəməsi"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4902,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Səlahiyyətlər dondurulur",
-      "Prezident",
-      "Konstitusiya Məhkəməsi",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4903,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Prezident",
-      "Konstitusiya Məhkəməsi",
-      "Səlahiyyətlər dondurulur"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4904,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Səlahiyyətlər dondurulur",
-      "Konstitusiya Məhkəməsi",
-      "Prezident"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4905,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Prezident",
-      "Konstitusiya Məhkəməsi",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Səlahiyyətlər dondurulur"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4907,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Konstitusiya Məhkəməsi",
-      "Səlahiyyətlər dondurulur",
-      "Prezident",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4908,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Konstitusiya Məhkəməsi",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Səlahiyyətlər dondurulur",
-      "Prezident"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4909,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Prezident",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Konstitusiya Məhkəməsi",
-      "Səlahiyyətlər dondurulur"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4910,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Prezident",
-      "Konstitusiya Məhkəməsi",
-      "Səlahiyyətlər dondurulur",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4912,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Konstitusiya Məhkəməsi",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Prezident",
-      "Səlahiyyətlər dondurulur"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4913,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Konstitusiya Məhkəməsi",
-      "Prezident",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Səlahiyyətlər dondurulur"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4914,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Səlahiyyətlər dondurulur",
-      "Konstitusiya Məhkəməsi",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Prezident"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4915,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Prezident",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Səlahiyyətlər dondurulur",
-      "Konstitusiya Məhkəməsi"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4916,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Konstitusiya Məhkəməsi",
-      "Səlahiyyətlər dondurulur",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Prezident"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4921,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Konstitusiya Məhkəməsi",
-      "Prezident",
-      "Səlahiyyətlər dondurulur",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4922,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Səlahiyyətlər dondurulur",
-      "Prezident",
-      "Konstitusiya Məhkəməsi"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4923,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Səlahiyyətlər dondurulur",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Konstitusiya Məhkəməsi",
-      "Prezident"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4925,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Səlahiyyətlər dondurulur",
-      "Konstitusiya Məhkəməsi",
-      "Prezident",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4934,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Səlahiyyətlər dondurulur",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Prezident",
-      "Konstitusiya Məhkəməsi"
-    ],
-    "correct_option_id": 1,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4936,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Prezident",
-      "Səlahiyyətlər dondurulur",
-      "Konstitusiya Məhkəməsi",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)"
-    ],
-    "correct_option_id": 3,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4937,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Konstitusiya Məhkəməsi",
-      "Səlahiyyətlər dondurulur",
-      "Prezident"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4942,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Prezident",
-      "Səlahiyyətlər dondurulur",
-      "Konstitusiya Məhkəməsi"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4945,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Səlahiyyətlər dondurulur",
-      "Prezident",
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Konstitusiya Məhkəməsi"
-    ],
-    "correct_option_id": 2,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
-  },
-  {
-    "id": 4998,
-    "category": "Konstitusiya (Ən Çətin - Analitik)",
-    "question": "Milli Məclis buraxıldıqda onun səlahiyyətlərini kim həyata keçirir? (Analitik)",
-    "options": [
-      "Milli Məclis öz səlahiyyətlərini yeni tərkib işə başlayana qədər saxlayır (lakin iclas keçirmir)",
-      "Konstitusiya Məhkəməsi",
-      "Prezident",
-      "Səlahiyyətlər dondurulur"
-    ],
-    "correct_option_id": 0,
-    "explanation": "Milli Məclisin səlahiyyəti yalnız yeni çağırışın ilk iclasında bitir."
   },
   {
     "category": "ÇƏTİN - Dövlət Qulluğu (Situasiya)",
@@ -47061,19 +45982,6 @@
     "id": 6615
   },
   {
-    "category": "İnzibati Xətalar Məcəlləsi",
-    "question": "Sual 6: \"İnzibati icraat haqqında\" Qanuna görə, inzibati xətanın aradan qaldırılması üçün şikayət hansı orqana verilə bilər?",
-    "options": [
-      "Yalnız yuxarı instansiya inzibati orqana",
-      "Ya yuxarı instansiya orqana, ya da məhkəməyə",
-      "Yalnız məhkəməyə",
-      "Yalnız Baş Prokurorluğa"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 6616
-  },
-  {
     "category": "Dövlət Qulluğu haqqında Qanun",
     "question": "Sual 7: \"Bütün dövlət qulluqçuları (A) vətəndaşdır (B). Bəzi vətəndaşlar (B) hüquqşünasdır (C). O halda...\"",
     "options": [
@@ -47478,19 +46386,6 @@
   },
   {
     "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 38: Dövlət qulluğuna hansı əsaslarla qəbul edilə bilər?",
-    "options": [
-      "Yalnız müsabiqə yolu ilə",
-      "Yalnızbaşına təyin etmə yolu ilə",
-      "Müsabiqə və təyin etmə yolu ilə",
-      "Yalnız ərizə yolu ilə"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6648
-  },
-  {
-    "category": "Dövlət Qulluğu haqqında Qanun",
     "question": "Sual 39 (Situasiya): Dövlət qulluqçusu olaraq, iş yerinizdə kolleqanızın qanunsuz əməliyyatlarını aşkar etdiniz. O, sizdən bu barədə susmağı xahiş edir və müqabilində maddi kömək təklif edir. Sizin hərəkətiniz necə olardı?",
     "options": [
       "Razılaşardım və susardım.",
@@ -47868,19 +46763,6 @@
   },
   {
     "category": "İnzibati Xətalar Məcəlləsi",
-    "question": "Sual 69 (Situasiya): Vətəndaş inzibati cəzanın qeyri-qanuni olduğunu düşünür. İlk müraciəti hansı orqana etməlidir?",
-    "options": [
-      "Məhkəməyə",
-      "Yuxarı instansiya inzibati orqana",
-      "Polisə",
-      "Prokurorluğa"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 6679
-  },
-  {
-    "category": "İnzibati Xətalar Məcəlləsi",
     "question": "Sual 70: İnzibati cəza tədbirləri hansı məqsədlə tətbiq olunur?",
     "options": [
       "Yalnız cərimə toplamaq üçün",
@@ -47971,19 +46853,6 @@
     "id": 6686
   },
   {
-    "category": "İnzibati Xətalar Məcəlləsi",
-    "question": "Sual 77 (Situasiya): İşçi 2 həftədir işə gəlmir, heç bir ərizə təqdim etməyib. İşəgötürən nə edə bilər?",
-    "options": [
-      "Dərhal işdən çıxarsın",
-      "Əvvəlcə iş yerində axtarış aparsın",
-      "İşdən könüllü çıxma kimi qəbul etsin",
-      "İşə davamiyyətin pozulması faktını protokollaşdırsın və qanunla nəzərdə tutulmuş qaydada işdən çıxarsın"
-    ],
-    "correct_option_id": 3,
-    "explanation": "",
-    "id": 6687
-  },
-  {
     "category": "Əmək Məcəlləsi",
     "question": "Sual 78: İşçinin əmək müqaviləsi bağlanarkən təqdim etməli olduğu sənədlər sırasına aşağıdakılardan hansı daxil deyil?",
     "options": [
@@ -47995,32 +46864,6 @@
     "correct_option_id": 2,
     "explanation": "",
     "id": 6688
-  },
-  {
-    "category": "Dövlət Qulluğu",
-    "question": "Sual 79: Sənədlərin icrasına nəzarəti kim həyata keçirir?",
-    "options": [
-      "Yalnız sənədi imzalayan",
-      "Yalnız kargüzar şöbəsi",
-      "Sənədi imzalayan və ya onun təyin etdiyi şəxs",
-      "Yalnız arxiv işçisi"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6689
-  },
-  {
-    "category": "Məntiq",
-    "question": "Sual 80: Təşkilatın adı sənədlərdə necə göstərilir?",
-    "options": [
-      "Yalnız qısaltma ilə",
-      "Tam adı ilə, qanunvericiliklə müəyyən edilmiş formada",
-      "İxtiyari formada",
-      "Yalnız rəqəmlə"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 6690
   },
   {
     "category": "Məntiq",
@@ -48179,19 +47022,6 @@
     "id": 6702
   },
   {
-    "category": "Təhsil Qanunu",
-    "question": "Sual 93: Dövlət qulluqçusuna ixtisas dərəcəsi verilərkən nə nəzərə alınır?",
-    "options": [
-      "Yalnız təhsil səviyyəsi",
-      "Yalnız iş stajı",
-      "Təhsil, iş stajı və peşəkar bilik səviyyəsi",
-      "Yalnız yaşı"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6703
-  },
-  {
     "category": "Əmək Məcəlləsi",
     "question": "Sual 94 (Situasiya): Dövlət qulluqçusu kimi sizə məlum oldu ki, kolleqanız vəzifə vəzifəsindən şəxsi mənfəət üçün istifadə edir. Siz nə etməlisiniz?",
     "options": [
@@ -48203,19 +47033,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 6704
-  },
-  {
-    "category": "Əmək Məcəlləsi",
-    "question": "Sual 95: \"Rüşvət\" nədir?",
-    "options": [
-      "Hədiyyə",
-      "Vəzifəli şəxsə qanunsuz ödəniş",
-      "Əmək haqqı",
-      "Bonus"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 6705
   },
   {
     "category": "İnformasiya əldə edilməsi",
@@ -48439,32 +47256,6 @@
     "id": 6722
   },
   {
-    "category": "Əmək Məcəlləsi",
-    "question": "Sual 113: \"Yol verdirmə\" (ləyaqətsizlik) nədir?",
-    "options": [
-      "Vəzifəli şəxsin öz səlahiyyətindən istifadə etməklə başqasına qanunsuz xidmət göstərməsi",
-      "Hədiyyə qəbul etmə",
-      "Rüşvət vermə",
-      "İşdən çıxarılma"
-    ],
-    "correct_option_id": 0,
-    "explanation": "",
-    "id": 6723
-  },
-  {
-    "category": "Konstitusiya",
-    "question": "Sual 114: Korrupsiyaya qarşı mübarizə üzrə məlumat vermə hüququ kimə məxsusdur?",
-    "options": [
-      "Yalnız dövlət qulluqçularına",
-      "Yalnız vətəndaşlara",
-      "Bütün fiziki və hüquqi şəxslərə",
-      "Yalnız jurnalistlərə"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6724
-  },
-  {
     "category": "Dövlət Qulluğu",
     "question": "Sual 115: Normativ hüquqi aktın ləğvi hansı formada həyata keçirilir?",
     "options": [
@@ -48528,19 +47319,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 6729
-  },
-  {
-    "category": "İnformasiya əldə edilməsi",
-    "question": "Sual 120: Məlumat sorğusuna cavab hansı formada verilir?",
-    "options": [
-      "Yalnız şifahi",
-      "Yalnız yazılı",
-      "Yazılı və ya elektron formada",
-      "Yalnız telefonla"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6730
   },
   {
     "category": "Mülki Məcəllə",
@@ -48725,19 +47503,6 @@
     "id": 6747
   },
   {
-    "category": "Əmək Məcəlləsi",
-    "question": "Sual 138: Məhkəmə qərarının qanuni qüvvəyə minməsi nə deməkdir?",
-    "options": [
-      "Qərarın icra olunması",
-      "Qərarın dərc edilməsi",
-      "Qərarın apellyasiya və ya kassasiya şikayəti üçün müddətinin bitməsi",
-      "Qərarın tərtib edilməsi"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6748
-  },
-  {
     "category": "İnzibati Xətalar Məcəlləsi",
     "question": "Sual 139 (Situasiya): Vətəndaşa inzibati cəza tətbiq edilib, lakin o, həmin qərarı ədalətli hesab etmir və şikayət etmək istəyir. Şikayət müddəti nə qədərdir?",
     "options": [
@@ -48777,32 +47542,6 @@
     "id": 6751
   },
   {
-    "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 142: Normativ hüquqi aktın qüvvəyə minməsi üçün nə lazımdır?",
-    "options": [
-      "Yalnız qəbul edilməsi",
-      "Dərc olunması və qanunla müəyyən edilmiş qaydada qüvvəyə minmə müddətinin keçməsi",
-      "Yalnız imzalanması",
-      "İcraya göndərilməsi"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 6752
-  },
-  {
-    "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 143: Dövlət qulluqçusunun xidməti vəzifələrini yerinə yetirərkən hansı prinsiplərə riayət etməlidir?",
-    "options": [
-      "Yalnız səmimiyyət",
-      "Qanunilik, bərabərlik, ləyaqət və şəffaflıq",
-      "Yalnız sürət",
-      "Yalnız effektivlik"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 6753
-  },
-  {
     "category": "Əmək Məcəlləsi",
     "question": "Sual 144 (Situasiya): Dövlət qulluqçusu olaraq, sizə məlum oldu ki, qohumunuz sizin işlədiyiniz sahədə lisenziya almaq istəyir. Sizin hərəkətiniz necə olmalıdır?",
     "options": [
@@ -48814,19 +47553,6 @@
     "correct_option_id": 2,
     "explanation": "",
     "id": 6754
-  },
-  {
-    "category": "Bələdiyyə",
-    "question": "Sual 145: Korrupsiyaya qarşı mübarizə tədbirləri hansı sahələri əhatə edir?",
-    "options": [
-      "Yalnız dövlət qulluğunu",
-      "Yalnız biznes sektorunu",
-      "Bütün ictimai həyatı",
-      "Yalnız məhkəmə sistemini"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6755
   },
   {
     "category": "İnformasiya əldə edilməsi",
@@ -48879,32 +47605,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 6759
-  },
-  {
-    "category": "Əmək Məcəlləsi",
-    "question": "Sual 150 (Situasiya): İşçi işəgötürənin əmrlərinə tabe olmadığına görə işdən çıxarılıb. O, bu qərarın qanunsuz olduğunu düşünür. Hansı orqana müraciət edə bilər?",
-    "options": [
-      "Yalnız məhkəməyə",
-      "Yalnız əmək inspeksiyasına",
-      "Əmək mübahisələri komissiyasına və ya məhkəməyə",
-      "Yalnız polisə"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6760
-  },
-  {
-    "category": "Dövlət Qulluğu",
-    "question": "Sual 152: Sənədlərin icrasına nəzarət hansı hallarda həyata keçirilir?",
-    "options": [
-      "Yalnız təcili sənədlər üçün",
-      "Bütün sənədlər üçün",
-      "Yalnız gizli sənədlər üçün",
-      "Yalnız xarici sənədlər üçün"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 6762
   },
   {
     "category": "Dövlət Qulluğu",
@@ -49011,19 +47711,6 @@
     "id": 6779
   },
   {
-    "category": "Konstitusiya",
-    "question": "Sual 170: Normativ hüquqi aktın dərc olunması hansı mətbuat orqanlarında həyata keçirilir?",
-    "options": [
-      "İstənilən qəzetdə",
-      "\"Azərbaycan Respublikasının qanunvericilik toplusu\"nda",
-      "İnternet saytlarında",
-      "Yalnız jurnallarda"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 6780
-  },
-  {
     "category": "Məntiq",
     "question": "Sual 184: Əgər bütün kitablar kağızdandırsa və bəzi kağızlar ağdırsa, onda:",
     "options": [
@@ -49051,19 +47738,6 @@
   },
   {
     "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 196: \"Dövlət qulluqçularının etik davranış qaydaları haqqında\" Qanuna görə, dövlət qulluqçusu vəzifə yerinə yetirərkən hansı prinsiplərə riayət etməlidir?",
-    "options": [
-      "Yalnız peşəkarlıq",
-      "Ləyaqət, nəzakət və obyektivlik",
-      "Yalnız səmimiyyət",
-      "Yalnız sürət"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 6806
-  },
-  {
-    "category": "Dövlət Qulluğu haqqında Qanun",
     "question": "Sual 197 (Situasiya): Dövlət qulluqçusu olaraq, sizə şəxsi sosial şəbəkə hesabınızdan iş yoldaşınız işlə bağlı məlumat soruşur. Sizin cavabınız necə olmalıdır?",
     "options": [
       "Dərhal cavab verməli",
@@ -49074,19 +47748,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 6807
-  },
-  {
-    "category": "Korrupsiya ilə mübarizə",
-    "question": "Sual 198: \"Korrupsiyaya qarşı mübarizə haqqında\" Qanuna görə, vəzifəli şəxsə icazə verilən hədiyyənin maksimum dəyəri nə qədərdir?",
-    "options": [
-      "50 AZN",
-      "100 AZN",
-      "200 AZN",
-      "Qanunla müəyyən edilmiş həddə"
-    ],
-    "correct_option_id": 3,
-    "explanation": "",
-    "id": 6808
   },
   {
     "category": "Dövlət Qulluğu",
@@ -49349,19 +48010,6 @@
     "id": 6828
   },
   {
-    "category": "Mülki Məcəllə",
-    "question": "Sual 219: Korrupsiyaya yol verən vəzifəli şəxsə nə cür məsuliyyət nəzərdə tutulub?",
-    "options": [
-      "Yalnız inzibati cəza",
-      "Yalnız mülki məsuliyyət",
-      "Cinayət, inzibati və mülki məsuliyyət",
-      "Yalnız intizam cəzası"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6829
-  },
-  {
     "category": "Konstitusiya",
     "question": "Sual 220: Aşağıdakılardan hansı korrupsiya əlamətlərindən sayıla bilməz?",
     "options": [
@@ -49493,19 +48141,6 @@
   },
   {
     "category": "Əmək Məcəlləsi",
-    "question": "Sual 232: Hüquqi şəxsin ləğvi hansı ardıcıllıqla həyata keçirilir?",
-    "options": [
-      "Birbaşa məhkəməyə müraciət",
-      "Vergi orqanlarına bildiriş, likvidasiya komissiyasının yaradılması, hesablaşmaların aparılması, dövlət qeydiyyatından çıxarılma",
-      "Yalnız bank hesabının bağlanması",
-      "Avtomatik olaraq"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 6842
-  },
-  {
-    "category": "Əmək Məcəlləsi",
     "question": "Sual 233 (Situasiya): İşçi 2 aydır iş yerində məzuniyyətdə olmadan işləyir. İşəgötürən ona məzuniyyət vermir. İşçi hansı hüququndan istifadə edə bilər?",
     "options": [
       "Heç nə edə bilməz",
@@ -49594,19 +48229,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 6858
-  },
-  {
-    "category": "Dövlət Qulluğu",
-    "question": "Sual 258: Dövlət bayrağı hansı materialdan hazırlanmalıdır?",
-    "options": [
-      "İstənilən materialdan",
-      "Yalnız parçadan",
-      "Parçadan və ya digər materiallardan, lakin rəngləri təsvirə uyğun olmalıdır",
-      "Yalnız kağızdan"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6868
   },
   {
     "category": "Dövlət Qulluğu haqqında Qanun",
@@ -49805,19 +48427,6 @@
   },
   {
     "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 301: Dövlət qulluqçusunun xidməti fəaliyyətinin dayandırılması hansı hallarda baş verə bilər?",
-    "options": [
-      "Yalnız cinayət işi açıldıqda",
-      "Yalnız öz istəyi ilə",
-      "Müvəqqəti əlil olma, həbs edilmə, vəzifəli cinayət işi açılma hallarında",
-      "Heç bir halda"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6911
-  },
-  {
-    "category": "Dövlət Qulluğu haqqında Qanun",
     "question": "Sual 302 (Situasiya): Dövlət qulluqçusu olaraq, sizə məlum oldu ki, iş yoldaşınız vəzifə vəzifəsindən şəxsi məqsədlər üçün istifadə edir. O, sizdən bu barədə susmağınızı xahiş edir. Sizin hərəkətiniz necə olardı?",
     "options": [
       "Susardım",
@@ -49843,19 +48452,6 @@
     "id": 6941
   },
   {
-    "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 332 (Situasiya): Dövlət qulluqçusu olaraq, sizə məlum olur ki, rəhbəriniz qanunsuz əməliyyat aparır. Siz nə etməlisiniz?",
-    "options": [
-      "Susmalı, çünki o, rəhbərdir",
-      "Birbaşa media orqanlarına məlumat verməli",
-      "Daxili xəbərdarlıq mexanizmindən istifadə etməli və ya korrupsiyaya qarşı mübarizə orqanlarına müraciət etməli",
-      "İş yoldaşlarınıza danışmalı"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6942
-  },
-  {
     "category": "Korrupsiya ilə mübarizə",
     "question": "Sual 333: Aşağıdakı hərəkətlərdən hansı korrupsiya sayılmır?",
     "options": [
@@ -49869,19 +48465,6 @@
     "id": 6943
   },
   {
-    "category": "Konstitusiya",
-    "question": "Sual 334: Korrupsiyaya qarşı mübarizə üzrə məlumat verən şəxslərə nə cür qoruma təmin edilir?",
-    "options": [
-      "Heç bir qoruma təmin edilmir",
-      "Yalnız maddi mükafat verilir",
-      "Şəxsiyyətin qorunması, təhlükəsizliyin təmin edilməsi və digər zəmanətlər",
-      "Yalnız vəzifə yüksəldilməsi"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 6944
-  },
-  {
     "category": "Əmək Məcəlləsi",
     "question": "Sual 335: Normativ hüquqi aktın \"hüquqi qüvvəsinin itirilməsi\" nə deməkdir?",
     "options": [
@@ -49893,19 +48476,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 6945
-  },
-  {
-    "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 358: \"Dövlət qulluqçularının etik davranış qaydaları haqqində\" Qanuna görə, dövlət qulluqçusu vəzifə yerinə yetirərkən hansı prinsiplərə riayət etməlidir?",
-    "options": [
-      "Yalnız peşəkarlıq",
-      "Ləyaqət, nəzakət və obyektivlik",
-      "Yalnız səmimiyyət",
-      "Yalnız sürət"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 6968
   },
   {
     "category": "Məntiq",
@@ -49999,19 +48569,6 @@
     "id": 7065
   },
   {
-    "category": "Dövlət Qulluğu",
-    "question": "Sual 456: \"Normativ xarakterli akt\" nədir?",
-    "options": [
-      "Tam normativ akt",
-      "Normativ aktın layihəsi",
-      "Normativ akt kimi tətbiq edilən, lakin normativ akt adlanmayan sənəd",
-      "Heç biri"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7066
-  },
-  {
     "category": "İnzibati Xətalar Məcəlləsi",
     "question": "Sual 457: İnzibati cəzanın tətbiqi zamanı vətəndaşın öz vəziyyətini izah etmək hüququ varmı?",
     "options": [
@@ -50023,19 +48580,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 7067
-  },
-  {
-    "category": "İnzibati Xətalar Məcəlləsi",
-    "question": "Sual 458 (Situasiya): Vətəndaş ictimai nəqliyyatda bilet almadan səyahət etdiyinə görə cərimə olunub. O, cəzanın həddən artıq olduğunu düşünür. Hansı orqana müraciət edə bilər?",
-    "options": [
-      "Yalnız polisə",
-      "Yalnız məhkəməyə",
-      "Cəzanı tətbiq edən orqanın yuxarı instansiya rəhbərinə və ya məhkəməyə",
-      "Heç bir orqana"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7068
   },
   {
     "category": "Dövlət Qulluğu",
@@ -50114,19 +48658,6 @@
     "correct_option_id": 2,
     "explanation": "",
     "id": 7074
-  },
-  {
-    "category": "Əmək Məcəlləsi",
-    "question": "Sual 465 (Situasiya): İşçi iş yerində alkoqol qəbul etdiyinə görə işdən çıxarılıb. O, bu qərarın qanunsuz olduğunu düşünür. Hansı sübutları təqdim edə bilər?",
-    "options": [
-      "Yalnız şahid ifadələri",
-      "Yalnız həkim arayışı",
-      "Alkoqol qəbul etmədiyini sübut edən hər hansı sübut (şahid ifadələri, videomaterial, həkim arayışı)",
-      "Heç bir sübut təqdim edə bilməz"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7075
   },
   {
     "category": "Dövlət Qulluğu",
@@ -50303,19 +48834,6 @@
   },
   {
     "category": "Konstitusiya",
-    "question": "Sual 522: Azərbaycan Konstitusiyasına görə, dövlət hakimiyyəti necə həyata keçirilir?",
-    "options": [
-      "Yalnız referendum yolu ilə",
-      "Xalqın səlahiyyət verdiyi orqanlar vasitəsilə",
-      "Yalnız Prezident tərəfindən",
-      "Yalnız Milli Məclis tərəfindən"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7132
-  },
-  {
-    "category": "Konstitusiya",
     "question": "Sual 523: Konstitusiyaya görə, Azərbaycan Respublikasında hakimiyyət bölgüsü prinsipi necə təşkil olunub?",
     "options": [
       "Qanunverici, icraedici və məhkəmə hakimiyyətinin ayrılığı",
@@ -50399,19 +48917,6 @@
   },
   {
     "category": "Konstitusiya",
-    "question": "Sual 551: Azərbaycan Konstitusiyasına görə, Prezidentin səlahiyyətləri hansı hallarda erkən bitir?",
-    "options": [
-      "Yalnız vəfat etdikdə",
-      "İstefa verdikdə, vəzifədən kənarlaşdırıldıqdə və ya vəfat etdikdə",
-      "Yalnız vəzifədən kənarlaşdırıldıqda",
-      "Yalnız xəstəlik səbəbi ilə"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7161
-  },
-  {
-    "category": "Konstitusiya",
     "question": "Sual 552: Konstitusiyaya görə, Azərbaycan Respublikasının ərazi bütövlüyü necə təmin edilir?",
     "options": [
       "Yalnız hərbi yolla",
@@ -50423,19 +48928,6 @@
     "correct_option_id": 2,
     "explanation": "",
     "id": 7162
-  },
-  {
-    "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 553: Dövlət qulluqçusunun xidməti münasibətləri hansı hallarda xitam oluna bilər?",
-    "options": [
-      "Yalnız öz istəyi ilə",
-      "Yalnız cinayət işi açıldıqda",
-      "Müxtəlif əsaslarla (öz istəyi, müəyyən edilmiş yaşa çatdıqda, vəzifəsinə xitam verildikdə və s.)",
-      "Heç bir halda"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7163
   },
   {
     "category": "Əmək Məcəlləsi",
@@ -50450,19 +48942,6 @@
     "correct_option_id": 2,
     "explanation": "",
     "id": 7164
-  },
-  {
-    "category": "Əmək Məcəlləsi",
-    "question": "Sual 555: \"Yol verdirmə\" nə deməkdir?",
-    "options": [
-      "Vəzifəli şəxsin öz səlahiyyətindən istifadə etməklə başqasına qanunsuz xidmət göstərməsi",
-      "Hədiyyə qəbul etmə",
-      "Rüşvət vermə",
-      "İşdən çıxarılma"
-    ],
-    "correct_option_id": 0,
-    "explanation": "",
-    "id": 7165
   },
   {
     "category": "Dövlət Qulluğu haqqında Qanun",
@@ -50675,32 +49154,6 @@
     "id": 7182
   },
   {
-    "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 171: Normativ hüquqi aktın qüvvəyə minməsi üçün nə lazımdır?",
-    "options": [
-      "Yalnız qəbul edilməsi",
-      "Dərc olunması və qanunla müəyyən edilmiş qaydada qüvvəyə minmə müddətinin keçməsi",
-      "Yalnız imzalanması",
-      "İcraya göndərilməsi"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7183
-  },
-  {
-    "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 172: Dövlət qulluqçusunun xidməti vəzifələrini yerinə yetirərkən hansı prinsiplərə riayət etməlidir?",
-    "options": [
-      "Yalnız səmimiyyət",
-      "Qanunilik, bərabərlik, ləyaqət və şəffaflıq",
-      "Yalnız sürət",
-      "Yalnız effektivlik"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7184
-  },
-  {
     "category": "Əmək Məcəlləsi",
     "question": "Sual 173 (Situasiya): Dövlət qulluqçusu olaraq, sizə məlum oldu ki, qohumunuz sizin işlədiyiniz sahədə lisenziya almaq istəyir. Sizin hərəkətiniz necə olmalıdır?",
     "options": [
@@ -50712,19 +49165,6 @@
     "correct_option_id": 2,
     "explanation": "",
     "id": 7185
-  },
-  {
-    "category": "Bələdiyyə",
-    "question": "Sual 174: Korrupsiyaya qarşı mübarizə tədbirləri hansı sahələri əhatə edir?",
-    "options": [
-      "Yalnız dövlət qulluğunu",
-      "Yalnız biznes sektorunu",
-      "Bütün ictimai həyatı",
-      "Yalnız məhkəmə sistemini"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7186
   },
   {
     "category": "İnformasiya əldə edilməsi",
@@ -50780,19 +49220,6 @@
   },
   {
     "category": "Əmək Məcəlləsi",
-    "question": "Sual 179 (Situasiya): İşçi işəgötürənin əmrlərinə tabe olmadığına görə işdən çıxarılıb. O, bu qərarın qanunsuz olduğunu düşünür. Hansı orqana müraciət edə bilər?",
-    "options": [
-      "Yalnız məhkəməyə",
-      "Yalnız əmək inspeksiyasına",
-      "Əmək mübahisələri komissiyasına və ya məhkəməyə",
-      "Yalnız polisə"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7191
-  },
-  {
-    "category": "Əmək Məcəlləsi",
     "question": "Sual 180: İşçiyə əsas ödənişli məzuniyyət neçə təqvim günü verilir?",
     "options": [
       "21 gün",
@@ -50803,19 +49230,6 @@
     "correct_option_id": 0,
     "explanation": "",
     "id": 7192
-  },
-  {
-    "category": "Dövlət Qulluğu",
-    "question": "Sual 181: Sənədlərin icrasına nəzarət hansı hallarda həyata keçirilir?",
-    "options": [
-      "Yalnız təcili sənədlər üçün",
-      "Bütün sənədlər üçün",
-      "Yalnız gizli sənədlər üçün",
-      "Yalnız xarici sənədlər üçün"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7193
   },
   {
     "category": "Məntiq",
@@ -51039,19 +49453,6 @@
     "id": 7210
   },
   {
-    "category": "Məntiq",
-    "question": "Sual 240: Sənədlərin icrasına nəzarəti kim həyata keçirir?",
-    "options": [
-      "Yalnız sənədi imzalayan",
-      "Yalnız kargüzar şöbəsi",
-      "Sənədi imzalayan və ya onun təyin etdiyi şəxs",
-      "Yalnız arxiv işçisi"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7211
-  },
-  {
     "category": "Dövlət Qulluğu",
     "question": "Sual 241: 5, 10, 20, 40, ? Növbəti rəqəm hansıdır?",
     "options": [
@@ -51235,19 +49636,6 @@
   },
   {
     "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 262: \"Dövlət qulluqçularının etik davranış qaydaları haqqında\" Qanuna görə, dövlət qulluqçusu vəzifə yerinə yetirərkən hansı prinsiplərə riayət etməlidir?",
-    "options": [
-      "Yalnız peşəkarlıq",
-      "Ləyaqət, nəzakət və obyektivlik",
-      "Yalnız səmimiyyət",
-      "Yalnız sürət"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7226
-  },
-  {
-    "category": "Dövlət Qulluğu haqqında Qanun",
     "question": "Sual 263 (Situasiya): Dövlət qulluqçusu olaraq, sizə şəxsi sosial şəbəkə hesabınızdan iş yoldaşınız işlə bağlı məlumat soruşur. Sizin cavabınız necə olmalıdır?",
     "options": [
       "Dərhal cavab verməli",
@@ -51258,19 +49646,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 7227
-  },
-  {
-    "category": "Korrupsiya ilə mübarizə",
-    "question": "Sual 264: \"Korrupsiyaya qarşı mübarizə haqqında\" Qanuna görə, vəzifəli şəxsə icazə verilən hədiyyənin maksimum dəyəri nə qədərdir?",
-    "options": [
-      "50 AZN",
-      "100 AZN",
-      "200 AZN",
-      "Qanunla müəyyən edilmiş həddə"
-    ],
-    "correct_option_id": 3,
-    "explanation": "",
-    "id": 7228
   },
   {
     "category": "Dövlət Qulluğu",
@@ -51390,19 +49765,6 @@
     "id": 7237
   },
   {
-    "category": "İnformasiya əldə edilməsi",
-    "question": "Sual 281: Məlumat sorğusuna cavab hansı formada verilir?",
-    "options": [
-      "Yalnız şifahi",
-      "Yalnız yazılı",
-      "Yazılı və ya elektron formada",
-      "Yalnız telefonla"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7238
-  },
-  {
     "category": "Mülki Məcəllə",
     "question": "Sual 282: Dövlət orqanlarının beynəlxalq əlaqələri hansı dildə aparılır?",
     "options": [
@@ -51427,19 +49789,6 @@
     "correct_option_id": 0,
     "explanation": "",
     "id": 7240
-  },
-  {
-    "category": "Əmək Məcəlləsi",
-    "question": "Sual 285 (Situasiya): İşçi 2 həftədir işə gəlmir, heç bir ərizə təqdim etməyib. İşəgötürən nə edə bilər?",
-    "options": [
-      "Dərhal işdən çıxarsın",
-      "Əvvəlcə iş yerində axtarış aparsın",
-      "İşdən könüllü çıxma kimi qəbul etsin",
-      "İşə davamiyyətin pozulması faktını protokollaşdırsın və qanunla nəzərdə tutulmuş qaydada işdən çıxarsın"
-    ],
-    "correct_option_id": 3,
-    "explanation": "",
-    "id": 7241
   },
   {
     "category": "Dövlət Qulluğu",
@@ -51729,19 +50078,6 @@
   },
   {
     "category": "Əmək Məcəlləsi",
-    "question": "Sual 314: Hüquqi şəxsin ləğvi hansı ardıcıllıqla həyata keçirilir?",
-    "options": [
-      "Birbaşa məhkəməyə müraciət",
-      "Vergi orqanlarına bildiriş, likvidasiya komissiyasının yaradılması, hesablaşmaların aparılması, dövlət qeydiyyatından çıxarılma",
-      "Yalnız bank hesabının bağlanması",
-      "Avtomatik olaraq"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7264
-  },
-  {
-    "category": "Əmək Məcəlləsi",
     "question": "Sual 315 (Situasiya): İşçi 2 aydır iş yerində məzuniyyətdə olmadan işləyir. İşəgötürən ona məzuniyyət vermir. İşçi hansı hüququndan istifadə edə bilər?",
     "options": [
       "Heç nə edə bilməz",
@@ -51830,19 +50166,6 @@
     "correct_option_id": 2,
     "explanation": "",
     "id": 7271
-  },
-  {
-    "category": "Məntiq",
-    "question": "Sual 322: Sənədlərin icrasına nəzarəti kim həyata keçirir?",
-    "options": [
-      "Yalnız sənədi imzalayan",
-      "Yalnız kargüzar şöbəsi",
-      "Sənədi imzalayan və ya onun təyin etdiyi şəxs",
-      "Yalnız arxiv işçisi"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7272
   },
   {
     "category": "Dövlət Qulluğu",
@@ -52079,45 +50402,6 @@
     "id": 7290
   },
   {
-    "category": "Əmək Məcəlləsi",
-    "question": "Sual 346 (Situasiya): İşçi işəgötürənin əmrlərinə tabe olmadığına görə işdən çıxarılıb. O, bu qərarın qanunsuz olduğunu düşünür. Hansı orqana müraciət edə bilər?",
-    "options": [
-      "Yalnız məhkəməyə",
-      "Yalnız əmək inspeksiyasına",
-      "Əmək mübahisələri komissiyasına və ya məhkəməyə",
-      "Yalnız polisə"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7291
-  },
-  {
-    "category": "Dövlət Qulluğu",
-    "question": "Sual 347: Sənədlərin icrasına nəzarəti kim həyata keçirir?",
-    "options": [
-      "Yalnız sənədi imzalayan",
-      "Yalnız kargüzar şöbəsi",
-      "Sənədi imzalayan və ya onun təyin etdiyi şəxs",
-      "Yalnız arxiv işçisi"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7292
-  },
-  {
-    "category": "Məntiq",
-    "question": "Sual 348: Təşkilatın adı sənədlərdə necə göstərilir?",
-    "options": [
-      "Yalnız qısaltma ilə",
-      "Tam adı ilə, qanunvericiliklə müəyyən edilmiş formada",
-      "İxtiyari formada",
-      "Yalnız rəqəmlə"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7293
-  },
-  {
     "category": "Dövlət Qulluğu",
     "question": "Sual 349: 2, 4, 8, 16, 32, ? Növbəti rəqəm hansıdır?",
     "options": [
@@ -52246,19 +50530,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 7303
-  },
-  {
-    "category": "Korrupsiya ilə mübarizə",
-    "question": "Sual 360: \"Korrupsiyaya qarşı mübarizə haqqında\" Qanuna görə, vəzifəli şəxsə icazə verilən hədiyyənin maksimum dəyəri nə qədərdir?",
-    "options": [
-      "50 AZN",
-      "100 AZN",
-      "200 AZN",
-      "Qanunla müəyyən edilmiş həddə"
-    ],
-    "correct_option_id": 3,
-    "explanation": "",
-    "id": 7304
   },
   {
     "category": "Dövlət Qulluğu",
@@ -52626,19 +50897,6 @@
   },
   {
     "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 391: Dövlət qulluqçusunun xidməti fəaliyyətinin dayandırılması hansı hallarda baş verə bilər?",
-    "options": [
-      "Yalnız cinayət işi açıldıqda",
-      "Yalnız öz istəyi ilə",
-      "Müvəqqəti əlil olma, həbs edilmə, vəzifəli cinayət işi açılma hallarında",
-      "Heç bir halda"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7333
-  },
-  {
-    "category": "Dövlət Qulluğu haqqında Qanun",
     "question": "Sual 392 (Situasiya): Dövlət qulluqçusu olaraq, sizə məlum oldu ki, iş yoldaşınız vəzifə vəzifəsindən şəxsi məqsədlər üçün istifadə edir. O, sizdən bu barədə susmağınızı xahiş edir. Sizin hərəkətiniz necə olardı?",
     "options": [
       "Susardım",
@@ -52795,19 +51053,6 @@
   },
   {
     "category": "Əmək Məcəlləsi",
-    "question": "Sual 404: Hüquqi şəxsin ləğvi hansı ardıcıllıqla həyata keçirilir?",
-    "options": [
-      "Birbaşa məhkəməyə müraciət",
-      "Vergi orqanlarına bildiriş, likvidasiya komissiyasının yaradılması, hesablaşmaların aparılması, dövlət qeydiyyatından çıxarılma",
-      "Yalnız bank hesabının bağlanması",
-      "Avtomatik olaraq"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7346
-  },
-  {
-    "category": "Əmək Məcəlləsi",
     "question": "Sual 405 (Situasiya): İşçi 2 aydır iş yerində məzuniyyətdə olmadan işləyir. İşəgötürən ona məzuniyyət vermir. İşçi hansı hüququndan istifadə edə bilər?",
     "options": [
       "Heç nə edə bilməz",
@@ -52896,19 +51141,6 @@
     "correct_option_id": 2,
     "explanation": "",
     "id": 7353
-  },
-  {
-    "category": "Məntiq",
-    "question": "Sual 412: Sənədlərin icrasına nəzarəti kim həyata keçirir?",
-    "options": [
-      "Yalnız sənədi imzalayan",
-      "Yalnız kargüzar şöbəsi",
-      "Sənədi imzalayan və ya onun təyin etdiyi şəxs",
-      "Yalnız arxiv işçisi"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7354
   },
   {
     "category": "Dövlət Qulluğu",
@@ -53132,19 +51364,6 @@
     "id": 7371
   },
   {
-    "category": "Dövlət Qulluğu",
-    "question": "Sual 430: Dövlət bayrağı hansı materialdan hazırlanmalıdır?",
-    "options": [
-      "İstənilən materialdan",
-      "Yalnız parçadan",
-      "Parçadan və ya digər materiallardan, lakin rəngləri təsvirə uyğun olmalıdır",
-      "Yalnız kağızdan"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7372
-  },
-  {
     "category": "Konstitusiya",
     "question": "Sual 431: \"Normativ hüquqi aktlar haqqında\" Konstitusiya Qanununa görə, qanunvericilikdə boşluq nədir?",
     "options": [
@@ -53159,19 +51378,6 @@
   },
   {
     "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 432: \"Dövlət qulluqçularının etik davranış qaydaları haqqında\" Qanuna görə, dövlət qulluqçusu vəzifə yerinə yetirərkən hansı prinsiplərə riayət etməlidir?",
-    "options": [
-      "Yalnız peşəkarlıq",
-      "Ləyaqət, nəzakət və obyektivlik",
-      "Yalnız səmimiyyət",
-      "Yalnız sürət"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7374
-  },
-  {
-    "category": "Dövlət Qulluğu haqqında Qanun",
     "question": "Sual 433 (Situasiya): Dövlət qulluqçusu olaraq, sizə şəxsi sosial şəbəkə hesabınızdan iş yoldaşınız işlə bağlı məlumat soruşur. Sizin cavabınız necə olmalıdır?",
     "options": [
       "Dərhal cavab verməli",
@@ -53182,19 +51388,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 7375
-  },
-  {
-    "category": "Korrupsiya ilə mübarizə",
-    "question": "Sual 434: \"Korrupsiyaya qarşı mübarizə haqqında\" Qanuna görə, vəzifəli şəxsə icazə verilən hədiyyənin maksimum dəyəri nə qədərdir?",
-    "options": [
-      "50 AZN",
-      "100 AZN",
-      "200 AZN",
-      "Qanunla müəyyən edilmiş həddə"
-    ],
-    "correct_option_id": 3,
-    "explanation": "",
-    "id": 7376
   },
   {
     "category": "Dövlət Qulluğu",
@@ -53458,19 +51651,6 @@
   },
   {
     "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 476: \"Dövlət qulluqçularının etik davranış qaydaları haqqında\" Qanuna görə, dövlət qulluqçusu vəzifə yerinə yetirərkən hansı prinsiplərə riayət etməlidir?",
-    "options": [
-      "Yalnız peşəkarlıq",
-      "Ləyaqət, nəzakət və obyektivlik",
-      "Yalnız səmimiyyət",
-      "Yalnız sürət"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7397
-  },
-  {
-    "category": "Dövlət Qulluğu haqqında Qanun",
     "question": "Sual 477 (Situasiya): Dövlət qulluqçusu olaraq, sizə şəxsi sosial şəbəkə hesabınızdan iş yoldaşınız işlə bağlı məlumat soruşur. Sizin cavabınız necə olmalıdır?",
     "options": [
       "Dərhal cavab verməli",
@@ -53481,19 +51661,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 7398
-  },
-  {
-    "category": "Korrupsiya ilə mübarizə",
-    "question": "Sual 478: \"Korrupsiyaya qarşı mübarizə haqqında\" Qanuna görə, vəzifəli şəxsə icazə verilən hədiyyənin maksimum dəyəri nə qədərdir?",
-    "options": [
-      "50 AZN",
-      "100 AZN",
-      "200 AZN",
-      "Qanunla müəyyən edilmiş həddə"
-    ],
-    "correct_option_id": 3,
-    "explanation": "",
-    "id": 7399
   },
   {
     "category": "Dövlət Qulluğu",
@@ -53782,19 +51949,6 @@
     "id": 7421
   },
   {
-    "category": "Konstitusiya",
-    "question": "Sual 507: Normativ hüquqi aktın dərc olunması hansı mətbuat orqanlarında həyata keçirilir?",
-    "options": [
-      "İstənilən qəzetdə",
-      "\"Azərbaycan Respublikasının qanunvericilik toplusu\"nda",
-      "İnternet saytlarında",
-      "Yalnız jurnallarda"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7422
-  },
-  {
     "category": "İnzibati Xətalar Məcəlləsi",
     "question": "Sual 509: İnzibati həbsin maksimum müddəti nə qədərdir?",
     "options": [
@@ -53832,19 +51986,6 @@
     "correct_option_id": 1,
     "explanation": "",
     "id": 7425
-  },
-  {
-    "category": "İnformasiya əldə edilməsi",
-    "question": "Sual 512: Məlumat sorğusuna cavab hansı formada verilir?",
-    "options": [
-      "Yalnız şifahi",
-      "Yalnız yazılı",
-      "Yazılı və ya elektron formada",
-      "Yalnız telefonla"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7426
   },
   {
     "category": "Mülki Məcəllə",
@@ -54003,19 +52144,6 @@
     "id": 7438
   },
   {
-    "category": "İnzibati Xətalar Məcəlləsi",
-    "question": "Sual 531 (Situasiya): Vətəndaş ictimai nəqliyyatda bilet almadan səyahət etdiyinə görə cərimə olunub. O, cəzanın həddən artıq olduğunu düşünür. Hansı orqana müraciət edə bilər?",
-    "options": [
-      "Yalnız polisə",
-      "Yalnız məhkəməyə",
-      "Cəzanı tətbiq edən orqanın yuxarı instansiya rəhbərinə və ya məhkəməyə",
-      "Heç bir orqana"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7439
-  },
-  {
     "category": "Dövlət Qulluğu",
     "question": "Sual 532: Müraciətçi müraciətinin qismən qaneedici cavab aldığını düşünür. O, nə edə bilər?",
     "options": [
@@ -54092,19 +52220,6 @@
     "correct_option_id": 2,
     "explanation": "",
     "id": 7445
-  },
-  {
-    "category": "Əmək Məcəlləsi",
-    "question": "Sual 538 (Situasiya): İşçi iş yerində alkoqol qəbul etdiyinə görə işdən çıxarılıb. O, bu qərarın qanunsuz olduğunu düşünür. Hansı sübutları təqdim edə bilər?",
-    "options": [
-      "Yalnız şahid ifadələri",
-      "Yalnız həkim arayışı",
-      "Alkoqol qəbul etmədiyini sübut edən hər hansı sübut (şahid ifadələri, videomaterial, həkim arayışı)",
-      "Heç bir sübut təqdim edə bilməz"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7446
   },
   {
     "category": "Dövlət Qulluğu",
@@ -54237,19 +52352,6 @@
     "id": 7456
   },
   {
-    "category": "Dövlət Qulluğu haqqında Qanun",
-    "question": "Sual 549: \"Dövlət qulluqçularının etik davranış qaydaları haqqında\" Qanuna görə, dövlət qulluqçusu vəzifə yerinə yetirərkən hansı prinsiplərə riayət etməlidir?",
-    "options": [
-      "Yalnız peşəkarlıq",
-      "Ləyaqət, nəzakət və obyektivlik",
-      "Yalnız səmimiyyət",
-      "Yalnız sürət"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7457
-  },
-  {
     "category": "Dövlət Qulluğu",
     "question": "Sual 557: Normativ hüquqi aktın ləğvi hansı formada həyata keçirilir?",
     "options": [
@@ -54365,32 +52467,6 @@
     "correct_option_id": 2,
     "explanation": "",
     "id": 7466
-  },
-  {
-    "category": "Dövlət Qulluğu",
-    "question": "Sual 567: Sənədlərin icrasına nəzarəti kim həyata keçirir?",
-    "options": [
-      "Yalnız sənədi imzalayan",
-      "Yalnız kargüzar şöbəsi",
-      "Sənədi imzalayan və ya onun təyin etdiyi şəxs",
-      "Yalnız arxiv işçisi"
-    ],
-    "correct_option_id": 2,
-    "explanation": "",
-    "id": 7467
-  },
-  {
-    "category": "Dövlət Qulluğu",
-    "question": "Sual 568: Təşkilatın adı sənədlərdə necə göstərilir?",
-    "options": [
-      "Yalnız qısaltma ilə",
-      "Tam adı ilə, qanunvericiliklə müəyyən edilmiş formada",
-      "İxtiyari formada",
-      "Yalnız rəqəmlə"
-    ],
-    "correct_option_id": 1,
-    "explanation": "",
-    "id": 7468
   },
   {
     "category": "Dövlət Qulluğu",

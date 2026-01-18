@@ -6005,5 +6005,365 @@
     "qk": "korrupsiya huquqpozmalari nelerden ibaretdir? (madde 9.1)",
     "id": "1767194888783_125",
     "at": 1768745702163
+  },
+  {
+    "fp": "4e20a4cc3894e0a4fe5bb8e17be386836a54982c",
+    "qk": "sorgucu informasiyani asagidaki formalardan hansinda elde ede bilmez?",
+    "id": "1767201623947_13",
+    "at": 1768752001123
+  },
+  {
+    "fp": "3fb7fa1181c6c2774381f3231da7afc3be202438",
+    "qk": "konstitusiyaya gore seckide istirak etmek huququ yoxdur:",
+    "id": "1766934946320_98",
+    "at": 1768752048597
+  },
+  {
+    "fp": "658bcba5ab17ab03bf5bbcbe35c54effb54df5aa",
+    "qk": "qanunlarin konstitusiyaya uygunlugunu yoxlayir - bu selahiyyet kime aiddir?",
+    "id": 12,
+    "at": 1768752095806
+  },
+  {
+    "fp": "5123a9efe4325d12c5f600522324b4e9c5d8b0a5",
+    "qk": "melumatin elde edilmesi asagidaki yollardan hansi ile temin edilmir?",
+    "id": "1767195356231_9",
+    "at": 1768752143082
+  },
+  {
+    "fp": "520103c26a0a82addca211ad3876c2a698df2439",
+    "qk": "hakimler hansi qaydada teyin edilir?",
+    "id": 7395,
+    "at": 1768752190314
+  },
+  {
+    "fp": "42afdab2a3b314f6a99c4d0b76633b85096256ae",
+    "qk": "asagidaki muhakimelerden hansi yanlisdir? (mehkemeler ve hakimler haqqinda qanun)",
+    "id": 3969,
+    "at": 1768752237612
+  },
+  {
+    "fp": "bf87b9cd1ec0dc3425de5fb5c28285a93de6d4cc",
+    "qk": "hansi soz digerleri ile eynikoklu deyil?",
+    "id": "1767036331578_43",
+    "at": 1768752285026
+  },
+  {
+    "fp": "978acec8325d3db498ab8c0c137c5a1d0c50fd58",
+    "qk": "asagidakilardan hansi azerbaycan respublikasi milli meclisinin deputatligina namizedlere aid teleb deyil?",
+    "id": "1766934946320_167",
+    "at": 1768752332246
+  },
+  {
+    "fp": "7b17be2b6c29bd2e7b017ae9631b8bfdf456803f",
+    "qk": "bu konstitusiya qanunu asagidaki aktlardan hansinin resmilesdirilmesi, derc edilmesi ve sistemlesdirilmesi qaydalarina samil olunmur? (madde 5.3)",
+    "id": "1768696058306_5",
+    "at": 1768752379485
+  },
+  {
+    "fp": "b75dc0f03790de04d77ea9757475d2f8ee82a4ac",
+    "qk": "(situasiya): vetendas kucede masini qeyri-qanuni yerde dayandirdigina gore cerime olunub. cerime vereqesinde onun adi sehv yazilib. vetendas ne etmelidir?",
+    "id": 7339,
+    "at": 1768752426699
+  },
+  {
+    "fp": "4d7141cd516a39d3bb8e88157c24b713eaf9995a",
+    "qk": "mehkeme icraati hansi dilde aparilir?",
+    "id": 1455,
+    "at": 1768752473913
+  },
+  {
+    "fp": "83c89d189698838d477899897bd948318a29d7aa",
+    "qk": "ferid evvel islediyi sirketle bagli qerar qebul etmelidir. bu halda o nece davranmalidir?",
+    "id": 6377,
+    "at": 1768752521120
+  },
+  {
+    "fp": "861a664e9720ad859443b513fc74c7ee8c093630",
+    "qk": "hakimler oz fealiyyetinde hansi prinsip esasinda hereket edirler?",
+    "id": 6776,
+    "at": 1768752568316
+  },
+  {
+    "fp": "da9da16516b83cb76ba1acb33d65a3cd57c70682",
+    "qk": "nazirlikde boyuk meslehetci vezifesinde calisan veli rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5916,
+    "at": 1768752615526
+  },
+  {
+    "fp": "5acf9a5e1ef7949ac0a96bcb5da4aab5bb26cdb1",
+    "qk": "\"vetendaslarin muracietleri\" qanunvericiliyine esasen, herbi qulluqcularin muracietlerine baxilma muddeti ne qederdir?",
+    "id": 522,
+    "at": 1768752662771
+  },
+  {
+    "fp": "5ef40c1a27210ccbae4aac8d288f343c579b6d2c",
+    "qk": "vezifeli sexs xidmeti vezifelerini yerine yetirerken qonaqperverlik numayis etdirerek 300 manat deyerinde hediyye qebul edir. korrupsiyaya qarsi mubarize haqqinda qanuna gore bu halda ne bas vermelidir? (situasiya)",
+    "id": 3746,
+    "at": 1768752710022
+  },
+  {
+    "fp": "b25e4f6355dcf507dd521b3a32a79184254076fd",
+    "qk": "\"sobe mudiri\" vezifesi inzibati vezifelerin hansi tesnifatina aiddir? (numunevi)",
+    "id": 233,
+    "at": 1768752757243
+  },
+  {
+    "fp": "8439d417db8891c613c542af112f54c57fd2bd6b",
+    "qk": "elave oyrenilme teleb eden muraciete baxilma muddeti 30 is gunu, lakin bu muddet asagidaki hallardan hansinda mutleq sekilde uzadila bilmez?",
+    "id": "1767199348909_62",
+    "at": 1768752804462
+  },
+  {
+    "fp": "202c3fcd25a998e5f8bf60486b1ffe62a0df6823",
+    "qk": "xidmetde boyuk meslehetci vezifesinde calisan leyla uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5200,
+    "at": 1768752851692
+  },
+  {
+    "fp": "a585e9aae17532b0d2334040f5a575122a9a4176",
+    "qk": "budce ili ne vaxt baslayir?",
+    "id": 1505,
+    "at": 1768752899491
+  },
+  {
+    "fp": "13172a5801021e1aca5f1f817742627d8fd5b15b",
+    "qk": "i̇cra hakimiyyetinde aparici meslehetci vezifesinde calisan leyla uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6114,
+    "at": 1768759201176
+  },
+  {
+    "fp": "d928d0909c40327d0c81514db169d85d7ece417a",
+    "qk": "konstitusiyaya gore yasamaq huququ mehdudlasdirila biler:",
+    "id": "1766934946320_79",
+    "at": 1768759248603
+  },
+  {
+    "fp": "47f67bd1e2ff7a2907d6859534df9ae9c4df56b4",
+    "qk": "i̇nzibati orqan maraqli sexsin erizesini qebul etdikden sonra ona 'qebz' vermelidir. eger qebz verilmeyibse, muddet nece hesablanir? (analitik)",
+    "id": 4446,
+    "at": 1768759295862
+  },
+  {
+    "fp": "ef76ae0cd5b3894d13ce28bc1efab64b588692bd",
+    "qk": "azerbaycan respublikasi nazirler kabinetinin qerari hansi hallarda fermana ustunluk teskil edir? (madde 2.7)",
+    "id": "1768696058306_2",
+    "at": 1768759343084
+  },
+  {
+    "fp": "fecad0848f612e160b935df533e007c10e5b5315",
+    "qk": "dovlet qulluqcusu deyeri 55 manatdan yuxari olan hediyyeni qebul ederse ne etmelidir?",
+    "id": 454,
+    "at": 1768759390326
+  },
+  {
+    "fp": "7e249cddf9a01bd84b370c0c43d74fa84d34fbf1",
+    "qk": "dovlet qulluqcusunun xidmeti fealiyyetinin qiymetlendirilmesi zamani ona \"kafi\" qiymet verilmisdir. lakin o, 8 ildir ki, qusursuz isleyir. bu halda qulluqcunun hansi huququ var? (situasiya)",
+    "id": 3320,
+    "at": 1768759437572
+  },
+  {
+    "fp": "f209711871f8ebc0f11d9bbdb0dc0b05e165846a",
+    "qk": "normativ huquqi aktlar haqqinda konstitusiya qanununun 1.0.25-ci maddesine esasen, 'diskresion selahiyyetler' nedir?",
+    "id": 2451,
+    "at": 1768759484795
+  },
+  {
+    "fp": "8985957ebf5f34ea0a98729fcb02b61720d57901",
+    "qk": "veli xidmeti vezifelerini icra ederken ona teqdim olunan 61 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5437,
+    "at": 1768759532035
+  },
+  {
+    "fp": "05b77d897cbaf6864097a4bf3018cda0068d9f05",
+    "qk": "asagidakilardan hansi informasiya sahibinin aciqlamali oldugu ictimai informasiyaya aid deyil?",
+    "id": "1767201623947_22",
+    "at": 1768759579309
+  },
+  {
+    "fp": "74ce7ea0a443911602fba5236f14a25a626e900a",
+    "qk": "aysel xidmeti vezifelerini icra ederken ona teqdim olunan 69 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6009,
+    "at": 1768759626514
+  },
+  {
+    "fp": "dd1dc932bb3aa0bd9e65ef29dd7fffff37cb28ec",
+    "qk": "aysel xidmeti vezifelerini icra ederken ona teqdim olunan 60 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5199,
+    "at": 1768759673741
+  },
+  {
+    "fp": "8dfe69eed2e1cc092f57bf6cdbce3ceb7c441ac4",
+    "qk": "hansi cumlenin vasitesiz tamamligi duzeltme sifetdir:",
+    "id": "1767034684452_82",
+    "at": 1768759721050
+  },
+  {
+    "fp": "763411b468663e55114e7a6dcf4c7921d8f4e5ba",
+    "qk": "dovlet qulluqcusu qerar qebul ederken neye yol vermemelidir?",
+    "id": "1767194557339_29",
+    "at": 1768759768276
+  },
+  {
+    "fp": "57f0572d38456b6df58d56d6e4a5603b70825756",
+    "qk": "dovlet qulluqcusu boyuk meslehetci vezifesinde calisir. o, il erzinde tekraren etik davranis qaydalarini pozmaq halina yol verir. rehberlik ona hansi intizam tenbehini tetbiq etmelidir? (situasiya)",
+    "id": 3153,
+    "at": 1768759815551
+  },
+  {
+    "fp": "5782b8de2a4e8a3a25839d6f395e2224b6022dd0",
+    "qk": "muraciete cavab vermek ucun muddet 30 gundur. bu muddet hansi tarixden hesablanir?",
+    "id": 7425,
+    "at": 1768759862775
+  },
+  {
+    "fp": "877fe12289d85dda9c00d17092eef08e6b4ac492",
+    "qk": "normativ huquqi aktin quvveye minmesi ucun ne vaxt derc olunmalidir?",
+    "id": 7065,
+    "at": 1768759910006
+  },
+  {
+    "fp": "5a970e7faf68a949c7456353b21ed8ad4a6facd2",
+    "qk": "ombudsmana sikayet huquqlarin pozuldugu gunden hansi muddet erzinde verile biler?",
+    "id": 2495,
+    "at": 1768759957251
+  },
+  {
+    "fp": "37958307a1184f24002f80942d0b03dc2c5dd44b",
+    "qk": "situasiya: nigar rehberliyin qanuni gosterisini yerine yetirmekden imtina edir. bu halda dovlet qulluqcusu hansi etik davranis prinsipini pozmusdur?",
+    "id": 369,
+    "at": 1768760004727
+  },
+  {
+    "fp": "d6c2a27f67fe5186009cac8f4fb0b313e8ad31e5",
+    "qk": "nazirlikde sobe mudiri vezifesinde calisan samir xidmeti vezifelerini kobud sekilde pozub. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5666,
+    "at": 1768760051953
+  },
+  {
+    "fp": "5d8abb6d1d89a83f096872535dff9979881716ab",
+    "qk": "i̇nzibati icraatda kimler 'maraqli sexs' hesab olunur?",
+    "id": 2986,
+    "at": 1768760100094
+  },
+  {
+    "fp": "6f30d25d436541c234bda61fe6a4f598b0da8ff6",
+    "qk": "(situasiya): size teqdim olunan erizeni emal ederken, orada qanunvericiliye zidd olan teleb oldugunu gordunuz. sizin hereketiniz nece olmalidir?",
+    "id": 7243,
+    "at": 1768766401651
+  },
+  {
+    "fp": "d649e7fb1b7d87ca1dc450952b9305265a4caef1",
+    "qk": "xidmetde bas meslehetci vezifesinde calisan tural uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5692,
+    "at": 1768766448912
+  },
+  {
+    "fp": "58646195404d4cd5a10d6eba29e597dedfe15a7b",
+    "qk": "formal konstitusiya nezareti novunun izahi hansi bendde cavab verilmisdir?",
+    "id": "1766934946320_195",
+    "at": 1768766496115
+  },
+  {
+    "fp": "49b406128980fef733c857f17de38872ea718f5b",
+    "qk": "canli yayimda edilen sifahi muraciet nece cavablandirila biler?",
+    "id": "1767199348909_50",
+    "at": 1768766543324
+  },
+  {
+    "fp": "20688fbe9520bc0f6828ab6f3adb82bfd7a84389",
+    "qk": "si̇tuasi̇ya: dovlet qulluqcusu samireye vetendas terefinden isinin tez hell edilmesi muqabilinde 'sirinlik' teklif olunur. samire bunu redd edir, lakin bu barede rehberliyine melumat vermir. sual: samirenin hereketinde pozuntu varmi?",
+    "id": 2351,
+    "at": 1768766590497
+  },
+  {
+    "fp": "58322a4d22dc5032066f514f9f1a1c486242f3ea",
+    "qk": "preferensial secki sistemi dedikde, ne basa dusulur?",
+    "id": "1766934946320_137",
+    "at": 1768766637816
+  },
+  {
+    "fp": "5ff10cc1a54a0a087de2d109c80c15f8036ff7e1",
+    "qk": "1, 1, 2, 3, 5, 8, 13, ? novbeti reqem hansidir?",
+    "id": 6853,
+    "at": 1768766685007
+  },
+  {
+    "fp": "72a5082264e28121f65077b9b798c05e5685e035",
+    "qk": "naxcivan muxtar respublikasinda konstitusiya nezaretinin heyata kecirilmesi ile bagli naxcivan muxtar respublikasi ali mehkemesinin aktlarindan hansi orqana sikayet verile biler?",
+    "id": "1766934946320_147",
+    "at": 1768766732218
+  },
+  {
+    "fp": "031924dec719edb1ea450490e4139a12eb642e36",
+    "qk": "komitede sektor mudiri vezifesinde calisan veli rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6024,
+    "at": 1768766779471
+  },
+  {
+    "fp": "f2d722e10f27d803d0c59326ab7fc1e48538e562",
+    "qk": "agentlikde sobe mudiri vezifesinde calisan nergiz uzrlu sebeb olmadan ise gelmeyib (bir is gunu). bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 6067,
+    "at": 1768766826733
+  },
+  {
+    "fp": "fe85b91ce902e365eb54ca8d075f3216f60078b6",
+    "qk": "dovlet qulluqcusunun rotasiyasi zamani onun raziligi teleb olunurmu? qanunvericiliyin en son teleblerini nezere alaraq duzgun varianti secin. (analitik)",
+    "id": 4104,
+    "at": 1768766873904
+  },
+  {
+    "fp": "96fef3f32401471c69df9f6b232c48d5aca5998f",
+    "qk": "nergiz basqa bir odenisli vezife tutmaq teklifi alir. bu halda o nece davranmalidir?",
+    "id": 6302,
+    "at": 1768766921110
+  },
+  {
+    "fp": "b7a5fe37d7aebb5816cb022cfeeeabdf99596b48",
+    "qk": "tural xidmeti vezifelerini icra ederken ona teqdim olunan 53 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 6439,
+    "at": 1768766968323
+  },
+  {
+    "fp": "fc534fb3325e0cb907fed7c013064123a116fed8",
+    "qk": "dovlet qulluqcusunun fealiyyetinde madde 1.2-de qeyd olunan prinsipleri rehber tutmasi, bu qanunun madde 2.0.2-de gosterilen dovlet orqanlarinin ve dovlet qulluqcularinin semereliliyinin artirilmasi meqsedine nece xidmet edir?",
+    "id": "1767194557339_40",
+    "at": 1768767015531
+  },
+  {
+    "fp": "6de0d6cd32ae98908ee1904fcce4e00dff71ab97",
+    "qk": "(situasiya): dovlet qulluqcusu olaraq, size sexsi sosial sebeke hesabinizdan is yoldasiniz isle bagli melumat sorusur. sizin cavabiniz nece olmalidir?",
+    "id": 7375,
+    "at": 1768767062746
+  },
+  {
+    "fp": "99c4eb13376f4ffe4924186470716a4fbd2c1ca9",
+    "qk": "agentlikde aparici meslehetci vezifesinde calisan eli rehberin qanuni gosterisini yerine yetirmeyib. bu halda ona hansi intizam tenbehi tetbiq edile biler?",
+    "id": 5609,
+    "at": 1768767109985
+  },
+  {
+    "fp": "6a2dbab511e879604741314f7e7f92331cc01e8d",
+    "qk": "qht numayendesi c inzibati sikayet verir. sikayete baxan orqan sikayetin icraatini dayandirir. bu qerar hansi halda qanunidir? (situasiya)",
+    "id": 3524,
+    "at": 1768767157169
+  },
+  {
+    "fp": "5093b940b0424caa9f5f4353060a5e59e05573ea",
+    "qk": "\"i̇nzibati i̇craat\" qanunvericiliyine esasen, inzibati icraatin muddeti muddeti ne qederdir?",
+    "id": 546,
+    "at": 1768767204358
+  },
+  {
+    "fp": "30ff370e05b1b4173a11354b08237078336022ed",
+    "qk": "eli xidmeti vezifelerini icra ederken ona teqdim olunan 50 manat deyerinde hediyyeni qebul edir. qanunvericiliye esasen onun bu hereketi nece qiymetlendirilir?",
+    "id": 5712,
+    "at": 1768767251560
+  },
+  {
+    "fp": "2ec75eb48c1fee8fb048a29d85250231bbba8ca9",
+    "qk": "dovlet qulluqcusunun ictimai ve ya siyasi fealiyyeti ile bagli esas mehdudiyyet nedir ve bu mehdudiyyetin meqsedi hansidir?",
+    "id": "1767194557339_54",
+    "at": 1768767298761
   }
 ]

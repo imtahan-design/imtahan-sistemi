@@ -72,7 +72,83 @@
     <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js" defer></script>
     <style>
+        /* Special Exams Section Styling - Premium Law Theme */
+        #special-exams-title {
+            color: #fbbf24; /* Gold */
+            border-left: 4px solid #fbbf24;
+            padding-left: 15px;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            background: linear-gradient(90deg, rgba(251, 191, 36, 0.1), transparent);
+            padding-top: 10px;
+            padding-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+        }
 
+        #special-exams-grid {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 50px;
+            border: 1px solid rgba(251, 191, 36, 0.3); /* Gold border */
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.1), inset 0 0 20px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative background element */
+        #special-exams-grid::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle at top right, rgba(251, 191, 36, 0.15), transparent 70%);
+            border-radius: 0 20px 0 100%;
+            pointer-events: none;
+        }
+
+        #special-exams-grid .category-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-top: 4px solid #fbbf24;
+            transition: all 0.4s ease;
+        }
+
+        #special-exams-grid .category-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 15px rgba(251, 191, 36, 0.2);
+            border-color: rgba(251, 191, 36, 0.5);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        #special-exams-grid .category-card i {
+            color: #fbbf24; /* Gold icons */
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        #special-exams-grid .category-card h3 {
+            color: #fff;
+            font-size: 1.3rem;
+            letter-spacing: 0.5px;
+        }
+        
+        #special-exams-grid .category-card .btn-primary {
+            background: linear-gradient(135deg, #b45309 0%, #fbbf24 100%);
+            border: none;
+            font-weight: bold;
+            color: #000;
+        }
+        
+        #special-exams-grid .category-card .btn-primary:hover {
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -695,6 +771,13 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="header-actions animate-up" style="animation-delay: 0.64s;">
+                    <h2 id="special-exams-title" class="hidden">Xüsusi Sınaqlar</h2>
+                </div>
+                <div id="special-exams-grid" class="grid-container animate-up" style="animation-delay: 0.68s;">
+                    <!-- Special Exams will be loaded here -->
                 </div>
 
                 <div class="header-actions animate-up" style="animation-delay: 0.64s;">

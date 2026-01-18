@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xüsusi Sınaq İmtahanı | DİM Stili</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* DİM Style Overrides */
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .dim-container {
+            display: flex;
+            height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        /* Sidebar (Question Palette) */
+        .dim-sidebar {
+            width: 280px;
+            background: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .dim-sidebar-header {
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .dim-timer {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #d32f2f;
+            background: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .question-palette {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .q-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #ccc;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .q-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        .q-btn.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+
+        .q-btn.answered {
+            background-color: #28a745; /* Green for answered in DİM? Or grey? Usually grey/blue. Let's use Green for clear feedback */
+            color: white;
+            border-color: #1e7e34;
+        }
+
+        .q-btn.flagged {
+            background-color: #ffc107;
+            color: black;
+            border-color: #d39e00;
+        }
+
+        /* Main Content */
+        .dim-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .dim-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .dim-question-area {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            /* border: 1px solid #eee; */
+        }
+
+        .q-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+
+        .q-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .q-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .q-option {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .q-option:hover {
+            background-color: #f8f9fa;
+            border-color: #adb5bd;
+        }
+
+        .q-option.selected {
+            background-color: #e3f2fd;
+            border-color: #007bff;
+        }
+
+        .q-radio {
+            margin-top: 4px;
+            margin-right: 12px;
+        }
+
+        .dim-footer {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .btn-dim {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .btn-prev {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-prev:hover { background-color: #5a6268; }
+
+        .btn-next {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-next:hover { background-color: #0056b3; }
+
+        .btn-finish {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-finish:hover { background-color: #c82333; }
+
+        .btn-flag {
+            background-color: #ffc107;
+            color: black;
+            margin-right: auto;
+            margin-left: 20px;
+        }
+        
+        .hidden { display: none !important; }
+
+        /* Results Screen */
+        .dim-results {
+            max-width: 800px;
+            margin: 50px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .result-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-top: 4px solid #007bff;
+        }
+        
+        .stat-val { font-size: 2rem; font-weight: bold; color: #333; }
+        .stat-label { color: #666; font-size: 0.9rem; }
+
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+        <div class="loader"></div>
+        <p style="margin-top:20px;font-size:1.2rem;color:#555;">İmtahan yüklənir...</p>
+    </div>
+
+    <!-- Exam Interface -->
+    <div id="exam-interface" class="dim-container hidden">
+        <!-- Left Sidebar -->
+        <div class="dim-sidebar">
+            <div class="dim-sidebar-header">
+                <h3>Sual Paneli</h3>
+            </div>
+            <div id="timer-display" class="dim-timer">00:00:00</div>
+            
+            <div class="question-palette" id="question-palette">
+                <!-- Question buttons generated by JS -->
+            </div>
+            
+            <div style="margin-top: 20px; font-size: 0.8rem; color: #666;">
+                <div style="display:flex;align-items:center;margin-bottom:5px;">
+                    <span style="width:12px;height:12px;background:#007bff;display:inline-block;margin-right:8px;"></span> Cari Sual
+                </div>
+                <div style="display:flex;align-items:center;margin-bottom:5px;">
+                    <span style="width:12px;height:12px;background:#28a745;display:inline-block;margin-right:8px;"></span> Cavablandırılıb
+                </div>
+                <div style="display:flex;align-items:center;margin-bottom:5px;">
+                    <span style="width:12px;height:12px;background:white;border:1px solid #ccc;display:inline-block;margin-right:8px;"></span> Cavablandırılmayıb
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="dim-main">
+            <div class="dim-header">
+                <h2 id="exam-title">Sınaq İmtahanı</h2>
+                <div>
+                    <strong>İstifadəçi:</strong> <span id="user-name">Qonaq</span>
+                </div>
+            </div>
+
+            <div class="dim-question-area">
+                <div class="q-number" id="q-number">Sual 1</div>
+                <div class="q-text" id="q-text">Sual mətni yüklənir...</div>
+                
+                <div class="q-options" id="q-options">
+                    <!-- Options generated by JS -->
+                </div>
+            </div>
+
+            <div class="dim-footer">
+                <button class="btn-dim btn-prev" id="btn-prev" onclick="prevQuestion()"><i class="fas fa-chevron-left"></i> Əvvəlki</button>
+                <button class="btn-dim btn-flag" onclick="toggleFlag()"><i class="fas fa-flag"></i> İşarələ</button>
+                <button class="btn-dim btn-next" id="btn-next" onclick="nextQuestion()">Növbəti <i class="fas fa-chevron-right"></i></button>
+                <button class="btn-dim btn-finish" onclick="finishExam()">İmtahanı Bitir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Interface -->
+    <div id="results-interface" class="hidden">
+        <div class="dim-results">
+            <i class="fas fa-check-circle text-success" style="font-size: 4rem; margin-bottom: 20px;"></i>
+            <h2>İmtahan Tamamlandı</h2>
+            <p id="result-message">Nəticələriniz aşağıdakı kimidir:</p>
+            
+            <div class="result-stat-grid">
+                <div class="stat-card" style="border-color: #28a745;">
+                    <div class="stat-val" id="res-correct">0</div>
+                    <div class="stat-label">Düzgün</div>
+                </div>
+                <div class="stat-card" style="border-color: #dc3545;">
+                    <div class="stat-val" id="res-wrong">0</div>
+                    <div class="stat-label">Səhv</div>
+                </div>
+                <div class="stat-card" style="border-color: #ffc107;">
+                    <div class="stat-val" id="res-score">0</div>
+                    <div class="stat-label">Bal</div>
+                </div>
+            </div>
+
+            <button class="btn-dim btn-next" onclick="window.location.href='index.html'">Əsas Səhifəyə Qayıt</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    
+    <script src="app.js"></script> <!-- Reusing app.js for config but we will override init -->
+    <script>
+        // Override standard app initialization
+        window.onload = async function() {
+            // Prevent standard dashboard load
+            document.body.classList.add('dim-mode'); // Optional flag
+            
+            // Wait for firebase
+            setTimeout(initDimExam, 1000);
+        };
+
+        let dimQuiz = {
+            questions: [],
+            currentIndex: 0,
+            answers: [], // stores index of selected option
+            flags: [],
+            timerInterval: null,
+            startTime: null,
+            duration: 0
+        };
+
+        async function initDimExam() {
+            const catId = localStorage.getItem('activeSpecialCategory');
+            if (!catId) {
+                alert('İmtahan seçilməyib!');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Load Category
+            let cat = null;
+
+            // Check for generated exam
+            if (catId === 'generated_prokurorluq') {
+                try {
+                    const genData = localStorage.getItem('generatedExamData');
+                    if (genData) cat = JSON.parse(genData);
+                } catch(e) { console.error(e); }
+            }
+
+            // Normal loading
+            if (!cat) {
+                cat = categories.find(c => c.id === catId);
+            }
+            
+            // If not in memory (app.js might not have loaded it yet), try to fetch or wait
+            if (!cat && db) {
+                try {
+                    const doc = await db.collection('categories').doc(catId).get();
+                    if (doc.exists) {
+                        cat = { id: doc.id, ...doc.data() };
+                    }
+                } catch(e) { console.error(e); }
+            }
+
+            if (!cat) {
+                // Try local storage fallback
+                const localCats = JSON.parse(localStorage.getItem('categories') || '[]');
+                cat = localCats.find(c => c.id === catId);
+            }
+
+            if (!cat || !cat.questions || cat.questions.length === 0) {
+                alert('Sual tapılmadı!');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Initialize Quiz
+            document.getElementById('exam-title').textContent = cat.name;
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if(user) document.getElementById('user-name').textContent = user.username || user.email;
+
+            // Prepare questions (Shuffle if needed, currently taking all)
+            // DİM exams usually have fixed order, but let's shuffle options maybe?
+            // For now, keep order as is or shuffle questions
+            dimQuiz.questions = cat.questions; // Keep original order for "Sınaq"
+            dimQuiz.answers = new Array(dimQuiz.questions.length).fill(null);
+            dimQuiz.flags = new Array(dimQuiz.questions.length).fill(false);
+            dimQuiz.duration = (cat.time || 90) * 60; // minutes to seconds
+
+            renderPalette();
+            loadDimQuestion(0);
+            startTimer();
+
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('exam-interface').classList.remove('hidden');
+        }
+
+        function renderPalette() {
+            const p = document.getElementById('question-palette');
+            p.innerHTML = '';
+            dimQuiz.questions.forEach((_, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'q-btn';
+                btn.textContent = i + 1;
+                btn.onclick = () => loadDimQuestion(i);
+                btn.id = `pal-btn-${i}`;
+                p.appendChild(btn);
+            });
+            updatePaletteStyles();
+        }
+
+        function updatePaletteStyles() {
+            dimQuiz.questions.forEach((_, i) => {
+                const btn = document.getElementById(`pal-btn-${i}`);
+                if (!btn) return;
+                
+                btn.className = 'q-btn'; // reset
+                if (i === dimQuiz.currentIndex) btn.classList.add('active');
+                if (dimQuiz.answers[i] !== null) btn.classList.add('answered');
+                if (dimQuiz.flags[i]) btn.classList.add('flagged');
+            });
+        }
+
+        function loadDimQuestion(index) {
+            if (index < 0 || index >= dimQuiz.questions.length) return;
+            
+            dimQuiz.currentIndex = index;
+            const q = dimQuiz.questions[index];
+            
+            document.getElementById('q-number').textContent = `Sual ${index + 1}`;
+            document.getElementById('q-text').textContent = q.text; // Use innerHTML if rich text needed, but textContent safer
+            
+            const optsDiv = document.getElementById('q-options');
+            optsDiv.innerHTML = '';
+            
+            q.options.forEach((opt, optIdx) => {
+                const div = document.createElement('div');
+                div.className = 'q-option';
+                if (dimQuiz.answers[index] === optIdx) div.classList.add('selected');
+                
+                div.onclick = () => selectAnswer(optIdx);
+                
+                div.innerHTML = `
+                    <input type="radio" name="q-opt" class="q-radio" ${dimQuiz.answers[index] === optIdx ? 'checked' : ''}>
+                    <span>${escapeHtml(opt)}</span>
+                `;
+                optsDiv.appendChild(div);
+            });
+
+            // Update buttons
+            document.getElementById('btn-prev').disabled = index === 0;
+            document.getElementById('btn-next').style.display = index === dimQuiz.questions.length - 1 ? 'none' : 'inline-block';
+            
+            updatePaletteStyles();
+        }
+
+        function selectAnswer(optIdx) {
+            dimQuiz.answers[dimQuiz.currentIndex] = optIdx;
+            
+            // Visual update
+            const opts = document.querySelectorAll('.q-option');
+            opts.forEach((o, i) => {
+                if (i === optIdx) {
+                    o.classList.add('selected');
+                    o.querySelector('input').checked = true;
+                } else {
+                    o.classList.remove('selected');
+                    o.querySelector('input').checked = false;
+                }
+            });
+            
+            updatePaletteStyles();
+        }
+
+        function prevQuestion() {
+            loadDimQuestion(dimQuiz.currentIndex - 1);
+        }
+
+        function nextQuestion() {
+            loadDimQuestion(dimQuiz.currentIndex + 1);
+        }
+
+        function toggleFlag() {
+            dimQuiz.flags[dimQuiz.currentIndex] = !dimQuiz.flags[dimQuiz.currentIndex];
+            updatePaletteStyles();
+        }
+
+        function startTimer() {
+            let timeLeft = dimQuiz.duration;
+            const display = document.getElementById('timer-display');
+            
+            dimQuiz.timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 0) {
+                    clearInterval(dimQuiz.timerInterval);
+                    finishExam(true);
+                    return;
+                }
+                
+                const h = Math.floor(timeLeft / 3600);
+                const m = Math.floor((timeLeft % 3600) / 60);
+                const s = timeLeft % 60;
+                
+                display.textContent = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                
+                // Warning color
+                if (timeLeft < 300) display.style.color = 'red';
+            }, 1000);
+        }
+
+        function finishExam(force = false) {
+            if (!force && !confirm('İmtahanı bitirmək istədiyinizə əminsiniz?')) return;
+            
+            clearInterval(dimQuiz.timerInterval);
+            
+            // Calculate Results
+            let correct = 0;
+            let wrong = 0;
+            
+            dimQuiz.questions.forEach((q, i) => {
+                const userAns = dimQuiz.answers[i];
+                if (userAns !== null) {
+                    // Check if q.correctIndex exists (from admin panel) or q.correct (from some generators)
+                    // Admin panel saves 'correctIndex' (int)
+                    // Some scripts save 'correct' (string or index)
+                    
+                    let correctIdx = q.correctIndex;
+                    if (correctIdx === undefined) correctIdx = q.correct; // Fallback
+                    
+                    if (parseInt(userAns) === parseInt(correctIdx)) {
+                        correct++;
+                    } else {
+                        wrong++;
+                    }
+                }
+            });
+
+            // Hide Exam, Show Results
+            document.getElementById('exam-interface').classList.add('hidden');
+            document.getElementById('results-interface').classList.remove('hidden');
+            
+            document.getElementById('res-correct').textContent = correct;
+            document.getElementById('res-wrong').textContent = wrong;
+            document.getElementById('res-score').textContent = correct; // Or some calculation
+            
+            // Save attempt if user is logged in (Optional)
+            if (currentUser && db) {
+                 const catId = localStorage.getItem('activeSpecialCategory');
+                 
+                 db.collection('student_attempts').add({
+                     userId: currentUser.id,
+                     categoryId: catId,
+                     score: correct,
+                     total: dimQuiz.questions.length,
+                     date: firebase.firestore.FieldValue.serverTimestamp(),
+                     type: 'special_exam'
+                 }).catch(console.error);
+
+                 // Save Exam History for Dynamic Exams (Prevent repeats)
+                 if (catId === 'special_prokurorluq' || catId === 'generated_prokurorluq') {
+                     try {
+                         const examData = JSON.parse(localStorage.getItem('currentDimExam') || '{}');
+                         if ((examData.examType === 'special_prokurorluq' || examData.examType === 'generated_prokurorluq') && dimQuiz.questions.length > 0) {
+                             const qIds = dimQuiz.questions.map(q => String(q.id));
+                             db.collection('exam_history').add({
+                                 userId: currentUser.id,
+                                 examType: examData.examType,
+                                 questionIds: qIds,
+                                 date: firebase.firestore.FieldValue.serverTimestamp()
+                             }).then(() => console.log("Exam history saved for no-repeat logic."))
+                              .catch(err => console.error("Error saving exam history:", err));
+                        }
+                    } catch (e) {
+                        console.error("Error processing exam history:", e);
+                    }
+                }
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
