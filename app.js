@@ -15,6 +15,13 @@ const PART_1 = "AIzaSyBnq5gW1jk_";
 const PART_2 = "7mNwt2UUboehr5R8DM1qsRM";
 let GEMINI_API_KEY = PART_1 + PART_2;
 
+// Google Analytics Helper
+window.trackEvent = function(eventName, params = {}) {
+    if (typeof gtag === 'function') {
+        gtag('event', eventName, params);
+    }
+};
+
 const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === ''
     ? "http://localhost:5000"
     : "https://imtahan-backend-7w71.onrender.com";
@@ -76,6 +83,31 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
+// Analytics Initialization
+async function initAnalytics() {
+    try {
+        if (!db) return;
+        const doc = await db.collection('config').doc('main').get();
+        if (doc.exists) {
+            const data = doc.data();
+            const gaId = data.google_analytics_id;
+            if (gaId && gaId.startsWith('G-')) {
+                if (document.querySelector(`script[src*="${gaId}"]`)) return;
+                const script = document.createElement('script');
+                script.async = true;
+                script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+                document.head.appendChild(script);
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                window.gtag = gtag;
+                gtag('js', new Date());
+                gtag('config', gaId, { 'send_page_view': true });
+                console.log('Google Analytics initialized:', gaId);
+            }
+        }
+    } catch (e) { console.warn('Analytics init failed:', e); }
+}
+
 // Initialize Firebase if config is valid
 let db;
 let auth;
@@ -97,6 +129,7 @@ try {
         
         // Track Visitor
         trackVisitor();
+        initAnalytics();
     } else {
         // Firebase config not set
     }
@@ -1595,6 +1628,11 @@ window.register = async function() {
             const success = await sendVerificationEmail(email, verificationCode, `${name} ${surname}`);
             
             if (success) {
+                // Google Analytics: Qeydiyyat Cəhdi (Müəllim)
+                trackEvent('registration_attempt', {
+                    'role': 'teacher'
+                });
+
                 showNotification(`${email} ünvanına təsdiq kodu göndərildi. Zəhmət olmasa emailinizi yoxlayın.`, 'success');
                 document.getElementById('verification-modal').classList.remove('hidden');
             } else {
@@ -1621,6 +1659,12 @@ window.register = async function() {
                 if (db) {
                     await db.collection('users').doc(uid).set(newUser);
                 }
+
+                // Google Analytics: Qeydiyyat Uğurlu (Tələbə)
+                trackEvent('sign_up', {
+                    'method': 'direct',
+                    'role': 'student'
+                });
 
                 showNotification('Qeydiyyat uğurludur!', 'success');
                 
@@ -1685,6 +1729,13 @@ window.confirmVerification = async function() {
 
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             showNotification('Email təsdiqləndi! Qeydiyyat uğurla tamamlandı.', 'success');
+            
+            // Google Analytics: Qeydiyyat Uğurlu (Müəllim)
+            trackEvent('sign_up', {
+                'method': 'email_verification',
+                'role': 'teacher'
+            });
+
             closeVerification();
             updateUI();
 
@@ -5285,6 +5336,12 @@ window.dislikeQuestion = async function(qId) {
 window.checkPublicAnswer = function(questionId, selectedIdx, correctIdx) {
     const optionsContainer = document.getElementById(`pub-options-${questionId}`);
     if (optionsContainer.classList.contains('answered')) return;
+    
+    // Google Analytics: İctimai Sual Cavablandı
+    trackEvent('public_question_answer', {
+        'question_id': questionId,
+        'is_correct': selectedIdx === correctIdx
+    });
 
     const items = optionsContainer.querySelectorAll('.pub-opt-item');
     items.forEach((item, idx) => {
@@ -6511,6 +6568,12 @@ window.confirmStartQuiz = function() {
         questionTimes: new Array(finalQuestions.length).fill(cat.time)
     };
 
+    trackEvent('start_quiz', {
+        category: cat.name,
+        category_id: cat.id,
+        question_count: count
+    });
+
     // Səhifə fokusunu itirəndə blur tətbiq etmək (İstifadəçinin istəyi ilə ləğv edildi)
     /*
     window.securityInterval = setInterval(() => {
@@ -6803,6 +6866,13 @@ function showResult() {
     currentQuiz.score = correct; // Update final score
     const accuracy = Math.round((correct / total) * 100) || 0;
     
+    trackEvent('finish_quiz', {
+        category: currentQuiz.categoryId,
+        score: correct,
+        total: total,
+        accuracy: accuracy
+    });
+
     document.getElementById('score-text').textContent = `${accuracy}%`;
     document.getElementById('correct-count').textContent = correct;
     document.getElementById('wrong-count').textContent = wrong;
