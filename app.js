@@ -531,6 +531,37 @@ async function loadData() {
         if (db) db.collection('categories').doc('public_general').set(publicGeneral);
         hasChanged = true;
     }
+
+    // Seed Special Exams (Prokurorluq, Hakimlik, Vəkillik)
+    const specialSeeds = [
+        { id: 'special_prokurorluq', name: 'Prokurorluq üzrə sınaq', isSpecial: true, time: 180, description: 'Prokurorluq orqanlarına qəbul' },
+        { id: 'special_hakimlik', name: 'Hakimlik üzrə sınaq', isSpecial: true, time: 240, description: 'Hakimlərin Seçki Komitəsi imtahanı' },
+        { id: 'special_vekillik', name: 'Vəkillik üzrə sınaq', isSpecial: true, time: 180, description: 'Vəkillər Kollegiyasına qəbul' }
+    ];
+
+    specialSeeds.forEach(seed => {
+        const exists = categories.find(c => c.id === seed.id || c.name === seed.name);
+        if (!exists) {
+            const newCat = { 
+                id: seed.id, 
+                name: seed.name, 
+                time: seed.time, 
+                questions: [], 
+                parentId: null,
+                isSpecial: true,
+                description: seed.description
+            };
+            categories.push(newCat);
+            if (db) {
+                // Use set with merge to be safe, though set overwrites by default
+                db.collection('categories').doc(seed.id).set(newCat)
+                    .then(() => console.log(`Created special cat: ${seed.name}`))
+                    .catch(e => console.error(`Error creating ${seed.name}:`, e));
+            }
+            hasChanged = true;
+        }
+    });
+
     if (hasChanged) {
         saveCategories();
     }
@@ -4563,7 +4594,11 @@ async function renderHistory() {
 
 function renderCategories() {
     const grid = document.getElementById('categories-grid');
+    const specialGrid = document.getElementById('special-exams-grid');
+    const specialTitle = document.getElementById('special-exams-title');
+
     grid.innerHTML = '';
+    if (specialGrid) specialGrid.innerHTML = '';
     
     // Filter categories by parentId
     const filteredCategories = categories.filter(cat => cat.parentId === currentParentId);
@@ -4576,10 +4611,14 @@ function renderCategories() {
         const parent = categories.find(c => c.id === currentParentId);
         title.textContent = parent ? parent.name : 'Kateqoriyalar';
         backBtn.classList.remove('hidden');
+        if (specialTitle) specialTitle.classList.add('hidden');
     } else {
         title.textContent = 'Mövcud İmtahanlar';
         backBtn.classList.add('hidden');
+        if (specialTitle) specialTitle.classList.remove('hidden');
     }
+
+    let hasSpecial = false;
 
     filteredCategories.forEach((cat, index) => {
         const div = document.createElement('div');
@@ -4599,9 +4638,9 @@ function renderCategories() {
         if (cat.name.toLowerCase().includes('dərslik')) icon = 'fa-graduation-cap';
         if (cat.name.toLowerCase().includes('tarix')) icon = 'fa-monument';
         if (cat.name.toLowerCase().includes('sinif')) icon = 'fa-school';
-        if (cat.name.toLowerCase().includes('biologiya')) icon = 'fa-dna';
-        if (cat.name.toLowerCase().includes('kimya')) icon = 'fa-flask';
-        if (cat.name.toLowerCase().includes('dərslik')) icon = 'fa-graduation-cap';
+        if (cat.name.toLowerCase().includes('prokuror')) icon = 'fa-landmark';
+        if (cat.name.toLowerCase().includes('hakim')) icon = 'fa-balance-scale';
+        if (cat.name.toLowerCase().includes('vəkil')) icon = 'fa-briefcase';
 
         // Check if it has subcategories
         const hasSub = categories.some(c => c.parentId === cat.id);
@@ -4613,19 +4652,165 @@ function renderCategories() {
             console.log(`XI Sinif tapıldı: ${cat.name}, ID: ${cat.id}, Sual: ${cat.questions ? cat.questions.length : 0}`);
         }
 
+        // Special Exam Logic
+        const isSpecial = cat.isSpecial || 
+                         cat.name.toLowerCase().includes('prokuror') || 
+                         cat.name.toLowerCase().includes('hakim') || 
+                         cat.name.toLowerCase().includes('vəkil');
+
         div.innerHTML = `
             <i class="fas ${icon}"></i>
             <h3>${escapeHtml(cat.name || '')}</h3>
             ${hasSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
                 ${hasSub ? `<button class="btn-secondary" onclick="enterCategory('${cat.id}')">Bölmələrə Bax</button>` : ''}
-                ${(hasQuestions || isXI) ? `<button class="btn-primary" onclick="startQuizCheck('${cat.id}')">Testə Başla</button>` : ''}
+                ${(hasQuestions || isXI) ? `<button class="btn-primary" onclick="${isSpecial ? `startSpecialQuiz('${cat.id}')` : `startQuizCheck('${cat.id}')`}">${isSpecial ? 'İmtahana Başla' : 'Testə Başla'}</button>` : ''}
                 ${cat.id === 'public_general' ? `<button class="btn-outline" onclick="openGlobalPublicQuestions()"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
                 ${!hasSub && !hasQuestions && !isXI && cat.id !== 'public_general' ? '<p class="text-muted text-xs italic">Tezliklə...</p>' : ''}
             </div>
         `;
-        grid.appendChild(div);
+        
+        if (isSpecial && !currentParentId && specialGrid) {
+             specialGrid.appendChild(div);
+             hasSpecial = true;
+        } else {
+             grid.appendChild(div);
+        }
     });
+    
+    if (!hasSpecial && specialTitle && !currentParentId) {
+        // Show title even if empty, as per user request to "create the section"
+        specialTitle.classList.remove('hidden');
+        if (specialGrid && specialGrid.children.length === 0) {
+            specialGrid.innerHTML = '<p class="text-muted italic" style="grid-column: 1/-1;">Hələlik xüsusi sınaq yoxdur.</p>';
+        }
+    }
+}
+
+
+// Prokurorluq Sınağı üçün Sxem
+const PROKURORLUQ_SCHEMA = [
+    { id: '1768674522030', count: 20, name: 'Cinayət Məcəlləsi' },
+    { id: '1768683898010', count: 20, name: 'Cinayət-Prosessual Məcəlləsi' },
+    { id: '1766934946320', count: 6, name: 'Konstitusiya' },
+    { id: '1768696058306', count: 3, name: 'Normativ hüquqi aktlar' },
+    { id: '1768735010552', count: 5, name: 'İnzibati Xətalar Məcəlləsi' },
+    { id: '1768750915800', count: 2, name: 'Mülki Məcəllə' },
+    { id: '1768737630088', count: 2, name: 'Mülki-Prosessual Məcəllə' },
+    { id: '1768745670510', count: 2, name: 'Əmək Məcəlləsi' },
+    { id: '1768696474731', count: 8, name: 'Prokurorluq haqqında' },
+    { id: '1768696605470', count: 6, name: 'Prokurorluq orqanlarında qulluq' },
+    { id: '1767194888783', count: 5, name: 'Korrupsiyaya qarşı mübarizə' }, // Konvensiya əvəzinə artırıldı
+    { id: '1768698786812', count: 1, name: 'Polis haqqında' }
+];
+
+async function generateProkurorluqExam() {
+    if (!currentUser) throw new Error("İmtahan üçün daxil olmalısınız.");
+    
+    // 1. İstifadəçinin tarixçəsini yüklə
+    let usedQuestionIds = new Set();
+    if (db) {
+        try {
+            const historySnapshot = await db.collection('exam_history')
+                .where('userId', '==', currentUser.id)
+                .where('examType', '==', 'prokurorluq')
+                .get();
+            
+            historySnapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.questionIds && Array.isArray(data.questionIds)) {
+                    data.questionIds.forEach(id => usedQuestionIds.add(id));
+                }
+            });
+            console.log(`User has seen ${usedQuestionIds.size} unique questions.`);
+        } catch (e) {
+            console.error("History fetch error:", e);
+        }
+    }
+
+    let examQuestions = [];
+    let log = [];
+
+    // 2. Hər kateqoriya üzrə sualları seç
+    for (const item of PROKURORLUQ_SCHEMA) {
+        // Kateqoriyanı tap (yaddaşdan və ya DB-dən)
+        let cat = categories.find(c => c.id === item.id);
+        
+        // Əgər yaddaşda yoxdursa və DB varsa, yüklə
+        if ((!cat || !cat.questions || cat.questions.length === 0) && db) {
+            try {
+                const doc = await db.collection('categories').doc(item.id).get();
+                if (doc.exists) {
+                    cat = { id: doc.id, ...doc.data() };
+                }
+            } catch (e) { console.error(`Error fetching cat ${item.id}:`, e); }
+        }
+
+        if (!cat || !cat.questions) {
+            log.push(`${item.name}: Kateqoriya tapılmadı!`);
+            continue;
+        }
+
+        // Sualları filtrlə (işlənmişləri çıxar)
+        const availableQuestions = cat.questions.filter(q => !usedQuestionIds.has(String(q.id)));
+        
+        if (availableQuestions.length < item.count) {
+            log.push(`${item.name}: Kifayət qədər yeni sual yoxdur (Tələb: ${item.count}, Var: ${availableQuestions.length}). Mövcud olanlar götürülür.`);
+        }
+
+        // Təsadüfi seç
+        const shuffled = availableQuestions.sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, item.count);
+        
+        examQuestions = [...examQuestions, ...selected];
+    }
+
+    if (examQuestions.length === 0) {
+        throw new Error("Sual bazası boşdur və ya bütün sualları işləmisiniz.");
+    }
+
+    // 3. İmtahan obyektini yarat
+    return {
+        id: 'generated_prokurorluq',
+        name: 'Prokurorluq üzrə sınaq',
+        time: 180, // 3 saat
+        questions: examQuestions,
+        isSpecial: true,
+        examType: 'prokurorluq', // For saving history later
+        createdAt: Date.now()
+    };
+}
+
+window.startSpecialQuiz = async function(catId) {
+    if (catId === 'special_prokurorluq') {
+        const btn = document.querySelector(`button[onclick*="'${catId}'"]`);
+        const originalText = btn ? btn.innerHTML : '';
+        if(btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Hazırlanır...';
+        }
+
+        try {
+            const generatedExam = await generateProkurorluqExam();
+            
+            // Yadda saxla
+            localStorage.setItem('generatedExamData', JSON.stringify(generatedExam));
+            localStorage.setItem('activeSpecialCategory', 'generated_prokurorluq');
+            
+            window.location.href = 'dim_view.html';
+        } catch (e) {
+            console.error(e);
+            alert('Sınaq yaradılarkən xəta: ' + e.message);
+            if(btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+        return;
+    }
+
+    localStorage.setItem('activeSpecialCategory', catId);
+    window.location.href = 'dim_view.html';
 }
 
 window.enterCategory = function(id) {
