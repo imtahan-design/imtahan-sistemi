@@ -50,26 +50,12 @@ window.onerror = function(message, source, lineno, colno, error) {
         return false;
     }
 
-    // If we are in a loading state, maybe we should show an error to the user
-    const loadingScreen = document.getElementById('loading-screen');
-    if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
-        // Təhlükəsizlik üçün mesajı təmizləyirik (XSS qarşısı almaq üçün)
-        const safeMessage = message ? String(message).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : "Naməlum xəta";
-
-        loadingScreen.innerHTML = `
-            <div class="text-white text-center p-6 bg-dark rounded-12 shadow-lg">
-                <i class="fas fa-exclamation-triangle text-6xl text-danger mb-6"></i>
-                <h2 class="mt-4">Sistem yüklənə bilmədi</h2>
-                <p class="mt-3 opacity-80">Məlumat bazası ilə əlaqə kəsildi və ya şəbəkə xətası baş verdi.</p>
-                <div class="bg-white opacity-10 p-3 rounded-md mt-4 text-xs italic text-warning">
-                    ${safeMessage}
-                </div>
-                <button onclick="location.reload()" class="btn-primary mt-4 bg-white text-primary border-none p-3 rounded-md cursor-pointer font-bold">
-                    Səhifəni yenilə
-                </button>
-            </div>
-        `;
-    }
+    // Disable global error UI to prevent "System Failed" on minor non-fatal errors
+    // const loadingScreen = document.getElementById('loading-screen');
+    // if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+    //    ...
+    // }
+    
     return false;
 };
 
