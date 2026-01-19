@@ -35,6 +35,123 @@ try {
 
 
 
+// Global Constants for Special Exams
+window.PROKURORLUQ_SUBS = [
+    { id: '1768674522030', count: 20, name: 'Cinayət Məcəlləsi' },
+    { id: '1768683898010', count: 20, name: 'Cinayət-Prosessual Məcəlləsi' },
+    { id: '1766934946320', count: 6, name: 'Konstitusiya' },
+    { id: '1768696058306', count: 3, name: 'Normativ hüquqi aktlar' },
+    { id: '1768735010552', count: 5, name: 'İnzibati Xətalar Məcəlləsi' },
+    { id: '1768750915800', count: 2, name: 'Mülki Məcəllə' },
+    { id: '1768737630088', count: 2, name: 'Mülki-Prosessual Məcəllə' },
+    { id: '1768745670510', count: 2, name: 'Əmək Məcəlləsi' },
+    { id: '1768696474731', count: 8, name: 'Prokurorluq haqqında' },
+    { id: '1768696605470', count: 6, name: 'Prokurorluq orqanlarında qulluq' },
+    { id: '1767194888783', count: 5, name: 'Korrupsiyaya qarşı mübarizə' },
+    { id: '1768698786812', count: 1, name: 'Polis haqqında' },
+    { id: 'special_prokurorluq_human_rights', name: 'Avropa İnsan Hüquqları Konvensiyası' }
+];
+
+// Helper to seed/merge prokurorluq subcategories
+async function seedProkurorluqSubcategories() {
+    const parentId = 'special_prokurorluq';
+    // Ensure parent exists
+    const parent = categories.find(c => c.id === parentId);
+    if (!parent && typeof db !== 'undefined') {
+        // Create parent if missing (rare case)
+        console.log("Parent 'special_prokurorluq' missing, creating...");
+        // This is handled in seed special exams loop usually, but good to be safe
+    }
+
+    const schema = window.PROKURORLUQ_SUBS;
+    let addedCount = 0;
+    let hasChanges = false;
+
+    for (const item of schema) {
+        // 1. Check if official category exists by ID
+        let officialCat = categories.find(c => c.id === item.id);
+        
+        // 2. Find duplicates (Same name, same parent, but wrong ID)
+        // More robust matching: trim, lowercase
+        const duplicates = categories.filter(c => 
+            c.parentId === parentId && 
+            c.id !== item.id && 
+            (
+                c.name.trim().toLowerCase() === item.name.trim().toLowerCase() ||
+                // Special case for Convention if names vary slightly
+                (item.name.includes('Konvensiya') && c.name.includes('Konvensiya'))
+            )
+        );
+
+        if (duplicates.length > 0) {
+            console.log(`Found duplicates for ${item.name}:`, duplicates.map(d => d.id));
+            
+            // Ensure official category exists
+            if (!officialCat) {
+                officialCat = {
+                    id: item.id,
+                    name: item.name,
+                    parentId: parentId,
+                    questions: [],
+                    isHiddenFromPublic: true,
+                    createdBy: 'system',
+                    time: 45
+                };
+                categories.push(officialCat);
+                hasChanges = true;
+            }
+
+            // Merge questions from duplicates
+            duplicates.forEach(dup => {
+                if (dup.questions && dup.questions.length > 0) {
+                    const existingIds = new Set((officialCat.questions || []).map(q => q.id));
+                    const newQuestions = dup.questions.filter(q => !existingIds.has(q.id));
+                    if (newQuestions.length > 0) {
+                        officialCat.questions = [...(officialCat.questions || []), ...newQuestions];
+                        hasChanges = true;
+                    }
+                }
+                
+                // Delete duplicate
+                const idx = categories.indexOf(dup);
+                if (idx > -1) categories.splice(idx, 1);
+                
+                // Delete from DB
+                if (typeof db !== 'undefined' && db) {
+                    db.collection('categories').doc(dup.id).delete().catch(console.error);
+                }
+            });
+            
+            // Save official category to DB
+            if (typeof db !== 'undefined' && db) {
+                db.collection('categories').doc(officialCat.id).set(officialCat).catch(console.error);
+            }
+        } else if (!officialCat) {
+            // No official, no duplicates -> Create new
+            const newSub = {
+                id: item.id,
+                name: item.name,
+                parentId: parentId,
+                questions: [],
+                isHiddenFromPublic: true,
+                createdBy: 'system',
+                time: 45
+            };
+            categories.push(newSub);
+            if (typeof db !== 'undefined' && db) {
+                db.collection('categories').doc(item.id).set(newSub).catch(console.error);
+            }
+            hasChanges = true;
+        }
+    }
+    
+    if (hasChanges && typeof saveCategories === 'function') {
+        saveCategories();
+    }
+}
+window.seedProkurorluqSubcategories = seedProkurorluqSubcategories;
+
+
 // Global Error Handling
 window.onerror = function(message, source, lineno, colno, error) {
     console.error("Global JS Error:", message, "at", source, ":", lineno);
@@ -556,39 +673,10 @@ async function loadData() {
     });
 
     // Seed Prokurorluq Subcategories
-    const PROKURORLUQ_SUBS = [
-        { id: '1768674522030', count: 20, name: 'Cinayət Məcəlləsi' },
-        { id: '1768683898010', count: 20, name: 'Cinayət-Prosessual Məcəlləsi' },
-        { id: '1766934946320', count: 6, name: 'Konstitusiya' },
-        { id: '1768696058306', count: 3, name: 'Normativ hüquqi aktlar' },
-        { id: '1768735010552', count: 5, name: 'İnzibati Xətalar Məcəlləsi' },
-        { id: '1768750915800', count: 2, name: 'Mülki Məcəllə' },
-        { id: '1768737630088', count: 2, name: 'Mülki-Prosessual Məcəllə' },
-        { id: '1768745670510', count: 2, name: 'Əmək Məcəlləsi' },
-        { id: '1768696474731', count: 8, name: 'Prokurorluq haqqında' },
-        { id: '1768696605470', count: 6, name: 'Prokurorluq orqanlarında qulluq' },
-        { id: '1767194888783', count: 5, name: 'Korrupsiyaya qarşı mübarizə' },
-        { id: '1768698786812', count: 1, name: 'Polis haqqında' },
-        { id: 'special_prokurorluq_human_rights', name: 'Avropa İnsan Hüquqları Konvensiyası' }
-    ];
+    if (typeof seedProkurorluqSubcategories === 'function') {
+        seedProkurorluqSubcategories().catch(console.error);
+    }
 
-    PROKURORLUQ_SUBS.forEach(sub => {
-        const exists = categories.find(c => c.id === sub.id);
-        if (!exists) {
-            const newSub = {
-                id: sub.id,
-                name: sub.name,
-                parentId: 'special_prokurorluq',
-                questions: [],
-                isHiddenFromPublic: true // Hide from public "Mövcud İmtahanlar"
-            };
-            categories.push(newSub);
-            if (db) {
-                db.collection('categories').doc(sub.id).set(newSub).catch(console.error);
-            }
-            hasChanged = true;
-        }
-    });
 
         // Check for special_pool.json and upload if needed (Admin helper)
     if (db) { // Run in any environment if DB is connected
@@ -4810,35 +4898,23 @@ async function generateProkurorluqExam() {
              cat = categories.find(c => c.parentId === 'special_prokurorluq' && (c.name.includes('Konvensiya') || c.id === 'special_prokurorluq_human_rights'));
         }
 
-        // 3. Fallback to Schema ID (Public/Legacy)
-        if (!cat) {
-            cat = categories.find(c => c.id === item.id);
-        }
-
-        // Dynamic Lookup for Konvensiya (Legacy/Public)
-        if (!cat && item.isDynamic) {
-             cat = categories.find(c => c.name === item.name || c.name.includes('Konvensiya'));
-             if (cat) console.log(`Found dynamic category: ${cat.name} (${cat.id})`);
-        }
+        // 3. STRICT ISOLATION: DO NOT FALLBACK TO PUBLIC
+        // Əgər xüsusi bölmə tapılmırsa və ya boşdursa, köhnə bazaya müraciət ETMƏ!
         
-        // Əgər yaddaşda yoxdursa və DB varsa, yüklə
-        if ((!cat || !cat.questions || cat.questions.length === 0) && db) {
+        // Əgər yaddaşda yoxdursa və DB varsa, yüklə (yalnız xüsusi ID varsa)
+        if ((!cat || !cat.questions || cat.questions.length === 0) && db && cat) {
             try {
-                const docId = cat ? cat.id : item.id;
-                if (!docId) {
-                    console.log("Skipping undefined docId for", item.name);
-                    continue;
-                }
+                const docId = cat.id; // Yalnız xüsusi kateqoriya ID-si
                 const doc = await db.collection('categories').doc(docId).get();
                 if (doc.exists) {
                     cat = { id: doc.id, ...doc.data() };
                 }
-            } catch (e) { console.error(`Error fetching cat ${item.id}:`, e); }
+            } catch (e) { console.error(`Error fetching special cat ${cat.id}:`, e); }
         }
 
-        if (!cat || !cat.questions) {
-            log.push(`${item.name}: Kateqoriya tapılmadı!`);
-            continue;
+        if (!cat || !cat.questions || cat.questions.length === 0) {
+            log.push(`${item.name}: Xüsusi bölmədə sual yoxdur! (Tələb olunan: ${item.count})`);
+            continue; // Skip this subject if empty in special pool
         }
 
         // Sualları filtrlə (işlənmişləri çıxar)
@@ -9677,58 +9753,7 @@ function appendAdminChatMessage(data) {
     }, 50);
 }
 
-window.seedProkurorluqSubcategories = async function() {
-    const parentId = 'special_prokurorluq';
-    const parent = categories.find(c => c.id === parentId);
-    if (!parent) {
-        console.log("Parent category 'special_prokurorluq' not found.");
-        return;
-    }
 
-    const schema = [
-        { name: 'Cinayət Məcəlləsi' },
-        { name: 'Cinayət-Prosessual Məcəlləsi' },
-        { name: 'Konstitusiya' },
-        { name: 'Normativ hüquqi aktlar' },
-        { name: 'İnzibati Xətalar Məcəlləsi' },
-        { name: 'Mülki Məcəllə' },
-        { name: 'Mülki-Prosessual Məcəllə' },
-        { name: 'Əmək Məcəlləsi' },
-        { name: 'Prokurorluq haqqında' },
-        { name: 'Prokurorluq orqanlarında qulluq' },
-        { name: 'Korrupsiyaya qarşı mübarizə' },
-        { name: 'Polis haqqında' },
-        { name: 'Avropa İnsan Hüquqları Konvensiyası', id: 'special_prokurorluq_human_rights' }
-    ];
-
-    let addedCount = 0;
-
-    for (const item of schema) {
-        // Check if exists under this parent (by name)
-        const exists = categories.some(c => c.parentId === parentId && c.name === item.name);
-        if (!exists) {
-            const newCat = {
-                id: item.id || 'special_sub_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-                name: item.name,
-                time: 45,
-                questions: [],
-                createdBy: 'system',
-                parentId: parentId,
-                isHiddenFromPublic: true
-            };
-            categories.push(newCat);
-            if (typeof addCategoryToDB === 'function') {
-                await addCategoryToDB(newCat);
-            }
-            addedCount++;
-        }
-    }
-    
-    if (addedCount > 0) {
-        saveCategories();
-        console.log(`${addedCount} subcategories seeded.`);
-    }
-};
 
 window.organizeProkurorluqQuestions = async function() {
     if (!confirm("Bu əməliyyat 'Prokurorluq üzrə sınaq' kateqoriyasındakı sualları müvafiq alt bölmələrə köçürəcək. Davam edilsin?")) return;
