@@ -45,6 +45,11 @@ window.onerror = function(message, source, lineno, colno, error) {
         return true; 
     }
 
+    // DİM sınaq səhifəsində (dim_view.html) yüklənmə zamanı yaranan xətaları UI-da göstərmə (User experience üçün)
+    if (window.location.pathname.includes('dim_view.html')) {
+        return false;
+    }
+
     // If we are in a loading state, maybe we should show an error to the user
     const loadingScreen = document.getElementById('loading-screen');
     if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
