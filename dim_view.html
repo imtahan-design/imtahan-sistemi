@@ -150,7 +150,9 @@
             flex-direction: column;
             width: 100%; /* Fix narrowing issue */
             box-sizing: border-box; /* Ensure padding doesn't affect width */
-            min-height: 500px; /* Prevent jumpiness */
+            min-height: 700px; /* Increased to prevent jumpiness on large screens */
+            flex-grow: 1; /* Always grow to fill space */
+            height: 100%; /* Try to force full height */
         }
 
         .q-number {
