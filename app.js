@@ -4823,7 +4823,17 @@ async function generateProkurorluqExam() {
 }
 
 window.startSpecialQuiz = async function(catId) {
-    if (catId === 'special_prokurorluq') {
+    const cat = categories.find(c => c.id === catId);
+    const isProkuror = cat && (cat.id === 'special_prokurorluq' || cat.name.toLowerCase().includes('prokuror'));
+
+    if (isProkuror) {
+        // Password Check
+        const password = prompt("Zəhmət olmasa sınaq şifrəsini daxil edin:");
+        if (password !== "123") {
+            alert("Şifrə yanlışdır!");
+            return;
+        }
+
         const btn = document.querySelector(`button[onclick*="'${catId}'"]`);
         const originalText = btn ? btn.innerHTML : '';
         if(btn) {
