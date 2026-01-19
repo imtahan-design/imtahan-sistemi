@@ -4025,10 +4025,36 @@ function handleUrlParams() {
         
         if (adminCatId) {
             currentAdminParentId = adminCatId;
-            // Delay to ensure DOM is ready and data loaded
-            setTimeout(() => {
+            
+            // Helper to wait for categories
+            const waitForCategories = () => {
+                return new Promise(resolve => {
+                    if (categories && categories.length > 0) return resolve();
+                    const checkInterval = setInterval(() => {
+                        if (categories && categories.length > 0) {
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                    // Timeout after 10s
+                    setTimeout(() => {
+                        clearInterval(checkInterval);
+                        resolve(); 
+                    }, 10000);
+                });
+            };
+
+            waitForCategories().then(() => {
                 if (typeof window.openCategory === 'function') {
-                    window.openCategory(adminCatId);
+                    // If it's a parent category, enter it first
+                    const cat = categories.find(c => c.id === adminCatId);
+                    if (cat && categories.some(c => c.parentId === adminCatId)) {
+                        // It's a parent category (like Prokurorluq main)
+                        window.enterAdminCategory(adminCatId);
+                    } else {
+                        // It's a leaf category (like Constitutional Law)
+                        window.openCategory(adminCatId);
+                    }
                     
                     if (editQuestionId) {
                         setTimeout(() => {
@@ -4038,7 +4064,7 @@ function handleUrlParams() {
                         }, 500);
                     }
                 }
-            }, 500);
+            });
         }
         return;
     } else if (page === 'teacher') {
