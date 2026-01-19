@@ -40,7 +40,7 @@ window.onerror = function(message, source, lineno, colno, error) {
     console.error("Global JS Error:", message, "at", source, ":", lineno);
     
     // "596 - Reklam" xətası üçün xüsusi yoxlama
-    if (message && (message.includes('596') || message.toLowerCase().includes('reklam'))) {
+    if (message && (message.includes('596') || message.toLowerCase().includes('reklam') || message.includes('emojis'))) {
         // Reklam xətaları adətən zərərsizdir, istifadəçini narahat etməyək
         return true; 
     }
