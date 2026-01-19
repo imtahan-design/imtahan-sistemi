@@ -539,7 +539,13 @@
             // Prepare questions (Shuffle if needed, currently taking all)
             // DİM exams usually have fixed order, but let's shuffle options maybe?
             // For now, keep order as is or shuffle questions
-            dimQuiz.questions = cat.questions; // Keep original order for "Sınaq"
+            
+            // Filter out empty questions and clean text
+            dimQuiz.questions = cat.questions.filter(q => {
+                const cleaned = cleanQuestionText(q.text);
+                return cleaned && cleaned.length > 5;
+            });
+            
             dimQuiz.answers = new Array(dimQuiz.questions.length).fill(null);
             dimQuiz.flags = new Array(dimQuiz.questions.length).fill(false);
             dimQuiz.duration = (cat.time || 90) * 60; // minutes to seconds
@@ -583,8 +589,15 @@
             let t = text;
             // Remove prefix like "Sual 1.", "17.", "Sual 5:", "Sual 17"
             t = t.replace(/^(Sual\s*\d*|\d+)\s*[:.]?\s*/i, '');
+            
+            // Remove "(Maddə ...)" at the start (e.g. "(Maddə 26: ...)")
+            t = t.replace(/^\s*\(\s*Maddə\s*[^)]+\)\s*/i, '');
+            // Remove "Maddə ..." at the start without parens if present
+            t = t.replace(/^\s*Maddə\s*[^:.]+[.:]\s*/i, '');
+
             // Remove suffix like "(Maddə 7.0.35)", "(Maddə 90)", "Maddə 15"
-            t = t.replace(/\s*\(?\s*Maddə\s+[^)]+\)?\s*$/i, '');
+            t = t.replace(/\s*\(?\s*Maddə\s*[^)]+\)?\s*$/i, '');
+            
             return t.trim();
         }
 
