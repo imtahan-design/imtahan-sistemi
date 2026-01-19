@@ -45,6 +45,14 @@
             border-bottom: 2px solid #f0f0f0;
             padding-bottom: 15px;
         }
+
+        .dim-sidebar-footer {
+             margin-top: auto; 
+             padding-top: 20px;
+             border-top: 2px solid #f0f0f0;
+             display: flex;
+             justify-content: center;
+        }
         
         .dim-sidebar-header h3 {
             margin: 0;
@@ -383,6 +391,10 @@
                     <span style="width:12px;height:12px;background:white;border:1px solid #ccc;display:inline-block;margin-right:8px;"></span> Cavablandırılmayıb
                 </div>
             </div>
+
+            <div class="dim-sidebar-footer">
+                <button class="btn-dim btn-finish" onclick="finishExam()">İmtahanı Bitir</button>
+            </div>
         </div>
 
         <!-- Main Content -->
@@ -407,7 +419,6 @@
                 <button class="btn-dim btn-prev" id="btn-prev" onclick="prevQuestion()"><i class="fas fa-chevron-left"></i> Əvvəlki</button>
                 <button class="btn-dim btn-flag" onclick="toggleFlag()"><i class="fas fa-flag"></i> İşarələ</button>
                 <button class="btn-dim btn-next" id="btn-next" onclick="nextQuestion()">Növbəti <i class="fas fa-chevron-right"></i></button>
-                <button class="btn-dim btn-finish" onclick="finishExam()">İmtahanı Bitir</button>
             </div>
         </div>
     </div>
@@ -540,11 +551,15 @@
             // DİM exams usually have fixed order, but let's shuffle options maybe?
             // For now, keep order as is or shuffle questions
             
-            // Filter out empty questions and clean text
-            dimQuiz.questions = cat.questions.filter(q => {
-                const cleaned = cleanQuestionText(q.text);
-                return cleaned && cleaned.length > 5;
-            });
+            // Filter out empty questions and clean text (UPDATED: Actually updating the object text now!)
+            dimQuiz.questions = cat.questions
+                .map(q => {
+                    // Create a shallow copy to avoid mutating original data in memory if it matters,
+                    // but more importantly, to ensure we have the cleaned text.
+                    const newText = cleanQuestionText(q.text);
+                    return { ...q, text: newText };
+                })
+                .filter(q => q.text && q.text.length > 5);
             
             dimQuiz.answers = new Array(dimQuiz.questions.length).fill(null);
             dimQuiz.flags = new Array(dimQuiz.questions.length).fill(false);
