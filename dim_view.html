@@ -897,9 +897,18 @@
                 editBtn.style.backgroundColor = '#ffc107'; // Warning color
                 editBtn.style.color = '#000';
                 editBtn.onclick = () => {
-                    const catId = q.categoryId || localStorage.getItem('activeSpecialCategory');
+                    // Prioritize source category (for weekly exams) -> explicit category -> active context
+                    const catId = q._sourceCategoryId || q.categoryId || localStorage.getItem('activeSpecialCategory');
+                    
                     if (catId && q.id) {
-                         window.location.href = `index.html?page=admin&adminCat=${catId}&editQuestionId=${q.id}`;
+                         // Use window.open to avoid losing exam state if they want to just peek, 
+                         // but user asked to go there. Let's keep it in same tab or new tab?
+                         // User said "suala getmir. Ana səhifəyə gedir", implies navigation.
+                         // Let's open in new tab to preserve exam state, or same tab if they want to edit.
+                         // Usually admin wants to fix and come back. New tab is safer for "exam in progress".
+                         // But if they want to "go to question", maybe they expect to leave.
+                         // Let's use blank for now as it's safer for the exam state.
+                         window.open(`index.html?page=admin&adminCat=${catId}&editQuestionId=${q.id}`, '_blank');
                     } else {
                         alert('Xəta: Kateqoriya və ya sual ID tapılmadı.');
                     }
