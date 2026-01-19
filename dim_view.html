@@ -882,6 +882,31 @@
             document.getElementById('btn-prev').disabled = index === 0;
             document.getElementById('btn-next').style.display = index === dimQuiz.questions.length - 1 ? 'none' : 'inline-block';
             
+            // Admin-only Edit Question button
+            const footer = document.querySelector('.dim-footer');
+            // Remove existing edit button if any
+            const existingEditBtn = footer.querySelector('.btn-edit');
+            if (existingEditBtn) existingEditBtn.remove();
+
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (currentUser && currentUser.role === 'admin') {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-dim btn-edit';
+                editBtn.innerHTML = '<i class="fas fa-edit"></i> Sualı Düzəlt';
+                editBtn.style.marginLeft = '10px';
+                editBtn.style.backgroundColor = '#ffc107'; // Warning color
+                editBtn.style.color = '#000';
+                editBtn.onclick = () => {
+                    const catId = q.categoryId || localStorage.getItem('activeSpecialCategory');
+                    if (catId && q.id) {
+                         window.location.href = `index.html?page=admin&adminCat=${catId}&editQuestionId=${q.id}`;
+                    } else {
+                        alert('Xəta: Kateqoriya və ya sual ID tapılmadı.');
+                    }
+                };
+                footer.appendChild(editBtn);
+            }
+
             updatePaletteStyles();
         }
 

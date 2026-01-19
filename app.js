@@ -3930,6 +3930,28 @@ function handleUrlParams() {
         return;
     } else if (page === 'admin') {
         window.showAdminDashboard(false);
+        
+        // Handle Deep Linking for Admin
+        const adminCatId = urlParams.get('adminCat');
+        const editQuestionId = urlParams.get('editQuestionId');
+        
+        if (adminCatId) {
+            currentAdminParentId = adminCatId;
+            // Delay to ensure DOM is ready and data loaded
+            setTimeout(() => {
+                if (typeof window.openCategory === 'function') {
+                    window.openCategory(adminCatId);
+                    
+                    if (editQuestionId) {
+                        setTimeout(() => {
+                            if (typeof window.editCategoryQuestion === 'function') {
+                                window.editCategoryQuestion(editQuestionId);
+                            }
+                        }, 500);
+                    }
+                }
+            }, 500);
+        }
         return;
     } else if (page === 'teacher') {
         window.showTeacherDashboard(false);
@@ -4826,7 +4848,7 @@ async function generateProkurorluqExam() {
             log.push(`${item.name}: Kifayət qədər yeni sual yoxdur (Tələb: ${item.count}, Var: ${availableQuestions.length}). Mövcud olanlar götürülür.`);
         }
 
-        // Təsadüfi seç (Oxşarlıq nəzərə alınmaqla)
+            // Təsadüfi seç (Oxşarlıq nəzərə alınmaqla)
         const shuffled = availableQuestions.sort(() => 0.5 - Math.random());
         let selectedCount = 0;
         let subjectSelected = [];
@@ -4842,7 +4864,10 @@ async function generateProkurorluqExam() {
                 }
             }
             
-            subjectSelected.push(q);
+            // Add category ID to question for admin tracking
+            const qWithCat = { ...q, categoryId: cat.id };
+            subjectSelected.push(qWithCat);
+            
             if (q.similarityGroupId) usedSimilarityGroups.add(q.similarityGroupId);
             selectedCount++;
         }
