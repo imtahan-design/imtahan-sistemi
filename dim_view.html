@@ -13,7 +13,8 @@
             font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
+            overflow: hidden; /* Prevent global scroll */
+            height: 100vh;
             color: #333;
         }
 
@@ -33,25 +34,28 @@
             border-right: 1px solid #e0e0e0;
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            overflow-y: auto;
+            height: 100vh; /* Ensure full viewport height */
+            padding: 0; /* Managed internally */
+            overflow: hidden; /* No global scroll */
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             z-index: 10;
         }
 
         .dim-sidebar-header {
-            margin-bottom: 25px;
+            padding: 20px;
             text-align: center;
             border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 15px;
+            flex-shrink: 0;
         }
 
         .dim-sidebar-footer {
-             margin-top: auto; 
-             padding-top: 20px;
+             padding: 20px;
              border-top: 2px solid #f0f0f0;
+             background: white;
              display: flex;
              justify-content: center;
+             flex-shrink: 0;
+             margin-top: auto; /* Push to bottom if space allows */
         }
         
         .dim-sidebar-header h3 {
@@ -69,15 +73,29 @@
             padding: 15px;
             border-radius: 8px;
             border: 1px solid #ffcccc;
-            margin-bottom: 25px;
+            margin: 20px;
             text-align: center;
             box-shadow: 0 2px 5px rgba(231, 76, 60, 0.1);
+            flex-shrink: 0;
         }
 
         .question-palette {
+            padding: 0 20px;
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 10px;
+            flex: 1; /* Grow to fill space */
+            min-height: 0; /* Critical for nested scrolling */
+            overflow-y: auto; /* Internal scroll */
+            align-content: start;
+            margin-bottom: 10px;
+        }
+
+        /* Target the legend div which has inline style */
+        .dim-sidebar > div[style*="font-size: 0.8rem"] {
+            padding: 0 20px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
         }
 
         .q-btn {
@@ -126,20 +144,22 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 40px;
-            overflow-y: auto;
+            height: 100vh; /* Full height */
+            overflow: hidden; /* No global scroll */
             background-color: #f3f4f6;
+            padding: 0; /* Remove padding from container */
         }
 
         .dim-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
             background: white;
             padding: 20px 30px;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            margin: 20px 40px; /* Margin for spacing */
+            flex-shrink: 0;
         }
 
         .dim-header h2 {
@@ -149,18 +169,22 @@
         }
 
         .dim-question-area {
-            flex: 1;
+            width: 800px; /* Fixed Width Request */
+            max-width: 90%; /* Responsive fallback */
+            margin: 0 auto; /* Center horizontally */
             background: white;
             padding: 40px;
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
-            width: 100%; /* Fix narrowing issue */
-            box-sizing: border-box; /* Ensure padding doesn't affect width */
-            min-height: 700px; /* Increased to prevent jumpiness on large screens */
-            flex-grow: 1; /* Always grow to fill space */
-            height: 100%; /* Try to force full height */
+            
+            flex: 1; /* Fill remaining vertical space */
+            min-height: 0; /* Allow shrinking for scroll */
+            overflow-y: auto; /* Internal Scroll */
+            
+            box-sizing: border-box;
+            margin-bottom: 20px;
         }
 
         .q-number {
@@ -222,7 +246,6 @@
         }
 
         .dim-footer {
-            margin-top: 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -230,6 +253,8 @@
             padding: 20px 30px;
             border-radius: 12px;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.03);
+            margin: 0 40px 20px 40px; /* Bottom margin */
+            flex-shrink: 0; /* Keep fixed at bottom */
         }
 
         .btn-dim {
@@ -281,14 +306,15 @@
 
         /* Results Screen */
         .dim-results {
-            max-width: 1200px; /* Wider for table */
-            margin: 40px auto;
+            max-width: 1000px; /* More compact width */
+            margin: 10px auto;
             background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 20px; /* Reduced padding */
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             text-align: center;
             position: relative;
+            /* Optional: transform for very small screens if needed, handled via media query usually */
         }
         
         .dim-results h2 { color: #111827 !important; }
@@ -344,12 +370,10 @@
         }
 
         .result-summary-footer {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #f3f4f6;
+            display: block; /* Stacked vertically */
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: none;
         }
         
         .summary-item {
@@ -358,86 +382,69 @@
         .summary-val { font-size: 2rem; font-weight: 800; }
         .summary-label { color: #6b7280; font-size: 0.9rem; text-transform: uppercase; }
 
-        /* DİM Result Table Styles */
-        .dim-result-table-wrapper {
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-        .dim-result-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            border: 1px solid #000;
-        }
-        .dim-result-table th, .dim-result-table td {
-            border: 1px solid #000;
-            padding: 4px;
-            text-align: center;
-            min-width: 25px;
-        }
-        .res-cell-correct { color: green; font-weight: bold; }
-        .res-cell-wrong { color: red; font-weight: bold; }
-        .res-cell-empty { color: #aaa; }
-        .res-row-plus { color: green; font-weight: bold; font-size: 14px; }
-        .res-row-minus { color: red; font-weight: bold; font-size: 14px; }
+        /* DİM Protocol Table Styles - COMPACT V3 */
+        .dim-protocol-header { text-align: center; margin-bottom: 5px; }
+        .dim-protocol-title { font-size: 1.1rem; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; color: #000; }
+        .dim-protocol-user { font-size: 1.2rem; font-weight: 800; margin-bottom: 5px; color: #000; text-transform: uppercase; }
+        .dim-protocol-meta { text-align: left; font-size: 0.8rem; color: #333; margin-bottom: 5px; font-weight: 600; }
 
-        /* Protocol Style Overrides */
-        .protocol-table-wrapper {
-            margin-bottom: 30px;
-            overflow-x: auto;
-            background: white;
-            padding: 10px;
+        .dim-protocol-table-wrapper { margin-bottom: 5px; overflow-x: auto; }
+        .dim-protocol-table { width: 100%; border-collapse: collapse; border: 1px solid #000; table-layout: fixed; }
+        .dim-protocol-table td { 
+            border: 1px solid #000; 
+            text-align: center; 
+            vertical-align: middle; 
+            height: 20px; /* Super Compact Height */
+            width: 25px; 
+            padding: 0; 
+            font-size: 11px; /* Super Compact Font */
+            color: #000; 
         }
-        .protocol-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 14px;
-            margin-bottom: 20px;
-            border: 2px solid #000; /* Outer border */
-        }
-        .protocol-table td {
-            border: 1px solid #666; /* Cell borders */
-            padding: 4px 2px;
-            text-align: center;
-            min-width: 28px;
-        }
-        .protocol-row-header {
-            background-color: white;
-            font-weight: bold;
-            text-align: left !important;
-            padding-left: 8px !important;
-            white-space: nowrap;
-            width: 120px;
+        
+        /* First column (Headers) specific style */
+        .dim-protocol-table td:first-child { width: 80px; text-align: left; padding-left: 5px; font-weight: bold; background: #fff; white-space: nowrap; font-size: 10px; }
+        
+        .status-plus { color: green !important; font-weight: 900; font-size: 12px; background-color: #f0fdf4; }
+        .status-minus { color: red !important; font-weight: 900; font-size: 12px; background-color: #fef2f2; }
+
+        /* New Result Elements */
+        .result-stats-left {
+            text-align: left;
             font-size: 13px;
-            border-right: 2px solid #000 !important; /* Separator between header and data */
-        }
-        .protocol-cell-correct-ans {
+            font-weight: 600;
             color: #000;
-            font-weight: normal;
+            margin: 5px 0;
+            line-height: 1.4;
+            padding-left: 5px;
         }
-        .protocol-cell-user-correct {
-            color: #0056b3; /* Blue for correct user answer */
-            font-weight: bold;
+
+        .result-final-block {
+            background-color: #f8d7da; /* Light red/pinkish as requested */
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            margin: 10px 0;
+            width: 100%;
+            box-sizing: border-box;
         }
-        .protocol-cell-user-wrong {
-            color: #dc3545; /* Red for wrong user answer */
-            font-weight: bold;
+        .result-final-text {
+            color: #721c24; /* Dark red text */
+            font-weight: 900;
+            font-size: 1.5rem;
+            display: block;
         }
-        .protocol-cell-plus {
-            color: #0056b3;
-            font-weight: bold;
-            font-size: 16px;
+
+        .result-back-btn-container {
+            margin-top: 10px;
+            text-align: center;
         }
-        .protocol-cell-minus {
-            color: #dc3545;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        .protocol-header-container {
-            font-family: 'Times New Roman', Times, serif;
-            color: #000;
-            margin-bottom: 30px;
+
+        @media (max-height: 900px) {
+            .dim-results {
+                transform: scale(0.95);
+                transform-origin: top center;
+                margin-top: 5px;
+            }
         }
     </style>
 </head>
@@ -505,7 +512,7 @@
     </div>
 
     <!-- Results Interface -->
-    <div id="results-interface" class="hidden text-center">
+    <div id="results-interface" class="dim-results hidden text-center">
         <!-- Header removed here as it is injected via JS now -->
         
         <div class="result-table-container">
@@ -693,103 +700,124 @@
                 }
             });
 
-            // Generate Protocol HTML
+            // Container
             const container = document.querySelector('.result-table-container');
-            container.innerHTML = ''; // Clear previous
+            container.innerHTML = ''; 
             
-            // Chunk questions into groups of 20
+            // 1. Header Section
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            const userName = user ? (user.username || user.email) : 'NAMİZƏD';
+            const examTitle = document.getElementById('exam-title').textContent || 'SINAQ İMTAHANI';
+            
+            const now = new Date();
+            const dateStr = `${now.getDate().toString().padStart(2,'0')}.${(now.getMonth()+1).toString().padStart(2,'0')}.${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+
+            const headerHtml = `
+                <div class="dim-protocol-header">
+                    <div class="dim-protocol-title">${examTitle}</div>
+                    <div class="dim-protocol-user">${userName}</div>
+                    <div class="dim-protocol-meta">İmtahanın tarixi və vaxtı: ${dateStr}</div>
+                </div>
+            `;
+            container.innerHTML = headerHtml;
+
+            // 2. Protocol Tables (Chunks of 20)
             const chunkSize = 20;
             for (let i = 0; i < questions.length; i += chunkSize) {
                 const chunk = questions.slice(i, i + chunkSize);
                 
-                const wrapper = document.createElement('div');
-                wrapper.className = 'protocol-table-wrapper';
-                
                 let tableHtml = `
-                    <table class="protocol-table">
-                        <tr>
-                            <td class="protocol-row-header">Sual №</td>
+                    <div class="dim-protocol-table-wrapper">
+                        <table class="dim-protocol-table">
+                            <!-- Row 1: Numbers -->
+                            <tr>
+                                <td>Sual №</td>
                 `;
-                
-                // Row 1: Numbers
-                chunk.forEach((_, idx) => {
-                    tableHtml += `<td>${i + idx + 1}</td>`;
-                });
-                tableHtml += `</tr><tr><td class="protocol-row-header">Doğru cavab</td>`;
-                
+                // Fill cells 1..20
+                for(let j=0; j<chunkSize; j++) {
+                    if (i+j < questions.length) tableHtml += `<td>${i+j+1}</td>`;
+                    else tableHtml += `<td></td>`;
+                }
+                tableHtml += `</tr>`;
+
                 // Row 2: Correct Answers
-                chunk.forEach((q) => {
-                    let cIdx = q.correctIndex !== undefined ? q.correctIndex : q.correct;
-                    tableHtml += `<td class="protocol-cell-correct-ans">${optionLabels[cIdx] || '?'}</td>`;
-                });
-                tableHtml += `</tr><tr><td class="protocol-row-header">Cavab</td>`;
-                
+                tableHtml += `<tr><td>Doğru cavab</td>`;
+                for(let j=0; j<chunkSize; j++) {
+                    if (i+j < questions.length) {
+                        const q = questions[i+j];
+                        let cIdx = q.correctIndex !== undefined ? q.correctIndex : q.correct;
+                        tableHtml += `<td style="color:red; font-weight:bold;">${optionLabels[cIdx] || ''}</td>`;
+                    } else tableHtml += `<td></td>`;
+                }
+                tableHtml += `</tr>`;
+
                 // Row 3: User Answers
-                chunk.forEach((q, idx) => {
-                    const absIdx = i + idx;
-                    const uAns = answers[absIdx];
-                    let label = uAns !== null ? optionLabels[uAns] : '';
-                    tableHtml += `<td>${label}</td>`;
-                });
-                tableHtml += `</tr><tr><td class="protocol-row-header"></td>`; // Indicator Row Header
+                tableHtml += `<tr><td>Cavab</td>`;
+                for(let j=0; j<chunkSize; j++) {
+                    if (i+j < questions.length) {
+                        const uAns = answers[i+j];
+                        tableHtml += `<td>${uAns !== null ? optionLabels[uAns] : ''}</td>`;
+                    } else tableHtml += `<td></td>`;
+                }
+                tableHtml += `</tr>`;
+
+                // Row 4: Status (+/-)
+                tableHtml += `<tr><td>Status</td>`; 
+                for(let j=0; j<chunkSize; j++) {
+                    if (i+j < questions.length) {
+                        const q = questions[i+j];
+                        const uAns = answers[i+j];
+                        let cIdx = q.correctIndex !== undefined ? q.correctIndex : q.correct;
+                        
+                        let sym = '';
+                        let cls = '';
+                        if (uAns !== null) {
+                            if (parseInt(uAns) === parseInt(cIdx)) {
+                                sym = '+';
+                                cls = 'status-plus';
+                            } else {
+                                sym = '-';
+                                cls = 'status-minus';
+                            }
+                        }
+                        tableHtml += `<td class="${cls}">${sym}</td>`;
+                    } else tableHtml += `<td></td>`;
+                }
+                tableHtml += `</tr></table></div>`;
                 
-                // Row 4: Indicators (+/-)
-                chunk.forEach((q, idx) => {
-                    const absIdx = i + idx;
-                    const uAns = answers[absIdx];
-                    let cIdx = q.correctIndex !== undefined ? q.correctIndex : q.correct;
-                    
-                    let content = '';
-                    let className = '';
-                    
-                    if (uAns === null) {
-                        content = ''; 
-                    } else if (parseInt(uAns) === parseInt(cIdx)) {
-                        content = '+';
-                        className = 'protocol-cell-plus';
-                    } else {
-                        content = '-';
-                        className = 'protocol-cell-minus';
-                    }
-                    tableHtml += `<td class="${className}">${content}</td>`;
-                });
-                
-                tableHtml += `</tr></table>`;
-                wrapper.innerHTML = tableHtml;
-                container.appendChild(wrapper);
+                container.insertAdjacentHTML('beforeend', tableHtml);
             }
 
             // Hide Exam, Show Results
             document.getElementById('exam-interface').classList.add('hidden');
             document.getElementById('results-interface').classList.remove('hidden');
             
-            // Update Header Info
-            const user = JSON.parse(localStorage.getItem('currentUser'));
-            const userName = user ? (user.username || user.email) : 'Qonaq';
-            document.getElementById('res-user').textContent = userName;
-            
-            const now = new Date();
-            document.getElementById('res-date').textContent = `${now.getDate().toString().padStart(2,'0')}.${(now.getMonth()+1).toString().padStart(2,'0')}.${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+            // Remove old header injection if present
+            if(document.getElementById('res-user')) document.getElementById('res-user').textContent = '';
+            if(document.getElementById('res-date')) document.getElementById('res-date').textContent = '';
 
-            // Update Summary Footer (Custom Protocol Style)
+            // 3. Summary Footer
             const summaryFooter = document.querySelector('.result-summary-footer');
-            summaryFooter.style.display = 'block';
-            summaryFooter.style.textAlign = 'left';
-            summaryFooter.innerHTML = `
-                <div style="font-family: 'Times New Roman', Times, serif; font-size: 1.1rem; line-height: 1.6; color: #000;">
-                    <div style="margin-bottom: 5px;">Doğru cavabların sayı: <strong>${correct}</strong></div>
-                    <div style="margin-bottom: 5px;">Yanlış cavabların sayı: <strong>${wrong}</strong></div>
-                    <div style="margin-bottom: 20px;">Cavablandırılmayan test tapşırıqlarının sayı: <strong>${unanswered}</strong></div>
-                    
-                    <div style="border: 1px solid #f5c6cb; background-color: #f8d7da; padding: 15px 20px; border-radius: 5px; display: inline-block;">
-                        <span style="color: #721c24; font-weight: bold; font-size: 1.5rem;">YEKUN BAL: ${correct}</span>
-                    </div>
-                </div>
+            if(summaryFooter) {
+                summaryFooter.classList.remove('hidden');
+                summaryFooter.style.display = 'block'; // Ensure block display
                 
-                <div style="margin-top: 40px; text-align: center;">
-                     <button class="btn-dim btn-next" onclick="window.location.href='index.html'" style="display: inline-flex;">Əsas Səhifəyə Qayıt</button>
-                </div>
-            `;
+                summaryFooter.innerHTML = `
+                    <div class="result-stats-left">
+                        <div>Doğru cavabların sayı: ${correct}</div>
+                        <div>Yanlış cavabların sayı: ${wrong}</div>
+                        <div>Cavablandırılmayan test tapşırıqlarının sayı: ${unanswered}</div>
+                    </div>
+                    
+                    <div class="result-final-block">
+                        <span class="result-final-text">YEKUN BAL: ${correct}</span>
+                    </div>
+
+                    <div class="result-back-btn-container">
+                         <button class="btn-dim btn-next" onclick="window.location.href='index.html'" style="margin: 0 auto; display:inline-flex;">Əsas Səhifəyə Qayıt</button>
+                    </div>
+                `;
+            }
 
             // Save attempt if user is logged in
             if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined' && db) {
@@ -808,7 +836,6 @@
                  if (catId === 'special_prokurorluq' || catId === 'generated_prokurorluq') {
                      try {
                          const examData = JSON.parse(localStorage.getItem('generatedExamData') || '{}');
-                         // Verify it's the right exam
                          if (questions.length > 0) {
                              const qIds = questions.map(q => String(q.id));
                              db.collection('exam_history').add({
