@@ -380,6 +380,65 @@
         .res-cell-empty { color: #aaa; }
         .res-row-plus { color: green; font-weight: bold; font-size: 14px; }
         .res-row-minus { color: red; font-weight: bold; font-size: 14px; }
+
+        /* Protocol Style Overrides */
+        .protocol-table-wrapper {
+            margin-bottom: 30px;
+            overflow-x: auto;
+            background: white;
+            padding: 10px;
+        }
+        .protocol-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 14px;
+            margin-bottom: 20px;
+            border: 2px solid #000; /* Outer border */
+        }
+        .protocol-table td {
+            border: 1px solid #666; /* Cell borders */
+            padding: 4px 2px;
+            text-align: center;
+            min-width: 28px;
+        }
+        .protocol-row-header {
+            background-color: white;
+            font-weight: bold;
+            text-align: left !important;
+            padding-left: 8px !important;
+            white-space: nowrap;
+            width: 120px;
+            font-size: 13px;
+            border-right: 2px solid #000 !important; /* Separator between header and data */
+        }
+        .protocol-cell-correct-ans {
+            color: #000;
+            font-weight: normal;
+        }
+        .protocol-cell-user-correct {
+            color: #0056b3; /* Blue for correct user answer */
+            font-weight: bold;
+        }
+        .protocol-cell-user-wrong {
+            color: #dc3545; /* Red for wrong user answer */
+            font-weight: bold;
+        }
+        .protocol-cell-plus {
+            color: #0056b3;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .protocol-cell-minus {
+            color: #dc3545;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .protocol-header-container {
+            font-family: 'Times New Roman', Times, serif;
+            color: #000;
+            margin-bottom: 30px;
+        }
     </style>
 </head>
 <body>
