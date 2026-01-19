@@ -6739,13 +6739,23 @@ window.saveAdminQuestions = async function() {
 
     if (editingQuestionId) {
         // Mövcud sualı yenilə
-        const qIdx = cat.questions.findIndex(q => q.id === editingQuestionId);
+        let qIdx = cat.questions.findIndex(q => q.id === editingQuestionId);
+        
+        // Fallback for type mismatch (number vs string)
+        if (qIdx === -1) {
+             qIdx = cat.questions.findIndex(q => String(q.id) === String(editingQuestionId));
+        }
+
         if (qIdx !== -1) {
             cat.questions[qIdx] = {
                 ...cat.questions[qIdx],
                 ...newQuestionsData[0]
             };
             showNotification('Sual uğurla yeniləndi!', 'success');
+        } else {
+            console.error("Editing question not found:", editingQuestionId);
+            showNotification('Xəta: Sual tapılmadı!', 'error');
+            return;
         }
     } else {
         // Yeni suallar əlavə et
