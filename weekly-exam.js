@@ -223,7 +223,32 @@
         log.push(`OK: ${item.name} (${selected.length}/${item.count})`);
       }
       if (examQuestions.length === 0) {
-        return showNotification('Heç bir sual tapılmadı! Kateqoriyaları yoxlayın.', 'error');
+        const poolCat = categories.find(c => String(c.id) === 'special_prokurorluq' && Array.isArray(c.questions));
+        const poolList = (__WEEKLY_POOL_QUESTIONS && Array.isArray(__WEEKLY_POOL_QUESTIONS)) ? __WEEKLY_POOL_QUESTIONS : (poolCat ? poolCat.questions : []);
+        if (poolList && poolList.length > 0) {
+          function pickRandomN(arr, n) {
+            var a = arr.slice();
+            var len = a.length;
+            var m = Math.min(n, len);
+            for (var i = 0; i < m; i++) {
+              var r = i + Math.floor(Math.random() * (len - i));
+              var tmp = a[i];
+              a[i] = a[r];
+              a[r] = tmp;
+            }
+            return a.slice(0, m);
+          }
+          const filteredPool = poolList.filter(q => !excludeIds.has(q.id));
+          const selected80 = pickRandomN(filteredPool.length > 0 ? filteredPool : poolList, 80);
+          selected80.forEach(q => {
+            q._sourceSchemaName = q.subjectName || 'Prokurorluq (Havuz)';
+            q._sourceCategoryId = 'special_prokurorluq';
+          });
+          examQuestions = selected80;
+          log.push(`FALLBACK: Havuzdan seçildi (${examQuestions.length}/80)`);
+        } else {
+          return showNotification('Heç bir sual tapılmadı! Kateqoriyaları yoxlayın.', 'error');
+        }
       }
       const draft = {
         id: 'weekly_draft_' + type,
