@@ -13,31 +13,29 @@
   const WeeklyExamSystem = {
     findCategory(schemaItem) {
       if (!window.categories || !Array.isArray(window.categories)) return null;
-      
-      const targetName = schemaItem.name.trim().toLowerCase();
-      
-      // 1. Exact match (case-insensitive)
-      let cat = categories.find(c => c.name.trim().toLowerCase() === targetName);
-      
-      // 2. Exact match with special parent preference
-      if (!cat) {
-         cat = categories.find(c => c.name.trim().toLowerCase() === targetName && c.parentId && c.parentId.startsWith('special_'));
+      const targetName = (schemaItem.name || '').trim().toLowerCase();
+      const targetId = String(schemaItem.id || '');
+      let cat = null;
+      if (targetId) {
+        cat = categories.find(c => String(c.id) === targetId);
+        if (cat && Array.isArray(cat.questions) && cat.questions.length > 0) return cat;
       }
-
-      // 3. Contains match (if exact failed)
       if (!cat) {
-        cat = categories.find(c => c.name.trim().toLowerCase().includes(targetName));
+        cat = categories.find(c => c.name && c.name.trim().toLowerCase() === targetName && c.parentId && String(c.parentId).startsWith('special_'));
+        if (cat && Array.isArray(cat.questions) && cat.questions.length > 0) return cat;
       }
-
-      // 4. Keys based match
-      if (!cat && schemaItem.keys) {
-        for (const key of schemaItem.keys) {
-          const k = key.trim().toLowerCase();
-          cat = categories.find(c => c.name.trim().toLowerCase().includes(k));
-          if (cat) break;
+      if (!cat) {
+        cat = categories.find(c => c.name && c.name.trim().toLowerCase() === targetName);
+        if (cat && Array.isArray(cat.questions) && cat.questions.length > 0) return cat;
+      }
+      const poolCat = categories.find(c => String(c.id) === 'special_prokurorluq' && Array.isArray(c.questions));
+      if (poolCat) {
+        const filtered = poolCat.questions.filter(q => String(q.subjectId || '') === targetId || ((q.subjectName || '').trim().toLowerCase() === targetName));
+        if (filtered.length > 0) {
+          return { id: targetId || 'special_prokurorluq', name: schemaItem.name, parentId: 'special_prokurorluq', questions: filtered };
         }
       }
-      return cat;
+      return null;
     },
 
     // Admin: İdarəetmə pəncərəsini açır (Yarat, Baxış, Yayımla, Arxiv)
