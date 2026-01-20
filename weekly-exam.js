@@ -12,19 +12,28 @@
   // İstifadə: Qaralama yaradarkən sxem elementinə görə uyğun kateqoriya tapılır
   const WeeklyExamManager = {
     findCategory(schemaItem) {
-      let cat = categories.find(c => c.name.toLowerCase() === schemaItem.name.toLowerCase() && c.parentId && c.parentId.startsWith('special_'));
+      if (!window.categories || !Array.isArray(window.categories)) return null;
+      
+      const targetName = schemaItem.name.trim().toLowerCase();
+      
+      // 1. Exact match (case-insensitive)
+      let cat = categories.find(c => c.name.trim().toLowerCase() === targetName);
+      
+      // 2. Exact match with special parent preference
       if (!cat) {
-        cat = categories.find(c => c.name.toLowerCase() === schemaItem.name.toLowerCase());
+         cat = categories.find(c => c.name.trim().toLowerCase() === targetName && c.parentId && c.parentId.startsWith('special_'));
       }
+
+      // 3. Contains match (if exact failed)
+      if (!cat) {
+        cat = categories.find(c => c.name.trim().toLowerCase().includes(targetName));
+      }
+
+      // 4. Keys based match
       if (!cat && schemaItem.keys) {
         for (const key of schemaItem.keys) {
-          cat = categories.find(c => c.name.toLowerCase().includes(key) && c.parentId && c.parentId.startsWith('special_'));
-          if (cat) break;
-        }
-      }
-      if (!cat && schemaItem.keys) {
-        for (const key of schemaItem.keys) {
-          cat = categories.find(c => c.name.toLowerCase().includes(key));
+          const k = key.trim().toLowerCase();
+          cat = categories.find(c => c.name.trim().toLowerCase().includes(k));
           if (cat) break;
         }
       }

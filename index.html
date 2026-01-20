@@ -71,6 +71,17 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js" defer></script>
+    
+    <!-- Tailwind CSS (Safe Mode - No Preflight) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        corePlugins: {
+          preflight: false, // Disable base style reset to prevent conflicts
+        }
+      }
+    </script>
+
     <style>
         /* Special Exams Section Styling - Premium Law Theme */
         #special-exams-title {
