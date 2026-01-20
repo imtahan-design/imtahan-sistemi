@@ -8,6 +8,7 @@
 // Dəyişilməyənlər: ID-lər, backend sənədləri, localStorage açarları
 
 (function(){
+  let __WEEKLY_POOL_QUESTIONS = null;
   // Helper: Weekly Exam sistemində kateqoriyanı tapmaq
   // İstifadə: Qaralama yaradarkən sxem elementinə görə uyğun kateqoriya tapılır
   const WeeklyExamSystem = {
@@ -29,8 +30,9 @@
         if (cat && Array.isArray(cat.questions) && cat.questions.length > 0) return cat;
       }
       const poolCat = categories.find(c => String(c.id) === 'special_prokurorluq' && Array.isArray(c.questions));
-      if (poolCat) {
-        const filtered = poolCat.questions.filter(q => String(q.subjectId || '') === targetId || ((q.subjectName || '').trim().toLowerCase() === targetName));
+      const poolList = (__WEEKLY_POOL_QUESTIONS && Array.isArray(__WEEKLY_POOL_QUESTIONS)) ? __WEEKLY_POOL_QUESTIONS : (poolCat ? poolCat.questions : null);
+      if (poolList) {
+        const filtered = poolList.filter(q => String(q.subjectId || '') === targetId || ((q.subjectName || '').trim().toLowerCase() === targetName));
         if (filtered.length > 0) {
           return { id: targetId || 'special_prokurorluq', name: schemaItem.name, parentId: 'special_prokurorluq', questions: filtered };
         }
@@ -125,6 +127,18 @@
       if (!schema || schema.length === 0) {
         return showNotification('Bu imtahan növü üçün sual bölgüsü (sxem) hələ təyin edilməyib.', 'warning');
       }
+
+      try {
+        if (!__WEEKLY_POOL_QUESTIONS) {
+          const poolDoc = await db.collection('categories').doc('special_prokurorluq').get();
+          if (poolDoc.exists) {
+            const d = poolDoc.data();
+            if (d && Array.isArray(d.questions)) {
+              __WEEKLY_POOL_QUESTIONS = d.questions;
+            }
+          }
+        }
+      } catch (_) {}
 
       let examQuestions = [];
       let log = [];
