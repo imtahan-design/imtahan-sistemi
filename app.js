@@ -5728,32 +5728,48 @@ window.startWeeklyExam = async function() {
 window.startSpecialQuiz = async function(catId) {
     console.log(`Starting special quiz for: ${catId}`);
     
-    // Weekly Exam Hook (Legacy or standalone)
-    if (catId === 'special_weekly_exam') {
-        window.startWeeklyExam();
-        return;
-    }
+    try {
+        // Weekly Exam Hook (Legacy or standalone)
+        if (catId === 'special_weekly_exam' || catId === 'weekly_exam') {
+            window.startWeeklyExam();
+            return;
+        }
 
-    const cat = categories.find(c => c.id === catId);
-    if (!cat) {
-        alert("Xəta: Kateqoriya tapılmadı!");
-        return;
-    }
-    
-    // Determine Exam Type
-    let examType = null;
-    if (catId === 'special_prokurorluq') examType = 'prokurorluq';
-    else if (catId === 'special_hakimlik') examType = 'hakimlik'; // Future support
-    else if (catId === 'special_vekillik') examType = 'vekillik'; // Future support
+        let cat = categories.find(c => c.id === catId);
+        
+        // Determine Exam Type (Check ID AND Name)
+        let examType = null;
+        
+        // Try to guess from ID if category not found (Zombie category handling)
+        if (!cat) {
+            if (catId.includes('prokuror')) { cat = {name: 'Prokurorluq', id: catId}; examType = 'prokurorluq'; }
+            else if (catId.includes('hakim')) { cat = {name: 'Hakimlik', id: catId}; examType = 'hakimlik'; }
+            else if (catId.includes('vekillik')) { cat = {name: 'Vəkillik', id: catId}; examType = 'vekillik'; }
+        } else {
+            const lowerName = cat.name.toLowerCase();
+            if (catId === 'special_prokurorluq' || lowerName.includes('prokuror')) examType = 'prokurorluq';
+            else if (catId === 'special_hakimlik' || lowerName.includes('hakim')) examType = 'hakimlik'; 
+            else if (catId === 'special_vekillik' || lowerName.includes('vəkil')) examType = 'vekillik'; 
+        }
 
-    if (examType && (examType === 'prokurorluq' || examType === 'hakimlik' || examType === 'vekillik')) {
-        showExamSelectionModal(cat, examType);
-        return;
+        if (!cat) {
+            alert("Xəta: Kateqoriya tapılmadı! Səhifəni yeniləyin.");
+            return;
+        }
+
+        if (examType && (examType === 'prokurorluq' || examType === 'hakimlik' || examType === 'vekillik')) {
+            showExamSelectionModal(cat, examType);
+            return;
+        }
+        
+        // Fallback for unknown special types
+        localStorage.setItem('activeSpecialCategory', catId);
+        window.location.href = 'dim_view.html';
+        
+    } catch (e) {
+        console.error("Special Quiz Error:", e);
+        alert("Sistem xətası: " + e.message);
     }
-    
-    // Fallback for unknown special types
-    localStorage.setItem('activeSpecialCategory', catId);
-    window.location.href = 'dim_view.html';
 }
 
 window.enterCategory = function(id) {

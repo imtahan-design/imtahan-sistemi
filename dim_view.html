@@ -562,7 +562,7 @@
             let cat = null;
 
             // Check for generated exam
-            if (catId === 'generated_prokurorluq' || catId === 'weekly_exam_active' || catId === 'weekly_draft_view') {
+            if (catId === 'generated_prokurorluq' || catId.startsWith('weekly_exam_') || catId === 'weekly_draft_view') {
                 try {
                     const genData = localStorage.getItem('generatedExamData');
                     if (genData) cat = JSON.parse(genData);
