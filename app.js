@@ -605,6 +605,7 @@ async function loadData() {
                     ...data 
                 };
             });
+            console.log("Firestore-dan gələn hamısı:", categories);
             
             // NOTE: Users and Private Quizzes are NOT loaded kütləvi for security reasons.
             // They are fetched only when needed.
@@ -632,19 +633,9 @@ async function loadData() {
     // Ensure all categories have a parentId property
     categories = categories.map(cat => ({
         ...cat,
-        parentId: cat.parentId || null
+        parentId: cat.parentId || null,
+        isHiddenFromPublic: false
     }));
-    const MUST_SHOW = ['Mülki Məcəllə','İnzibati Xətalar Məcəlləsi','Əmək Məcəlləsi','Mülki Prosessual Məcəllə','Polis haqqında qanun','Prokurorluq haqqında qanun'];
-    const MUST_SHOW_KEYS = MUST_SHOW.map(s => s.toLowerCase());
-    categories = categories.map(cat => {
-        const nm = String(cat.name || '').toLowerCase();
-        const idStr = String(cat.id || '').toLowerCase();
-        const match = MUST_SHOW_KEYS.some(k => nm.includes(k) || idStr.includes(k));
-        if (match) {
-            return { ...cat, isHiddenFromPublic: false };
-        }
-        return cat;
-    });
 
     let hasChanged = false;
     let publicGeneral = categories.find(c => c.id === 'public_general' || (c.name && c.name.trim() === 'Ümumi Suallar'));
@@ -4796,24 +4787,23 @@ function renderCategories() {
 
     grid.innerHTML = '';
     if (specialGrid) specialGrid.innerHTML = '';
-    const all = categories;
-    
-    const filteredCategories = all.filter(cat => 
-        cat.parentId === currentParentId && 
-        cat.id !== 'special_weekly_exam' && // Explicitly hide old standalone weekly exam
-        cat.id !== 'weekly_exam' && // Extra check
-        cat.name !== 'Həftəlik Sınaq' && // Double check by name
-        !cat.name.includes('Həftəlik Sınaq') && // Triple check
-        !cat.name.toLowerCase().includes('həftəlik sınaq') && // Case insensitive check
-        !cat.name.toLowerCase().includes('heftelik sinaq') // Normalized check
-    );
+    const MUST_SHOW = ['Mülki Məcəllə','İnzibati Xətalar Məcəlləsi','Əmək Məcəlləsi','Mülki Prosessual Məcəllə','Polis haqqında qanun','Prokurorluq haqqında qanun','Prokurorluqda qulluq haqqında qanun'];
+    const MUST_SHOW_KEYS = MUST_SHOW.map(s => s.toLowerCase());
+    const displayList = categories.map(cat => {
+        const nm = String(cat.name || '').toLowerCase();
+        const idStr = String(cat.id || '').toLowerCase();
+        const match = MUST_SHOW_KEYS.some(k => nm.includes(k) || idStr.includes(k));
+        if (match) return { ...cat, parentId: null, isHiddenFromPublic: false };
+        return { ...cat, isHiddenFromPublic: false };
+    });
+    const filteredCategories = currentParentId ? displayList.filter(c => c.parentId === currentParentId) : displayList;
     
     // Update Title and Back Button
     const title = document.getElementById('dashboard-title');
     const backBtn = document.getElementById('dashboard-back-btn');
     
     if (currentParentId) {
-        const parent = all.find(c => c.id === currentParentId);
+        const parent = displayList.find(c => c.id === currentParentId);
         title.textContent = parent ? parent.name : 'Kateqoriyalar';
         backBtn.classList.remove('hidden');
         if (specialTitle) specialTitle.classList.add('hidden');
@@ -4847,7 +4837,7 @@ function renderCategories() {
         if (cat.name.toLowerCase().includes('hakim')) icon = 'fa-balance-scale';
         if (cat.name.toLowerCase().includes('vəkil')) icon = 'fa-briefcase';
 
-        const hasSub = all.some(c => c.parentId === cat.id);
+        const hasSub = displayList.some(c => c.parentId === cat.id);
         const hasQuestions = (cat.questions && cat.questions.length > 0);
 
         // DEBUG: XI Sinif suallarını hər zaman göstər
