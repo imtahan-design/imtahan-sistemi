@@ -683,6 +683,7 @@
     }
   };
   window.WeeklyExamSystem = WeeklyExamSystem;
+  window.WeeklyExamManager = WeeklyExamSystem;
 
   // UI: Xüsusi kateqoriyada “İmtahana Başla” klikindən sonra seçim modalı
   window.showExamSelectionModal = function(cat, examType) {

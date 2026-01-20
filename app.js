@@ -97,7 +97,7 @@ async function seedProkurorluqSubcategories() {
                     name: item.name,
                     parentId: parentId,
                     questions: [],
-                    isHiddenFromPublic: true,
+                    isHiddenFromPublic: false,
                     createdBy: 'system',
                     time: 45
                 };
@@ -1364,7 +1364,9 @@ function updateUI() {
                                 (!quizSection || quizSection.classList.contains('hidden'));
 
             if (isAuthPage || noSectionOpen) {
-                showDashboard();
+                if (typeof window.showDashboard === 'function') {
+                    window.showDashboard();
+                }
             }
         }
     } else {
@@ -1391,7 +1393,9 @@ function updateUI() {
         const page = urlParams.get('page');
         
         if (!isPrivateQuiz && !hasAuthMode && !hasCatParam && page !== 'login' && page !== 'register') {
-            showDashboard();
+            if (typeof window.showDashboard === 'function') {
+                window.showDashboard();
+            }
         }
     }
 }
@@ -5456,7 +5460,7 @@ const WeeklyExamManager_DEPRECATED = {
         }
     }
 };
-window.WeeklyExamManager = WeeklyExamManager;
+// window.WeeklyExamManager = WeeklyExamManager; // Moved to weekly-exam.js
 
 window.startWeeklyExam = async function() {
     showNotification('Bu sınaq növü ləğv edilib. Zəhmət olmasa müvafiq kateqoriya (Prokurorluq, Hakimlik və s.) altındakı həftəlik sınaqdan istifadə edin.', 'error');
