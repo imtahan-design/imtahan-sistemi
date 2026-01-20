@@ -599,6 +599,7 @@ async function loadData() {
             
             categories = catSnapshot.docs.map(doc => {
                 const data = doc.data();
+                data.isHiddenFromPublic = false;
                 return { 
                     id: doc.id, 
                     parentId: data.parentId || null,
@@ -4851,9 +4852,9 @@ function renderCategories() {
             ${showSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
                 ${showSub ? `<button class="btn-secondary" data-action="enter-category" data-cat-id="${cat.id}">Bölmələrə Bax</button>` : ''}
-                ${(hasQuestions || isXI) ? `${isSpecial ? `<button class="btn-primary" data-action="start-special-exam" data-cat-id="${cat.id}">İmtahana Başla</button>` : `<button class="btn-primary" data-action="start-quiz-check" data-cat-id="${cat.id}">Testə Başla</button>`}` : ''}
+                ${isSpecial ? `<button class="btn-primary" data-action="start-special-exam" data-cat-id="${cat.id}">İmtahana Başla</button>` : `<button class="btn-primary" data-action="start-quiz-check" data-cat-id="${cat.id}">Testə Başla</button>`}
                 ${cat.id === 'public_general' ? `<button class="btn-outline" data-action="open-global-public"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
-                ${!hasSub && !hasQuestions && !isXI && cat.id !== 'public_general' ? '<p class="text-muted text-xs italic">Tezliklə...</p>' : ''}
+                
             </div>
         `;
         
