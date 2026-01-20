@@ -4857,9 +4857,9 @@ function renderCategories() {
             <h3>${escapeHtml(cat.name || '')}</h3>
             ${hasSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
-                ${hasSub ? `<button class="btn-secondary" onclick="enterCategory('${cat.id}')">Bölmələrə Bax</button>` : ''}
-                ${(hasQuestions || isXI) ? `<button class="btn-primary" onclick="${isSpecial ? `startSpecialQuiz('${cat.id}')` : `startQuizCheck('${cat.id}')`}">${isSpecial ? 'İmtahana Başla' : 'Testə Başla'}</button>` : ''}
-                ${cat.id === 'public_general' ? `<button class="btn-outline" onclick="openGlobalPublicQuestions()"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
+                ${hasSub ? `<button class="btn-secondary" data-action="enter-category" data-cat-id="${cat.id}">Bölmələrə Bax</button>` : ''}
+                ${(hasQuestions || isXI) ? `${isSpecial ? `<button class="btn-primary" data-action="start-special-exam" data-cat-id="${cat.id}">İmtahana Başla</button>` : `<button class="btn-primary" data-action="start-quiz-check" data-cat-id="${cat.id}">Testə Başla</button>`}` : ''}
+                ${cat.id === 'public_general' ? `<button class="btn-outline" data-action="open-global-public"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
                 ${!hasSub && !hasQuestions && !isXI && cat.id !== 'public_general' ? '<p class="text-muted text-xs italic">Tezliklə...</p>' : ''}
             </div>
         `;
@@ -5627,7 +5627,7 @@ window.showExamSelectionModal = function(cat, examType) {
                 </button>
             </div>
             <div class="p-6 flex flex-col gap-4">
-                <button onclick="startActiveWeeklyExam('${examType}', '${cat.id}')" class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 text-white rounded-lg font-bold text-lg shadow-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105">
+                <button data-action="start-active-weekly-exam" data-exam-type="${examType}" data-cat-id="${cat.id}" class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 text-white rounded-lg font-bold text-lg shadow-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105">
                     <i class="fas fa-play-circle text-2xl"></i>
                     Bu Həftənin Sınağı
                 </button>
@@ -5811,6 +5811,39 @@ window.addEventListener('popstate', (event) => {
     document.addEventListener('click', function(e) {
         const el = e.target.closest('button, a');
         if (!el) return;
+        const action = el.dataset.action;
+        if (action) {
+            e.preventDefault();
+            if (action === 'open-weekly-manager' && window.WeeklyExamManager && window.WeeklyExamManager.openManagerModal) {
+                window.WeeklyExamManager.openManagerModal();
+                return;
+            }
+            if (action === 'start-special-exam') {
+                const id = el.dataset.catId;
+                if (id) window.startSpecialQuiz(id);
+                return;
+            }
+            if (action === 'start-active-weekly-exam') {
+                const t = el.dataset.examType;
+                const c = el.dataset.catId;
+                if (t && c) window.startActiveWeeklyExam(t, c);
+                return;
+            }
+            if (action === 'start-quiz-check') {
+                const id = el.dataset.catId;
+                if (id) window.startQuizCheck(id);
+                return;
+            }
+            if (action === 'enter-category') {
+                const id = el.dataset.catId;
+                if (id) window.enterCategory(id);
+                return;
+            }
+            if (action === 'open-global-public') {
+                window.openGlobalPublicQuestions();
+                return;
+            }
+        }
         const oc = el.getAttribute('onclick');
         if (!oc) return;
         try {
