@@ -227,7 +227,7 @@
         const managerModal = document.getElementById('weekly-manager-modal');
         if (managerModal) managerModal.remove();
         showNotification(`Qaralama yaradıldı! (${examQuestions.length} sual).`, 'success');
-        this.openReviewModal(draft);
+        this.openFullEditor(type);
       } catch(e) {
         console.error(e);
         showNotification('Qaralama yadda saxlanılarkən xəta!', 'error');
@@ -245,7 +245,7 @@
         }
         const managerModal = document.getElementById('weekly-manager-modal');
         if (managerModal) managerModal.remove();
-        this.openReviewModal(doc.data());
+        this.openFullEditor(type);
       } catch(e) {
         console.error(e);
         showNotification('Xəta: ' + e.message, 'error');
