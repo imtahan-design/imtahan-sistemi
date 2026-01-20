@@ -38,42 +38,67 @@
       if (modal) modal.remove();
       modal = document.createElement('div');
       modal.id = 'weekly-manager-modal';
-      modal.className = 'modal';
+      modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4 backdrop-blur-sm';
+      
       const types = [
-        { id: 'prokurorluq', name: 'Prokurorluq', icon: 'fa-landmark' },
-        { id: 'hakimlik', name: 'Hakimlik', icon: 'fa-balance-scale' },
-        { id: 'vekillik', name: 'Vəkillik', icon: 'fa-briefcase' }
+        { id: 'prokurorluq', name: 'Prokurorluq', icon: 'fa-landmark', color: 'blue' },
+        { id: 'hakimlik', name: 'Hakimlik', icon: 'fa-gavel', color: 'purple' },
+        { id: 'vekillik', name: 'Vəkillik', icon: 'fa-briefcase', color: 'emerald' }
       ];
+
       const cardsHtml = types.map(t => `
-        <div class="category-card">
-          <div class="cat-card-header">
-            <i class="fas ${t.icon}"></i>
-            <span class="font-bold">${t.name}</span>
+        <div class="bg-gray-800 rounded-xl border border-gray-700 hover:border-${t.color}-500 transition-all duration-300 shadow-lg overflow-hidden group">
+          <div class="p-6 text-center border-b border-gray-700 bg-gray-800 group-hover:bg-gray-750">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-${t.color}-900/30 flex items-center justify-center text-${t.color}-400 group-hover:scale-110 transition-transform">
+              <i class="fas ${t.icon} text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-1">${t.name}</h3>
+            <p class="text-xs text-gray-400">Həftəlik sınaq idarəetməsi</p>
           </div>
-          <div class="cat-card-body">
-            <div class="flex gap-2">
-              <button onclick="WeeklyExamManager.generateDraft('${t.id}')" class="btn-outline m-0 flex-1"><i class="fas fa-wand-magic-sparkles"></i> Yarat</button>
-              <button onclick="WeeklyExamManager.viewDraft('${t.id}')" class="btn-outline m-0 flex-1"><i class="fas fa-eye"></i> Baxış</button>
-            </div>
-            <div class="flex gap-2 mt-2">
-              <button onclick="WeeklyExamManager.publishExam('${t.id}')" class="btn-primary m-0 flex-1"><i class="fas fa-paper-plane"></i> Yayımla</button>
-              <button onclick="WeeklyExamManager.viewArchives('${t.id}')" class="btn-outline m-0 flex-1"><i class="fas fa-box-archive"></i> Arxiv</button>
-            </div>
+          <div class="p-4 grid grid-cols-2 gap-3 bg-gray-900/50">
+            <button onclick="WeeklyExamManager.generateDraft('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors">
+              <i class="fas fa-magic text-yellow-400"></i> Yarat
+            </button>
+            <button onclick="WeeklyExamManager.viewDraft('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors">
+              <i class="fas fa-eye text-blue-400"></i> Baxış
+            </button>
+            <button onclick="WeeklyExamManager.publishExam('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors col-span-2 border border-gray-600">
+              <i class="fas fa-rocket text-green-400"></i> Yayımla
+            </button>
+            <button onclick="WeeklyExamManager.viewArchives('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors col-span-2">
+              <i class="fas fa-history"></i> Arxiv
+            </button>
           </div>
         </div>
       `).join('');
+
       modal.innerHTML = `
-        <div class="modal-content large-modal">
-          <div class="modal-header">
-            <h2><i class="fas fa-calendar-days"></i> Həftəlik Sınaq İdarəetməsi</h2>
-            <button onclick="closeModal('weekly-manager-modal')" class="close-btn">&times;</button>
+        <div class="bg-gray-900 w-full max-w-5xl rounded-2xl shadow-2xl border border-gray-700 animate-up max-h-[90vh] overflow-y-auto">
+          <div class="p-6 border-b border-gray-800 flex justify-between items-center sticky top-0 bg-gray-900 z-10">
+            <div>
+              <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                <span class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                  <i class="fas fa-cogs text-white"></i>
+                </span>
+                Həftəlik Sınaq Paneli
+              </h2>
+              <p class="text-gray-400 text-sm mt-1 ml-14">Yeni sınaqlar yaradın, yoxlayın və yayımlayın</p>
+            </div>
+            <button onclick="document.getElementById('weekly-manager-modal').remove()" class="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+              <i class="fas fa-times text-lg"></i>
+            </button>
           </div>
-          <div class="p-6">
-            <div class="grid-container">
+          
+          <div class="p-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               ${cardsHtml}
             </div>
-            <div class="mt-4 text-muted">
-              <i class="fas fa-info-circle"></i> Yeni sınaq yaradarkən son 2 həftənin sualları avtomatik istisna edilir.
+            
+            <div class="mt-8 p-4 rounded-lg bg-blue-900/20 border border-blue-800/30 flex items-start gap-4">
+              <i class="fas fa-info-circle text-blue-400 mt-1"></i>
+              <div class="text-sm text-gray-300">
+                <strong class="text-blue-300">Məlumat:</strong> Yeni sınaq yaradarkən sistem avtomatik olaraq son 2 həftənin suallarını istisna edir və bazadan təsadüfi suallar seçir. Yayımlamadan öncə "Baxış" edərək sualları dəyişdirə bilərsiniz.
+              </div>
             </div>
           </div>
         </div>
@@ -477,36 +502,63 @@
     if (modal) modal.remove();
     modal = document.createElement('div');
     modal.id = 'exam-selection-modal';
-    modal.className = 'modal';
-    const subjects = (examType === 'prokurorluq' ? (window.PROKURORLUQ_SUBS || []) :
-                      examType === 'hakimlik' ? (window.HAKIMLIK_SUBS || []) :
-                      examType === 'vekillik' ? (window.VEKILLIK_SUBS || []) : []);
-    const subjectsHtml = subjects && subjects.length ? `
-      <div class="mt-3">
-        <h4 class="m-0 mb-2">İmtahan tərkibi</h4>
-        <div style="max-height: 200px; overflow-y: auto;">
-          ${subjects.map(s => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid var(--glass-border);">
-              <span>${escapeHtml(s.name)}</span>
-              <span style="font-size:12px; color:var(--text-muted)">${s.count} sual</span>
-            </div>
-          `).join('')}
-        </div>
-      </div>` : '';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4 backdrop-blur-sm';
+    
+    // Determine icon and color based on exam type
+    let iconClass = 'fa-balance-scale';
+    let colorClass = 'indigo';
+    
+    if (examType === 'prokurorluq') {
+      iconClass = 'fa-landmark';
+      colorClass = 'blue';
+    } else if (examType === 'hakimlik') {
+      iconClass = 'fa-gavel';
+      colorClass = 'purple';
+    } else if (examType === 'vekillik') {
+      iconClass = 'fa-briefcase';
+      colorClass = 'emerald';
+    }
+
     modal.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header-brand">
-          <h2>${cat.name}</h2>
-          <button onclick="closeModal('exam-selection-modal')" class="close-btn">&times;</button>
+      <div class="bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl border border-gray-700 animate-up overflow-hidden">
+        <div class="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900">
+          <h2 class="text-xl font-bold text-white flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-${colorClass}-600 flex items-center justify-center shadow-lg shadow-${colorClass}-500/20">
+              <i class="fas ${iconClass} text-white text-sm"></i>
+            </span>
+            ${cat.name}
+          </h2>
+          <button onclick="document.getElementById('exam-selection-modal').remove()" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-        <div class="p-4">
-          <p class="text-muted">Bu sınaq hər həftə yenilənir. Son 2 həftənin sualları təkrar olunmur.</p>
-          ${subjectsHtml}
-          <div class="mt-4">
-            <button data-action="start-active-weekly-exam" data-exam-type="${examType}" data-cat-id="${cat.id}" class="btn-primary w-full m-0">
-              <i class="fas fa-play"></i> Bu Həftənin Sınağı
-            </button>
+        
+        <div class="p-6">
+          <div class="mb-6 p-4 rounded-xl bg-gray-800/50 border border-gray-700">
+            <div class="flex items-start gap-3">
+              <div class="mt-1 text-${colorClass}-400">
+                <i class="fas fa-info-circle text-lg"></i>
+              </div>
+              <div>
+                <h4 class="text-white font-medium mb-1">Məlumat</h4>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                  Bu sınaq hər həftə yenilənir. Sistem avtomatik olaraq son 2 həftənin suallarını istisna edir və bazadan təsadüfi suallar seçir.
+                </p>
+              </div>
+            </div>
           </div>
+
+          <button data-action="start-active-weekly-exam" data-exam-type="${examType}" data-cat-id="${cat.id}" 
+            class="w-full py-4 px-6 bg-gradient-to-r from-${colorClass}-600 to-${colorClass}-700 hover:from-${colorClass}-500 hover:to-${colorClass}-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-${colorClass}-900/50 transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-3">
+            <span class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <i class="fas fa-play text-white"></i>
+            </span>
+            İmtahana Başla
+          </button>
+          
+          <p class="text-center text-gray-500 text-xs mt-4">
+            Uğurlar arzulayırıq!
+          </p>
         </div>
       </div>
     `;
