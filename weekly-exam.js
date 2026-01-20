@@ -477,8 +477,16 @@
 
     renderQuestionCard(q, idx) {
         const uniqueId = `draft_${idx}`;
-        const variantsHtml = (q.variants || []).map((v, vIdx) => {
-            const isCorrect = (parseInt(q.correctVariant) === vIdx);
+        const opts = (Array.isArray(q.variants) && q.variants.length > 0) ? q.variants : (Array.isArray(q.options) ? q.options : []);
+        const corr = q.correctVariant !== undefined && q.correctVariant !== null
+            ? parseInt(q.correctVariant)
+            : (q.correctIndex !== undefined && q.correctIndex !== null
+                ? parseInt(q.correctIndex)
+                : (q.correct_option_id !== undefined && q.correct_option_id !== null
+                    ? parseInt(q.correct_option_id)
+                    : 0));
+        const variantsHtml = opts.map((v, vIdx) => {
+            const isCorrect = (corr === vIdx);
             const char = String.fromCharCode(65 + vIdx);
             return `
             <div class="manual-option-input">
@@ -486,7 +494,7 @@
                     <input type="radio" name="correct_${uniqueId}" value="${vIdx}" ${isCorrect ? 'checked' : ''} id="opt_${uniqueId}_${vIdx}">
                     <label for="opt_${uniqueId}_${vIdx}"></label>
                 </div>
-                <input type="text" class="manual-opt w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors" value="${escapeHtml(v)}" placeholder="${char} variantı">
+                <input type="text" class="manual-opt w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors" value="${escapeHtml(v || '')}" placeholder="${char} variantı">
                 <button onclick="this.parentElement.remove(); window.updateOptionValues('${uniqueId}')" class="remove-option-btn text-gray-400 hover:text-red-500 transition-colors ml-2">
                     <i class="fas fa-times"></i>
                 </button>
@@ -567,6 +575,8 @@
                     explanation: explanation,
                     variants: variants,
                     correctVariant: correctVariant,
+                    options: variants,
+                    correctIndex: correctVariant,
                     _sourceSchemaName: item.getAttribute('data-schema'),
                     _sourceCategoryId: item.getAttribute('data-cat-id')
                 });
