@@ -10,7 +10,7 @@
 (function(){
   // Helper: Weekly Exam sistemində kateqoriyanı tapmaq
   // İstifadə: Qaralama yaradarkən sxem elementinə görə uyğun kateqoriya tapılır
-  const WeeklyExamManager = {
+  const WeeklyExamSystem = {
     findCategory(schemaItem) {
       if (!window.categories || !Array.isArray(window.categories)) return null;
       
@@ -65,16 +65,16 @@
             <p class="text-xs text-gray-400">Həftəlik sınaq idarəetməsi</p>
           </div>
           <div class="p-4 grid grid-cols-2 gap-3 bg-gray-900/50">
-            <button onclick="WeeklyExamManager.generateDraft('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors">
+            <button onclick="WeeklyExamSystem.generateDraft('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors">
               <i class="fas fa-magic text-yellow-400"></i> Yarat
             </button>
-            <button onclick="WeeklyExamManager.viewDraft('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors">
+            <button onclick="WeeklyExamSystem.viewDraft('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors">
               <i class="fas fa-eye text-blue-400"></i> Baxış
             </button>
-            <button onclick="WeeklyExamManager.publishExam('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors col-span-2 border border-gray-600">
+            <button onclick="WeeklyExamSystem.publishExam('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors col-span-2 border border-gray-600">
               <i class="fas fa-rocket text-green-400"></i> Yayımla
             </button>
-            <button onclick="WeeklyExamManager.viewArchives('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors col-span-2">
+            <button onclick="WeeklyExamSystem.viewArchives('${t.id}')" class="flex items-center justify-center gap-2 py-2 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors col-span-2">
               <i class="fas fa-history"></i> Arxiv
             </button>
           </div>
@@ -288,7 +288,7 @@
                 <div class="font-bold text-white">${data.name || 'Sınaq'}</div>
                 <div class="text-xs text-gray-400">Arxivlənmə tarixi: ${date} | ID: ${data.weekId}</div>
               </div>
-              <button onclick="WeeklyExamManager.viewArchiveDetail('${doc.id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-500">Bax</button>
+              <button onclick="WeeklyExamSystem.viewArchiveDetail('${doc.id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-500">Bax</button>
             </div>
           `;
         }).join('');
@@ -404,13 +404,13 @@
                         <p class="text-sm text-gray-400 mt-1 ml-14">${draft.questions.length} sual - ${draft.type.toUpperCase()}</p>
                     </div>
                     <div class="flex gap-2">
-                         <button onclick="WeeklyExamManager.generateDraft('${draft.type}')" class="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 shadow-lg shadow-red-500/20" title="Bütün sualları yenilə">
+                         <button onclick="WeeklyExamSystem.generateDraft('${draft.type}')" class="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 shadow-lg shadow-red-500/20" title="Bütün sualları yenilə">
                             <i class="fas fa-redo"></i> Yenilə
                         </button>
-                        <button onclick="WeeklyExamManager.saveFullEditor('${draft.type}')" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-500 transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20">
+                        <button onclick="WeeklyExamSystem.saveFullEditor('${draft.type}')" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-500 transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20">
                             <i class="fas fa-save"></i> Yadda Saxla
                         </button>
-                         <button onclick="WeeklyExamManager.publishExam('${draft.type}')" class="px-4 py-2.5 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500 transition-all flex items-center gap-2 shadow-lg shadow-green-500/20">
+                         <button onclick="WeeklyExamSystem.publishExam('${draft.type}')" class="px-4 py-2.5 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500 transition-all flex items-center gap-2 shadow-lg shadow-green-500/20">
                             <i class="fas fa-check-circle"></i> Yayımla
                         </button>
                         <button onclick="document.getElementById('weekly-full-editor-modal').remove()" class="px-4 py-2.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
@@ -682,7 +682,7 @@
       }
     }
   };
-  window.WeeklyExamManager = WeeklyExamManager;
+  window.WeeklyExamSystem = WeeklyExamSystem;
 
   // UI: Xüsusi kateqoriyada “İmtahana Başla” klikindən sonra seçim modalı
   window.showExamSelectionModal = function(cat, examType) {
