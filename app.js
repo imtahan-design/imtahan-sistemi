@@ -52,9 +52,9 @@ window.PROKURORLUQ_SUBS = [
     { id: '1768698786812', count: 1, name: 'Polis haqqında Qanun', keys: ['polis haqqında'] }
 ];
 
-// Hakimlik və Vəkillik üçün eyni sxem (Hələlik) - Deep Copy to ensure independence
-window.HAKIMLIK_SUBS = JSON.parse(JSON.stringify(window.PROKURORLUQ_SUBS));
-window.VEKILLIK_SUBS = JSON.parse(JSON.stringify(window.PROKURORLUQ_SUBS));
+// Hakimlik və Vəkillik üçün sxemlər (Hələlik boşdur - Müstəqil bazalar formalaşdırılacaq)
+window.HAKIMLIK_SUBS = [];
+window.VEKILLIK_SUBS = [];
 
 // Helper to seed/merge prokurorluq subcategories
 async function seedProkurorluqSubcategories() {

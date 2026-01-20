@@ -123,7 +123,10 @@
       if (type === 'prokurorluq') schema = window.PROKURORLUQ_SUBS || [];
       else if (type === 'hakimlik') schema = window.HAKIMLIK_SUBS || [];
       else if (type === 'vekillik') schema = window.VEKILLIK_SUBS || [];
-      else return showNotification('Bu növ hələ aktiv deyil', 'warning');
+      
+      if (!schema || schema.length === 0) {
+        return showNotification('Bu imtahan növü üçün sual bölgüsü (sxem) hələ təyin edilməyib.', 'warning');
+      }
 
       let examQuestions = [];
       let log = [];
