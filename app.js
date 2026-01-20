@@ -4883,8 +4883,8 @@ function renderCategories() {
 
 
 
-// Weekly Exam System
-const WeeklyExamManager = {
+// Weekly Exam System (MOVED TO weekly-exam.js)
+const WeeklyExamManager_DEPRECATED = {
     // Helper to fuzzy find category - Prioritizes Special Categories
     findCategory(schemaItem) {
         // 1. Try to find exact name match in Special Categories first
