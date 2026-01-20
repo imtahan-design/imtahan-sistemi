@@ -16,23 +16,39 @@
       if (!window.categories || !Array.isArray(window.categories)) return null;
       const targetName = (schemaItem.name || '').trim().toLowerCase();
       const targetId = String(schemaItem.id || '');
+      const nrm = function(s) {
+        try { return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
+        catch(_) { return (s || '').toString().toLowerCase().trim(); }
+      };
+      const tn = nrm(targetName);
+      const keys = Array.isArray(schemaItem.keys) ? schemaItem.keys.map(nrm) : [];
       let cat = null;
       if (targetId) {
         cat = categories.find(c => String(c.id) === targetId);
         if (cat && Array.isArray(cat.questions) && cat.questions.length > 0) return cat;
       }
       if (!cat) {
-        cat = categories.find(c => c.name && c.name.trim().toLowerCase() === targetName && c.parentId && String(c.parentId).startsWith('special_'));
+        cat = categories.find(c => {
+          const cn = c.name ? nrm(c.name) : '';
+          return c.parentId && String(c.parentId).startsWith('special_') && (cn === tn || keys.some(k => cn.includes(k)));
+        });
         if (cat && Array.isArray(cat.questions) && cat.questions.length > 0) return cat;
       }
       if (!cat) {
-        cat = categories.find(c => c.name && c.name.trim().toLowerCase() === targetName);
+        cat = categories.find(c => {
+          const cn = c.name ? nrm(c.name) : '';
+          return cn === tn || keys.some(k => cn.includes(k));
+        });
         if (cat && Array.isArray(cat.questions) && cat.questions.length > 0) return cat;
       }
       const poolCat = categories.find(c => String(c.id) === 'special_prokurorluq' && Array.isArray(c.questions));
       const poolList = (__WEEKLY_POOL_QUESTIONS && Array.isArray(__WEEKLY_POOL_QUESTIONS)) ? __WEEKLY_POOL_QUESTIONS : (poolCat ? poolCat.questions : null);
       if (poolList) {
-        const filtered = poolList.filter(q => String(q.subjectId || '') === targetId || ((q.subjectName || '').trim().toLowerCase() === targetName));
+        const filtered = poolList.filter(q => {
+          const sid = String(q.subjectId || '');
+          const sn = nrm(q.subjectName || '');
+          return (sid === targetId) || (sn === tn) || sn.includes(tn) || keys.some(k => sn.includes(k));
+        });
         if (filtered.length > 0) {
           return { id: targetId || 'special_prokurorluq', name: schemaItem.name, parentId: 'special_prokurorluq', questions: filtered };
         }
@@ -192,7 +208,7 @@
       for (const item of targetSchema) {
         const subCat = this.findCategory(item);
         if (!subCat || !subCat.questions || subCat.questions.length === 0) {
-          console.warn(`Category not found or empty: ${item.name}`);
+          if (window.__DEBUG) console.warn(`Category not found or empty: ${item.name}`);
           log.push(`TAPILMADI: ${item.name}`);
           continue;
         }
