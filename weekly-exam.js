@@ -327,8 +327,13 @@
       } catch(e) { console.error(e); }
     },
 
-    // Admin: Qaralamaya baxış pəncərəsi (sual düzəliş/dəyişdir)
+    // Admin: Qaralamaya baxış pəncərəsi (sual düzəliş/dəyişdir) - MODIFIED: Redirects to Full Editor
     openReviewModal(draft) {
+      if (!draft.isArchive) {
+        this.openFullEditor(draft.type);
+        return;
+      }
+      // Keep old view only for archives
       let modal = document.getElementById('weekly-review-modal');
       if (!modal) {
         modal = document.createElement('div');
@@ -342,39 +347,21 @@
             <div class="text-xs text-yellow-500 mb-1">${q._sourceSchemaName || 'Naməlum'}</div>
             <p class="text-white text-sm">${escapeHtml(q.text)}</p>
           </div>
-          ${!draft.isArchive ? `
-          <div class="flex flex-col gap-2">
-            <button onclick="WeeklyExamManager.editQuestion('${draft.type}', ${idx})" class="text-xs bg-yellow-600 px-2 py-1 rounded text-white hover:bg-yellow-500">Düzəliş et</button>
-            <button onclick="WeeklyExamManager.replaceQuestion('${draft.type}', ${idx})" class="text-xs bg-blue-600 px-2 py-1 rounded text-white hover:bg-blue-500">Dəyişdir</button>
-          </div>` : ''}
         </div>
       `).join('');
       modal.innerHTML = `
         <div class="bg-gray-900 max-w-4xl mx-auto rounded-lg shadow-xl border border-gray-700 mt-10 animate-up">
           <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-800 rounded-t-lg">
             <h2 class="text-xl font-bold text-white">
-              ${draft.isArchive ? 'Arxiv Sınağı' : 'Həftəlik Sınaq Qaralaması'} 
-              (${draft.questions.length} sual) - ${draft.type ? draft.type.toUpperCase() : ''}
+              Arxiv Sınağı (${draft.questions.length} sual) - ${draft.type ? draft.type.toUpperCase() : ''}
             </h2>
             <button onclick="document.getElementById('weekly-review-modal').remove()" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
           </div>
           <div class="p-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
-            ${!draft.isArchive ? `
-            <div class="mb-4 flex justify-end">
-                <button onclick="WeeklyExamManager.openFullEditor('${draft.type}')" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 transition-all">
-                    <i class="fas fa-edit mr-2"></i> Tam Redaktə Rejimi
-                </button>
-            </div>
-            ` : ''}
-            ${draft.log ? `<div class="mb-4 text-xs font-mono bg-black p-2 text-green-400">${draft.log.join('<br>')}</div>` : ''}
             ${questionsHtml}
           </div>
           <div class="p-4 border-t border-gray-700 bg-gray-800 rounded-b-lg flex justify-end gap-3">
-            ${draft.isArchive ? 
-              `<button onclick="document.getElementById('weekly-review-modal').remove()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500">Bağla</button>` :
-              `<button onclick="WeeklyExamManager.generateDraft('${draft.type}')" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Yenidən Yarat</button>
-               <button onclick="WeeklyExamManager.publishExam('${draft.type}')" class="px-6 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-500 shadow-lg shadow-green-500/20">Təsdiqlə və Yayımla</button>`
-            }
+             <button onclick="document.getElementById('weekly-review-modal').remove()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500">Bağla</button>
           </div>
         </div>
       `;
