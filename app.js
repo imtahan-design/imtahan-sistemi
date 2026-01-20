@@ -608,6 +608,45 @@ async function loadData() {
             });
             console.log("Firestore-dan gələn hamısı:", categories);
             
+            const MAIN_LAW_NAMES = [
+                'Cinayət Məcəlləsi',
+                'Cinayət-Prosessual Məcəlləsi',
+                'Konstitusiya',
+                'Normativ hüquqi aktlar',
+                'İnzibati Xətalar Məcəlləsi',
+                'İnsan hüquqları Konvensiyası',
+                'Mülki Məcəllə',
+                'Mülki-Prosessual Məcəllə',
+                'Əmək Məcəlləsi',
+                'Prokurorluq haqqında Qanun',
+                'Prokurorluqda qulluq haqqında Qanun',
+                'Korrupsiyaya qarşı mübarizə',
+                'Polis haqqında Qanun',
+                'Cinayət icra',
+                'Cinayət mühafizə',
+                'Normativ aktlar toplusu'
+            ];
+            const isMainLaw = (name) => {
+                if (!name) return false;
+                const n = String(name).trim().toLowerCase();
+                return MAIN_LAW_NAMES.some(x => n === x.trim().toLowerCase() || n.includes(x.trim().toLowerCase()));
+            };
+            categories = categories.map(c => {
+                if (isMainLaw(c.name)) {
+                    return { ...c, parentId: null, isSpecial: false, isHiddenFromPublic: false };
+                }
+                return c;
+            }).filter(c => !(c.name && c.name.toLowerCase().includes('ingilis dili')));
+            try {
+                const rootLawDocs = categories.filter(c => c.parentId === null && isMainLaw(c.name));
+                for (const cat of rootLawDocs) {
+                    await db.collection('categories').doc(String(cat.id)).update({ parentId: null, isHiddenFromPublic: false });
+                }
+            } catch (e) {}
+            await attachPublicQuestionsToCategories();
+            await ensureProkurorluqIndependentSubs();
+            await populateProkurorluqWithPool425();
+            
             // NOTE: Users and Private Quizzes are NOT loaded kütləvi for security reasons.
             // They are fetched only when needed.
             users = []; 
@@ -624,11 +663,10 @@ async function loadData() {
 
         } catch (error) {
             console.error("Error loading from Firebase:", error);
-            // Fallback to local if error (e.g. offline)
-            categories = JSON.parse(localStorage.getItem('categories')) || [];
+            categories = [];
         }
     } else {
-        categories = JSON.parse(localStorage.getItem('categories')) || [];
+        categories = [];
     }
 
     // Ensure all categories have a parentId property
@@ -638,109 +676,14 @@ async function loadData() {
         isHiddenFromPublic: false
     }));
 
-    let hasChanged = false;
-    let publicGeneral = categories.find(c => c.id === 'public_general' || (c.name && c.name.trim() === 'Ümumi Suallar'));
-    if (!publicGeneral) {
-        publicGeneral = { id: 'public_general', name: 'Ümumi Suallar', time: 0, questions: [], parentId: null };
-        categories.push(publicGeneral);
-        if (db) db.collection('categories').doc('public_general').set(publicGeneral);
-        hasChanged = true;
-    }
-
-    // Seed Special Exams (Prokurorluq, Hakimlik, Vəkillik)
-    const specialSeeds = [
-        { id: 'special_prokurorluq', name: 'Prokurorluq üzrə sınaq', isSpecial: true, time: 180, description: 'Prokurorluq orqanlarına qəbul' },
-        { id: 'special_hakimlik', name: 'Hakimlik üzrə sınaq', isSpecial: true, time: 240, description: 'Hakimlərin Seçki Komitəsi imtahanı' },
-        { id: 'special_vekillik', name: 'Vəkillik üzrə sınaq', isSpecial: true, time: 180, description: 'Vəkillər Kollegiyasına qəbul' }
-    ];
-
-    specialSeeds.forEach(seed => {
-        const exists = categories.find(c => c.id === seed.id || c.name === seed.name);
-        if (!exists) {
-            const newCat = { 
-                id: seed.id, 
-                name: seed.name, 
-                time: seed.time, 
-                questions: [], 
-                parentId: null,
-                isSpecial: true,
-                description: seed.description
-            };
-            categories.push(newCat);
-            if (db) {
-                // Use set with merge to be safe, though set overwrites by default
-                db.collection('categories').doc(seed.id).set(newCat)
-                    .then(() => console.log(`Created special cat: ${seed.name}`))
-                    .catch(e => console.error(`Error creating ${seed.name}:`, e));
-            }
-            hasChanged = true;
-        } else if (seed.id === 'special_prokurorluq') {
-            // Ensure isPool flag is set if we have loaded it from somewhere else manually
-        }
-    });
-
-    // Seed Prokurorluq Subcategories (disabled)
-
-
-        // Check for special_pool.json and upload if needed (Admin helper)
-    if (db) { // Run in any environment if DB is connected
-        fetch('special_pool.json').then(res => {
-            if (res.ok) return res.json();
-            throw new Error('No pool file');
-        }).then(data => {
-             console.log("Found special_pool.json, checking if upload needed...");
-             const remoteCat = categories.find(c => c.id === 'special_prokurorluq');
-             
-             // Check if we need to update the pool (if it's empty OR if we have a force update flag or different size)
-             // We can check if remote questions count != local pool count
-             if (remoteCat && (!remoteCat.questions || remoteCat.questions.length !== data.questions.length)) {
-                 console.log("Updating special pool to Firestore (Size mismatch)...");
-                 const poolData = {
-                     questions: data.questions,
-                     lastUpdated: Date.now(),
-                     isPool: true
-                 };
-                 // Local update
-                 remoteCat.questions = data.questions;
-                 remoteCat.isPool = true;
-                renderCategories();
-                 
-                 // Remote update
-                 db.collection('categories').doc('special_prokurorluq').update(poolData)
-                    .then(() => {
-                        console.log("Special Pool Uploaded Successfully!");
-                        // Alert removed as per user request to avoid annoyance
-                    })
-                    .catch(e => console.error("Pool upload failed:", e));
-             }
-        }).catch(e => { /* ignore if file not found */ });
-    }
-
-    if (hasChanged) {
-        saveCategories();
-    }
+    // No static seeding or pool uploads — only Firestore data is used.
 
     // Dublikatları təmizləmək (Tamamilə bağlandı və təmizləndi)
     if (false) {
         // Köhnə təmizləmə kodu tamamilə deaktiv edildi
     }
 
-    // Seed Data if Empty (Bərpa edildi)
-    hasChanged = false;
-    
-    // --- Bütün avtomatik təmizləmə və birləşdirmə məntiqləri ləğv edildi ---
-    // Hər bir kateqoriya artıq müstəqildir.
-    /* 
-    Dərslik, Azərbaycan tarixi və XI sinif bölmələri üçün heç bir avtomatik kod işləmir.
-    İstifadəçi nə yükləsə, o da qalacaq.
-    */
-    if (false) {
-        // ... (bütün köhnə kodlar)
-    }
-
-    if (hasChanged) {
-        saveCategories();
-    }
+    // No auto-clean, no merge — categories remain exactly as loaded.
 
     // İlk dəfə istifadəçi yoxdursa admin yarat (yalnız offline üçün)
     if (users.length === 0 && !db) {
@@ -1165,6 +1108,136 @@ async function saveUsers() {
     localStorage.setItem('users_timestamp', Date.now().toString());
 }
 
+async function attachPublicQuestionsToCategories() {
+    if (!db) return;
+    const snapshot = await db.collection('public_questions').get();
+    const byCat = new Map();
+    snapshot.docs.forEach(doc => {
+        const d = doc.data() || {};
+        const cid = String(d.categoryId || d.category_id || d.catId || '');
+        if (!cid) return;
+        const opts = Array.isArray(d.options) ? d.options : (Array.isArray(d.variants) ? d.variants : []);
+        let correct = 0;
+        if (typeof d.correctIndex === 'number') correct = d.correctIndex;
+        else if (typeof d.correct === 'number') correct = d.correct;
+        else if (typeof d.answer === 'number') correct = d.answer;
+        const q = {
+            id: doc.id,
+            text: d.text || d.question || '',
+            options: opts,
+            correctIndex: correct,
+            image: d.image || d.img || null,
+            explanation: d.explanation || d.explain || ''
+        };
+        if (!byCat.has(cid)) byCat.set(cid, []);
+        byCat.get(cid).push(q);
+    });
+    categories = categories.map(c => {
+        const qs = byCat.get(String(c.id)) || [];
+        const withIdx = qs.map((q, i) => ({ ...q, originalIndex: i }));
+        return { ...c, questions: withIdx };
+    });
+}
+
+async function ensureProkurorluqIndependentSubs() {
+    const getNames = () => [
+        'Cinayət Məcəlləsi',
+        'Cinayət-Prosessual Məcəlləsi',
+        'Konstitusiya',
+        'Normativ hüquqi aktlar',
+        'İnzibati Xətalar Məcəlləsi',
+        'İnsan hüquqları Konvensiyası',
+        'Mülki Məcəllə',
+        'Mülki-Prosessual Məcəllə',
+        'Əmək Məcəlləsi',
+        'Prokurorluq haqqında Qanun',
+        'Prokurorluqda qulluq haqqında Qanun',
+        'Korrupsiyaya qarşı mübarizə',
+        'Polis haqqında Qanun',
+        'Cinayət icra',
+        'Cinayət mühafizə',
+        'Normativ aktlar toplusu'
+    ];
+    const slug = (s) => String(s || '').toLowerCase().replace(/[^\w\-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    let parent = categories.find(c => c.id === 'special_prokurorluq');
+    if (!parent) {
+        parent = { id: 'special_prokurorluq', name: 'Prokurorluq üzrə sınaq', isSpecial: true, parentId: null, time: 180 };
+        categories.push(parent);
+        if (db) await db.collection('categories').doc('special_prokurorluq').set(parent);
+    } else {
+        parent.isSpecial = true;
+    }
+    for (const name of getNames()) {
+        const exists = categories.find(c => c.parentId === 'special_prokurorluq' && String(c.id).startsWith('prok_') && c.name === name);
+        if (exists) continue;
+        const newId = 'prok_' + slug(name) + '_' + (Date.now() + Math.floor(Math.random() * 1000));
+        const obj = { id: newId, name, parentId: 'special_prokurorluq', isHiddenFromPublic: false, time: 45, questions: [] };
+        categories.push(obj);
+        if (db) await db.collection('categories').doc(newId).set(obj);
+    }
+}
+
+async function populateProkurorluqWithPool425() {
+    const names = [
+        'Cinayət Məcəlləsi',
+        'Cinayət-Prosessual Məcəlləsi',
+        'Konstitusiya',
+        'Normativ hüquqi aktlar',
+        'İnzibati Xətalar Məcəlləsi',
+        'İnsan hüquqları Konvensiyası',
+        'Mülki Məcəllə',
+        'Mülki-Prosessual Məcəllə',
+        'Əmək Məcəlləsi',
+        'Prokurorluq haqqında Qanun',
+        'Prokurorluqda qulluq haqqında Qanun',
+        'Korrupsiyaya qarşı mübarizə',
+        'Polis haqqında Qanun',
+        'Cinayət icra',
+        'Cinayət mühafizə',
+        'Normativ aktlar toplusu'
+    ];
+    const rootMap = new Map();
+    for (const n of names) {
+        const rootCat = categories.find(c => c.parentId === null && c.name === n);
+        if (rootCat) rootMap.set(n, (rootCat.questions || []).slice());
+    }
+    const prokCats = categories.filter(c => c.parentId === 'special_prokurorluq' && String(c.id).startsWith('prok_'));
+    let totalAvailable = 0;
+    prokCats.forEach(pc => {
+        const qs = rootMap.get(pc.name) || [];
+        totalAvailable += qs.length;
+    });
+    const schema = (window.PROKURORLUQ_SUBS || []).slice();
+    let baseSum = 0;
+    schema.forEach(s => { baseSum += s.count || 0; });
+    const targetTotal = 425;
+    const factor = baseSum > 0 ? targetTotal / baseSum : 1;
+    const allocations = new Map();
+    schema.forEach(s => {
+        const quota = Math.max(1, Math.floor((s.count || 1) * factor));
+        allocations.set(s.name, quota);
+    });
+    let selectedTotal = 0;
+    for (const pc of prokCats) {
+        const pool = (rootMap.get(pc.name) || []).slice();
+        const quota = allocations.get(pc.name) || Math.min(10, pool.length);
+        const shuffled = pool.sort(() => 0.5 - Math.random());
+        pc.questions = shuffled.slice(0, Math.min(quota, pool.length)).map(q => ({ ...q, subjectName: pc.name, categoryId: pc.id }));
+        selectedTotal += pc.questions.length;
+        if (db) await db.collection('categories').doc(String(pc.id)).set(pc);
+    }
+    if (selectedTotal > targetTotal) {
+        let over = selectedTotal - targetTotal;
+        for (const pc of prokCats) {
+            if (over <= 0) break;
+            const reduceBy = Math.min(over, Math.floor(pc.questions.length / 4));
+            pc.questions = pc.questions.slice(0, Math.max(0, pc.questions.length - reduceBy));
+            over -= reduceBy;
+            if (db) await db.collection('categories').doc(String(pc.id)).set(pc);
+        }
+    }
+    saveCategories();
+}
 
 // Initialization
 async function runDovletQulluguMigration() {
@@ -4842,8 +4915,7 @@ function renderCategories() {
             console.log(`XI Sinif tapıldı: ${cat.name}, ID: ${cat.id}, Sual: ${cat.questions ? cat.questions.length : 0}`);
         }
 
-        // Special Exam Logic
-        const isSpecial = !!cat.isSpecial;
+        const isSpecial = cat.id === 'special_prokurorluq';
         const showSub = hasSub && !isSpecial;
 
         div.innerHTML = `
@@ -4929,9 +5001,7 @@ const WeeklyExamManager_DEPRECATED = {
         modal.style.justifyContent = 'center';
         
         const types = [
-            { id: 'prokurorluq', name: 'Prokurorluq', icon: 'fa-landmark' },
-            { id: 'hakimlik', name: 'Hakimlik', icon: 'fa-balance-scale' },
-            { id: 'vekillik', name: 'Vəkillik', icon: 'fa-briefcase' }
+            { id: 'prokurorluq', name: 'Prokurorluq', icon: 'fa-landmark' }
         ];
 
         const cardsHtml = types.map(t => `
@@ -6006,6 +6076,27 @@ window.startQuizCheck = function(catId) {
     
     // For now, allow guests to take quiz as per "Initial view categories" request
     activeCategoryId = catId;
+    const cat = categories.find(c => c.id === catId);
+    if (db && cat && (!cat.questions || cat.questions.length === 0)) {
+        (async function(){
+            try {
+                const snapshot = await db.collection('public_questions').where('categoryId', '==', catId).get();
+                const qs = snapshot.docs.map((doc, i) => {
+                    const d = doc.data() || {};
+                    const opts = Array.isArray(d.options) ? d.options : (Array.isArray(d.variants) ? d.variants : []);
+                    let correct = 0;
+                    if (typeof d.correctIndex === 'number') correct = d.correctIndex;
+                    else if (typeof d.correct === 'number') correct = d.correct;
+                    else if (typeof d.answer === 'number') correct = d.answer;
+                    return { id: doc.id, text: d.text || d.question || '', options: opts, correctIndex: correct, image: d.image || d.img || null, explanation: d.explanation || d.explain || '', originalIndex: i };
+                });
+                cat.questions = qs;
+                saveCategories();
+            } catch(e) {}
+            startQuiz();
+        })();
+        return;
+    }
     startQuiz();
 }
 
