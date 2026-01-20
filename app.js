@@ -634,6 +634,17 @@ async function loadData() {
         ...cat,
         parentId: cat.parentId || null
     }));
+    const MUST_SHOW = ['Mülki Məcəllə','İnzibati Xətalar Məcəlləsi','Əmək Məcəlləsi','Mülki Prosessual Məcəllə','Polis haqqında qanun','Prokurorluq haqqında qanun'];
+    const MUST_SHOW_KEYS = MUST_SHOW.map(s => s.toLowerCase());
+    categories = categories.map(cat => {
+        const nm = String(cat.name || '').toLowerCase();
+        const idStr = String(cat.id || '').toLowerCase();
+        const match = MUST_SHOW_KEYS.some(k => nm.includes(k) || idStr.includes(k));
+        if (match) {
+            return { ...cat, isHiddenFromPublic: false };
+        }
+        return cat;
+    });
 
     let hasChanged = false;
     let publicGeneral = categories.find(c => c.id === 'public_general' || (c.name && c.name.trim() === 'Ümumi Suallar'));
@@ -676,10 +687,7 @@ async function loadData() {
         }
     });
 
-    // Seed Prokurorluq Subcategories
-    if (typeof seedProkurorluqSubcategories === 'function') {
-        seedProkurorluqSubcategories().catch(console.error);
-    }
+    // Seed Prokurorluq Subcategories (disabled)
 
 
         // Check for special_pool.json and upload if needed (Admin helper)
