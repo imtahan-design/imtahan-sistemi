@@ -35,6 +35,31 @@ try {
 
 
 
+
+const MAIN_LAW_NAMES = [
+    'Cinayət Məcəlləsi',
+    'Cinayət-Prosessual Məcəlləsi',
+    'Konstitusiya',
+    'Normativ hüquqi aktlar',
+    'İnzibati Xətalar Məcəlləsi',
+    'İnsan hüquqları Konvensiyası',
+    'Mülki Məcəllə',
+    'Mülki-Prosessual Məcəllə',
+    'Əmək Məcəlləsi',
+    'Prokurorluq haqqında Qanun',
+    'Prokurorluqda qulluq haqqında Qanun',
+    'Korrupsiyaya qarşı mübarizə',
+    'Polis haqqında Qanun',
+    'Cinayət icra',
+    'Cinayət mühafizə',
+    'Normativ aktlar toplusu'
+];
+const isMainLaw = (name) => {
+    if (!name) return false;
+    const n = String(name).trim().toLowerCase();
+    return MAIN_LAW_NAMES.some(x => n === x.trim().toLowerCase() || n.includes(x.trim().toLowerCase()));
+};
+
 // Global Constants for Special Exams
 window.PROKURORLUQ_SUBS = [
     { id: '1768674522030', count: 20, name: 'Cinayət Məcəlləsi', keys: ['cinayət məcəlləsi', 'cinayet mecellesi', 'cm'] },
@@ -608,29 +633,8 @@ async function loadData() {
             });
             console.log("Firestore-dan gələn hamısı:", categories);
             
-            const MAIN_LAW_NAMES = [
-                'Cinayət Məcəlləsi',
-                'Cinayət-Prosessual Məcəlləsi',
-                'Konstitusiya',
-                'Normativ hüquqi aktlar',
-                'İnzibati Xətalar Məcəlləsi',
-                'İnsan hüquqları Konvensiyası',
-                'Mülki Məcəllə',
-                'Mülki-Prosessual Məcəllə',
-                'Əmək Məcəlləsi',
-                'Prokurorluq haqqında Qanun',
-                'Prokurorluqda qulluq haqqında Qanun',
-                'Korrupsiyaya qarşı mübarizə',
-                'Polis haqqında Qanun',
-                'Cinayət icra',
-                'Cinayət mühafizə',
-                'Normativ aktlar toplusu'
-            ];
-            const isMainLaw = (name) => {
-                if (!name) return false;
-                const n = String(name).trim().toLowerCase();
-                return MAIN_LAW_NAMES.some(x => n === x.trim().toLowerCase() || n.includes(x.trim().toLowerCase()));
-            };
+            // Moved to global scope
+
             categories = categories.filter(c => !(c.name && c.name.toLowerCase().includes('ingilis dili')));
             await attachPublicQuestionsToCategories();
             await ensureProkurorluqIndependentSubs();
@@ -1123,9 +1127,12 @@ async function attachPublicQuestionsToCategories() {
         byCat.get(cid).push(q);
     });
     categories = categories.map(c => {
-        const qs = byCat.get(String(c.id)) || [];
-        const withIdx = qs.map((q, i) => ({ ...q, originalIndex: i }));
-        return { ...c, questions: withIdx };
+        const mapped = byCat.get(String(c.id));
+        if (mapped && mapped.length) {
+            const withIdx = mapped.map((q, i) => ({ ...q, originalIndex: i }));
+            return { ...c, questions: withIdx };
+        }
+        return c;
     });
 }
 
