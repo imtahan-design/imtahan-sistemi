@@ -153,15 +153,28 @@
       } catch(e) { console.error("Error fetching exclusion list:", e); }
 
       let targetSchema = schema.map(s => ({ ...s }));
-      const swapCount = 3;
-      for(let i=0; i<swapCount; i++) {
-        const idx1 = Math.floor(Math.random() * targetSchema.length);
-        let idx2 = Math.floor(Math.random() * targetSchema.length);
-        while(idx1 === idx2) idx2 = Math.floor(Math.random() * targetSchema.length);
-        if (targetSchema[idx1].count > 1) {
-          targetSchema[idx1].count--;
-          targetSchema[idx2].count++;
-        }
+      
+      // Swap logic only if we have enough items
+      if (targetSchema.length >= 2) {
+          const swapCount = 3;
+          for(let i=0; i<swapCount; i++) {
+            const idx1 = Math.floor(Math.random() * targetSchema.length);
+            let idx2 = Math.floor(Math.random() * targetSchema.length);
+            
+            // Safety break to prevent infinite loop
+            let safety = 0;
+            while(idx1 === idx2 && safety < 50) {
+                idx2 = Math.floor(Math.random() * targetSchema.length);
+                safety++;
+            }
+            
+            if (idx1 !== idx2) {
+                if (targetSchema[idx1].count > 1) {
+                  targetSchema[idx1].count--;
+                  targetSchema[idx2].count++;
+                }
+            }
+          }
       }
 
       for (const item of targetSchema) {
@@ -346,6 +359,13 @@
             <button onclick="document.getElementById('weekly-review-modal').remove()" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
           </div>
           <div class="p-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            ${!draft.isArchive ? `
+            <div class="mb-4 flex justify-end">
+                <button onclick="WeeklyExamManager.openFullEditor('${draft.type}')" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 transition-all">
+                    <i class="fas fa-edit mr-2"></i> Tam Redaktə Rejimi
+                </button>
+            </div>
+            ` : ''}
             ${draft.log ? `<div class="mb-4 text-xs font-mono bg-black p-2 text-green-400">${draft.log.join('<br>')}</div>` : ''}
             ${questionsHtml}
           </div>
@@ -360,25 +380,188 @@
       `;
     },
 
-    // Admin: Qaralamada sualın mətnini redaktə edir
+    // Admin: Full Editor Modal
+    async openFullEditor(type, scrollToIdx = null) {
+        try {
+            const draftDoc = await db.collection('weekly_exams').doc('draft_' + type).get();
+            if (!draftDoc.exists) return;
+            const draft = draftDoc.data();
+            
+            // Remove review modal if exists to avoid overlap
+            const reviewModal = document.getElementById('weekly-review-modal');
+            if (reviewModal) reviewModal.remove();
+
+            let modal = document.getElementById('weekly-full-editor-modal');
+            if (modal) modal.remove();
+            
+            modal = document.createElement('div');
+            modal.id = 'weekly-full-editor-modal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 overflow-y-auto p-4 backdrop-blur-sm';
+            
+            const questionsHtml = draft.questions.map((q, idx) => this.renderQuestionCard(q, idx, draft.type)).join('');
+            
+            modal.innerHTML = `
+                <div class="bg-gray-900 max-w-5xl mx-auto rounded-xl shadow-2xl border border-gray-700 mt-10 animate-up pb-20 relative min-h-screen">
+                <div class="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900/95 backdrop-blur rounded-t-xl sticky top-0 z-50 shadow-md">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                             <span class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                                <i class="fas fa-layer-group text-white"></i>
+                             </span>
+                            Sınaq Qaralaması
+                        </h2>
+                        <p class="text-sm text-gray-400 mt-1 ml-14">${draft.questions.length} sual - ${draft.type.toUpperCase()}</p>
+                    </div>
+                    <div class="flex gap-2">
+                         <button onclick="WeeklyExamManager.generateDraft('${draft.type}')" class="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 shadow-lg shadow-red-500/20" title="Bütün sualları yenilə">
+                            <i class="fas fa-redo"></i> Yenilə
+                        </button>
+                        <button onclick="WeeklyExamManager.saveFullEditor('${draft.type}')" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-500 transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20">
+                            <i class="fas fa-save"></i> Yadda Saxla
+                        </button>
+                         <button onclick="WeeklyExamManager.publishExam('${draft.type}')" class="px-4 py-2.5 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500 transition-all flex items-center gap-2 shadow-lg shadow-green-500/20">
+                            <i class="fas fa-check-circle"></i> Yayımla
+                        </button>
+                        <button onclick="document.getElementById('weekly-full-editor-modal').remove()" class="px-4 py-2.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-8 space-y-8" id="full-editor-questions-list">
+                    ${questionsHtml}
+                </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            if (scrollToIdx !== null) {
+                setTimeout(() => {
+                    const el = document.getElementById(`draft_card_${scrollToIdx}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            }
+        } catch(e) {
+            console.error(e);
+            showNotification('Editor açılarkən xəta: ' + e.message, 'error');
+        }
+    },
+
+    renderQuestionCard(q, idx) {
+        const uniqueId = `draft_${idx}`;
+        const variantsHtml = (q.variants || []).map((v, vIdx) => {
+            const isCorrect = (parseInt(q.correctVariant) === vIdx);
+            const char = String.fromCharCode(65 + vIdx);
+            return `
+            <div class="manual-option-input">
+                <div class="option-radio-wrapper">
+                    <input type="radio" name="correct_${uniqueId}" value="${vIdx}" ${isCorrect ? 'checked' : ''} id="opt_${uniqueId}_${vIdx}">
+                    <label for="opt_${uniqueId}_${vIdx}"></label>
+                </div>
+                <input type="text" class="manual-opt w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors" value="${escapeHtml(v)}" placeholder="${char} variantı">
+                <button onclick="this.parentElement.remove(); window.updateOptionValues('${uniqueId}')" class="remove-option-btn text-gray-400 hover:text-red-500 transition-colors ml-2">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            `;
+        }).join('');
+
+        return `
+        <div class="manual-question-item bg-gray-800/40 border border-gray-700 rounded-xl p-6 hover:border-indigo-500/50 transition-colors relative group" id="draft_card_${idx}" data-idx="${idx}" data-unique-id="${uniqueId}" data-original-id="${q.id || ''}" data-schema="${q._sourceSchemaName || ''}" data-cat-id="${q._sourceCategoryId || ''}">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-700/50">
+                <div class="font-bold text-white flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center text-sm font-mono text-indigo-400 border border-gray-600 shadow-inner">
+                        ${idx + 1}
+                    </span>
+                    <span class="text-sm text-gray-300 bg-gray-800 px-3 py-1 rounded-full border border-gray-700">
+                        ${q._sourceSchemaName || 'Sual'}
+                    </span>
+                </div>
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                     <!-- Actions if needed -->
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Sual mətni</label>
+                    <textarea class="manual-q-text w-full bg-gray-900/80 border border-gray-600 rounded-lg p-4 text-white min-h-[100px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all resize-y" placeholder="Sualın mətnini daxil edin...">${escapeHtml(q.text)}</textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2"><i class="fas fa-comment-alt mr-1"></i> İzah (Opsional)</label>
+                    <textarea class="manual-q-explanation w-full bg-gray-900/80 border border-gray-600 rounded-lg p-4 text-white h-20 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all resize-y" placeholder="İzah...">${escapeHtml(q.explanation || '')}</textarea>
+                </div>
+
+                <div>
+                     <label class="block text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Variantlar</label>
+                     <div class="manual-options-grid grid gap-3" id="options_grid_${uniqueId}">
+                        ${variantsHtml}
+                    </div>
+                    <button onclick="window.addManualOption('${uniqueId}')" class="mt-4 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg text-blue-400 text-sm font-medium transition-all flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Variant Əlavə Et
+                    </button>
+                </div>
+            </div>
+        </div>
+        `;
+    },
+
+    async saveFullEditor(type) {
+        try {
+            const container = document.getElementById('full-editor-questions-list');
+            if (!container) return;
+            const items = container.querySelectorAll('.manual-question-item');
+            const questions = [];
+            
+            items.forEach(item => {
+                const uniqueId = item.getAttribute('data-unique-id');
+                const text = item.querySelector('.manual-q-text').value;
+                const explanation = item.querySelector('.manual-q-explanation').value;
+                
+                // Get Variants
+                const variants = [];
+                const optionsGrid = document.getElementById(`options_grid_${uniqueId}`);
+                if (optionsGrid) {
+                    optionsGrid.querySelectorAll('.manual-option-input').forEach(opt => {
+                        variants.push(opt.querySelector('.manual-opt').value);
+                    });
+                }
+                
+                // Get Correct Variant
+                let correctVariant = 0;
+                const checked = document.querySelector(`input[name="correct_${uniqueId}"]:checked`);
+                if (checked) correctVariant = parseInt(checked.value);
+                
+                questions.push({
+                    id: item.getAttribute('data-original-id'),
+                    text: text,
+                    explanation: explanation,
+                    variants: variants,
+                    correctVariant: correctVariant,
+                    _sourceSchemaName: item.getAttribute('data-schema'),
+                    _sourceCategoryId: item.getAttribute('data-cat-id')
+                });
+            });
+            
+            await db.collection('weekly_exams').doc('draft_' + type).update({
+                questions: questions,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            showNotification('Dəyişikliklər yadda saxlanıldı!', 'success');
+            document.getElementById('weekly-full-editor-modal').remove();
+            this.viewDraft(type); // Re-open review modal
+            
+        } catch(e) {
+            console.error(e);
+            showNotification('Yadda saxlama xətası: ' + e.message, 'error');
+        }
+    },
+
+    // Admin: Qaralamada sualın mətnini redaktə edir (Updated to use Full Editor)
     async editQuestion(type, index) {
-      try {
-        const draftRef = db.collection('weekly_exams').doc('draft_' + type);
-        const doc = await draftRef.get();
-        if (!doc.exists) return;
-        const data = doc.data();
-        const question = data.questions[index];
-        const newText = prompt("Sualı redaktə edin:", question.text);
-        if (newText === null || newText === question.text) return;
-        if (newText.trim().length < 5) return alert("Sual mətni çox qısadır!");
-        data.questions[index].text = newText;
-        await draftRef.update({ questions: data.questions });
-        this.openReviewModal(data);
-        showNotification("Sual yeniləndi!", 'success');
-      } catch(e) {
-        console.error(e);
-        showNotification('Xəta: ' + e.message, 'error');
-      }
+      this.openFullEditor(type, index);
     },
 
     // Admin: Qaralamada sualı başqa sual ilə əvəz edir
@@ -399,7 +582,7 @@
         newQ._sourceCategoryId = oldQ._sourceCategoryId;
         data.questions[index] = newQ;
         await draftRef.update({ questions: data.questions });
-        this.openReviewModal(data);
+        this.openFullEditor(type, index);
       } catch(e) {
         console.error(e);
         alert('Xəta: ' + e.message);
@@ -457,6 +640,8 @@
         });
         const review = document.getElementById('weekly-review-modal');
         if (review) review.remove();
+        const editor = document.getElementById('weekly-full-editor-modal');
+        if (editor) editor.remove();
         showNotification(`Həftəlik sınaq (${weekId}) uğurla yayımlandı!`, 'success');
       } catch(e) {
         console.error(e);

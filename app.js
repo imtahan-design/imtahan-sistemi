@@ -709,7 +709,7 @@ async function loadData() {
                  db.collection('categories').doc('special_prokurorluq').update(poolData)
                     .then(() => {
                         console.log("Special Pool Uploaded Successfully!");
-                        alert("Xüsusi Sınaq Hovuzu (400 sual) uğurla yükləndi!");
+                        // Alert removed as per user request to avoid annoyance
                     })
                     .catch(e => console.error("Pool upload failed:", e));
              }
