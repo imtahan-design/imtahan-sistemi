@@ -322,18 +322,13 @@
           const data = doc.data();
           let modal = document.getElementById('weekly-review-modal');
           if (modal) modal.remove();
-          this.openReviewModal({ ...data, isArchive: true });
+          this.openArchiveModal({ ...data, isArchive: true });
         }
       } catch(e) { console.error(e); }
     },
 
-    // Admin: Qaralamaya baxış pəncərəsi (sual düzəliş/dəyişdir) - MODIFIED: Redirects to Full Editor
-    openReviewModal(draft) {
-      if (!draft.isArchive) {
-        this.openFullEditor(draft.type);
-        return;
-      }
-      // Keep old view only for archives
+    // Admin: Arxivə baxış pəncərəsi (yalnız oxumaq üçün)
+    openArchiveModal(draft) {
       let modal = document.getElementById('weekly-review-modal');
       if (!modal) {
         modal = document.createElement('div');
@@ -365,6 +360,15 @@
           </div>
         </div>
       `;
+    },
+
+    // DEPRECATED: Old review modal is removed. Use openFullEditor instead.
+    openReviewModal(draft) {
+        if(draft.isArchive) {
+            this.openArchiveModal(draft);
+        } else {
+            this.openFullEditor(draft.type);
+        }
     },
 
     // Admin: Full Editor Modal
