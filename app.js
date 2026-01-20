@@ -37,102 +37,62 @@ try {
 
 // Global Constants for Special Exams
 window.PROKURORLUQ_SUBS = [
-    { id: '1768674522030', count: 20, name: 'Cinayət Məcəlləsi' },
-    { id: '1768683898010', count: 20, name: 'Cinayət-Prosessual Məcəlləsi' },
-    { id: '1766934946320', count: 6, name: 'Konstitusiya' },
-    { id: '1768696058306', count: 3, name: 'Normativ hüquqi aktlar' },
-    { id: '1768735010552', count: 5, name: 'İnzibati Xətalar Məcəlləsi' },
-    { id: '1768750915800', count: 2, name: 'Mülki Məcəllə' },
-    { id: '1768737630088', count: 2, name: 'Mülki-Prosessual Məcəllə' },
-    { id: '1768745670510', count: 2, name: 'Əmək Məcəlləsi' },
-    { id: '1768696474731', count: 8, name: 'Prokurorluq haqqında' },
-    { id: '1768696605470', count: 6, name: 'Prokurorluq orqanlarında qulluq' },
-    { id: '1767194888783', count: 5, name: 'Korrupsiyaya qarşı mübarizə' },
-    { id: '1768698786812', count: 1, name: 'Polis haqqında' },
-    { id: 'special_prokurorluq_human_rights', name: 'Avropa İnsan Hüquqları Konvensiyası' }
+    { id: '1768674522030', count: 20, name: 'Cinayət Məcəlləsi', keys: ['cinayət məcəlləsi', 'cinayet mecellesi', 'cm'] },
+    { id: '1768683898010', count: 20, name: 'Cinayət-Prosessual Məcəlləsi', keys: ['cinayət-prosessual', 'cpm', 'cinayet prosessual'] },
+    { id: '1766934946320', count: 6, name: 'Konstitusiya', keys: ['konstitusiya'] },
+    { id: '1768696058306', count: 3, name: 'Normativ hüquqi aktlar', keys: ['normativ hüquqi aktlar', 'normativ aktlar'] },
+    { id: '1768735010552', count: 5, name: 'İnzibati Xətalar Məcəlləsi', keys: ['inzibati xətalar', 'ixm'] },
+    { id: 'special_prokurorluq_human_rights', count: 2, name: 'İnsan hüquqları Konvensiyası', keys: ['konvensiya', 'insan hüquqları'] },
+    { id: '1768750915800', count: 2, name: 'Mülki Məcəllə', keys: ['mülki məcəllə', 'mulki mecelle'] },
+    { id: '1768737630088', count: 2, name: 'Mülki-Prosessual Məcəllə', keys: ['mülki-prosessual', 'mpm'] },
+    { id: '1768745670510', count: 2, name: 'Əmək Məcəlləsi', keys: ['əmək məcəlləsi'] },
+    { id: '1768696474731', count: 8, name: 'Prokurorluq haqqında Qanun', keys: ['prokurorluq haqqında', 'prokurorluq qanunu'] },
+    { id: '1768696605470', count: 6, name: 'Prokurorluqda qulluq haqqında Qanun', keys: ['prokurorluqda qulluq'] },
+    { id: '1767194888783', count: 3, name: 'Korrupsiyaya qarşı mübarizə', keys: ['korrupsiya'] },
+    { id: '1768698786812', count: 1, name: 'Polis haqqında Qanun', keys: ['polis haqqında'] }
 ];
+
+// Hakimlik və Vəkillik üçün eyni sxem (Hələlik) - Deep Copy to ensure independence
+window.HAKIMLIK_SUBS = JSON.parse(JSON.stringify(window.PROKURORLUQ_SUBS));
+window.VEKILLIK_SUBS = JSON.parse(JSON.stringify(window.PROKURORLUQ_SUBS));
 
 // Helper to seed/merge prokurorluq subcategories
 async function seedProkurorluqSubcategories() {
     const parentId = 'special_prokurorluq';
-    // Ensure parent exists in memory
+    // Ensure parent exists
     const parent = categories.find(c => c.id === parentId);
-    if (!parent) return;
+    if (!parent && typeof db !== 'undefined') {
+        // Create parent if missing (rare case)
+        console.log("Parent 'special_prokurorluq' missing, creating...");
+        // This is handled in seed special exams loop usually, but good to be safe
+    }
 
     const schema = window.PROKURORLUQ_SUBS;
+    let addedCount = 0;
     let hasChanges = false;
 
     for (const item of schema) {
         // 1. Check if official category exists by ID
         let officialCat = categories.find(c => c.id === item.id);
         
-        // 2. Check if a category with this name already exists in this parent (even if ID is different)
-        // We use a looser check to find "duplicate" created by user or old versions
-        const existingByName = categories.find(c => 
+        // 2. Find duplicates (Same name, same parent, but wrong ID)
+        // More robust matching: trim, lowercase
+        const duplicates = categories.filter(c => 
             c.parentId === parentId && 
             c.id !== item.id && 
             (
                 c.name.trim().toLowerCase() === item.name.trim().toLowerCase() ||
+                // Special case for Convention if names vary slightly
                 (item.name.includes('Konvensiya') && c.name.includes('Konvensiya'))
             )
         );
 
-        if (officialCat) {
-            // Official category exists. Check if we have a duplicate to merge into it.
-            if (existingByName) {
-                console.log(`Merging duplicate ${existingByName.name} (${existingByName.id}) into official ${officialCat.id}`);
-                
-                // Move questions from duplicate to official if official is empty or we want to consolidate
-                if (existingByName.questions && existingByName.questions.length > 0) {
-                    const existingIds = new Set((officialCat.questions || []).map(q => q.id));
-                    const newQuestions = existingByName.questions.filter(q => !existingIds.has(q.id));
-                    if (newQuestions.length > 0) {
-                        officialCat.questions = [...(officialCat.questions || []), ...newQuestions];
-                        hasChanges = true;
-                    }
-                }
-                
-                // Remove duplicate from memory
-                const idx = categories.indexOf(existingByName);
-                if (idx > -1) categories.splice(idx, 1);
-                
-                // Delete from DB
-                if (typeof db !== 'undefined' && db) {
-                    db.collection('categories').doc(existingByName.id).delete().catch(console.error);
-                    db.collection('categories').doc(officialCat.id).set(officialCat).catch(console.error);
-                }
-            }
-        } else {
-            // Official category does NOT exist by ID.
-            if (existingByName) {
-                // We have a category with the right name but wrong ID. Migrate it.
-                console.log(`Migrating existing ${existingByName.name} (${existingByName.id}) to official ID ${item.id}`);
-                
-                // Create new official object based on existing one
-                const newOfficial = {
-                    ...existingByName,
-                    id: item.id, // Enforce official ID
-                    name: item.name, // Enforce official Name
-                    parentId: parentId,
-                    isHiddenFromPublic: true,
-                    createdBy: 'system'
-                };
-                
-                // Update memory: Remove old, add new
-                const idx = categories.indexOf(existingByName);
-                if (idx > -1) categories.splice(idx, 1);
-                categories.push(newOfficial);
-                
-                // DB Update: Create new, Delete old
-                if (typeof db !== 'undefined' && db) {
-                    db.collection('categories').doc(newOfficial.id).set(newOfficial)
-                        .then(() => db.collection('categories').doc(existingByName.id).delete())
-                        .catch(console.error);
-                }
-                hasChanges = true;
-            } else {
-                // Neither ID nor Name exists. Create fresh.
-                const newSub = {
+        if (duplicates.length > 0) {
+            console.log(`Found duplicates for ${item.name}:`, duplicates.map(d => d.id));
+            
+            // Ensure official category exists
+            if (!officialCat) {
+                officialCat = {
                     id: item.id,
                     name: item.name,
                     parentId: parentId,
@@ -141,12 +101,51 @@ async function seedProkurorluqSubcategories() {
                     createdBy: 'system',
                     time: 45
                 };
-                categories.push(newSub);
-                if (typeof db !== 'undefined' && db) {
-                    db.collection('categories').doc(item.id).set(newSub).catch(console.error);
-                }
+                categories.push(officialCat);
                 hasChanges = true;
             }
+
+            // Merge questions from duplicates
+            duplicates.forEach(dup => {
+                if (dup.questions && dup.questions.length > 0) {
+                    const existingIds = new Set((officialCat.questions || []).map(q => q.id));
+                    const newQuestions = dup.questions.filter(q => !existingIds.has(q.id));
+                    if (newQuestions.length > 0) {
+                        officialCat.questions = [...(officialCat.questions || []), ...newQuestions];
+                        hasChanges = true;
+                    }
+                }
+                
+                // Delete duplicate
+                const idx = categories.indexOf(dup);
+                if (idx > -1) categories.splice(idx, 1);
+                
+                // Delete from DB
+                if (typeof db !== 'undefined' && db) {
+                    db.collection('categories').doc(dup.id).delete().catch(console.error);
+                }
+            });
+            
+            // Save official category to DB
+            if (typeof db !== 'undefined' && db) {
+                db.collection('categories').doc(officialCat.id).set(officialCat).catch(console.error);
+            }
+        } else if (!officialCat) {
+            // No official, no duplicates -> Create new
+            const newSub = {
+                id: item.id,
+                name: item.name,
+                parentId: parentId,
+                questions: [],
+                isHiddenFromPublic: true,
+                createdBy: 'system',
+                time: 45
+            };
+            categories.push(newSub);
+            if (typeof db !== 'undefined' && db) {
+                db.collection('categories').doc(item.id).set(newSub).catch(console.error);
+            }
+            hasChanges = true;
         }
     }
     
@@ -155,95 +154,6 @@ async function seedProkurorluqSubcategories() {
     }
 }
 window.seedProkurorluqSubcategories = seedProkurorluqSubcategories;
-
-window.organizeProkurorluqQuestions = async function() {
-    const parentId = 'special_prokurorluq';
-    const parent = categories.find(c => c.id === parentId);
-    if (!parent || !parent.questions || parent.questions.length === 0) {
-        console.log("No questions to organize in special_prokurorluq");
-        return 0;
-    }
-
-    const schema = window.PROKURORLUQ_SUBS;
-    let movedCount = 0;
-    
-    // Define keywords for mapping
-    const keywords = {
-        'Cinayət Məcəlləsi': ['cinayət məcəlləsi', 'cm maddə', 'cinayət qanunu'],
-        'Cinayət-Prosessual Məcəlləsi': ['cinayət-prosessual', 'cpm', 'prosessual məcəllə'],
-        'Konstitusiya': ['konstitusiya'],
-        'İnzibati Xətalar Məcəlləsi': ['inzibati xətalar', 'ixm'],
-        'Mülki Məcəllə': ['mülki məcəllə', 'mm maddə'],
-        'Mülki-Prosessual Məcəllə': ['mülki-prosessual', 'mpm'],
-        'Əmək Məcəlləsi': ['əmək məcəlləsi', 'əm maddə'],
-        'Prokurorluq haqqında': ['prokurorluq haqqında', 'prokurorluq orqanları'],
-        'Avropa İnsan Hüquqları Konvensiyası': ['avropa insan', 'konvensiya', 'aihk', 'strasburq'],
-        'Korrupsiyaya qarşı mübarizə': ['korrupsiya'],
-        'Polis haqqında': ['polis haqqında'],
-        'Normativ hüquqi aktlar': ['normativ hüquqi', 'normativ akt']
-    };
-
-    const remainingQuestions = [];
-    
-    for (const q of parent.questions) {
-        let moved = false;
-        const text = (q.text || '').toLowerCase();
-        
-        for (const item of schema) {
-            const keys = keywords[item.name] || [item.name.toLowerCase()];
-            const match = keys.some(k => text.includes(k));
-            
-            if (match) {
-                // Find or create target subcategory
-                let subCat = categories.find(c => c.id === item.id);
-                if (subCat) {
-                    if (!subCat.questions) subCat.questions = [];
-                    // Check if question already exists in subcat
-                    if (!subCat.questions.some(sq => sq.id === q.id)) {
-                        // Mark source category ID on the question for deep linking
-                        q._sourceCategoryId = subCat.id;
-                        subCat.questions.push(q);
-                        moved = true;
-                        movedCount++;
-                        // Update subcat in DB
-                        if (typeof db !== 'undefined' && db) {
-                            db.collection('categories').doc(subCat.id).update({
-                                questions: subCat.questions
-                            }).catch(console.error);
-                        }
-                    } else {
-                        // Already exists, just treat as moved (remove from parent)
-                        moved = true;
-                    }
-                }
-                break; 
-            }
-        }
-        
-        if (!moved) {
-            remainingQuestions.push(q);
-        }
-    }
-
-    if (movedCount > 0) {
-        console.log(`Moved ${movedCount} questions from special_prokurorluq to subcategories.`);
-        parent.questions = remainingQuestions;
-        if (typeof db !== 'undefined' && db) {
-            db.collection('categories').doc(parent.id).update({
-                questions: parent.questions
-            }).catch(console.error);
-        }
-        
-        if (typeof saveCategories === 'function') {
-            saveCategories();
-        }
-        showNotification(`${movedCount} sual müvafiq bölmələrə köçürüldü.`, 'success');
-    } else {
-        // showNotification('Köçürüləcək sual tapılmadı.', 'info');
-    }
-    
-    return movedCount;
-};
 
 
 // Global Error Handling
@@ -4473,6 +4383,11 @@ function handleVisibilityChange() {
 window.showAdminDashboard = function(doPush = true) {
     if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) return showNotification('Bu səhifə yalnız səlahiyyətli şəxslər üçündür!', 'error');
     
+    // Check for weekly exam auto-generation
+    if (currentUser.role === 'admin' && typeof WeeklyExamManager !== 'undefined') {
+        WeeklyExamManager.checkAutoGenerateWeeklyExam();
+    }
+    
     if (doPush) {
         const url = new URL(window.location);
         url.searchParams.set('page', 'admin');
@@ -4871,7 +4786,16 @@ function renderCategories() {
     if (specialGrid) specialGrid.innerHTML = '';
     
     // Filter categories by parentId and public visibility
-    const filteredCategories = categories.filter(cat => cat.parentId === currentParentId && !cat.isHiddenFromPublic);
+    const filteredCategories = categories.filter(cat => 
+        cat.parentId === currentParentId && 
+        !cat.isHiddenFromPublic && 
+        cat.id !== 'special_weekly_exam' && // Explicitly hide old standalone weekly exam
+        cat.id !== 'weekly_exam' && // Extra check
+        cat.name !== 'Həftəlik Sınaq' && // Double check by name
+        !cat.name.includes('Həftəlik Sınaq') && // Triple check
+        !cat.name.toLowerCase().includes('həftəlik sınaq') && // Case insensitive check
+        !cat.name.toLowerCase().includes('heftelik sinaq') // Normalized check
+    );
     
     // Update Title and Back Button
     const title = document.getElementById('dashboard-title');
@@ -4958,22 +4882,621 @@ function renderCategories() {
 }
 
 
-// Prokurorluq Sınağı üçün Sxem
-const PROKURORLUQ_SCHEMA = [
-    { id: '1768674522030', count: 20, name: 'Cinayət Məcəlləsi' },
-    { id: '1768683898010', count: 20, name: 'Cinayət-Prosessual Məcəlləsi' },
-    { id: '1766934946320', count: 6, name: 'Konstitusiya' },
-    { id: '1768696058306', count: 3, name: 'Normativ hüquqi aktlar' },
-    { id: '1768735010552', count: 5, name: 'İnzibati Xətalar Məcəlləsi' },
-    { id: '1768750915800', count: 2, name: 'Mülki Məcəllə' },
-    { id: '1768737630088', count: 2, name: 'Mülki-Prosessual Məcəllə' },
-    { id: '1768745670510', count: 2, name: 'Əmək Məcəlləsi' },
-    { id: '1768696474731', count: 8, name: 'Prokurorluq haqqında' },
-    { id: '1768696605470', count: 6, name: 'Prokurorluq orqanlarında qulluq' },
-    { id: '1767194888783', count: 4, name: 'Korrupsiyaya qarşı mübarizə' }, 
-    { id: '1768698786812', count: 1, name: 'Polis haqqında' },
-    { name: 'Avropa İnsan Hüquqları Konvensiyası', count: 1, isDynamic: true }
-];
+
+// Weekly Exam System
+const WeeklyExamManager = {
+    // Helper to fuzzy find category - Prioritizes Special Categories
+    findCategory(schemaItem) {
+        // 1. Try to find exact name match in Special Categories first
+        let cat = categories.find(c => c.name.toLowerCase() === schemaItem.name.toLowerCase() && c.parentId && c.parentId.startsWith('special_'));
+        
+        // 2. If not found, try exact name in ANY category
+        if (!cat) {
+            cat = categories.find(c => c.name.toLowerCase() === schemaItem.name.toLowerCase());
+        }
+
+        // 3. If not found, try keys in Special Categories
+        if (!cat && schemaItem.keys) {
+            for (const key of schemaItem.keys) {
+                cat = categories.find(c => c.name.toLowerCase().includes(key) && c.parentId && c.parentId.startsWith('special_'));
+                if (cat) break;
+            }
+        }
+
+        // 4. If not found, try keys in ANY category
+        if (!cat && schemaItem.keys) {
+            for (const key of schemaItem.keys) {
+                cat = categories.find(c => c.name.toLowerCase().includes(key));
+                if (cat) break;
+            }
+        }
+        
+        return cat;
+    },
+
+    openManagerModal() {
+        if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
+        
+        let modal = document.getElementById('weekly-manager-modal');
+        if (modal) modal.remove();
+        
+        modal = document.createElement('div');
+        modal.id = 'weekly-manager-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 overflow-y-auto p-4 flex items-center justify-center';
+        
+        const types = [
+            { id: 'prokurorluq', name: 'Prokurorluq', icon: 'fa-landmark' },
+            { id: 'hakimlik', name: 'Hakimlik', icon: 'fa-balance-scale' },
+            { id: 'vekillik', name: 'Vəkillik', icon: 'fa-briefcase' }
+        ];
+
+        const cardsHtml = types.map(t => `
+            <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 flex flex-col items-center gap-4 hover:border-blue-500 transition-colors">
+                <div class="w-16 h-16 rounded-full bg-blue-900/30 flex items-center justify-center text-blue-400 text-2xl">
+                    <i class="fas ${t.icon}"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">${t.name}</h3>
+                <div class="flex flex-col w-full gap-2">
+                    <button onclick="WeeklyExamManager.generateDraft('${t.id}')" class="w-full py-2 bg-gray-700 hover:bg-gray-600 text-white rounded flex items-center justify-center gap-2">
+                        <i class="fas fa-random"></i> Yeni Qaralama
+                    </button>
+                    <button onclick="WeeklyExamManager.viewDraft('${t.id}')" class="w-full py-2 bg-gray-700 hover:bg-gray-600 text-white rounded flex items-center justify-center gap-2">
+                        <i class="fas fa-eye"></i> Qaralamaya Bax
+                    </button>
+                    <button onclick="WeeklyExamManager.publishExam('${t.id}')" class="w-full py-2 bg-green-900/50 hover:bg-green-800 text-green-100 rounded flex items-center justify-center gap-2 border border-green-800">
+                        <i class="fas fa-bullhorn"></i> Yayımla
+                    </button>
+                    <button onclick="WeeklyExamManager.viewArchives('${t.id}')" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded flex items-center justify-center gap-2 border border-gray-700 mt-2">
+                        <i class="fas fa-history"></i> Arxiv
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        modal.innerHTML = `
+            <div class="bg-gray-900 w-full max-w-4xl rounded-xl shadow-2xl border border-gray-700 animate-up">
+                <div class="p-6 border-b border-gray-800 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Həftəlik Sınaq İdarəetməsi</h2>
+                        <p class="text-gray-400 text-sm mt-1">Hər kateqoriya üçün ayrıca həftəlik sınaq yaradın və idarə edin</p>
+                    </div>
+                    <button onclick="document.getElementById('weekly-manager-modal').remove()" class="text-gray-400 hover:text-white p-2">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    ${cardsHtml}
+                </div>
+                <div class="p-6 border-t border-gray-800 bg-gray-800/50 rounded-b-xl">
+                    <div class="flex items-center gap-2 text-yellow-500 text-sm">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Qeyd: Yeni sınaq yaradarkən son 2 həftənin sualları avtomatik istisna edilir.</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    },
+
+    async generateDraft(type = 'prokurorluq') {
+        if (!db) return showNotification('Verilənlər bazası bağlantısı yoxdur!', 'error');
+        if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
+        
+        // Define Schema based on type
+        let schema = [];
+        if (type === 'prokurorluq') schema = window.PROKURORLUQ_SUBS || [];
+        else if (type === 'hakimlik') schema = window.HAKIMLIK_SUBS || [];
+        else if (type === 'vekillik') schema = window.VEKILLIK_SUBS || [];
+        else return showNotification('Bu növ hələ aktiv deyil', 'warning');
+
+        let examQuestions = [];
+        let log = [];
+
+        // Anti-repetition: Exclude questions from the last 2 weeks ONLY
+        const excludeIds = new Set();
+        try {
+            // 1. Fetch History Doc (Stores last 4 weeks of question IDs)
+            const historyDoc = await db.collection('weekly_exams').doc('history_' + type).get();
+            if (historyDoc.exists) {
+                const historyData = historyDoc.data().history || {};
+                // Sort keys (weeks) to find the latest ones
+                const sortedWeeks = Object.keys(historyData).sort();
+                // Take last 2 weeks
+                const recentWeeks = sortedWeeks.slice(-2);
+                
+                recentWeeks.forEach(week => {
+                    const ids = historyData[week];
+                    if (Array.isArray(ids)) ids.forEach(id => excludeIds.add(id));
+                });
+                console.log(`History exclusion (last 2 weeks: ${recentWeeks.join(', ')}): ${excludeIds.size} questions.`);
+            }
+            
+            // 2. Also exclude current active exam just in case
+            const activeDoc = await db.collection('weekly_exams').doc('active_' + type).get();
+            if (activeDoc.exists) {
+                const data = activeDoc.data();
+                if (data.questions) data.questions.forEach(q => excludeIds.add(q.id));
+            }
+            
+            console.log(`Total excluded questions: ${excludeIds.size}`);
+        } catch(e) { console.error("Error fetching exclusion list:", e); }
+
+        // Apply Dynamic Deviation (+/- 1 or 2)
+        // Clone schema to avoid modifying global
+        let targetSchema = schema.map(s => ({ ...s }));
+        
+        // Random swaps to maintain total 80 but vary distribution
+        const swapCount = 3; // Number of swaps
+        for(let i=0; i<swapCount; i++) {
+             // Pick two random indices
+             const idx1 = Math.floor(Math.random() * targetSchema.length);
+             let idx2 = Math.floor(Math.random() * targetSchema.length);
+             while(idx1 === idx2) idx2 = Math.floor(Math.random() * targetSchema.length);
+             
+             // Check bounds (ensure count doesn't drop below 1 or increase unreasonably)
+             // Only take from > 1
+             if (targetSchema[idx1].count > 1) {
+                 targetSchema[idx1].count--;
+                 targetSchema[idx2].count++;
+             }
+        }
+
+        // Collect questions based on schema
+        for (const item of targetSchema) {
+            const subCat = this.findCategory(item);
+            
+            if (!subCat || !subCat.questions || subCat.questions.length === 0) {
+                console.warn(`Category not found or empty: ${item.name}`);
+                log.push(`TAPILMADI: ${item.name}`);
+                continue;
+            }
+            
+            // Filter used questions
+            const available = subCat.questions.filter(q => !excludeIds.has(q.id));
+            let pool = available;
+            
+            if (available.length < item.count) {
+                 log.push(`XƏBƏRDARLIQ: ${item.name} - Yeni sual çatışmır (${available.length}/${item.count}). İşlənmişlər qarışdırılır.`);
+                 pool = subCat.questions; // Fallback to full pool if not enough unique questions
+            }
+            
+            // Randomly select 'item.count' questions
+            const shuffled = [...pool].sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, item.count);
+            
+            // Add metadata
+            selected.forEach(q => {
+                q._sourceSchemaName = item.name; 
+                q._sourceCategoryId = subCat.id;
+            });
+            
+            examQuestions = [...examQuestions, ...selected];
+            log.push(`OK: ${item.name} (${selected.length}/${item.count})`);
+        }
+        
+        if (examQuestions.length === 0) {
+             return showNotification('Heç bir sual tapılmadı! Kateqoriyaları yoxlayın.', 'error');
+        }
+
+        const draft = {
+            id: 'weekly_draft_' + type,
+            type: type,
+            questions: examQuestions,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdBy: currentUser.id,
+            status: 'draft',
+            log: log
+        };
+
+        try {
+            await db.collection('weekly_exams').doc('draft_' + type).set(draft);
+            
+            // Close manager modal if open
+            const managerModal = document.getElementById('weekly-manager-modal');
+            if (managerModal) managerModal.remove();
+
+            showNotification(`Qaralama yaradıldı! (${examQuestions.length} sual).`, 'success');
+            this.openReviewModal(draft);
+        } catch(e) {
+            console.error(e);
+            showNotification('Qaralama yadda saxlanılarkən xəta!', 'error');
+        }
+    },
+
+    async viewDraft(type = 'prokurorluq') {
+        if (!db) return;
+        if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
+
+        try {
+            const doc = await db.collection('weekly_exams').doc('draft_' + type).get();
+            if (!doc.exists) {
+                return showNotification('Qaralama tapılmadı. Əvvəlcə sınaq yaradın.', 'error');
+            }
+            
+            // Close manager modal if open
+            const managerModal = document.getElementById('weekly-manager-modal');
+            if (managerModal) managerModal.remove();
+
+            this.openReviewModal(doc.data());
+        } catch(e) {
+            console.error(e);
+            showNotification('Xəta: ' + e.message, 'error');
+        }
+    },
+
+    async viewArchives(type) {
+        if (!db) return;
+        if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
+
+        const btn = document.querySelector(`button[onclick*="viewArchives('${type}')"]`);
+        const originalText = btn ? btn.innerHTML : '';
+        if(btn) {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+        }
+
+        try {
+            const snapshot = await db.collection('weekly_exams')
+                .where('status', '==', 'archived')
+                .where('type', '==', type)
+                .orderBy('archivedAt', 'desc')
+                .limit(20)
+                .get();
+            
+            if (snapshot.empty) {
+                showNotification('Arxivdə sınaq tapılmadı.', 'info');
+                if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
+                return;
+            }
+
+            let modal = document.getElementById('weekly-archives-modal');
+            if (modal) modal.remove();
+            
+            modal = document.createElement('div');
+            modal.id = 'weekly-archives-modal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 overflow-y-auto p-4 flex items-center justify-center';
+            
+            const listHtml = snapshot.docs.map(doc => {
+                const data = doc.data();
+                const date = data.archivedAt ? data.archivedAt.toDate().toLocaleDateString() : 'N/A';
+                return `
+                    <div class="bg-gray-800 p-4 rounded border border-gray-700 flex justify-between items-center mb-2">
+                        <div>
+                            <div class="font-bold text-white">${data.name || 'Sınaq'}</div>
+                            <div class="text-xs text-gray-400">Arxivlənmə tarixi: ${date} | ID: ${data.weekId}</div>
+                        </div>
+                        <button onclick="WeeklyExamManager.viewArchiveDetail('${doc.id}')" class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-500">Bax</button>
+                    </div>
+                `;
+            }).join('');
+
+            modal.innerHTML = `
+                <div class="bg-gray-900 w-full max-w-2xl rounded-xl shadow-2xl border border-gray-700 animate-up">
+                    <div class="p-6 border-b border-gray-800 flex justify-between items-center">
+                        <h2 class="text-xl font-bold text-white">Arxiv - ${type.toUpperCase()}</h2>
+                        <button onclick="document.getElementById('weekly-archives-modal').remove()" class="text-gray-400 hover:text-white">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                        ${listHtml}
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+        } catch(e) {
+            console.error(e);
+            showNotification('Xəta: ' + e.message, 'error');
+        } finally {
+            if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
+        }
+    },
+
+    async viewArchiveDetail(docId) {
+        try {
+             const doc = await db.collection('weekly_exams').doc(docId).get();
+             if(doc.exists) {
+                 const data = doc.data();
+                 let modal = document.getElementById('weekly-review-modal');
+                 if (modal) modal.remove();
+                 
+                 this.openReviewModal({ ...data, isArchive: true });
+             }
+        } catch(e) { console.error(e); }
+    },
+
+    openReviewModal(draft) {
+        let modal = document.getElementById('weekly-review-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'weekly-review-modal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 overflow-y-auto p-4';
+            document.body.appendChild(modal);
+        }
+        
+        const questionsHtml = draft.questions.map((q, idx) => `
+            <div class="bg-gray-800 p-4 rounded mb-2 border border-gray-700 flex justify-between items-start gap-4">
+                <div class="flex-1">
+                    <div class="text-xs text-yellow-500 mb-1">${q._sourceSchemaName || 'Naməlum'}</div>
+                    <p class="text-white text-sm">${escapeHtml(q.text)}</p>
+                </div>
+                ${!draft.isArchive ? `
+                <div class="flex flex-col gap-2">
+                    <button onclick="WeeklyExamManager.editQuestion('${draft.type}', ${idx})" class="text-xs bg-yellow-600 px-2 py-1 rounded text-white hover:bg-yellow-500">Düzəliş et</button>
+                    <button onclick="WeeklyExamManager.replaceQuestion('${draft.type}', ${idx})" class="text-xs bg-blue-600 px-2 py-1 rounded text-white hover:bg-blue-500">Dəyişdir</button>
+                </div>` : ''}
+            </div>
+        `).join('');
+
+        modal.innerHTML = `
+            <div class="bg-gray-900 max-w-4xl mx-auto rounded-lg shadow-xl border border-gray-700 mt-10 animate-up">
+                <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-800 rounded-t-lg">
+                    <h2 class="text-xl font-bold text-white">
+                        ${draft.isArchive ? 'Arxiv Sınağı' : 'Həftəlik Sınaq Qaralaması'} 
+                        (${draft.questions.length} sual) - ${draft.type ? draft.type.toUpperCase() : ''}
+                    </h2>
+                    <button onclick="document.getElementById('weekly-review-modal').remove()" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="p-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    ${draft.log ? `<div class="mb-4 text-xs font-mono bg-black p-2 text-green-400">${draft.log.join('<br>')}</div>` : ''}
+                    ${questionsHtml}
+                </div>
+                <div class="p-4 border-t border-gray-700 bg-gray-800 rounded-b-lg flex justify-end gap-3">
+                    ${draft.isArchive ? 
+                        `<button onclick="document.getElementById('weekly-review-modal').remove()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500">Bağla</button>` :
+                        `<button onclick="WeeklyExamManager.generateDraft('${draft.type}')" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Yenidən Yarat</button>
+                         <button onclick="WeeklyExamManager.publishExam('${draft.type}')" class="px-6 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-500 shadow-lg shadow-green-500/20">Təsdiqlə və Yayımla</button>`
+                    }
+                </div>
+            </div>
+        `;
+    },
+
+    async editQuestion(type, index) {
+        try {
+            const draftRef = db.collection('weekly_exams').doc('draft_' + type);
+            const doc = await draftRef.get();
+            if (!doc.exists) return;
+            
+            const data = doc.data();
+            const question = data.questions[index];
+            
+            const newText = prompt("Sualı redaktə edin:", question.text);
+            if (newText === null || newText === question.text) return;
+            
+            if (newText.trim().length < 5) return alert("Sual mətni çox qısadır!");
+            
+            // Update question text
+            data.questions[index].text = newText;
+            
+            await draftRef.update({ questions: data.questions });
+            
+            this.openReviewModal(data);
+            showNotification("Sual yeniləndi!", 'success');
+            
+        } catch(e) {
+            console.error(e);
+            showNotification('Xəta: ' + e.message, 'error');
+        }
+    },
+
+    async replaceQuestion(type, index) {
+        try {
+            const draftRef = db.collection('weekly_exams').doc('draft_' + type);
+            const doc = await draftRef.get();
+            if (!doc.exists) return;
+            
+            const data = doc.data();
+            const oldQ = data.questions[index];
+            
+            const subCat = categories.find(c => c.id === oldQ._sourceCategoryId);
+            if (!subCat) return alert('Kateqoriya tapılmadı');
+
+            const currentIds = new Set(data.questions.map(q => q.id));
+            
+            // Also respect the exclusion list from history!
+            // But fetching it again is expensive. For now just check against current draft.
+            // Ideally we should pass exclusion list or fetch it.
+            // Let's at least check against current draft to avoid duplicates in the same exam.
+            
+            const available = subCat.questions.filter(q => !currentIds.has(q.id));
+            
+            if (available.length === 0) return alert('Bu kateqoriyada başqa sual qalmayıb!');
+            
+            const newQ = available[Math.floor(Math.random() * available.length)];
+            newQ._sourceSchemaName = oldQ._sourceSchemaName;
+            newQ._sourceCategoryId = oldQ._sourceCategoryId;
+            
+            data.questions[index] = newQ;
+            
+            await draftRef.update({ questions: data.questions });
+            this.openReviewModal(data);
+            
+        } catch(e) {
+            console.error(e);
+            alert('Xəta: ' + e.message);
+        }
+    },
+
+    async publishExam(type = 'prokurorluq') {
+        if (!db) return;
+        if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
+        if (!confirm('Sınağı yayımlamaq istədiyinizə əminsiniz?')) return;
+        
+        try {
+            const draftDoc = await db.collection('weekly_exams').doc('draft_' + type).get();
+            if (!draftDoc.exists) {
+                return showNotification('Qaralama tapılmadı.', 'error');
+            }
+            
+            const data = draftDoc.data();
+            const weekId = this.getCurrentWeekId();
+            
+            // Archive current active if exists
+            const activeRef = db.collection('weekly_exams').doc('active_' + type);
+            const activeDoc = await activeRef.get();
+            if (activeDoc.exists) {
+                const oldData = activeDoc.data();
+                const archivedData = { 
+                    ...oldData, 
+                    status: 'archived', 
+                    archivedAt: firebase.firestore.FieldValue.serverTimestamp() 
+                };
+                await db.collection('weekly_exams').doc(`archive_${type}_${oldData.weekId || Date.now()}`).set(archivedData);
+            }
+
+            // Save as active
+            const typeNames = {
+                'prokurorluq': 'Prokurorluq',
+                'hakimlik': 'Hakimlik',
+                'vekillik': 'Vəkillik'
+            };
+            const typeName = typeNames[type] || type;
+
+            await activeRef.set({
+                ...data,
+                publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                weekId: weekId,
+                status: 'active',
+                isSpecial: true,
+                name: `Həftəlik Sınaq - ${typeName} (${weekId})`,
+                description: `${typeName} üzrə həftəlik rəsmi sınaq imtahanı`
+            });
+
+            // Update History for Anti-Repetition
+            const historyRef = db.collection('weekly_exams').doc('history_' + type);
+            await db.runTransaction(async (t) => {
+                const doc = await t.get(historyRef);
+                let history = doc.exists ? (doc.data().history || {}) : {};
+                
+                // Add new week
+                if (data.questions) {
+                    history[weekId] = data.questions.map(q => q.id);
+                }
+                
+                // Prune old weeks (Keep last 4 weeks)
+                const keys = Object.keys(history).sort();
+                if (keys.length > 4) {
+                    const newHistory = {};
+                    keys.slice(-4).forEach(k => newHistory[k] = history[k]);
+                    history = newHistory;
+                }
+                
+                t.set(historyRef, { history, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() });
+            });
+            
+            document.getElementById('weekly-review-modal').remove();
+            showNotification(`Həftəlik sınaq (${weekId}) uğurla yayımlandı!`, 'success');
+        } catch(e) {
+            console.error(e);
+            showNotification('Yayımlama xətası: ' + e.message, 'error');
+        }
+    },
+    
+    getCurrentWeekId() {
+        const d = new Date();
+        const year = d.getFullYear();
+        const oneJan = new Date(year, 0, 1);
+        const numberOfDays = Math.floor((d - oneJan) / (24 * 60 * 60 * 1000));
+        const week = Math.ceil((d.getDay() + 1 + numberOfDays) / 7);
+        return `${year}-W${week}`;
+    },
+
+    async checkAutoGenerateWeeklyExam() {
+        if (!currentUser || currentUser.role !== 'admin') return;
+        
+        // Auto-check for all types
+        const types = ['prokurorluq', 'hakimlik', 'vekillik'];
+        
+        for (const type of types) {
+             // Only auto-generate if we have a schema for it
+             // For now we do, but maybe check if user wants it?
+             // We'll keep it simple and just check active vs draft.
+             
+             try {
+                const weekId = this.getCurrentWeekId();
+                const activeDoc = await db.collection('weekly_exams').doc('active_' + type).get();
+                if (activeDoc.exists && activeDoc.data().weekId === weekId) {
+                    continue; // Already active for this week
+                }
+                
+                const draftDoc = await db.collection('weekly_exams').doc('draft_' + type).get();
+                let draftIsFresh = false;
+                if (draftDoc.exists) {
+                    const draftData = draftDoc.data();
+                    const draftDate = draftData.createdAt ? draftData.createdAt.toDate() : new Date(0);
+                    const now = new Date();
+                    const diff = now.getDate() - now.getDay() + (now.getDay() == 0 ? -6 : 1);
+                    const monday = new Date(now.setDate(diff));
+                    monday.setHours(0,0,0,0);
+                    
+                    if (draftDate >= monday) draftIsFresh = true;
+                }
+                
+                if (!draftIsFresh) {
+                    console.log(`Auto-generating weekly draft for ${type} (${weekId})`);
+                    await this.generateDraft(type);
+                    // Don't show notification for every type, maybe just log or subtle toast
+                }
+             } catch(e) {
+                 console.error("Auto-generate check failed for " + type, e);
+             }
+        }
+    }
+};
+window.WeeklyExamManager = WeeklyExamManager;
+
+window.startWeeklyExam = async function() {
+    showNotification('Bu sınaq növü ləğv edilib. Zəhmət olmasa müvafiq kateqoriya (Prokurorluq, Hakimlik və s.) altındakı həftəlik sınaqdan istifadə edin.', 'error');
+    return;
+    /* 
+    // OLD LOGIC DISABLED
+    if (!db) return showNotification('Sistem xətası: DB yoxdur', 'error');
+    
+    // UI Feedback
+    const btn = document.getElementById('weekly-exam-btn');
+    const originalText = btn ? btn.innerHTML : '';
+    if(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
+    }
+
+    try {
+        const doc = await db.collection('weekly_exams').doc('active').get();
+        if (!doc.exists) {
+            throw new Error("Bu həftə üçün aktiv sınaq hələ yayımlanmayıb.");
+        }
+        
+        const data = doc.data();
+        
+        const generatedExam = {
+            id: 'weekly_exam_active',
+            name: `Həftəlik Sınaq (${data.weekId || 'Cari'})`,
+            time: 180, // 3 hours
+            questions: data.questions,
+            isSpecial: true,
+            examType: 'weekly',
+            weekId: data.weekId
+        };
+
+        localStorage.setItem('generatedExamData', JSON.stringify(generatedExam));
+        localStorage.setItem('activeSpecialCategory', 'weekly_exam_active');
+        window.location.href = 'dim_view.html';
+        
+    } catch (e) {
+        console.error(e);
+        alert('Xəta: ' + e.message);
+        if(btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+    */
+};
+
+
 
 async function generateProkurorluqExam() {
     if (!currentUser) {
@@ -5009,7 +5532,7 @@ async function generateProkurorluqExam() {
     let log = [];
 
     // 2. Hər kateqoriya üzrə sualları seç
-    for (const item of PROKURORLUQ_SCHEMA) {
+    for (const item of window.PROKURORLUQ_SUBS) {
         // 1. Try to find Special Subcategory (parentId = 'special_prokurorluq')
         let cat = categories.find(c => c.parentId === 'special_prokurorluq' && c.name === item.name);
 
@@ -5087,11 +5610,113 @@ async function generateProkurorluqExam() {
     };
 }
 
+window.showExamSelectionModal = function(cat, examType) {
+    let modal = document.getElementById('exam-selection-modal');
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = 'exam-selection-modal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 overflow-y-auto p-4 flex items-center justify-center';
+    
+    modal.innerHTML = `
+        <div class="bg-gray-900 w-full max-w-md rounded-xl shadow-2xl border border-gray-700 animate-up">
+            <div class="p-6 border-b border-gray-800 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-white">${cat.name}</h2>
+                <button onclick="document.getElementById('exam-selection-modal').remove()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 flex flex-col gap-4">
+                <button onclick="startActiveWeeklyExam('${examType}', '${cat.id}')" class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 text-white rounded-lg font-bold text-lg shadow-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105">
+                    <i class="fas fa-play-circle text-2xl"></i>
+                    Bu Həftənin Sınağı
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+window.startActiveWeeklyExam = async function(examType, catId) {
+    // Password Check
+    const password = prompt("Zəhmət olmasa sınaq şifrəsini daxil edin:");
+    if (password !== "123") {
+        alert("Şifrə yanlışdır!");
+        return;
+    }
+
+    const modal = document.getElementById('exam-selection-modal');
+    if(modal) {
+        // Show loading state in modal
+        const btn = modal.querySelector('button[onclick*="startActiveWeeklyExam"]');
+        if(btn) {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
+            btn.disabled = true;
+        }
+    }
+
+    try {
+        if (!db) throw new Error("Verilənlər bazası ilə əlaqə yoxdur.");
+
+        // Fetch ACTIVE weekly exam for this type
+        const doc = await db.collection('weekly_exams').doc('active_' + examType).get();
+        
+        if (!doc.exists) {
+            throw new Error("Bu kateqoriya üçün aktiv sınaq tapılmadı. Zəhmət olmasa adminin sınağı yayımlamasını gözləyin.");
+        }
+
+        const data = doc.data();
+        const cat = categories.find(c => c.id === catId);
+        
+        // Construct exam object
+        const generatedExam = {
+            id: 'weekly_exam_' + examType,
+            name: data.name || cat.name,
+            description: data.description || cat.description,
+            time: cat.time || 180,
+            questions: data.questions,
+            isSpecial: true,
+            examType: examType,
+            weekId: data.weekId,
+            publishedAt: data.publishedAt
+        };
+        
+        // Save to localStorage
+        localStorage.setItem('generatedExamData', JSON.stringify(generatedExam));
+        localStorage.setItem('activeSpecialCategory', 'weekly_exam_' + examType);
+        
+        window.location.href = 'dim_view.html';
+    } catch (e) {
+        console.error(e);
+        alert('Xəta: ' + e.message);
+        if(modal) modal.remove();
+    }
+}
+
+window.showUserArchives = function(examType) {
+    showNotification('Arxiv sınaqlarına giriş bağlanıb.', 'info');
+}
+
+window.startArchivedExam = function(docId, examType) {
+    showNotification('Bu funksiya deaktiv edilib.', 'error');
+}
+
 window.startSpecialQuiz = async function(catId) {
     const cat = categories.find(c => c.id === catId);
-    const isProkuror = cat && (cat.id === 'special_prokurorluq' || cat.name.toLowerCase().includes('prokuror'));
+    
+    // Determine Exam Type
+    let examType = null;
+    if (catId === 'special_prokurorluq') examType = 'prokurorluq';
+    else if (catId === 'special_hakimlik') examType = 'hakimlik'; // Future support
+    else if (catId === 'special_vekillik') examType = 'vekillik'; // Future support
 
-    if (isProkuror) {
+    if (examType && (examType === 'prokurorluq' || examType === 'hakimlik' || examType === 'vekillik')) {
+        showExamSelectionModal(cat, examType);
+        return;
+    }
+    
+    // Weekly Exam Hook
+    if (catId === 'special_weekly_exam') {
         window.startWeeklyExam();
         return;
     }
@@ -8391,221 +9016,7 @@ window.cleanupBadReports = async function() {
     }
 }
 
-// --- Weekly Exam System ---
-window.WeeklyExamManager = {
-    generateDraft: async function() {
-        if (!currentUser || currentUser.role !== 'admin') return;
-
-        showNotification('Həftəlik sınaq qaralaması hazırlanır...', 'info');
-
-        // 1. Get all questions from subcategories of 'special_prokurorluq'
-        const parentId = 'special_prokurorluq';
-        const subCats = categories.filter(c => c.parentId === parentId);
-        
-        let allQuestions = [];
-        
-        // Also check the parent itself if it has remaining questions
-        const parent = categories.find(c => c.id === parentId);
-        if (parent && parent.questions) {
-            allQuestions = allQuestions.concat(parent.questions.map(q => ({...q, _sourceCat: parent.name, _sourceId: parent.id})));
-        }
-
-        subCats.forEach(c => {
-            if (c.questions && c.questions.length > 0) {
-                allQuestions = allQuestions.concat(c.questions.map(q => ({...q, _sourceCat: c.name, _sourceId: c.id})));
-            }
-        });
-
-        if (allQuestions.length < 80) {
-            showNotification(`Kifayət qədər sual yoxdur. Cəmi: ${allQuestions.length}, Lazımdır: 80`, 'warning');
-            // Still allow generation for testing if > 0
-            if (allQuestions.length === 0) return;
-        }
-
-        // 2. Shuffle and pick 80
-        const shuffled = allQuestions.sort(() => 0.5 - Math.random());
-        const selected = shuffled.slice(0, 80);
-
-        // 3. Save draft
-        const draft = {
-            id: 'draft_' + Date.now(),
-            questions: selected,
-            createdAt: Date.now()
-        };
-        
-        localStorage.setItem('weekly_exam_draft', JSON.stringify(draft));
-        
-        // 4. Open UI
-        this.renderDraftUI();
-        showNotification('Qaralama yaradıldı. Zəhmət olmasa yoxlayın və təsdiqləyin.', 'success');
-    },
-
-    renderDraftUI: function() {
-        const draft = JSON.parse(localStorage.getItem('weekly_exam_draft'));
-        if (!draft) return showNotification('Qaralama tapılmadı', 'error');
-
-        // Create Modal
-        let modal = document.getElementById('weekly-exam-modal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'weekly-exam-modal';
-            modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
-            document.body.appendChild(modal);
-        }
-
-        modal.innerHTML = `
-            <div class="bg-white w-full max-w-4xl h-[90vh] rounded-lg shadow-xl flex flex-col m-4 animate-up">
-                <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
-                    <h3 class="text-xl font-bold text-gray-800">
-                        <i class="fas fa-tasks text-primary"></i> Həftəlik Sınaq Qaralaması (${draft.questions.length} sual)
-                    </h3>
-                    <button onclick="document.getElementById('weekly-exam-modal').remove()" class="text-gray-500 hover:text-red-500">
-                        <i class="fas fa-times text-2xl"></i>
-                    </button>
-                </div>
-                
-                <div class="flex-1 overflow-y-auto p-4 bg-gray-100">
-                    <div id="weekly-draft-list" class="space-y-3">
-                        ${draft.questions.map((q, idx) => `
-                            <div class="bg-white p-4 rounded shadow-sm border-l-4 border-primary relative group">
-                                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onclick="WeeklyExamManager.removeQuestion(${idx})" class="text-red-500 hover:bg-red-50 p-1 rounded" title="Sualı sil">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </div>
-                                <div class="flex justify-between mb-2">
-                                    <span class="font-bold text-gray-600">#${idx + 1}</span>
-                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">${q._sourceCat || 'Ümumi'}</span>
-                                </div>
-                                <p class="text-gray-800 mb-2">${escapeHtml(q.text)}</p>
-                                <div class="text-sm text-gray-500 grid grid-cols-2 gap-2">
-                                    ${q.options.map((opt, i) => `
-                                        <div class="${i === (q.correctIndex || q.correct) ? 'text-green-600 font-bold' : ''}">
-                                            ${String.fromCharCode(65+i)}) ${escapeHtml(opt)}
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <div class="p-4 border-t bg-gray-50 rounded-b-lg flex justify-between items-center">
-                    <div class="text-sm text-gray-500">
-                        Bu suallar təsdiqləndikdən sonra bütün istifadəçilər üçün aktiv olacaq.
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="WeeklyExamManager.generateDraft()" class="btn-secondary">
-                            <i class="fas fa-sync-alt"></i> Yenidən Yarat
-                        </button>
-                        <button onclick="WeeklyExamManager.publishExam()" class="btn-primary">
-                            <i class="fas fa-check-circle"></i> Təsdiqlə və Yayımla
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        modal.classList.remove('hidden');
-    },
-
-    removeQuestion: function(index) {
-        const draft = JSON.parse(localStorage.getItem('weekly_exam_draft'));
-        if (!draft) return;
-        
-        if (confirm('Bu sualı sınaqdan çıxarmaq istədiyinizə əminsiniz?')) {
-            draft.questions.splice(index, 1);
-            localStorage.setItem('weekly_exam_draft', JSON.stringify(draft));
-            this.renderDraftUI();
-        }
-    },
-
-    publishExam: async function() {
-        const draft = JSON.parse(localStorage.getItem('weekly_exam_draft'));
-        if (!draft || draft.questions.length === 0) return showNotification('Qaralama boşdur', 'error');
-
-        if (!confirm(`Bu sınağı (${draft.questions.length} sual) yayımlamaq istədiyinizə əminsiniz? Bu əməliyyat cari aktiv sınağı əvəzləyəcək.`)) return;
-
-        showNotification('Sınaq yayımlanır...', 'info');
-
-        // Create active exam object
-        const activeExam = {
-            id: 'week_' + new Date().getFullYear() + '_' + getWeekNumber(new Date()),
-            questions: draft.questions,
-            publishedAt: Date.now(),
-            publishedBy: currentUser.email
-        };
-
-        // 1. Save to LocalStorage (for immediate access)
-        localStorage.setItem('weekly_active_exam', JSON.stringify(activeExam));
-
-        // 2. Save to Firestore (Global Sync)
-        if (typeof db !== 'undefined' && db) {
-            try {
-                await db.collection('config').doc('weekly_exam').set(activeExam);
-                showNotification('Sınaq serverə yükləndi!', 'success');
-            } catch (e) {
-                console.error("Firestore save error:", e);
-                showNotification('Serverə yüklənmə xətası, lakin lokalda yadda saxlanıldı.', 'warning');
-            }
-        }
-
-        // Cleanup
-        localStorage.removeItem('weekly_exam_draft');
-        document.getElementById('weekly-exam-modal').remove();
-        showNotification('Həftəlik sınaq uğurla aktivləşdirildi!', 'success');
-    }
-};
-
-window.startWeeklyExam = async function() {
-    // 1. Try to load from Firestore first to ensure latest version
-    let examData = null;
-    
-    if (typeof db !== 'undefined' && db) {
-        try {
-            const doc = await db.collection('config').doc('weekly_exam').get();
-            if (doc.exists) {
-                examData = doc.data();
-                // Cache it
-                localStorage.setItem('weekly_active_exam', JSON.stringify(examData));
-            }
-        } catch (e) {
-            console.error("Fetch weekly exam error:", e);
-        }
-    }
-
-    // 2. Fallback to local
-    if (!examData) {
-        examData = JSON.parse(localStorage.getItem('weekly_active_exam'));
-    }
-
-    if (!examData || !examData.questions || examData.questions.length === 0) {
-        return showNotification('Hazırda aktiv həftəlik sınaq yoxdur. Zəhmət olmasa daha sonra yoxlayın.', 'info');
-    }
-
-    // Check if user already took this specific exam (by ID)
-    // We can implement this check later if needed. For now, let them retake.
-
-    // Start the exam using dimQuiz logic
-    const questions = examData.questions;
-    
-    // Setup DIM View
-    localStorage.setItem('activeSpecialCategory', 'weekly_exam');
-    localStorage.setItem('generatedExamData', JSON.stringify({
-        questions: questions,
-        duration: 90 * 60 // 90 minutes
-    }));
-
-    window.location.href = 'dim_view.html';
-};
-
-function getWeekNumber(d) {
-    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-    var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-    var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
-    return weekNo;
-}
-
+window.goToReportedQuestion = async function(catId, qId, qType, questionText = "") {
     // Clean question text from truncation dots and escape characters
     const cleanText = questionText ? questionText.replace(/\.\.\.$/, '').trim() : "";
     
@@ -10153,939 +10564,3 @@ window.organizeProkurorluqQuestions = async function() {
     
     alert(`${movedCount} sual uğurla köçürüldü! (${unmovable.length} sual qaldı)`);
 };
-
- 
- / /   - - -   W E E K L Y   E X A M   S Y S T E M   ( H � "!f t � "!l i k   S � � n a q )   - - - 
- 
- 
- 
- w i n d o w . W e e k l y E x a m M a n a g e r   =   { 
- 
-         d r a f t :   n u l l , 
- 
-         
- 
-         / /   1 .   G e n e r a t e   D r a f t 
- 
-         g e n e r a t e D r a f t :   a s y n c   f u n c t i o n ( )   { 
- 
-                 i f   ( ! c o n f i r m ( " Y e n i   h � "!f t � "!l i k   s � � n a q   q a r a l a m a s � �   y a r a d � � l a c a q .   D a v a m   e d i l s i n ? " ) )   r e t u r n ; 
- 
-                 
- 
-                 s h o w L o a d i n g ( " S u a l   b a z a s � �   t � "!h l i l   e d i l i r   v � "!  q a r a l a m a   h a z � � r l a n � � r . . . " ) ; 
- 
-                 
- 
-                 t r y   { 
- 
-                         / /   E n s u r e   s u b c a t e g o r i e s   a r e   s e e d e d / l o a d e d 
- 
-                         i f   ( t y p e o f   w i n d o w . s e e d P r o k u r o r l u q S u b c a t e g o r i e s   = = =   ' f u n c t i o n ' )   { 
- 
-                                 a w a i t   w i n d o w . s e e d P r o k u r o r l u q S u b c a t e g o r i e s ( ) ; 
- 
-                         } 
- 
- 
- 
-                         l e t   d r a f t Q u e s t i o n s   =   [ ] ; 
- 
-                         l e t   l o g   =   [ ] ; 
- 
-                         
- 
-                         / /   U s e   g l o b a l   s c h e m a 
- 
-                         c o n s t   s c h e m a   =   w i n d o w . P R O K U R O R L U Q _ S C H E M A   | |   [ ] ; 
- 
-                         
- 
-                         f o r   ( c o n s t   i t e m   o f   s c h e m a )   { 
- 
-                                 / /   F i n d   C a t e g o r y 
- 
-                                 l e t   c a t   =   c a t e g o r i e s . f i n d ( c   = >   c . p a r e n t I d   = = =   ' s p e c i a l _ p r o k u r o r l u q '   & &   c . n a m e   = = =   i t e m . n a m e ) ; 
- 
-                                 
- 
-                                 / /   D y n a m i c / S p e c i a l   h a n d l i n g 
- 
-                                 i f   ( ! c a t   & &   i t e m . i s D y n a m i c )   { 
- 
-                                           c a t   =   c a t e g o r i e s . f i n d ( c   = >   c . p a r e n t I d   = = =   ' s p e c i a l _ p r o k u r o r l u q '   & &   ( c . n a m e . i n c l u d e s ( ' K o n v e n s i y a ' )   | |   c . i d   = = =   ' s p e c i a l _ p r o k u r o r l u q _ h u m a n _ r i g h t s ' ) ) ; 
- 
-                                 } 
- 
-                                 
- 
-                                 / /   F a l l b a c k   D B   f e t c h   i f   e m p t y 
- 
-                                 i f   ( ( ! c a t   | |   ! c a t . q u e s t i o n s   | |   c a t . q u e s t i o n s . l e n g t h   = = =   0 )   & &   d b   & &   c a t )   { 
- 
-                                         t r y   { 
- 
-                                                 c o n s t   d o c   =   a w a i t   d b . c o l l e c t i o n ( ' c a t e g o r i e s ' ) . d o c ( c a t . i d ) . g e t ( ) ; 
- 
-                                                 i f   ( d o c . e x i s t s )   { 
- 
-                                                         c o n s t   d a t a   =   d o c . d a t a ( ) ; 
- 
-                                                         i f   ( c a t )   c a t . q u e s t i o n s   =   d a t a . q u e s t i o n s   | |   [ ] ; 
- 
-                                                 } 
- 
-                                         }   c a t c h   ( e )   {   c o n s o l e . e r r o r ( e ) ;   } 
- 
-                                 } 
- 
- 
- 
-                                 i f   ( ! c a t   | |   ! c a t . q u e s t i o n s   | |   c a t . q u e s t i o n s . l e n g t h   = = =   0 )   { 
- 
-                                         l o g . p u s h ( ` � a� � � �   $ { i t e m . n a m e } :   S u a l   t a p � � l m a d � � ! ` ) ; 
- 
-                                         c o n t i n u e ; 
- 
-                                 } 
- 
- 
- 
-                                 / /   S e l e c t   R a n d o m   Q u e s t i o n s 
- 
-                                 c o n s t   p o o l   =   [ . . . c a t . q u e s t i o n s ] ; 
- 
-                                 c o n s t   c o u n t   =   i t e m . c o u n t ; 
- 
-                                 
- 
-                                 / /   S h u f f l e 
- 
-                                 p o o l . s o r t ( ( )   = >   0 . 5   -   M a t h . r a n d o m ( ) ) ; 
- 
-                                 
- 
-                                 c o n s t   s e l e c t e d   =   p o o l . s l i c e ( 0 ,   c o u n t ) . m a p ( q   = >   ( { 
- 
-                                         . . . q , 
- 
-                                         _ s o u r c e C a t e g o r y N a m e :   i t e m . n a m e , 
- 
-                                         _ s o u r c e C a t e g o r y I d :   c a t . i d 
- 
-                                 } ) ) ; 
- 
-                                 
- 
-                                 d r a f t Q u e s t i o n s   =   [ . . . d r a f t Q u e s t i o n s ,   . . . s e l e c t e d ] ; 
- 
-                         } 
- 
-                         
- 
-                         t h i s . d r a f t   =   d r a f t Q u e s t i o n s ; 
- 
-                         
- 
-                         h i d e L o a d i n g ( ) ; 
- 
-                         t h i s . r e n d e r D r a f t U I ( ) ; 
- 
-                         s h o w N o t i f i c a t i o n ( ` Q a r a l a m a   h a z � � r d � � r !   $ { d r a f t Q u e s t i o n s . l e n g t h }   s u a l   s e � � i l d i . ` ,   ' s u c c e s s ' ) ; 
- 
-                         
- 
-                 }   c a t c h   ( e )   { 
- 
-                         h i d e L o a d i n g ( ) ; 
- 
-                         c o n s o l e . e r r o r ( e ) ; 
- 
-                         a l e r t ( " X � "!t a   b a � x  v e r d i :   "   +   e . m e s s a g e ) ; 
- 
-                 } 
- 
-         } , 
- 
-         
- 
-         / /   2 .   R e n d e r   D r a f t   U I   ( A d m i n   P a n e l ) 
- 
-         r e n d e r D r a f t U I :   f u n c t i o n ( )   { 
- 
-                 c o n s t   a d m i n A r e a   =   d o c u m e n t . q u e r y S e l e c t o r ( ' . a d m i n - p a n e l - a r e a ' ) ; 
- 
-                 i f   ( ! a d m i n A r e a )   r e t u r n ; 
- 
-                 
- 
-                 / /   C l e a r   p r e v i o u s   v i e w 
- 
-                 l e t   c o n t a i n e r   =   d o c u m e n t . g e t E l e m e n t B y I d ( ' w e e k l y - e x a m - d r a f t - c o n t a i n e r ' ) ; 
- 
-                 i f   ( ! c o n t a i n e r )   { 
- 
-                         c o n t a i n e r   =   d o c u m e n t . c r e a t e E l e m e n t ( ' d i v ' ) ; 
- 
-                         c o n t a i n e r . i d   =   ' w e e k l y - e x a m - d r a f t - c o n t a i n e r ' ; 
- 
-                         c o n t a i n e r . c l a s s N a m e   =   ' b g - w h i t e   p - 6   r o u n d e d - l g   s h a d o w - m d   m t - 6 ' ; 
- 
-                         a d m i n A r e a . a p p e n d C h i l d ( c o n t a i n e r ) ; 
- 
-                 } 
- 
-                 
- 
-                 i f   ( ! t h i s . d r a f t   | |   t h i s . d r a f t . l e n g t h   = = =   0 )   { 
- 
-                         c o n t a i n e r . i n n e r H T M L   =   ' < p   c l a s s = " t e x t - g r a y - 5 0 0 " > H � "!l � "!  q a r a l a m a   y o x d u r .   " Y e n i   S � � n a q   Y a r a t "   d � � y m � "!s i n i   s � � x � � n . < / p > ' ; 
- 
-                         r e t u r n ; 
- 
-                 } 
- 
-                 
- 
-                 l e t   h t m l   =   ` 
- 
-                         < d i v   c l a s s = " f l e x   j u s t i f y - b e t w e e n   i t e m s - c e n t e r   m b - 4 " > 
- 
-                                 < h 3   c l a s s = " t e x t - x l   f o n t - b o l d   t e x t - b l u e - 9 0 0 " > H � "!f t � "!l i k   S � � n a q   Q a r a l a m a s � �   ( $ { t h i s . d r a f t . l e n g t h }   s u a l ) < / h 3 > 
- 
-                                 < d i v > 
- 
-                                         < b u t t o n   o n c l i c k = " W e e k l y E x a m M a n a g e r . p u b l i s h E x a m ( ) "   c l a s s = " b g - g r e e n - 6 0 0   t e x t - w h i t e   p x - 4   p y - 2   r o u n d e d   h o v e r : b g - g r e e n - 7 0 0 " > 
- 
-                                                 < i   c l a s s = " f a s   f a - c h e c k - c i r c l e " > < / i >   T � "!s d i q l � "!  v � "!  Y a y � � m l a 
- 
-                                         < / b u t t o n > 
- 
-                                         < b u t t o n   o n c l i c k = " W e e k l y E x a m M a n a g e r . d i s c a r d D r a f t ( ) "   c l a s s = " b g - r e d - 5 0 0   t e x t - w h i t e   p x - 4   p y - 2   r o u n d e d   h o v e r : b g - r e d - 6 0 0   m l - 2 " > 
- 
-                                                 < i   c l a s s = " f a s   f a - t r a s h " > < / i >   L � "!� xv   e t 
- 
-                                         < / b u t t o n > 
- 
-                                 < / d i v > 
- 
-                         < / d i v > 
- 
-                         < d i v   c l a s s = " s p a c e - y - 4   m a x - h - s c r e e n   o v e r f l o w - y - a u t o   b o r d e r   p - 2   r o u n d e d   b g - g r a y - 5 0 " > 
- 
-                 ` ; 
- 
-                 
- 
-                 t h i s . d r a f t . f o r E a c h ( ( q ,   i n d e x )   = >   { 
- 
-                         h t m l   + =   ` 
- 
-                                 < d i v   c l a s s = " b g - w h i t e   p - 4   r o u n d e d   s h a d o w   b o r d e r - l - 4   b o r d e r - b l u e - 5 0 0   f l e x   j u s t i f y - b e t w e e n   i t e m s - s t a r t   g r o u p " > 
- 
-                                         < d i v   c l a s s = " f l e x - 1 " > 
- 
-                                                 < s p a n   c l a s s = " t e x t - x s   f o n t - b o l d   t e x t - b l u e - 6 0 0   u p p e r c a s e   m b - 1   b l o c k " > $ { q . _ s o u r c e C a t e g o r y N a m e } < / s p a n > 
- 
-                                                 < p   c l a s s = " t e x t - s m   t e x t - g r a y - 8 0 0   f o n t - m e d i u m " > $ { i n d e x   +   1 } .   $ { q . t e x t } < / p > 
- 
-                                                 $ { q . i m a g e   ?   ' < s p a n   c l a s s = " t e x t - x s   t e x t - p u r p l e - 6 0 0 " > < i   c l a s s = " f a s   f a - i m a g e " > < / i >   � ~� "!k i l l i < / s p a n > '   :   ' ' } 
- 
-                                         < / d i v > 
- 
-                                         < d i v   c l a s s = " m l - 4   f l e x   f l e x - c o l   g a p - 2   o p a c i t y - 1 0 0   s m : o p a c i t y - 0   s m : g r o u p - h o v e r : o p a c i t y - 1 0 0   t r a n s i t i o n - o p a c i t y " > 
- 
-                                                 < b u t t o n   o n c l i c k = " W e e k l y E x a m M a n a g e r . r e p l a c e Q u e s t i o n ( $ { i n d e x } ) "   c l a s s = " t e x t - o r a n g e - 5 0 0   h o v e r : t e x t - o r a n g e - 7 0 0   t e x t - s m   b o r d e r   b o r d e r - o r a n g e - 2 0 0   p x - 2   p y - 1   r o u n d e d   b g - o r a n g e - 5 0 "   t i t l e = " B a � xq a   s u a l l a   � "!v � "!z   e t " > 
- 
-                                                         < i   c l a s s = " f a s   f a - s y n c - a l t " > < / i >   D � "!y i � x
- 
-                                                 < / b u t t o n > 
- 
-                                                 < b u t t o n   o n c l i c k = " W e e k l y E x a m M a n a g e r . e d i t Q u e s t i o n ( ' $ { q . i d } ' ,   ' $ { q . _ s o u r c e C a t e g o r y I d } ' ) "   c l a s s = " t e x t - b l u e - 5 0 0   h o v e r : t e x t - b l u e - 7 0 0   t e x t - s m   b o r d e r   b o r d e r - b l u e - 2 0 0   p x - 2   p y - 1   r o u n d e d   b g - b l u e - 5 0 "   t i t l e = " D � � z � "!l i � x  e t " > 
- 
-                                                         < i   c l a s s = " f a s   f a - e d i t " > < / i >   D � � z � "!l t 
- 
-                                                 < / b u t t o n > 
- 
-                                         < / d i v > 
- 
-                                 < / d i v > 
- 
-                         ` ; 
- 
-                 } ) ; 
- 
-                 
- 
-                 h t m l   + =   ` < / d i v > ` ; 
- 
-                 c o n t a i n e r . i n n e r H T M L   =   h t m l ; 
- 
-                 c o n t a i n e r . s c r o l l I n t o V i e w ( {   b e h a v i o r :   ' s m o o t h '   } ) ; 
- 
-         } , 
- 
-         
- 
-         / /   3 .   R e p l a c e   a   Q u e s t i o n 
- 
-         r e p l a c e Q u e s t i o n :   f u n c t i o n ( i n d e x )   { 
- 
-                 c o n s t   c u r r e n t Q   =   t h i s . d r a f t [ i n d e x ] ; 
- 
-                 c o n s t   c a t I d   =   c u r r e n t Q . _ s o u r c e C a t e g o r y I d ; 
- 
-                 c o n s t   c a t   =   c a t e g o r i e s . f i n d ( c   = >   c . i d   = = =   c a t I d ) ; 
- 
-                 
- 
-                 i f   ( ! c a t   | |   ! c a t . q u e s t i o n s )   { 
- 
-                         a l e r t ( " K a t e q o r i y a   t a p � � l m a d � � ! " ) ; 
- 
-                         r e t u r n ; 
- 
-                 } 
- 
-                 
- 
-                 / /   F i n d   c a n d i d a t e s   n o t   i n   d r a f t 
- 
-                 c o n s t   c u r r e n t I d s   =   n e w   S e t ( t h i s . d r a f t . m a p ( q   = >   q . i d ) ) ; 
- 
-                 c o n s t   c a n d i d a t e s   =   c a t . q u e s t i o n s . f i l t e r ( q   = >   ! c u r r e n t I d s . h a s ( q . i d ) ) ; 
- 
-                 
- 
-                 i f   ( c a n d i d a t e s . l e n g t h   = = =   0 )   { 
- 
-                         a l e r t ( " B u   k a t e q o r i y a d a   � "!v � "!z   e t m � "!k   � � � � � � n   b a � xq a   s u a l   q a l m a y � � b ! " ) ; 
- 
-                         r e t u r n ; 
- 
-                 } 
- 
-                 
- 
-                 / /   P i c k   r a n d o m 
- 
-                 c o n s t   n e w Q   =   c a n d i d a t e s [ M a t h . f l o o r ( M a t h . r a n d o m ( )   *   c a n d i d a t e s . l e n g t h ) ] ; 
- 
-                 
- 
-                 / /   P r e s e r v e   m e t a d a t a 
- 
-                 c o n s t   r e p l a c e m e n t   =   { 
- 
-                         . . . n e w Q , 
- 
-                         _ s o u r c e C a t e g o r y N a m e :   c u r r e n t Q . _ s o u r c e C a t e g o r y N a m e , 
- 
-                         _ s o u r c e C a t e g o r y I d :   c a t I d 
- 
-                 } ; 
- 
-                 
- 
-                 t h i s . d r a f t [ i n d e x ]   =   r e p l a c e m e n t ; 
- 
-                 t h i s . r e n d e r D r a f t U I ( ) ; 
- 
-                 s h o w N o t i f i c a t i o n ( " S u a l   y e n i l � "!n d i " ,   " s u c c e s s " ) ; 
- 
-         } , 
- 
- 
- 
-         / /   4 .   E d i t   Q u e s t i o n   ( D i r e c t   L i n k ) 
- 
-         e d i t Q u e s t i o n :   f u n c t i o n ( q I d ,   c a t I d )   { 
- 
-                 / /   O p e n   a d m i n   e d i t   i n   n e w   t a b   o r   m o d a l ? 
- 
-                 / /   L e t ' s   u s e   t h e   d e e p   l i n k   l o g i c   w e   j u s t   f i x e d 
- 
-                 c o n s t   u r l   =   ` i n d e x . h t m l ? p a g e = a d m i n & a d m i n C a t = $ { c a t I d } & e d i t Q u e s t i o n I d = $ { q I d } ` ; 
- 
-                 w i n d o w . o p e n ( u r l ,   ' _ b l a n k ' ) ; 
- 
-         } , 
- 
-         
- 
-         / /   5 .   P u b l i s h 
- 
-         p u b l i s h E x a m :   a s y n c   f u n c t i o n ( )   { 
- 
-                 i f   ( ! t h i s . d r a f t   | |   t h i s . d r a f t . l e n g t h   ! = =   8 0 )   {   / /   8 0   i s   t a r g e t 
- 
-                           i f   ( ! c o n f i r m ( ` S u a l   s a y � �   8 0   d e y i l   ( $ { t h i s . d r a f t . l e n g t h } ) .   Y e n � "!  d � "!  y a y � � m l a m a q   i s t � "!y i r s i n i z ? ` ) )   r e t u r n ; 
- 
-                 } 
- 
-                 
- 
-                 i f   ( ! c o n f i r m ( " B u   s � � n a q   t � "!s d i q l � "!n � "!c � "!k   v � "!  c a r i   h � "!f t � "!  � � � � � � n   a k t i v   o l a c a q .   D a v a m   e d i l s i n ? " ) )   r e t u r n ; 
- 
-                 
- 
-                 s h o w L o a d i n g ( " S � � n a q   y a y � � m l a n � � r . . . " ) ; 
- 
-                 
- 
-                 t r y   { 
- 
-                         / /   D e t e r m i n e   W e e k   I D   ( e . g . ,   2 0 2 6 - W 0 4 ) 
- 
-                         c o n s t   n o w   =   n e w   D a t e ( ) ; 
- 
-                         c o n s t   s t a r t O f W e e k   =   n e w   D a t e ( n o w ) ; 
- 
-                         c o n s t   d a y   =   s t a r t O f W e e k . g e t D a y ( )   | |   7 ;   / /   G e t   c u r r e n t   d a y   n u m b e r ,   c o n v e r t i n g   S u n .   t o   7 
- 
-                         i f   ( d a y   ! = =   1 )   s t a r t O f W e e k . s e t H o u r s ( - 2 4   *   ( d a y   -   1 ) ) ; 
- 
-                         s t a r t O f W e e k . s e t H o u r s ( 0 , 0 , 0 , 0 ) ; 
- 
-                         
- 
-                         c o n s t   w e e k I d   =   ` w e e k _ $ { n o w . g e t F u l l Y e a r ( ) } _ $ { g e t W e e k N u m b e r ( n o w ) } ` ; 
- 
-                         
- 
-                         c o n s t   e x a m D a t a   =   { 
- 
-                                 i d :   w e e k I d , 
- 
-                                 q u e s t i o n s :   t h i s . d r a f t . m a p ( q   = >   q . i d ) ,   / /   S t o r e   I D s 
- 
-                                 f u l l Q u e s t i o n s :   t h i s . d r a f t ,   / /   S t o r e   S n a p s h o t   f o r   s a f e t y / i n t e g r i t y 
- 
-                                 c r e a t e d A t :   f i r e b a s e . f i r e s t o r e . F i e l d V a l u e . s e r v e r T i m e s t a m p ( ) , 
- 
-                                 c r e a t e d B y :   c u r r e n t U s e r . e m a i l , 
- 
-                                 a c t i v e :   t r u e , 
- 
-                                 s t a r t D a t e :   s t a r t O f W e e k . t o I S O S t r i n g ( ) 
- 
-                         } ; 
- 
-                         
- 
-                         / /   S a v e   t o   ' w e e k l y _ e x a m s '   c o l l e c t i o n 
- 
-                         i f   ( d b )   { 
- 
-                                 / /   D e a c t i v a t e   p r e v i o u s 
- 
-                                 / /   I d e a l l y   w e   q u e r y   f o r   a c t i v e   o n e s ,   b u t   f o r   n o w   w e   j u s t   o v e r w r i t e   l o g i c   b y   D a t e   c h e c k 
- 
-                                 a w a i t   d b . c o l l e c t i o n ( ' w e e k l y _ e x a m s ' ) . d o c ( w e e k I d ) . s e t ( e x a m D a t a ) ; 
- 
-                                 
- 
-                                 / /   U p d a t e   ' c u r r e n t _ w e e k l y _ e x a m '   p o i n t e r   i n   s e t t i n g s   f o r   f a s t   l o o k u p 
- 
-                                 a w a i t   d b . c o l l e c t i o n ( ' s e t t i n g s ' ) . d o c ( ' a c t i v e _ e x a m ' ) . s e t ( { 
- 
-                                         c u r r e n t W e e k I d :   w e e k I d , 
- 
-                                         u p d a t e d A t :   f i r e b a s e . f i r e s t o r e . F i e l d V a l u e . s e r v e r T i m e s t a m p ( ) 
- 
-                                 } ) ; 
- 
-                         } 
- 
-                         
- 
-                         h i d e L o a d i n g ( ) ; 
- 
-                         a l e r t ( " S � � n a q   u � xu r l a   y a y � � m l a n d � � !   H � "!r   k � "!s   � � � � � � n   a k t i v d i r . " ) ; 
- 
-                         t h i s . d i s c a r d D r a f t ( ) ; 
- 
-                         
- 
-                 }   c a t c h   ( e )   { 
- 
-                         h i d e L o a d i n g ( ) ; 
- 
-                         c o n s o l e . e r r o r ( e ) ; 
- 
-                         a l e r t ( " X � "!t a :   "   +   e . m e s s a g e ) ; 
- 
-                 } 
- 
-         } , 
- 
-         
- 
-         d i s c a r d D r a f t :   f u n c t i o n ( )   { 
- 
-                 t h i s . d r a f t   =   n u l l ; 
- 
-                 c o n s t   c o n t a i n e r   =   d o c u m e n t . g e t E l e m e n t B y I d ( ' w e e k l y - e x a m - d r a f t - c o n t a i n e r ' ) ; 
- 
-                 i f   ( c o n t a i n e r )   c o n t a i n e r . r e m o v e ( ) ; 
- 
-         } 
- 
- } ; 
- 
- 
- 
- / /   H e l p e r   f o r   W e e k   N u m b e r 
- 
- f u n c t i o n   g e t W e e k N u m b e r ( d )   { 
- 
-         d   =   n e w   D a t e ( D a t e . U T C ( d . g e t F u l l Y e a r ( ) ,   d . g e t M o n t h ( ) ,   d . g e t D a t e ( ) ) ) ; 
- 
-         d . s e t U T C D a t e ( d . g e t U T C D a t e ( )   +   4   -   ( d . g e t U T C D a y ( ) | | 7 ) ) ; 
- 
-         v a r   y e a r S t a r t   =   n e w   D a t e ( D a t e . U T C ( d . g e t U T C F u l l Y e a r ( ) , 0 , 1 ) ) ; 
- 
-         v a r   w e e k N o   =   M a t h . c e i l ( (   (   ( d   -   y e a r S t a r t )   /   8 6 4 0 0 0 0 0 )   +   1 ) / 7 ) ; 
- 
-         r e t u r n   w e e k N o ; 
- 
- } 
- 
- 
- 
- / /   - - -   A C T I V E   E X A M   F E T C H E R   ( C l i e n t   S i d e )   - - - 
- 
- w i n d o w . s t a r t W e e k l y E x a m   =   a s y n c   f u n c t i o n ( )   { 
- 
-         i f   ( ! c u r r e n t U s e r )   r e t u r n   s h o w L o g i n ( ) ; 
- 
-         
- 
-         c o n s t   b t n   =   d o c u m e n t . g e t E l e m e n t B y I d ( ' b t n - p r o k u r o r l u q - s t a r t ' ) ; 
- 
-         i f   ( b t n )   b t n . i n n e r H T M L   =   ' < i   c l a s s = " f a s   f a - s p i n n e r   f a - s p i n " > < / i >   Y � � k l � "!n i r . . . ' ; 
- 
-         
- 
-         t r y   { 
- 
-                 / /   1 .   C h e c k   f o r   A c t i v e   E x a m   I D 
- 
-                 l e t   a c t i v e E x a m I d   =   n u l l ; 
- 
-                 i f   ( d b )   { 
- 
-                         c o n s t   s e t t i n g s D o c   =   a w a i t   d b . c o l l e c t i o n ( ' s e t t i n g s ' ) . d o c ( ' a c t i v e _ e x a m ' ) . g e t ( ) ; 
- 
-                         i f   ( s e t t i n g s D o c . e x i s t s )   { 
- 
-                                 a c t i v e E x a m I d   =   s e t t i n g s D o c . d a t a ( ) . c u r r e n t W e e k I d ; 
- 
-                         } 
- 
-                 } 
- 
-                 
- 
-                 i f   ( ! a c t i v e E x a m I d )   { 
- 
-                         / /   F a l l b a c k :   C h e c k   g e n e r a t e d   W e e k I D   l o c a l l y ?   N o ,   m u s t   b e   s e r v e r   s y n c e d . 
- 
-                         t h r o w   n e w   E r r o r ( " B u   h � "!f t � "!  � � � � � � n   a k t i v   s � � n a q   t a p � � l m a d � � . " ) ; 
- 
-                 } 
- 
-                 
- 
-                 / /   2 .   F e t c h   E x a m   D a t a 
- 
-                 c o n s t   e x a m D o c   =   a w a i t   d b . c o l l e c t i o n ( ' w e e k l y _ e x a m s ' ) . d o c ( a c t i v e E x a m I d ) . g e t ( ) ; 
- 
-                 i f   ( ! e x a m D o c . e x i s t s )   { 
- 
-                         t h r o w   n e w   E r r o r ( " S � � n a q   m � "!l u m a t l a r � �   t a p � � l m a d � � . " ) ; 
- 
-                 } 
- 
-                 
- 
-                 c o n s t   e x a m D a t a   =   e x a m D o c . d a t a ( ) ; 
- 
-                 
- 
-                 / /   3 .   P r e p a r e   E x a m   O b j e c t 
- 
-                 / /   P r e f e r   ' f u l l Q u e s t i o n s '   s n a p s h o t   i f   a v a i l a b l e ,   e l s e   f e t c h   b y   I D s 
- 
-                 l e t   q u e s t i o n s   =   [ ] ; 
- 
-                 i f   ( e x a m D a t a . f u l l Q u e s t i o n s   & &   A r r a y . i s A r r a y ( e x a m D a t a . f u l l Q u e s t i o n s ) )   { 
- 
-                         q u e s t i o n s   =   e x a m D a t a . f u l l Q u e s t i o n s ; 
- 
-                 }   e l s e   { 
- 
-                         / /   F e t c h   b y   I D s   ( f a l l b a c k ,   s l o w ) 
- 
-                         / /   N o t   i m p l e m e n t e d   f o r   n o w ,   a s s u m i n g   s n a p s h o t   i s   s a v e d 
- 
-                         t h r o w   n e w   E r r o r ( " S � � n a q   s u a l l a r � �   y � � k l � "!n � "!  b i l m � "!d i   ( S n a p s h o t   m i s s i n g ) . " ) ; 
- 
-                 } 
- 
-                 
- 
-                 / /   4 .   L a u n c h 
- 
-                 c o n s t   f i n a l E x a m   =   { 
- 
-                         i d :   e x a m D a t a . i d , 
- 
-                         n a m e :   ' P r o k u r o r l u q   � � z r � "!  H � "!f t � "!l i k   S � � n a q ' , 
- 
-                         t i m e :   1 8 0 , 
- 
-                         q u e s t i o n s :   q u e s t i o n s , 
- 
-                         i s S p e c i a l :   t r u e , 
- 
-                         e x a m T y p e :   ' p r o k u r o r l u q _ w e e k l y ' 
- 
-                 } ; 
- 
-                 
- 
-                 l o c a l S t o r a g e . s e t I t e m ( ' g e n e r a t e d E x a m D a t a ' ,   J S O N . s t r i n g i f y ( f i n a l E x a m ) ) ; 
- 
-                 l o c a l S t o r a g e . s e t I t e m ( ' a c t i v e S p e c i a l C a t e g o r y ' ,   ' w e e k l y _ p r o k u r o r l u q ' ) ; 
- 
-                 w i n d o w . l o c a t i o n . h r e f   =   ' d i m _ v i e w . h t m l ' ; 
- 
-                 
- 
-         }   c a t c h   ( e )   { 
- 
-                 c o n s o l e . e r r o r ( e ) ; 
- 
-                 a l e r t ( e . m e s s a g e ) ; 
- 
-                 i f   ( b t n )   b t n . i n n e r H T M L   =   ' S � � n a � xa   B a � xl a ' ; 
- 
-         } 
- 
- } ; 
- 
- 
- 
- 
-// --- WEEKLY EXAM SYSTEM (Həftəlik Sınaq) ---
-
-window.WeeklyExamManager = {
-    draft: null,
-    
-    // 1. Generate Draft
-    generateDraft: async function() {
-        if (!confirm("Yeni həftəlik sınaq qaralaması yaradılacaq. Davam edilsin?")) return;
-        
-        showLoading("Sual bazası təhlil edilir və qaralama hazırlanır...");
-        
-        try {
-            // Ensure subcategories are seeded/loaded
-            if (typeof window.seedProkurorluqSubcategories === 'function') {
-                await window.seedProkurorluqSubcategories();
-            }
-
-            let draftQuestions = [];
-            let log = [];
-            
-            // Use global schema
-            const schema = window.PROKURORLUQ_SCHEMA || [];
-            
-            for (const item of schema) {
-                // Find Category
-                let cat = categories.find(c => c.parentId === 'special_prokurorluq' && c.name === item.name);
-                
-                // Dynamic/Special handling
-                if (!cat && item.isDynamic) {
-                     cat = categories.find(c => c.parentId === 'special_prokurorluq' && (c.name.includes('Konvensiya') || c.id === 'special_prokurorluq_human_rights'));
-                }
-                
-                // Fallback DB fetch if empty
-                if ((!cat || !cat.questions || cat.questions.length === 0) && db && cat) {
-                    try {
-                        const doc = await db.collection('categories').doc(cat.id).get();
-                        if (doc.exists) {
-                            const data = doc.data();
-                            if (cat) cat.questions = data.questions || [];
-                        }
-                    } catch (e) { console.error(e); }
-                }
-
-                if (!cat || !cat.questions || cat.questions.length === 0) {
-                    log.push(`⚠️ ${item.name}: Sual tapılmadı!`);
-                    continue;
-                }
-
-                // Select Random Questions
-                const pool = [...cat.questions];
-                const count = item.count;
-                
-                // Shuffle
-                pool.sort(() => 0.5 - Math.random());
-                
-                const selected = pool.slice(0, count).map(q => ({
-                    ...q,
-                    _sourceCategoryName: item.name,
-                    _sourceCategoryId: cat.id
-                }));
-                
-                draftQuestions = [...draftQuestions, ...selected];
-            }
-            
-            this.draft = draftQuestions;
-            
-            hideLoading();
-            this.renderDraftUI();
-            showNotification(`Qaralama hazırdır! ${draftQuestions.length} sual seçildi.`, 'success');
-            
-        } catch (e) {
-            hideLoading();
-            console.error(e);
-            alert("Xəta baş verdi: " + e.message);
-        }
-    },
-    
-    // 2. Render Draft UI (Admin Panel)
-    renderDraftUI: function() {
-        const adminArea = document.querySelector('.admin-panel-area');
-        if (!adminArea) return;
-        
-        // Clear previous view
-        let container = document.getElementById('weekly-exam-draft-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'weekly-exam-draft-container';
-            container.className = 'bg-white p-6 rounded-lg shadow-md mt-6';
-            adminArea.appendChild(container);
-        }
-        
-        if (!this.draft || this.draft.length === 0) {
-            container.innerHTML = '<p class="text-gray-500">Hələ qaralama yoxdur. "Yeni Sınaq Yarat" düyməsini sıxın.</p>';
-            return;
-        }
-        
-        let html = `
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-blue-900">Həftəlik Sınaq Qaralaması (${this.draft.length} sual)</h3>
-                <div>
-                    <button onclick="WeeklyExamManager.publishExam()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                        <i class="fas fa-check-circle"></i> Təsdiqlə və Yayımla
-                    </button>
-                    <button onclick="WeeklyExamManager.discardDraft()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 ml-2">
-                        <i class="fas fa-trash"></i> Ləğv et
-                    </button>
-                </div>
-            </div>
-            <div class="space-y-4 max-h-screen overflow-y-auto border p-2 rounded bg-gray-50">
-        `;
-        
-        this.draft.forEach((q, index) => {
-            html += `
-                <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500 flex justify-between items-start group">
-                    <div class="flex-1">
-                        <span class="text-xs font-bold text-blue-600 uppercase mb-1 block">${q._sourceCategoryName}</span>
-                        <p class="text-sm text-gray-800 font-medium">${index + 1}. ${q.text}</p>
-                        ${q.image ? '<span class="text-xs text-purple-600"><i class="fas fa-image"></i> Şəkilli</span>' : ''}
-                    </div>
-                    <div class="ml-4 flex flex-col gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <button onclick="WeeklyExamManager.replaceQuestion(${index})" class="text-orange-500 hover:text-orange-700 text-sm border border-orange-200 px-2 py-1 rounded bg-orange-50" title="Başqa sualla əvəz et">
-                            <i class="fas fa-sync-alt"></i> Dəyiş
-                        </button>
-                        <button onclick="WeeklyExamManager.editQuestion('${q.id}', '${q._sourceCategoryId}')" class="text-blue-500 hover:text-blue-700 text-sm border border-blue-200 px-2 py-1 rounded bg-blue-50" title="Düzəliş et">
-                            <i class="fas fa-edit"></i> Düzəlt
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `</div>`;
-        container.innerHTML = html;
-        container.scrollIntoView({ behavior: 'smooth' });
-    },
-    
-    // 3. Replace a Question
-    replaceQuestion: function(index) {
-        const currentQ = this.draft[index];
-        const catId = currentQ._sourceCategoryId;
-        const cat = categories.find(c => c.id === catId);
-        
-        if (!cat || !cat.questions) {
-            alert("Kateqoriya tapılmadı!");
-            return;
-        }
-        
-        // Find candidates not in draft
-        const currentIds = new Set(this.draft.map(q => q.id));
-        const candidates = cat.questions.filter(q => !currentIds.has(q.id));
-        
-        if (candidates.length === 0) {
-            alert("Bu kateqoriyada əvəz etmək üçün başqa sual qalmayıb!");
-            return;
-        }
-        
-        // Pick random
-        const newQ = candidates[Math.floor(Math.random() * candidates.length)];
-        
-        // Preserve metadata
-        const replacement = {
-            ...newQ,
-            _sourceCategoryName: currentQ._sourceCategoryName,
-            _sourceCategoryId: catId
-        };
-        
-        this.draft[index] = replacement;
-        this.renderDraftUI();
-        showNotification("Sual yeniləndi", "success");
-    },
-
-    // 4. Edit Question (Direct Link)
-    editQuestion: function(qId, catId) {
-        // Open admin edit in new tab or modal?
-        // Let's use the deep link logic we just fixed
-        const url = `index.html?page=admin&adminCat=${catId}&editQuestionId=${qId}`;
-        window.open(url, '_blank');
-    },
-    
-    // 5. Publish
-    publishExam: async function() {
-        if (!this.draft || this.draft.length !== 80) { // 80 is target
-             if (!confirm(`Sual sayı 80 deyil (${this.draft.length}). Yenə də yayımlamaq istəyirsiniz?`)) return;
-        }
-        
-        if (!confirm("Bu sınaq təsdiqlənəcək və cari həftə üçün aktiv olacaq. Davam edilsin?")) return;
-        
-        showLoading("Sınaq yayımlanır...");
-        
-        try {
-            // Determine Week ID (e.g., 2026-W04)
-            const now = new Date();
-            const startOfWeek = new Date(now);
-            const day = startOfWeek.getDay() || 7; // Get current day number, converting Sun. to 7
-            if (day !== 1) startOfWeek.setHours(-24 * (day - 1));
-            startOfWeek.setHours(0,0,0,0);
-            
-            const weekId = `week_${now.getFullYear()}_${getWeekNumber(now)}`;
-            
-            const examData = {
-                id: weekId,
-                questions: this.draft.map(q => q.id), // Store IDs
-                fullQuestions: this.draft, // Store Snapshot for safety/integrity
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                createdBy: currentUser.email,
-                active: true,
-                startDate: startOfWeek.toISOString()
-            };
-            
-            // Save to 'weekly_exams' collection
-            if (db) {
-                // Deactivate previous
-                // Ideally we query for active ones, but for now we just overwrite logic by Date check
-                await db.collection('weekly_exams').doc(weekId).set(examData);
-                
-                // Update 'current_weekly_exam' pointer in settings for fast lookup
-                await db.collection('settings').doc('active_exam').set({
-                    currentWeekId: weekId,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }
-            
-            hideLoading();
-            alert("Sınaq uğurla yayımlandı! Hər kəs üçün aktivdir.");
-            this.discardDraft();
-            
-        } catch (e) {
-            hideLoading();
-            console.error(e);
-            alert("Xəta: " + e.message);
-        }
-    },
-    
-    discardDraft: function() {
-        this.draft = null;
-        const container = document.getElementById('weekly-exam-draft-container');
-        if (container) container.remove();
-    }
-};
-
-// Helper for Week Number
-function getWeekNumber(d) {
-    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-    var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-    var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
-    return weekNo;
-}
-
-// --- ACTIVE EXAM FETCHER (Client Side) ---
-window.startWeeklyExam = async function() {
-    if (!currentUser) return showLogin();
-    
-    const btn = document.getElementById('btn-prokurorluq-start');
-    if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
-    
-    try {
-        // 1. Check for Active Exam ID
-        let activeExamId = null;
-        if (db) {
-            const settingsDoc = await db.collection('settings').doc('active_exam').get();
-            if (settingsDoc.exists) {
-                activeExamId = settingsDoc.data().currentWeekId;
-            }
-        }
-        
-        if (!activeExamId) {
-            // Fallback: Check generated WeekID locally? No, must be server synced.
-            throw new Error("Bu həftə üçün aktiv sınaq tapılmadı.");
-        }
-        
-        // 2. Fetch Exam Data
-        const examDoc = await db.collection('weekly_exams').doc(activeExamId).get();
-        if (!examDoc.exists) {
-            throw new Error("Sınaq məlumatları tapılmadı.");
-        }
-        
-        const examData = examDoc.data();
-        
-        // 3. Prepare Exam Object
-        // Prefer 'fullQuestions' snapshot if available, else fetch by IDs
-        let questions = [];
-        if (examData.fullQuestions && Array.isArray(examData.fullQuestions)) {
-            questions = examData.fullQuestions;
-        } else {
-            // Fetch by IDs (fallback, slow)
-            // Not implemented for now, assuming snapshot is saved
-            throw new Error("Sınaq sualları yüklənə bilmədi (Snapshot missing).");
-        }
-        
-        // 4. Launch
-        const finalExam = {
-            id: examData.id,
-            name: 'Prokurorluq üzrə Həftəlik Sınaq',
-            time: 180,
-            questions: questions,
-            isSpecial: true,
-            examType: 'prokurorluq_weekly'
-        };
-        
-        localStorage.setItem('generatedExamData', JSON.stringify(finalExam));
-        localStorage.setItem('activeSpecialCategory', 'weekly_prokurorluq');
-        window.location.href = 'dim_view.html';
-        
-    } catch (e) {
-        console.error(e);
-        alert(e.message);
-        if (btn) btn.innerHTML = 'Sınağa Başla';
-    }
-};
-

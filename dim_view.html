@@ -562,7 +562,7 @@
             let cat = null;
 
             // Check for generated exam
-            if (catId === 'generated_prokurorluq') {
+            if (catId === 'generated_prokurorluq' || catId === 'weekly_exam_active' || catId === 'weekly_draft_view') {
                 try {
                     const genData = localStorage.getItem('generatedExamData');
                     if (genData) cat = JSON.parse(genData);
@@ -606,7 +606,7 @@
             // For now, keep order as is or shuffle questions
             
             // Filter out empty questions and clean text (UPDATED: Actually updating the object text now!)
-            dimQuiz.questions = cat.questions
+            let processedQuestions = cat.questions
                 .map(q => {
                     // Create a shallow copy to avoid mutating original data in memory if it matters,
                     // but more importantly, to ensure we have the cleaned text.
@@ -614,6 +614,13 @@
                     return { ...q, text: newText };
                 })
                 .filter(q => q.text && q.text.length > 5);
+            
+            // Shuffle if Weekly Exam (User request: same questions but random order for each user)
+            if (catId && catId.includes('weekly')) {
+                 processedQuestions = processedQuestions.sort(() => 0.5 - Math.random());
+            }
+
+            dimQuiz.questions = processedQuestions;
             
             dimQuiz.answers = new Array(dimQuiz.questions.length).fill(null);
             dimQuiz.flags = new Array(dimQuiz.questions.length).fill(false);
@@ -822,28 +829,42 @@
             // Save attempt if user is logged in
             if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined' && db) {
                  const catId = localStorage.getItem('activeSpecialCategory');
+                 let examName = document.getElementById('exam-title').textContent;
+                 let weekId = null;
+                 let examType = 'special_exam';
+
+                 try {
+                     const genData = JSON.parse(localStorage.getItem('generatedExamData') || '{}');
+                     if (genData && (genData.id === catId || catId.includes('weekly'))) {
+                         if (genData.name) examName = genData.name;
+                         if (genData.weekId) weekId = genData.weekId;
+                         if (genData.examType) examType = genData.examType;
+                     }
+                 } catch(e) { console.error("Error parsing generated data for save:", e); }
                  
                  db.collection('student_attempts').add({
                      userId: currentUser.id,
                      categoryId: catId,
+                     examName: examName,
+                     weekId: weekId,
                      score: correct,
                      total: dimQuiz.questions.length,
                      date: firebase.firestore.FieldValue.serverTimestamp(),
-                     type: 'special_exam'
+                     type: examType
                  }).catch(console.error);
 
                  // Save Exam History for Dynamic Exams (Prevent repeats)
-                 if (catId === 'special_prokurorluq' || catId === 'generated_prokurorluq') {
+                 // Also save for Weekly exams to track what user has seen (though weekly is fixed per week)
+                 if (catId.includes('prokurorluq') || catId.includes('weekly') || catId.includes('generated')) {
                      try {
-                         const examData = JSON.parse(localStorage.getItem('generatedExamData') || '{}');
                          if (questions.length > 0) {
                              const qIds = questions.map(q => String(q.id));
                              db.collection('exam_history').add({
                                  userId: currentUser.id,
-                                 examType: 'special_prokurorluq',
+                                 examType: examType || 'prokurorluq',
                                  questionIds: qIds,
                                  date: firebase.firestore.FieldValue.serverTimestamp()
-                             }).then(() => console.log("Exam history saved for no-repeat logic."))
+                             }).then(() => console.log("Exam history saved."))
                               .catch(err => console.error("Error saving exam history:", err));
                         }
                     } catch (e) {
@@ -897,18 +918,10 @@
                 editBtn.style.backgroundColor = '#ffc107'; // Warning color
                 editBtn.style.color = '#000';
                 editBtn.onclick = () => {
-                    // Prioritize source category (for weekly exams) -> explicit category -> active context
+                    // Use source category if available (for weekly exams), else fallback to question's category or active exam category
                     const catId = q._sourceCategoryId || q.categoryId || localStorage.getItem('activeSpecialCategory');
-                    
                     if (catId && q.id) {
-                         // Use window.open to avoid losing exam state if they want to just peek, 
-                         // but user asked to go there. Let's keep it in same tab or new tab?
-                         // User said "suala getmir. Ana səhifəyə gedir", implies navigation.
-                         // Let's open in new tab to preserve exam state, or same tab if they want to edit.
-                         // Usually admin wants to fix and come back. New tab is safer for "exam in progress".
-                         // But if they want to "go to question", maybe they expect to leave.
-                         // Let's use blank for now as it's safer for the exam state.
-                         window.open(`index.html?page=admin&adminCat=${catId}&editQuestionId=${q.id}`, '_blank');
+                         window.location.href = `index.html?page=admin&adminCat=${catId}&editQuestionId=${q.id}`;
                     } else {
                         alert('Xəta: Kateqoriya və ya sual ID tapılmadı.');
                     }
