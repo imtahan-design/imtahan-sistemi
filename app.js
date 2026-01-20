@@ -4923,6 +4923,16 @@ const WeeklyExamManager = {
         modal = document.createElement('div');
         modal.id = 'weekly-manager-modal';
         modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 overflow-y-auto p-4 flex items-center justify-center';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.right = '0';
+        modal.style.bottom = '0';
+        modal.style.background = 'rgba(0,0,0,0.9)';
+        modal.style.zIndex = '99999';
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
         
         const types = [
             { id: 'prokurorluq', name: 'Prokurorluq', icon: 'fa-landmark' },
@@ -5617,6 +5627,16 @@ window.showExamSelectionModal = function(cat, examType) {
     modal = document.createElement('div');
     modal.id = 'exam-selection-modal';
     modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 overflow-y-auto p-4 flex items-center justify-center';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.right = '0';
+    modal.style.bottom = '0';
+    modal.style.background = 'rgba(0,0,0,0.9)';
+    modal.style.zIndex = '99999';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
     
     modal.innerHTML = `
         <div class="bg-gray-900 w-full max-w-md rounded-xl shadow-2xl border border-gray-700 animate-up">
@@ -5635,6 +5655,7 @@ window.showExamSelectionModal = function(cat, examType) {
         </div>
     `;
     document.body.appendChild(modal);
+    console.log('Exam selection modal opened for:', examType, cat.id);
 }
 
 window.startActiveWeeklyExam = async function(examType, catId) {
@@ -5809,7 +5830,7 @@ window.addEventListener('popstate', (event) => {
     if (window.__clickFallbacksInstalled) return;
     window.__clickFallbacksInstalled = true;
     document.addEventListener('click', function(e) {
-        const el = e.target.closest('button, a');
+        const el = e.target.closest('[data-action], button, a');
         if (!el) return;
         const action = el.dataset.action;
         if (action) {
