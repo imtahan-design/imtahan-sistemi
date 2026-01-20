@@ -5804,6 +5804,43 @@ window.addEventListener('popstate', (event) => {
     handleUrlParams();
 });
 
+// CSP inline handler fallback
+(function() {
+    if (window.__clickFallbacksInstalled) return;
+    window.__clickFallbacksInstalled = true;
+    document.addEventListener('click', function(e) {
+        const el = e.target.closest('button, a');
+        if (!el) return;
+        const oc = el.getAttribute('onclick');
+        if (!oc) return;
+        try {
+            if (oc.includes('WeeklyExamManager.openManagerModal')) {
+                e.preventDefault();
+                if (window.WeeklyExamManager && window.WeeklyExamManager.openManagerModal) {
+                    window.WeeklyExamManager.openManagerModal();
+                }
+                return;
+            }
+            if (oc.includes('startSpecialQuiz')) {
+                e.preventDefault();
+                const m = oc.match(/startSpecialQuiz\('([^']+)'\)/);
+                const id = m ? m[1] : null;
+                if (id) window.startSpecialQuiz(id);
+                return;
+            }
+            if (oc.includes('startActiveWeeklyExam')) {
+                e.preventDefault();
+                const m = oc.match(/startActiveWeeklyExam\('([^']+)'\s*,\s*'([^']+)'\)/);
+                const p1 = m ? m[1] : null;
+                const p2 = m ? m[2] : null;
+                if (p1 && p2) window.startActiveWeeklyExam(p1, p2);
+                return;
+            }
+        } catch (err) {
+            alert('Xəta: ' + err.message);
+        }
+    }, true);
+})();
 function renderAdminCategories() {
     const grid = document.getElementById('admin-categories-grid');
     grid.innerHTML = '';
