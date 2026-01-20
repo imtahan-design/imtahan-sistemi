@@ -555,40 +555,6 @@ let users = [];      // Will be loaded from DB
 let privateQuizzes = []; // Private quizzes for teachers
 let currentParentId = null; // Track current level in dashboard
 let currentAdminParentId = null; // Track current level in admin dashboard
-let categoriesMaster = [];
-function __nrm(s){try{return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}catch(_){return (s||'').toString().toLowerCase().trim();}}
-function getStableCategories(){return JSON.parse(JSON.stringify(categoriesMaster && categoriesMaster.length ? categoriesMaster : categories));}
-function mergeStableLists(a,b){
-    const byId = new Map();
-    const byName = new Map();
-    const push = (c)=>{
-        const id = String(c.id||'');
-        const nm = __nrm(c.name||'');
-        const prev = byId.get(id) || byName.get(nm);
-        if (!prev) {
-            const copy = JSON.parse(JSON.stringify(c));
-            byId.set(id, copy);
-            if (nm) byName.set(nm, copy);
-        } else {
-            const m = prev;
-            if (c.name && !m.name) m.name = c.name;
-            if (c.parentId !== undefined && m.parentId === undefined) m.parentId = c.parentId;
-            if (Array.isArray(c.questions)) {
-                const mq = Array.isArray(m.questions) ? m.questions : [];
-                const better = c.questions.length >= mq.length ? c.questions : mq;
-                m.questions = JSON.parse(JSON.stringify(better));
-            }
-            if (c.isSpecial !== undefined) m.isSpecial = c.isSpecial;
-            if (c.time !== undefined) m.time = c.time;
-            if (c.description !== undefined) m.description = c.description;
-            if (c.icon !== undefined) m.icon = c.icon;
-            if (m.isHiddenFromPublic === true && c.isHiddenFromPublic === false) m.isHiddenFromPublic = false;
-        }
-    };
-    (Array.isArray(a)?a:[]).forEach(push);
-    (Array.isArray(b)?b:[]).forEach(push);
-    return Array.from(byId.values());
-}
 
 // Notification System
 function showNotification(message, type = 'info') {
@@ -647,7 +613,6 @@ async function loadData() {
 
             console.log("Categories loaded from Firebase");
             saveCategories(); 
-            categoriesMaster = JSON.parse(JSON.stringify(categories));
             
             // Dövlət qulluğu miqrasiyası (Tamamilə deaktiv edildi)
             // setTimeout(() => runDovletQulluguMigration(), 2000); 
@@ -662,9 +627,6 @@ async function loadData() {
         }
     } else {
         categories = JSON.parse(localStorage.getItem('categories')) || [];
-    }
-    if (!categoriesMaster || categoriesMaster.length === 0) {
-        categoriesMaster = JSON.parse(JSON.stringify(categories));
     }
 
     // Ensure all categories have a parentId property
@@ -681,7 +643,6 @@ async function loadData() {
         if (db) db.collection('categories').doc('public_general').set(publicGeneral);
         hasChanged = true;
     }
-    categoriesMaster = mergeStableLists(categoriesMaster, categories);
 
     // Seed Special Exams (Prokurorluq, Hakimlik, Vəkillik)
     const specialSeeds = [
@@ -714,7 +675,6 @@ async function loadData() {
             // Ensure isPool flag is set if we have loaded it from somewhere else manually
         }
     });
-    categoriesMaster = mergeStableLists(categoriesMaster, categories);
 
     // Seed Prokurorluq Subcategories
     if (typeof seedProkurorluqSubcategories === 'function') {
@@ -743,7 +703,6 @@ async function loadData() {
                  // Local update
                  remoteCat.questions = data.questions;
                  remoteCat.isPool = true;
-                categoriesMaster = mergeStableLists(categoriesMaster, categories);
                 renderCategories();
                  
                  // Remote update
@@ -878,7 +837,6 @@ async function loadData() {
 
     const initialCount = categories.length;
     categories = categories.filter(c => c.name !== 'İngilis' && String(c.id) !== 'english_demo');
-    categoriesMaster = mergeStableLists(categoriesMaster, categories);
     
     // Generate Prokurorluq Exam from Special Pool - DEPRECATED (Moved to async function generateProkurorluqExam below)
 
@@ -4830,13 +4788,10 @@ function renderCategories() {
 
     grid.innerHTML = '';
     if (specialGrid) specialGrid.innerHTML = '';
-    const base = getStableCategories();
-    const merged = mergeStableLists(base, categories);
-    categories = mergeStableLists(categories, base);
+    const all = categories;
     
-    const filteredCategories = merged.filter(cat => 
+    const filteredCategories = all.filter(cat => 
         cat.parentId === currentParentId && 
-        !cat.isHiddenFromPublic && 
         cat.id !== 'special_weekly_exam' && // Explicitly hide old standalone weekly exam
         cat.id !== 'weekly_exam' && // Extra check
         cat.name !== 'Həftəlik Sınaq' && // Double check by name
@@ -4850,7 +4805,7 @@ function renderCategories() {
     const backBtn = document.getElementById('dashboard-back-btn');
     
     if (currentParentId) {
-        const parent = merged.find(c => c.id === currentParentId);
+        const parent = all.find(c => c.id === currentParentId);
         title.textContent = parent ? parent.name : 'Kateqoriyalar';
         backBtn.classList.remove('hidden');
         if (specialTitle) specialTitle.classList.add('hidden');
@@ -4884,9 +4839,8 @@ function renderCategories() {
         if (cat.name.toLowerCase().includes('hakim')) icon = 'fa-balance-scale';
         if (cat.name.toLowerCase().includes('vəkil')) icon = 'fa-briefcase';
 
-        const hasSub = merged.some(c => c.parentId === cat.id && !c.isHiddenFromPublic);
-        const hasSubSuallar = merged.some(c => c.parentId === cat.id && c.questions && c.questions.length > 0);
-        const hasQuestions = (cat.questions && cat.questions.length > 0) || hasSubSuallar;
+        const hasSub = all.some(c => c.parentId === cat.id);
+        const hasQuestions = (cat.questions && cat.questions.length > 0);
 
         // DEBUG: XI Sinif suallarını hər zaman göstər
         const isXI = cat.name.toLowerCase().includes('xi sinif') || cat.name.toLowerCase().includes('11-ci sinif');
