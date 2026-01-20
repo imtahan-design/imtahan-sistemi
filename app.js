@@ -835,7 +835,6 @@ async function loadData() {
     };
 
     const initialCount = categories.length;
-    categories = categories.filter(c => c.name !== 'İngilis' && String(c.id) !== 'english_demo');
     
     // Generate Prokurorluq Exam from Special Pool - DEPRECATED (Moved to async function generateProkurorluqExam below)
 
@@ -4787,23 +4786,19 @@ function renderCategories() {
 
     grid.innerHTML = '';
     if (specialGrid) specialGrid.innerHTML = '';
-    const MUST_SHOW = ['Mülki Məcəllə','İnzibati Xətalar Məcəlləsi','Əmək Məcəlləsi','Mülki Prosessual Məcəllə','Polis haqqında qanun','Prokurorluq haqqında qanun','Prokurorluqda qulluq haqqında qanun'];
-    const MUST_SHOW_KEYS = MUST_SHOW.map(s => s.toLowerCase());
-    const displayList = categories.map(cat => {
-        const nm = String(cat.name || '').toLowerCase();
-        const idStr = String(cat.id || '').toLowerCase();
-        const match = MUST_SHOW_KEYS.some(k => nm.includes(k) || idStr.includes(k));
-        if (match) return { ...cat, parentId: null, isHiddenFromPublic: false };
-        return { ...cat, isHiddenFromPublic: false };
+    // Yalnız iyerarxiyaya uyğun render: ana səhifədə parentId-si olmayanlar,
+    // alt səviyyədə isə seçilmiş currentParentId-ə bağlı olanlar.
+    const filteredCategories = categories.filter(c => {
+        if (currentParentId) return c.parentId === currentParentId;
+        return !c.parentId;
     });
-    const filteredCategories = currentParentId ? displayList.filter(c => c.parentId === currentParentId) : displayList;
     
     // Update Title and Back Button
     const title = document.getElementById('dashboard-title');
     const backBtn = document.getElementById('dashboard-back-btn');
     
     if (currentParentId) {
-        const parent = displayList.find(c => c.id === currentParentId);
+        const parent = categories.find(c => c.id === currentParentId);
         title.textContent = parent ? parent.name : 'Kateqoriyalar';
         backBtn.classList.remove('hidden');
         if (specialTitle) specialTitle.classList.add('hidden');
@@ -4837,7 +4832,7 @@ function renderCategories() {
         if (cat.name.toLowerCase().includes('hakim')) icon = 'fa-balance-scale';
         if (cat.name.toLowerCase().includes('vəkil')) icon = 'fa-briefcase';
 
-        const hasSub = displayList.some(c => c.parentId === cat.id);
+        const hasSub = categories.some(c => c.parentId === cat.id);
         const hasQuestions = (cat.questions && cat.questions.length > 0);
 
         // DEBUG: XI Sinif suallarını hər zaman göstər
@@ -4847,10 +4842,7 @@ function renderCategories() {
         }
 
         // Special Exam Logic
-        const isSpecial = cat.isSpecial || 
-                         cat.name.toLowerCase().includes('prokuror') || 
-                         cat.name.toLowerCase().includes('hakim') || 
-                         cat.name.toLowerCase().includes('vəkil');
+        const isSpecial = !!cat.isSpecial;
         const showSub = hasSub && !isSpecial;
 
         div.innerHTML = `
