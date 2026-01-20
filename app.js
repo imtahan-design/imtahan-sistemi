@@ -5638,6 +5638,8 @@ window.showExamSelectionModal = function(cat, examType) {
 }
 
 window.startActiveWeeklyExam = async function(examType, catId) {
+    console.log(`Starting active weekly exam: ${examType}, category: ${catId}`);
+    
     // Password Check
     const password = prompt("Zəhmət olmasa sınaq şifrəsini daxil edin:");
     if (password !== "123") {
@@ -5646,9 +5648,11 @@ window.startActiveWeeklyExam = async function(examType, catId) {
     }
 
     const modal = document.getElementById('exam-selection-modal');
+    let btn = null;
+    
     if(modal) {
         // Show loading state in modal
-        const btn = modal.querySelector('button[onclick*="startActiveWeeklyExam"]');
+        btn = modal.querySelector('button[onclick*="startActiveWeeklyExam"]');
         if(btn) {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yüklənir...';
             btn.disabled = true;
@@ -5656,17 +5660,21 @@ window.startActiveWeeklyExam = async function(examType, catId) {
     }
 
     try {
-        if (!db) throw new Error("Verilənlər bazası ilə əlaqə yoxdur.");
+        if (typeof db === 'undefined' || !db) {
+            throw new Error("Verilənlər bazası ilə əlaqə yoxdur. Səhifəni yeniləyin.");
+        }
 
         // Fetch ACTIVE weekly exam for this type
-        const doc = await db.collection('weekly_exams').doc('active_' + examType).get();
+        const docRef = db.collection('weekly_exams').doc('active_' + examType);
+        const doc = await docRef.get();
         
         if (!doc.exists) {
-            throw new Error("Bu kateqoriya üçün aktiv sınaq tapılmadı. Zəhmət olmasa adminin sınağı yayımlamasını gözləyin.");
+            throw new Error("Bu kateqoriya üçün hələlik aktiv sınaq yoxdur. Admin sınağı yayımladıqdan sonra cəhd edin.");
         }
 
         const data = doc.data();
-        const cat = categories.find(c => c.id === catId);
+        // Fallback for category if not found in memory (rare)
+        const cat = categories.find(c => c.id === catId) || { name: 'Sınaq', description: '', time: 180 };
         
         // Construct exam object
         const generatedExam = {
@@ -5687,22 +5695,50 @@ window.startActiveWeeklyExam = async function(examType, catId) {
         
         window.location.href = 'dim_view.html';
     } catch (e) {
-        console.error(e);
-        alert('Xəta: ' + e.message);
-        if(modal) modal.remove();
+        console.error("Weekly Exam Error:", e);
+        alert(e.message);
+        
+        // Reset button state
+        if(btn) {
+            btn.innerHTML = '<i class="fas fa-play-circle text-2xl"></i> Bu Həftənin Sınağı';
+            btn.disabled = false;
+        }
     }
 }
 
 window.showUserArchives = function(examType) {
-    showNotification('Arxiv sınaqlarına giriş bağlanıb.', 'info');
+    const msg = 'Arxiv sınaqlarına giriş bağlanıb.';
+    showNotification(msg, 'info');
+    alert(msg); // Fallback for visibility
 }
 
 window.startArchivedExam = function(docId, examType) {
-    showNotification('Bu funksiya deaktiv edilib.', 'error');
+    const msg = 'Bu funksiya deaktiv edilib.';
+    showNotification(msg, 'error');
+    alert(msg); // Fallback for visibility
+}
+
+window.startWeeklyExam = async function() {
+    const msg = 'Bu sınaq növü ləğv edilib. Zəhmət olmasa müvafiq kateqoriya (Prokurorluq, Hakimlik və s.) altındakı həftəlik sınaqdan istifadə edin.';
+    showNotification(msg, 'error');
+    alert(msg); // Fallback for visibility
+    return;
 }
 
 window.startSpecialQuiz = async function(catId) {
+    console.log(`Starting special quiz for: ${catId}`);
+    
+    // Weekly Exam Hook (Legacy or standalone)
+    if (catId === 'special_weekly_exam') {
+        window.startWeeklyExam();
+        return;
+    }
+
     const cat = categories.find(c => c.id === catId);
+    if (!cat) {
+        alert("Xəta: Kateqoriya tapılmadı!");
+        return;
+    }
     
     // Determine Exam Type
     let examType = null;
@@ -5715,12 +5751,7 @@ window.startSpecialQuiz = async function(catId) {
         return;
     }
     
-    // Weekly Exam Hook
-    if (catId === 'special_weekly_exam') {
-        window.startWeeklyExam();
-        return;
-    }
-
+    // Fallback for unknown special types
     localStorage.setItem('activeSpecialCategory', catId);
     window.location.href = 'dim_view.html';
 }
