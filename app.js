@@ -631,21 +631,11 @@ async function loadData() {
                 const n = String(name).trim().toLowerCase();
                 return MAIN_LAW_NAMES.some(x => n === x.trim().toLowerCase() || n.includes(x.trim().toLowerCase()));
             };
-            categories = categories.map(c => {
-                if (isMainLaw(c.name)) {
-                    return { ...c, parentId: null, isSpecial: false, isHiddenFromPublic: false };
-                }
-                return c;
-            }).filter(c => !(c.name && c.name.toLowerCase().includes('ingilis dili')));
-            try {
-                const rootLawDocs = categories.filter(c => c.parentId === null && isMainLaw(c.name));
-                for (const cat of rootLawDocs) {
-                    await db.collection('categories').doc(String(cat.id)).update({ parentId: null, isHiddenFromPublic: false });
-                }
-            } catch (e) {}
+            categories = categories.filter(c => !(c.name && c.name.toLowerCase().includes('ingilis dili')));
             await attachPublicQuestionsToCategories();
             await ensureProkurorluqIndependentSubs();
             await populateProkurorluqWithPool425();
+            await applyHierarchyPolicy();
             
             // NOTE: Users and Private Quizzes are NOT loaded kütləvi for security reasons.
             // They are fetched only when needed.
@@ -1198,8 +1188,8 @@ async function populateProkurorluqWithPool425() {
     ];
     const rootMap = new Map();
     for (const n of names) {
-        const rootCat = categories.find(c => c.parentId === null && c.name === n);
-        if (rootCat) rootMap.set(n, (rootCat.questions || []).slice());
+        const srcCat = categories.find(c => c.name === n) || categories.find(c => (c.name || '').toLowerCase().includes(n.toLowerCase()));
+        if (srcCat) rootMap.set(n, (srcCat.questions || []).slice());
     }
     const prokCats = categories.filter(c => c.parentId === 'special_prokurorluq' && String(c.id).startsWith('prok_'));
     let totalAvailable = 0;
@@ -1237,6 +1227,84 @@ async function populateProkurorluqWithPool425() {
         }
     }
     saveCategories();
+}
+
+function __normalize(s) {
+    try {
+        return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    } catch(_) {
+        return (s || '').toString().toLowerCase().trim();
+    }
+}
+
+async function applyHierarchyPolicy() {
+    const allowedRoot = new Set([
+        'dövlət qulluğu',
+        'qanunlar',
+        'vergi məcəlləsi',
+        'mülki məcəllə',
+        'cinayət məcəlləsi',
+        'dərslik',
+        'konstitusiya'
+    ].map(__normalize));
+    const bannedRoot = new Set([
+        'cinayət mühafizə',
+        'cinayət icra',
+        'normativ aktlar toplusu',
+        'normatik aktlar toplusu',
+        'ingilis',
+        'ingilis dili'
+    ].map(__normalize));
+    const isGenerated = (id) => String(id).startsWith('prok_') || String(id).startsWith('temp_') || String(id).startsWith('mock_');
+    const lawsParent = categories.find(c => __normalize(c.name) === 'qanunlar');
+
+    // 1) Remove banned root categories
+    const toDelete = [];
+    categories.forEach(c => {
+        if (!c.parentId && bannedRoot.has(__normalize(c.name))) {
+            toDelete.push(c);
+        }
+    });
+    for (const c of toDelete) {
+        const idx = categories.indexOf(c);
+        if (idx > -1) categories.splice(idx, 1);
+        if (db) {
+            try { await db.collection('categories').doc(String(c.id)).delete(); } catch(e) { console.warn('Delete failed', c.id, e); }
+        }
+    }
+
+    // 2) Deduplicate root by name (keep best)
+    const rootCats = categories.filter(c => !c.parentId);
+    const byName = new Map();
+    for (const c of rootCats) {
+        const key = __normalize(c.name);
+        if (!byName.has(key)) {
+            byName.set(key, c);
+        } else {
+            const kept = byName.get(key);
+            const score = (x) => ((x.questions ? x.questions.length : 0) + (isGenerated(x.id) ? -100 : 0));
+            const winner = score(c) > score(kept) ? c : kept;
+            const loser = winner === c ? kept : c;
+            byName.set(key, winner);
+            const idx = categories.indexOf(loser);
+            if (idx > -1) categories.splice(idx, 1);
+            if (db) {
+                try { await db.collection('categories').doc(String(loser.id)).delete(); } catch(e) { console.warn('Delete dup failed', loser.id, e); }
+            }
+        }
+    }
+
+    // 3) Reparent law categories under "Qanunlar" if not whitelisted
+    if (lawsParent) {
+        for (const c of categories) {
+            if (!c.parentId && isMainLaw(c.name) && !allowedRoot.has(__normalize(c.name)) && c.id !== 'special_prokurorluq') {
+                c.parentId = lawsParent.id;
+                if (db) {
+                    try { await db.collection('categories').doc(String(c.id)).update({ parentId: lawsParent.id }); } catch(e) { console.warn('Update parent failed', c.id, e); }
+                }
+            }
+        }
+    }
 }
 
 // Initialization

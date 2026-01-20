@@ -205,13 +205,9 @@
       var examType = null;
       if (!cat) {
         if (catId.indexOf('prokuror') > -1) { cat = {name: 'Prokurorluq', id: catId}; examType = 'prokurorluq'; }
-        else if (catId.indexOf('hakim') > -1) { cat = {name: 'Hakimlik', id: catId}; examType = 'hakimlik'; }
-        else if (catId.indexOf('vekillik') > -1) { cat = {name: 'Vəkillik', id: catId}; examType = 'vekillik'; }
       } else {
         var lowerName = (cat.name || '').toLowerCase();
         if (catId === 'special_prokurorluq' || lowerName.indexOf('prokuror') > -1) examType = 'prokurorluq';
-        else if (catId === 'special_hakimlik' || lowerName.indexOf('hakim') > -1) examType = 'hakimlik';
-        else if (catId === 'special_vekillik' || lowerName.indexOf('vəkil') > -1 || lowerName.indexOf('vekil') > -1) examType = 'vekillik';
       }
 
       if (!cat) {
@@ -219,7 +215,7 @@
         return;
       }
 
-      if (examType && (examType === 'prokurorluq' || examType === 'hakimlik' || examType === 'vekillik')) {
+      if (examType && examType === 'prokurorluq') {
         if (typeof window.showExamSelectionModal === 'function') {
           window.showExamSelectionModal(cat, examType);
           return;
@@ -233,4 +229,3 @@
     }
   };
 })();
-

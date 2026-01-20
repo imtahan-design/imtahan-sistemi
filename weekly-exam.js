@@ -66,9 +66,7 @@
       modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4 backdrop-blur-sm';
       
       const types = [
-        { id: 'prokurorluq', name: 'Prokurorluq', icon: 'fa-landmark', color: 'blue' },
-        { id: 'hakimlik', name: 'Hakimlik', icon: 'fa-gavel', color: 'purple' },
-        { id: 'vekillik', name: 'Vəkillik', icon: 'fa-briefcase', color: 'emerald' }
+        { id: 'prokurorluq', name: 'Prokurorluq', icon: 'fa-landmark', color: 'blue' }
       ];
 
       const cardsHtml = types.map(t => `
