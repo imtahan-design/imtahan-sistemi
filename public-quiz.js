@@ -128,6 +128,25 @@
       state.hasMore = true;
       state.fallbackAll = null;
       state.pageIndex = 0;
+      try {
+        var ck = 'public_questions_cache_' + activeCategoryId;
+        var raw = localStorage.getItem(ck);
+        if (raw) {
+          var cached = JSON.parse(raw);
+          if (cached && Array.isArray(cached.items) && cached.items.length > 0 && (Date.now() - (cached.ts || 0)) < (10 * 60 * 1000)) {
+            list.innerHTML = '';
+            var first = cached.items.slice(0, PAGE_SIZE);
+            state.questions = first;
+            appendPublicQuestions(first);
+            if (loadMoreBtn) {
+              loadMoreBtn.classList.remove('hidden');
+              loadMoreBtn.disabled = false;
+              loadMoreBtn.innerHTML = 'Daha çox yüklə';
+            }
+            return;
+          }
+        }
+      } catch (_e) {}
     } else {
       if (loadMoreBtn) {
         loadMoreBtn.disabled = true;
@@ -144,6 +163,12 @@
           page = snapshot.docs.map(function(doc){ return { id: doc.id, data: doc.data(), createdAt: doc.data().createdAt, authorName: doc.data().authorName, options: doc.data().options, text: doc.data().text, correctIndex: doc.data().correctIndex, likes: doc.data().likes, dislikes: doc.data().dislikes }; });
           state.lastDoc = snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : state.lastDoc;
           if (page.length < PAGE_SIZE) state.hasMore = false;
+          if (initial) {
+            try {
+              var ck2 = 'public_questions_cache_' + activeCategoryId;
+              localStorage.setItem(ck2, JSON.stringify({ items: page, ts: Date.now() }));
+            } catch (_e2) {}
+          }
         } catch (queryErr) {
           var snapshot2 = await db.collection('public_questions').where('categoryId', '==', activeCategoryId).get();
           var all = snapshot2.docs.map(function(doc){ return { id: doc.id, data: doc.data(), createdAt: doc.data().createdAt, authorName: doc.data().authorName, options: doc.data().options, text: doc.data().text, correctIndex: doc.data().correctIndex, likes: doc.data().likes, dislikes: doc.data().dislikes }; });
@@ -158,6 +183,12 @@
           page = state.fallbackAll.slice(start, end);
           state.pageIndex += 1;
           if (end >= state.fallbackAll.length) state.hasMore = false;
+          if (initial) {
+            try {
+              var ck3 = 'public_questions_cache_' + activeCategoryId;
+              localStorage.setItem(ck3, JSON.stringify({ items: page, ts: Date.now() }));
+            } catch (_e3) {}
+          }
         }
       } else {
         var allLocal = JSON.parse(localStorage.getItem('public_questions') || '[]').filter(function(q){ return q.categoryId === activeCategoryId; }).sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
