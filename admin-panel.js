@@ -278,10 +278,12 @@
       +     '</select>'
       +     '<label class="block text-sm text-gray-300">Kupon kodu</label>'
       +     '<div class="flex gap-2"><input id="coupon-code-input-admin" type="text" class="flex-1 p-3 rounded-md bg-gray-800 text-white border border-gray-700" placeholder="PROK12345" /><button class="btn-secondary" onclick="generateCouponCodeAdmin()">Generasiya</button></div>'
-      +     '<label class="block text-sm text-gray-300">Başlama vaxtı</label>'
-      +     '<input id="coupon-start-input" type="datetime-local" class="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-700" />'
-      +     '<label class="block text-sm text-gray-300">Bitmə vaxtı</label>'
-      +     '<input id="coupon-end-input" type="datetime-local" class="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-700" />'
+      +     '<label class="block text-sm text-gray-300">Etibarlılıq müddəti</label>'
+      +     '<div class="grid grid-cols-2 gap-2">'
+      +       '<div class="flex flex-col gap-1"><label for="coupon-days-input" class="text-xs text-gray-400">Gün</label><input id="coupon-days-input" type="number" min="0" value="1" class="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-700" placeholder="Məs: 1" title="Etibarlılıq müddəti – gün" /></div>'
+      +       '<div class="flex flex-col gap-1"><label for="coupon-minutes-input" class="text-xs text-gray-400">Dəqiqə</label><input id="coupon-minutes-input" type="number" min="0" value="0" class="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-700" placeholder="Məs: 30" title="Etibarlılıq müddəti – dəqiqə" /></div>'
+      +     '</div>'
+      +     '<p class="text-xs text-gray-400">Nümunə: 1 gün + 30 dəqiqə → endTime = indi + müddət</p>'
       +     '<button class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md" onclick="createCouponAdmin()">Yarat</button>'
       +     '<p id="coupon-admin-error" class="text-red-400 text-sm hidden"></p>'
       +   '</div>'
@@ -304,15 +306,17 @@
       var type = sel ? String(sel.value) : 'prokurorluq';
       var examId = 'active_' + type;
       var codeInp = document.getElementById('coupon-code-input-admin');
-      var startInp = document.getElementById('coupon-start-input');
-      var endInp = document.getElementById('coupon-end-input');
+      var daysInp = document.getElementById('coupon-days-input');
+      var minutesInp = document.getElementById('coupon-minutes-input');
       var code = String(codeInp && codeInp.value ? codeInp.value : '').trim();
       if (!code) throw new Error('Kupon kodu daxil edin');
-      var sd = startInp && startInp.value ? new Date(startInp.value) : null;
-      var ed = endInp && endInp.value ? new Date(endInp.value) : null;
-      if (!sd || !ed || isNaN(sd.getTime()) || isNaN(ed.getTime())) throw new Error('Vaxt intervalı düzgün deyil');
-      var st = firebase.firestore.Timestamp.fromDate(sd);
-      var et = firebase.firestore.Timestamp.fromDate(ed);
+      var days = parseInt(daysInp && daysInp.value ? daysInp.value : '0', 10);
+      var minutes = parseInt(minutesInp && minutesInp.value ? minutesInp.value : '0', 10);
+      if (isNaN(days) || days < 0 || isNaN(minutes) || minutes < 0) throw new Error('Gün/dəqiqə dəyərləri düzgün deyil');
+      var now = new Date();
+      var end = new Date(now.getTime() + (days * 24 * 60 * 60 * 1000) + (minutes * 60 * 1000));
+      var st = firebase.firestore.Timestamp.fromDate(now);
+      var et = firebase.firestore.Timestamp.fromDate(end);
       await db.collection('exam_coupons').doc(code).set({
         code: code,
         examId: examId,
