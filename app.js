@@ -1108,8 +1108,9 @@ async function attachPublicQuestionsToCategories() {
     const byCat = new Map();
     // Debugging Question Mapping
     console.log(`[DIAGNOSTIC] Loaded ${snapshot.docs.length} public questions.`);
-    const firstQ = snapshot.docs[0] ? snapshot.docs[0].data() : null;
-    if (firstQ) console.log(`[DIAGNOSTIC] Sample question data:`, JSON.stringify(firstQ));
+    let noIdCount = 0;
+    let fallbackMatches = 0;
+    let failedTags = new Set();
 
     snapshot.docs.forEach(doc => {
         const d = doc.data() || {};
@@ -1118,17 +1119,18 @@ async function attachPublicQuestionsToCategories() {
         
         // FALLBACK: If no ID, try to match by TAGS
         if (!cid && Array.isArray(d.tags)) {
+            noIdCount++;
             for (const tag of d.tags) {
-                const normTag = String(tag).trim().toLowerCase().replace(/ə/g,'e').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ğ/g,'g').replace(/ç/g,'c').replace(/ş/g,'s');
+                const normTag = __normalize(tag);
                 // Find a category with matching name
-                const match = categories.find(c => {
-                    const normName = String(c.name).trim().toLowerCase().replace(/ə/g,'e').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ğ/g,'g').replace(/ç/g,'c').replace(/ş/g,'s');
-                    return normName === normTag;
-                });
+                const match = categories.find(c => __normalize(c.name) === normTag);
                 if (match) {
                     cid = String(match.id);
-                    // console.log(`[DIAGNOSTIC] Matched question ${doc.id} to category ${match.name} via tag "${tag}"`);
+                    fallbackMatches++;
+                    if (fallbackMatches <= 5) console.log(`[DIAGNOSTIC] Matched question ${doc.id} to category '${match.name}' via tag "${tag}"`);
                     break;
+                } else {
+                   if (failedTags.size < 10) failedTags.add(`${tag} -> ${normTag}`);
                 }
             }
         }
@@ -1298,10 +1300,31 @@ async function applyHierarchyPolicy() {
     const isGenerated = (id) => String(id).startsWith('prok_') || String(id).startsWith('temp_') || String(id).startsWith('mock_');
     const lawsParent = categories.find(c => __normalize(c.name) === 'qanunlar');
 
+    // 0) Liberate allowed roots (Force parentId = null for whitelisted items)
+    for (const c of categories) {
+        if (c.parentId) {
+            const norm = __normalize(c.name);
+            const allowed = allowedRoot.has(norm);
+            if (c.name.includes('Cinayət-Prosessual')) console.log(`[HIERARCHY] Checking CPM: Name='${c.name}', Norm='${norm}', Allowed=${allowed}, Parent=${c.parentId}`);
+            
+            if (allowed) {
+                console.log(`[HIERARCHY] Liberating ${c.name} from parent ${c.parentId}`);
+                c.parentId = null;
+                if (db) {
+                    try { await db.collection('categories').doc(String(c.id)).update({ parentId: null }); } catch(e) { console.warn('Liberate failed', c.id, e); }
+                }
+            }
+        }
+    }
+
     // 1) Remove banned root categories
     const toDelete = [];
+    // Explicitly ban "Hakimlik" and "Vəkillik" from root if they appear there
+    const explicitBans = new Set(['hakimlik', 'vəkillik', 'cinayət mühafizə', 'cinayət icra', 'normativ aktlar toplusu', 'ingilis', 'ingilis dili'].map(__normalize));
+
     categories.forEach(c => {
-        if (!c.parentId && bannedRoot.has(__normalize(c.name))) {
+        if (!c.parentId && (bannedRoot.has(__normalize(c.name)) || explicitBans.has(__normalize(c.name)))) {
+            console.log(`[HIERARCHY] Banning unwanted root: ${c.name}`);
             toDelete.push(c);
         }
     });
