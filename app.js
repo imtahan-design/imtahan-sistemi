@@ -502,7 +502,6 @@ async function loadData() {
             
             // Moved to global scope
             categories = categories.filter(c => !(c.name && c.name.toLowerCase().includes('ingilis dili')));
-            await attachPublicQuestionsToCategories();
             
             // NOTE: Users and Private Quizzes are NOT loaded kütləvi for security reasons.
             // They are fetched only when needed.
