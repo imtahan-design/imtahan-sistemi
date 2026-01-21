@@ -1106,11 +1106,25 @@ async function attachPublicQuestionsToCategories() {
     if (!db) return;
     const snapshot = await db.collection('public_questions').get();
     const byCat = new Map();
+    // Debugging Question Mapping
+    console.log(`[DIAGNOSTIC] Loaded ${snapshot.docs.length} public questions.`);
+    const firstQ = snapshot.docs[0] ? snapshot.docs[0].data() : null;
+    if (firstQ) console.log(`[DIAGNOSTIC] Sample question data:`, JSON.stringify(firstQ));
+
     snapshot.docs.forEach(doc => {
         const d = doc.data() || {};
+        // Explicitly check for categoryId mismatch
         const cid = String(d.categoryId || d.category_id || d.catId || '');
-        if (!cid) return;
+        if (!cid) {
+            // console.warn(`[DIAGNOSTIC] Question ${doc.id} has no categoryId!`);
+            return;
+        }
+        
+        // Log mismatch for specific critical categories if needed
+        // if (cid === 'some_critical_id') console.log(`[DIAGNOSTIC] Found question for critical cat: ${doc.id}`);
+
         const opts = Array.isArray(d.options) ? d.options : (Array.isArray(d.variants) ? d.variants : []);
+
         let correct = 0;
         if (typeof d.correctIndex === 'number') correct = d.correctIndex;
         else if (typeof d.correct === 'number') correct = d.correct;
@@ -1251,6 +1265,7 @@ async function applyHierarchyPolicy() {
         'vergi məcəlləsi',
         'mülki məcəllə',
         'cinayət məcəlləsi',
+        'cinayət-prosessual məcəlləsi',
         'dərslik',
         'konstitusiya'
     ].map(__normalize));
