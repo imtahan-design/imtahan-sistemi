@@ -907,6 +907,8 @@
   // UI: Aktiv həftəlik sınağı backend-dən götürüb imtahana başlatmaq
   window.startActiveWeeklyExam = async function(examType, catId) {
     if (window.__DEBUG) console.log(`Starting active weekly exam: ${examType}, category: ${catId}`);
+    const __u = window.currentUser || (function(){ try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch (_) { return null; } })();
+    if (!window.currentUser && __u) window.currentUser = __u;
     if (window.COUPON_REQUIRED_TYPES && window.COUPON_REQUIRED_TYPES.has(String(examType))) {
       if (!window.currentUser || !window.currentUser.id) {
         if (typeof showNotification === 'function') showNotification('Zəhmət olmasa hesabla daxil olun', 'error');

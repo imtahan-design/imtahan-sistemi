@@ -444,11 +444,13 @@
                 overflow: auto;
                 height: auto;
                 min-height: 100vh;
+                min-height: 100dvh;
             }
             .dim-container {
                 flex-direction: column;
                 height: auto;
                 min-height: 100vh;
+                min-height: 100dvh;
             }
             .dim-sidebar {
                 width: 100%;
@@ -459,6 +461,7 @@
                 border-right: none;
                 border-top: 1px solid #e0e0e0;
                 box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+                z-index: 0;
             }
             .question-palette {
                 grid-template-columns: repeat(6, 1fr);
@@ -468,6 +471,7 @@
                 height: auto;
                 order: 1;
                 background: #f3f4f6;
+                overflow: visible;
             }
             .dim-header, .dim-footer {
                 margin: 10px;
@@ -478,6 +482,7 @@
                 max-width: 100%;
                 padding: 20px;
                 margin: 0 10px 10px 10px;
+                -webkit-overflow-scrolling: touch;
             }
             .btn-dim {
                 padding: 10px 16px;
