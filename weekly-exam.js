@@ -9,6 +9,76 @@
 
 (function(){
   let __WEEKLY_POOL_QUESTIONS = null;
+  window.COUPON_REQUIRED_TYPES = new Set(['prokurorluq']);
+  window.validateCoupon = async function(code, examId) {
+    if (!db) throw new Error('Verilənlər bazası bağlantısı yoxdur');
+    code = String(code || '').trim();
+    if (!code) throw new Error('Kupon kodu daxil edin');
+    const byId = await db.collection('exam_coupons').doc(code).get();
+    let doc = byId.exists ? byId : null;
+    if (!doc) {
+      const q = await db.collection('exam_coupons').where('code','==', code).limit(1).get();
+      doc = q.empty ? null : q.docs[0];
+    }
+    if (!doc) throw new Error('Kupon tapılmadı');
+    const data = doc.data() || {};
+    if (String(data.examId || '') !== String(examId)) throw new Error('Bu kupon bu imtahana uyğun deyil');
+    const now = new Date();
+    const s = data.startTime && typeof data.startTime.toDate === 'function' ? data.startTime.toDate() : new Date(data.startTime || 0);
+    const e = data.endTime && typeof data.endTime.toDate === 'function' ? data.endTime.toDate() : new Date(data.endTime || 0);
+    if (isNaN(s.getTime()) || isNaN(e.getTime())) throw new Error('Kupon tarix intervalı düzgün deyil');
+    if (now < s) throw new Error('Kupon hələ aktiv deyil');
+    if (now > e) throw new Error('Kuponun müddəti bitib');
+    if (data.usedBy) throw new Error('Kupon artıq istifadə olunub');
+    await db.runTransaction(async (t) => {
+      const ref = db.collection('exam_coupons').doc(doc.id);
+      const snap = await t.get(ref);
+      if (!snap.exists) throw new Error('Kupon tapılmadı');
+      const d = snap.data() || {};
+      if (d.usedBy) throw new Error('Kupon artıq istifadə olunub');
+      if (String(d.examId || '') !== String(examId)) throw new Error('Bu kupon bu imtahana uyğun deyil');
+      t.update(ref, { usedBy: String(currentUser && currentUser.id ? currentUser.id : 'guest') });
+    });
+    return true;
+  };
+  window.showCouponModal = function(examId, onSuccess) {
+    let m = document.getElementById('coupon-modal');
+    if (m) m.remove();
+    m = document.createElement('div');
+    m.id = 'coupon-modal';
+    m.className = 'fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4';
+    m.innerHTML = `
+      <div class="bg-gray-900 rounded-xl border border-gray-700 w-full max-w-md p-6 animate-up">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-white">Kuponu daxil edin</h3>
+          <button class="text-gray-400 hover:text-white" onclick="document.getElementById('coupon-modal').remove()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-3">
+          <label class="block text-sm text-gray-300">Kupon kodu</label>
+          <input id="coupon-code-input" type="text" class="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-700" placeholder="PROK12345" />
+          <button id="coupon-submit-btn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md">Təsdiqlə</button>
+          <p id="coupon-error" class="text-red-400 text-sm hidden"></p>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(m);
+    const btn = m.querySelector('#coupon-submit-btn');
+    btn.onclick = async function() {
+      const code = m.querySelector('#coupon-code-input').value;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yoxlanır...';
+      try {
+        await window.validateCoupon(code, examId);
+        document.getElementById('coupon-modal').remove();
+        if (typeof onSuccess === 'function') onSuccess();
+      } catch(e) {
+        const err = m.querySelector('#coupon-error');
+        if (err) { err.textContent = e.message; err.classList.remove('hidden'); }
+        btn.disabled = false;
+        btn.innerHTML = 'Təsdiqlə';
+      }
+    };
+  };
   // Helper: Weekly Exam sistemində kateqoriyanı tapmaq
   // İstifadə: Qaralama yaradarkən sxem elementinə görə uyğun kateqoriya tapılır
   const WeeklyExamSystem = {
@@ -828,10 +898,9 @@
   // UI: Aktiv həftəlik sınağı backend-dən götürüb imtahana başlatmaq
   window.startActiveWeeklyExam = async function(examType, catId) {
     if (window.__DEBUG) console.log(`Starting active weekly exam: ${examType}, category: ${catId}`);
-    const password = prompt("Zəhmət olmasa sınaq şifrəsini daxil edin:");
-    if (password !== "123") {
-      alert("Şifrə yanlışdır!");
-      return;
+    if (window.COUPON_REQUIRED_TYPES && window.COUPON_REQUIRED_TYPES.has(String(examType))) {
+      const examId = 'active_' + String(examType);
+      await new Promise((resolve) => { window.showCouponModal(examId, resolve); });
     }
     const modal = document.getElementById('exam-selection-modal');
     let btn = null;

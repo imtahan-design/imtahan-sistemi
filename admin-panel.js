@@ -202,7 +202,11 @@
         + '<button class="btn-outline' + (window.adminExamFilter==='general'?' active':'') + '" onclick="filterAdminCategories(\'general\')">Mövcud imtahanlar</button>'
         + '<button class="btn-outline' + (window.adminExamFilter==='special'?' active':'') + '" onclick="filterAdminCategories(\'special\')">Xüsusi sınaqlar</button>'
         + '</div>';
-      title.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;"><span>' + baseTitle + '</span>' + tabsHtml2 + '</div>';
+      var extra = '';
+      if (currentUser.role === 'admin') {
+        extra = '<div class="flex items-center gap-8"><button class="btn-warning" onclick="openCouponManager()"><i class=\'fas fa-ticket-alt\'></i> Kuponlar</button></div>';
+      }
+      title.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;"><span>' + baseTitle + '</span><div style="display:flex;gap:12px;align-items:center;">' + tabsHtml2 + extra + '</div></div>';
       backBtn.classList.add('hidden');
     }
     var exportBtn = document.querySelector('.btn-success[onclick="exportData()"]');
@@ -250,6 +254,82 @@
         + '</div>';
       grid.appendChild(div);
     });
+  };
+
+  window.openCouponManager = function() {
+    if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
+    var m = document.getElementById('coupon-manager-modal');
+    if (m) m.remove();
+    m = document.createElement('div');
+    m.id = 'coupon-manager-modal';
+    m.className = 'fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4';
+    m.innerHTML = ''
+      + '<div class="bg-gray-900 rounded-xl border border-gray-700 w-full max-w-lg p-6 animate-up">'
+      +   '<div class="flex items-center justify-between mb-4">'
+      +     '<h3 class="text-lg font-bold text-white">Kupon Yarat</h3>'
+      +     '<button class="text-gray-400 hover:text-white" onclick="document.getElementById(\'coupon-manager-modal\').remove()"><i class="fas fa-times"></i></button>'
+      +   '</div>'
+      +   '<div class="space-y-3">'
+      +     '<label class="block text-sm text-gray-300">Hədəf sınaq</label>'
+      +     '<select id="coupon-exam-type" class="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-700">'
+      +       '<option value="prokurorluq">Prokurorluq (active_prokurorluq)</option>'
+      +       '<option value="hakimlik">Hakimlik (active_hakimlik)</option>'
+      +       '<option value="vekillik">Vəkillik (active_vekillik)</option>'
+      +     '</select>'
+      +     '<label class="block text-sm text-gray-300">Kupon kodu</label>'
+      +     '<div class="flex gap-2"><input id="coupon-code-input-admin" type="text" class="flex-1 p-3 rounded-md bg-gray-800 text-white border border-gray-700" placeholder="PROK12345" /><button class="btn-secondary" onclick="generateCouponCodeAdmin()">Generasiya</button></div>'
+      +     '<label class="block text-sm text-gray-300">Başlama vaxtı</label>'
+      +     '<input id="coupon-start-input" type="datetime-local" class="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-700" />'
+      +     '<label class="block text-sm text-gray-300">Bitmə vaxtı</label>'
+      +     '<input id="coupon-end-input" type="datetime-local" class="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-700" />'
+      +     '<button class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md" onclick="createCouponAdmin()">Yarat</button>'
+      +     '<p id="coupon-admin-error" class="text-red-400 text-sm hidden"></p>'
+      +   '</div>'
+      + '</div>';
+    document.body.appendChild(m);
+  };
+  window.generateCouponCodeAdmin = function() {
+    var sel = document.getElementById('coupon-exam-type');
+    var type = sel ? String(sel.value) : 'prokurorluq';
+    var prefix = type === 'prokurorluq' ? 'PROK' : (type === 'hakimlik' ? 'HKM' : 'VEK');
+    var code = prefix + Math.floor(10000 + Math.random()*89999);
+    var inp = document.getElementById('coupon-code-input-admin');
+    if (inp) inp.value = code;
+  };
+  window.createCouponAdmin = async function() {
+    try {
+      if (!db) throw new Error('Verilənlər bazası bağlantısı yoxdur');
+      if (!currentUser || currentUser.role !== 'admin') throw new Error('İcazə yoxdur');
+      var sel = document.getElementById('coupon-exam-type');
+      var type = sel ? String(sel.value) : 'prokurorluq';
+      var examId = 'active_' + type;
+      var codeInp = document.getElementById('coupon-code-input-admin');
+      var startInp = document.getElementById('coupon-start-input');
+      var endInp = document.getElementById('coupon-end-input');
+      var code = String(codeInp && codeInp.value ? codeInp.value : '').trim();
+      if (!code) throw new Error('Kupon kodu daxil edin');
+      var sd = startInp && startInp.value ? new Date(startInp.value) : null;
+      var ed = endInp && endInp.value ? new Date(endInp.value) : null;
+      if (!sd || !ed || isNaN(sd.getTime()) || isNaN(ed.getTime())) throw new Error('Vaxt intervalı düzgün deyil');
+      var st = firebase.firestore.Timestamp.fromDate(sd);
+      var et = firebase.firestore.Timestamp.fromDate(ed);
+      await db.collection('exam_coupons').doc(code).set({
+        code: code,
+        examId: examId,
+        startTime: st,
+        endTime: et,
+        usedBy: null,
+        createdBy: String(currentUser.id),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      showNotification('Kupon yaradıldı', 'success');
+      var m = document.getElementById('coupon-manager-modal');
+      if (m) m.remove();
+    } catch(e) {
+      var err = document.getElementById('coupon-admin-error');
+      if (err) { err.textContent = e.message; err.classList.remove('hidden'); }
+      showNotification('Xəta: ' + e.message, 'error');
+    }
   };
 
   window.filterAdminCategories = function(type) {
