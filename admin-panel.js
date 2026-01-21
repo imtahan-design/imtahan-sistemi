@@ -1,6 +1,7 @@
 // Admin Panel Modulu
 // Bu modul admin və moderatorlar üçün idarəetmə səhifəsini, kateqoriya renderini və util funksiyaları bir mərkəzdə toplayır.
 (function() {
+  window.adminExamFilter = 'general';
   // Admin Dashboard açılışı və istiqamətləmə
   window.showAdminDashboard = function(doPush) {
     if (doPush === undefined) doPush = true;
@@ -14,6 +15,15 @@
       url.searchParams.delete('cat');
       window.history.pushState({ page: 'admin' }, '', url);
     }
+    try {
+      var url2 = new URL(window.location);
+      var exam = url2.searchParams.get('exam');
+      if (exam === 'special' || exam === 'general') {
+        window.adminExamFilter = exam;
+      } else {
+        window.adminExamFilter = 'general';
+      }
+    } catch(e) {}
     currentAdminParentId = null;
     hideAllSections();
     document.getElementById('admin-dashboard-section').classList.remove('hidden');
@@ -117,12 +127,36 @@
   window.renderAdminCategories = function() {
     var grid = document.getElementById('admin-categories-grid');
     grid.innerHTML = '';
-    var filteredCategories = categories.filter(function(cat) { return cat.parentId === currentAdminParentId; });
+    var roots = categories.filter(function(c){ return String(c.id||'').indexOf('special_') === 0; }).map(function(c){ return c.id; });
+    var specialSet = new Set(roots);
+    var changed = true;
+    while (changed) {
+      changed = false;
+      categories.forEach(function(c){
+        if (c.parentId && specialSet.has(c.parentId) && !specialSet.has(c.id)) {
+          specialSet.add(c.id);
+          changed = true;
+        }
+      });
+    }
+    function isSpecial(cat){
+      return specialSet.has(cat.id) || specialSet.has(cat.parentId) || (cat.examType === 'special' || cat.exam_type === 'special');
+    }
+    var filteredCategories = categories.filter(function(cat) { return cat.parentId === currentAdminParentId; })
+      .filter(function(cat){
+        if (window.adminExamFilter === 'special') return isSpecial(cat);
+        return !isSpecial(cat);
+      });
     var title = document.getElementById('admin-dashboard-title');
     var backBtn = document.getElementById('admin-back-btn');
     if (currentAdminParentId) {
       var parent = categories.find(function(c) { return c.id === currentAdminParentId; });
-      title.textContent = "Bölmə: " + (parent ? parent.name : '...');
+      var base = "Bölmə: " + (parent ? parent.name : '...');
+      var tabsHtml = '<div class="admin-tab-container" style="display:flex;gap:8px;align-items:center;margin-top:6px;">'
+        + '<button class="btn-outline' + (window.adminExamFilter==='general'?' active':'') + '" onclick="filterAdminCategories(\'general\')">Mövcud imtahanlar</button>'
+        + '<button class="btn-outline' + (window.adminExamFilter==='special'?' active':'') + '" onclick="filterAdminCategories(\'special\')">Xüsusi sınaqlar</button>'
+        + '</div>';
+      title.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;"><span>' + base + '</span>' + tabsHtml + '</div>';
       backBtn.classList.remove('hidden');
       if (currentAdminParentId === 'special_prokurorluq' && currentUser.role === 'admin') {
         var toolBtn = document.createElement('button');
@@ -132,7 +166,12 @@
         title.appendChild(toolBtn);
       }
     } else {
-      title.textContent = currentUser.role === 'moderator' ? 'Moderator Paneli' : 'Admin Paneli - Kateqoriyalar';
+      var baseTitle = currentUser.role === 'moderator' ? 'Moderator Paneli' : 'Admin Paneli - Kateqoriyalar';
+      var tabsHtml2 = '<div class="admin-tab-container" style="display:flex;gap:8px;align-items:center;">'
+        + '<button class="btn-outline' + (window.adminExamFilter==='general'?' active':'') + '" onclick="filterAdminCategories(\'general\')">Mövcud imtahanlar</button>'
+        + '<button class="btn-outline' + (window.adminExamFilter==='special'?' active':'') + '" onclick="filterAdminCategories(\'special\')">Xüsusi sınaqlar</button>'
+        + '</div>';
+      title.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;"><span>' + baseTitle + '</span>' + tabsHtml2 + '</div>';
       backBtn.classList.add('hidden');
     }
     var exportBtn = document.querySelector('.btn-success[onclick="exportData()"]');
@@ -182,6 +221,18 @@
     });
   };
 
+  window.filterAdminCategories = function(type) {
+    if (type !== 'special' && type !== 'general') return;
+    window.adminExamFilter = type;
+    try {
+      var url = new URL(window.location);
+      url.searchParams.set('page', 'admin');
+      url.searchParams.set('exam', type);
+      window.history.pushState({ page: 'admin', exam: type }, '', url);
+    } catch(e) {}
+    renderAdminCategories();
+  };
+
   // Admin panelində naviqasiya (alt-bölmələrə daxil ol/geri qayıt)
   window.enterAdminCategory = function(id) {
     currentAdminParentId = id;
@@ -214,6 +265,30 @@
     document.getElementById('new-cat-name').value = '';
     document.getElementById('new-cat-time').value = '45';
     document.getElementById('save-category-btn').textContent = 'Yarat';
+    var modalContent = document.querySelector('#category-modal .modal-content');
+    if (modalContent) {
+      var warn = document.getElementById('admin-flow-warning');
+      if (!warn) {
+        warn = document.createElement('div');
+        warn.id = 'admin-flow-warning';
+        warn.className = 'bg-warning-light border border-warning-light p-3 rounded-md mb-2 text-warning-dark text-sm flex items-center gap-2';
+        warn.innerHTML = '<i class="fas fa-info-circle"></i><span>Bu əməliyyat mövcud data itirməyəcək və Xüsusi sınaqlar Mövcud imtahanlara qarışmayacaq.</span>';
+        var btn = document.getElementById('save-category-btn');
+        if (btn && btn.parentNode) btn.parentNode.insertBefore(warn, btn);
+      }
+      var typeInfo = document.getElementById('admin-exam-type-info');
+      var labelText = window.adminExamFilter === 'special' ? 'Axın: Xüsusi sınaqlar' : 'Axın: Mövcud imtahanlar';
+      if (!typeInfo) {
+        typeInfo = document.createElement('div');
+        typeInfo.id = 'admin-exam-type-info';
+        typeInfo.className = 'p-2 mb-2 text-xs text-primary border border-primary rounded-md';
+        typeInfo.textContent = labelText;
+        var btn2 = document.getElementById('save-category-btn');
+        if (btn2 && btn2.parentNode) btn2.parentNode.insertBefore(typeInfo, btn2);
+      } else {
+        typeInfo.textContent = labelText;
+      }
+    }
     document.getElementById('category-modal').classList.remove('hidden');
   };
 
@@ -226,6 +301,43 @@
     document.getElementById('new-cat-name').value = cat.name;
     document.getElementById('new-cat-time').value = cat.time;
     document.getElementById('save-category-btn').textContent = 'Yadda Saxla';
+    var modalContent = document.querySelector('#category-modal .modal-content');
+    if (modalContent) {
+      var warn = document.getElementById('admin-flow-warning');
+      if (!warn) {
+        warn = document.createElement('div');
+        warn.id = 'admin-flow-warning';
+        warn.className = 'bg-warning-light border border-warning-light p-3 rounded-md mb-2 text-warning-dark text-sm flex items-center gap-2';
+        warn.innerHTML = '<i class="fas fa-info-circle"></i><span>Bu əməliyyat mövcud data itirməyəcək və Xüsusi sınaqlar Mövcud imtahanlara qarışmayacaq.</span>';
+        var btn = document.getElementById('save-category-btn');
+        if (btn && btn.parentNode) btn.parentNode.insertBefore(warn, btn);
+      }
+      var typeInfo = document.getElementById('admin-exam-type-info');
+      var roots = categories.filter(function(c){ return String(c.id||'').indexOf('special_') === 0; }).map(function(c){ return c.id; });
+      var specialSet = new Set(roots);
+      var changed = true;
+      while (changed) {
+        changed = false;
+        categories.forEach(function(c){
+          if (c.parentId && specialSet.has(c.parentId) && !specialSet.has(c.id)) {
+            specialSet.add(c.id);
+            changed = true;
+          }
+        });
+      }
+      var isSpec = specialSet.has(cat.id) || specialSet.has(cat.parentId) || (cat.examType === 'special' || cat.exam_type === 'special');
+      var labelText = isSpec ? 'Axın: Xüsusi sınaqlar' : 'Axın: Mövcud imtahanlar';
+      if (!typeInfo) {
+        typeInfo = document.createElement('div');
+        typeInfo.id = 'admin-exam-type-info';
+        typeInfo.className = 'p-2 mb-2 text-xs text-primary border border-primary rounded-md';
+        typeInfo.textContent = labelText;
+        var btn2 = document.getElementById('save-category-btn');
+        if (btn2 && btn2.parentNode) btn2.parentNode.insertBefore(typeInfo, btn2);
+      } else {
+        typeInfo.textContent = labelText;
+      }
+    }
     document.getElementById('category-modal').classList.remove('hidden');
   };
 
@@ -249,7 +361,8 @@
         time: time || 45,
         questions: [],
         createdBy: currentUser.id,
-        parentId: currentAdminParentId
+        parentId: currentAdminParentId,
+        examType: window.adminExamFilter === 'special' ? 'special' : 'general'
       };
       categories.push(newCat);
       addCategoryToDB(newCat);
@@ -279,9 +392,17 @@
     if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu hərəkət üçün admin icazəsi lazımdır!', 'error');
     if (confirm('Bu kateqoriyanı silmək istədiyinizə əminsiniz?')) {
       if (db) {
-        db.collection('categories').doc(String(id)).delete().catch(console.error);
+        const ref = db.collection('categories').doc(String(id));
+        db.runTransaction(async function(t){
+          const snap = await t.get(ref);
+          if (!snap.exists) return;
+          t.update(ref, { deleted: true, deletedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        }).catch(console.error);
       }
-      categories = categories.filter(function(c) { return String(c.id) !== String(id); });
+      categories = categories.map(function(c) { 
+        if (String(c.id) === String(id)) return { ...c, deleted: true, deletedAt: Date.now() };
+        return c;
+      }).filter(function(c){ return !c.deleted; });
       if (typeof saveCategories === 'function') saveCategories();
       renderAdminCategories();
     }

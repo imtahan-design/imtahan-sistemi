@@ -501,7 +501,9 @@ async function loadData() {
             console.log("Firestore-dan gələn hamısı:", categories);
             
             // Moved to global scope
-            categories = categories.filter(c => !(c.name && c.name.toLowerCase().includes('ingilis dili')));
+            categories = categories
+                .filter(c => !(c.name && c.name.toLowerCase().includes('ingilis dili')))
+                .filter(c => !c.deleted);
             
             // NOTE: Users and Private Quizzes are NOT loaded kütləvi for security reasons.
             // They are fetched only when needed.
@@ -942,7 +944,14 @@ async function saveCategories(syncToDb = false) {
 
 // Yeni: Tək kateqoriyanı sinxron etmək üçün
 async function syncCategory(catId) {
-    return;
+    try {
+        if (!db) return;
+        const cat = categories.find(c => String(c.id) === String(catId));
+        if (!cat) return;
+        await db.collection('categories').doc(String(catId)).set(cat, { merge: true });
+    } catch (e) {
+        console.error('syncCategory error:', e);
+    }
 }
 
 async function saveUsers() {
@@ -6111,9 +6120,17 @@ window.deleteCategory = function(id, event) {
     if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu hərəkət üçün admin icazəsi lazımdır!', 'error');
     if (confirm('Bu kateqoriyanı silmək istədiyinizə əminsiniz?')) {
         if (db) {
-            db.collection('categories').doc(String(id)).delete().catch(console.error);
+            const ref = db.collection('categories').doc(String(id));
+            db.runTransaction(async function(t){
+                const snap = await t.get(ref);
+                if (!snap.exists) return;
+                t.update(ref, { deleted: true, deletedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            }).catch(console.error);
         }
-        categories = categories.filter(c => String(c.id) !== String(id));
+        categories = categories.map(function(c) { 
+            if (String(c.id) === String(id)) return { ...c, deleted: true, deletedAt: Date.now() };
+            return c;
+        }).filter(function(c){ return !c.deleted; });
         saveCategories();
         renderAdminCategories(); // Update admin view
     }
@@ -7573,6 +7590,17 @@ window.showAddQuestionModal = function() {
     addAdminQuestionForm();
     switchAdminQuestionTab('manual'); // Reset to manual tab
     document.getElementById('admin-question-section').classList.remove('hidden');
+    var body = document.querySelector('#admin-question-section .modal-body');
+    if (body) {
+        var warn = document.getElementById('admin-flow-warning-questions');
+        if (!warn) {
+            warn = document.createElement('div');
+            warn.id = 'admin-flow-warning-questions';
+            warn.className = 'bg-warning-light border border-warning-light p-3 rounded-md mb-3 text-warning-dark text-sm flex items-center gap-2';
+            warn.innerHTML = '<i class="fas fa-info-circle"></i><span>Bu əməliyyat mövcud data itirməyəcək və Xüsusi sınaqlar Mövcud imtahanlara qarışmayacaq.</span>';
+            body.insertBefore(warn, body.firstChild);
+        }
+    }
 }
 
 window.addAdminQuestionForm = function() {
