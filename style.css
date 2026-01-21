@@ -5296,8 +5296,8 @@ nav:hover {
     }
 
     .grid-container {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        grid-template-columns: 1fr;
+        gap: 15px;
     }
 
     .category-card {
@@ -5423,6 +5423,9 @@ nav:hover {
 }
 
 @media (max-width: 480px) {
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
     .logo-main {
         font-size: 24px;
     }
@@ -6949,4 +6952,3 @@ nav:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
 }
-

@@ -10,6 +10,15 @@
 (function(){
   let __WEEKLY_POOL_QUESTIONS = null;
   window.COUPON_REQUIRED_TYPES = new Set(['prokurorluq']);
+  try {
+    var __crt = localStorage.getItem('coupon_required_types') || '';
+    if (__crt && typeof __crt === 'string') {
+      __crt.split(',').map(function(s){ return String(s || '').trim(); }).filter(function(s){ return s.length > 0; }).forEach(function(t){ window.COUPON_REQUIRED_TYPES.add(t); });
+    }
+    if (Array.isArray(window.COUPON_REQUIRED_TYPES_EXTRA)) {
+      window.COUPON_REQUIRED_TYPES_EXTRA.map(function(s){ return String(s || '').trim(); }).filter(function(s){ return s.length > 0; }).forEach(function(t){ window.COUPON_REQUIRED_TYPES.add(t); });
+    }
+  } catch(_) {}
   window.validateCoupon = async function(code, examId) {
     if (!db) throw new Error('Verilənlər bazası bağlantısı yoxdur');
     code = String(code || '').trim();
@@ -899,6 +908,10 @@
   window.startActiveWeeklyExam = async function(examType, catId) {
     if (window.__DEBUG) console.log(`Starting active weekly exam: ${examType}, category: ${catId}`);
     if (window.COUPON_REQUIRED_TYPES && window.COUPON_REQUIRED_TYPES.has(String(examType))) {
+      if (!window.currentUser || !window.currentUser.id) {
+        if (typeof showNotification === 'function') showNotification('Zəhmət olmasa hesabla daxil olun', 'error');
+        return;
+      }
       const examId = 'active_' + String(examType);
       await new Promise((resolve) => { window.showCouponModal(examId, resolve); });
     }
