@@ -36,148 +36,14 @@ try {
 
 
 
-const MAIN_LAW_NAMES = [
-    'Cinayət Məcəlləsi',
-    'Cinayət-Prosessual Məcəlləsi',
-    'Konstitusiya',
-    'Normativ hüquqi aktlar',
-    'İnzibati Xətalar Məcəlləsi',
-    'İnsan hüquqları Konvensiyası',
-    'Mülki Məcəllə',
-    'Mülki-Prosessual Məcəllə',
-    'Əmək Məcəlləsi',
-    'Prokurorluq haqqında Qanun',
-    'Prokurorluqda qulluq haqqında Qanun',
-    'Korrupsiyaya qarşı mübarizə',
-    'Polis haqqında Qanun',
-    'Cinayət icra',
-    'Cinayət mühafizə',
-    'Normativ aktlar toplusu'
-];
-const isMainLaw = (name) => {
-    if (!name) return false;
-    const n = String(name).trim().toLowerCase();
-    return MAIN_LAW_NAMES.some(x => n === x.trim().toLowerCase() || n.includes(x.trim().toLowerCase()));
-};
+const isMainLaw = () => false;
 
-// Global Constants for Special Exams
-window.PROKURORLUQ_SUBS = [
-    { id: '1768674522030', count: 20, name: 'Cinayət Məcəlləsi', keys: ['cinayət məcəlləsi', 'cinayet mecellesi', 'cm'] },
-    { id: '1768683898010', count: 20, name: 'Cinayət-Prosessual Məcəlləsi', keys: ['cinayət-prosessual', 'cpm', 'cinayet prosessual'] },
-    { id: '1766934946320', count: 6, name: 'Konstitusiya', keys: ['konstitusiya'] },
-    { id: '1768696058306', count: 3, name: 'Normativ hüquqi aktlar', keys: ['normativ hüquqi aktlar', 'normativ aktlar'] },
-    { id: '1768735010552', count: 5, name: 'İnzibati Xətalar Məcəlləsi', keys: ['inzibati xətalar', 'ixm'] },
-    { id: 'special_prokurorluq_human_rights', count: 2, name: 'İnsan hüquqları Konvensiyası', keys: ['konvensiya', 'insan hüquqları'] },
-    { id: '1768750915800', count: 2, name: 'Mülki Məcəllə', keys: ['mülki məcəllə', 'mulki mecelle'] },
-    { id: '1768737630088', count: 2, name: 'Mülki-Prosessual Məcəllə', keys: ['mülki-prosessual', 'mpm'] },
-    { id: '1768745670510', count: 2, name: 'Əmək Məcəlləsi', keys: ['əmək məcəlləsi'] },
-    { id: '1768696474731', count: 8, name: 'Prokurorluq haqqında Qanun', keys: ['prokurorluq haqqında', 'prokurorluq qanunu'] },
-    { id: '1768696605470', count: 6, name: 'Prokurorluqda qulluq haqqında Qanun', keys: ['prokurorluqda qulluq'] },
-    { id: '1767194888783', count: 3, name: 'Korrupsiyaya qarşı mübarizə', keys: ['korrupsiya'] },
-    { id: '1768698786812', count: 1, name: 'Polis haqqında Qanun', keys: ['polis haqqında'] }
-];
-
-// Hakimlik və Vəkillik üçün sxemlər (Hələlik boşdur - Müstəqil bazalar formalaşdırılacaq)
-window.HAKIMLIK_SUBS = [];
-window.VEKILLIK_SUBS = [];
+window.PROKURORLUQ_SUBS = undefined;
+window.HAKIMLIK_SUBS = undefined;
+window.VEKILLIK_SUBS = undefined;
 
 // Helper to seed/merge prokurorluq subcategories
-async function seedProkurorluqSubcategories() {
-    const parentId = 'special_prokurorluq';
-    // Ensure parent exists
-    const parent = categories.find(c => c.id === parentId);
-    if (!parent && typeof db !== 'undefined') {
-        // Create parent if missing (rare case)
-        console.log("Parent 'special_prokurorluq' missing, creating...");
-        // This is handled in seed special exams loop usually, but good to be safe
-    }
-
-    const schema = window.PROKURORLUQ_SUBS;
-    let addedCount = 0;
-    let hasChanges = false;
-
-    for (const item of schema) {
-        // 1. Check if official category exists by ID
-        let officialCat = categories.find(c => c.id === item.id);
-        
-        // 2. Find duplicates (Same name, same parent, but wrong ID)
-        // More robust matching: trim, lowercase
-        const duplicates = categories.filter(c => 
-            c.parentId === parentId && 
-            c.id !== item.id && 
-            (
-                c.name.trim().toLowerCase() === item.name.trim().toLowerCase() ||
-                // Special case for Convention if names vary slightly
-                (item.name.includes('Konvensiya') && c.name.includes('Konvensiya'))
-            )
-        );
-
-        if (duplicates.length > 0) {
-            console.log(`Found duplicates for ${item.name}:`, duplicates.map(d => d.id));
-            
-            // Ensure official category exists
-            if (!officialCat) {
-                officialCat = {
-                    id: item.id,
-                    name: item.name,
-                    parentId: parentId,
-                    questions: [],
-                    isHiddenFromPublic: false,
-                    createdBy: 'system',
-                    time: 45
-                };
-                categories.push(officialCat);
-                hasChanges = true;
-            }
-
-            // Merge questions from duplicates
-            duplicates.forEach(dup => {
-                if (dup.questions && dup.questions.length > 0) {
-                    const existingIds = new Set((officialCat.questions || []).map(q => q.id));
-                    const newQuestions = dup.questions.filter(q => !existingIds.has(q.id));
-                    if (newQuestions.length > 0) {
-                        officialCat.questions = [...(officialCat.questions || []), ...newQuestions];
-                        hasChanges = true;
-                    }
-                }
-                
-                // Delete duplicate
-                const idx = categories.indexOf(dup);
-                if (idx > -1) categories.splice(idx, 1);
-                
-                // Delete from DB
-                if (typeof db !== 'undefined' && db) {
-                    db.collection('categories').doc(dup.id).delete().catch(console.error);
-                }
-            });
-            
-            // Save official category to DB
-            if (typeof db !== 'undefined' && db) {
-                db.collection('categories').doc(officialCat.id).set(officialCat).catch(console.error);
-            }
-        } else if (!officialCat) {
-            // No official, no duplicates -> Create new
-            const newSub = {
-                id: item.id,
-                name: item.name,
-                parentId: parentId,
-                questions: [],
-                isHiddenFromPublic: true,
-                createdBy: 'system',
-                time: 45
-            };
-            categories.push(newSub);
-            if (typeof db !== 'undefined' && db) {
-                db.collection('categories').doc(item.id).set(newSub).catch(console.error);
-            }
-            hasChanges = true;
-        }
-    }
-    
-    if (hasChanges && typeof saveCategories === 'function') {
-        saveCategories();
-    }
-}
+async function seedProkurorluqSubcategories() { return; }
 window.seedProkurorluqSubcategories = seedProkurorluqSubcategories;
 
 
@@ -580,6 +446,7 @@ let users = [];      // Will be loaded from DB
 let privateQuizzes = []; // Private quizzes for teachers
 let currentParentId = null; // Track current level in dashboard
 let currentAdminParentId = null; // Track current level in admin dashboard
+window.DIAGMODE = true;
 
 // Notification System
 function showNotification(message, type = 'info') {
@@ -634,12 +501,8 @@ async function loadData() {
             console.log("Firestore-dan gələn hamısı:", categories);
             
             // Moved to global scope
-
             categories = categories.filter(c => !(c.name && c.name.toLowerCase().includes('ingilis dili')));
             await attachPublicQuestionsToCategories();
-            await ensureProkurorluqIndependentSubs();
-            await populateProkurorluqWithPool425();
-            await applyHierarchyPolicy();
             
             // NOTE: Users and Private Quizzes are NOT loaded kütləvi for security reasons.
             // They are fetched only when needed.
@@ -1082,11 +945,7 @@ async function saveCategories(syncToDb = false) {
 
 // Yeni: Tək kateqoriyanı sinxron etmək üçün
 async function syncCategory(catId) {
-    if (!db) return;
-    const cat = categories.find(c => String(c.id) === String(catId));
-    if (cat) {
-        await db.collection('categories').doc(String(cat.id)).set(cat);
-    }
+    return;
 }
 
 async function saveUsers() {
@@ -1122,8 +981,19 @@ async function attachPublicQuestionsToCategories() {
             noIdCount++;
             for (const tag of d.tags) {
                 const normTag = __normalize(tag);
-                // Find a category with matching name
-                const match = categories.find(c => __normalize(c.name) === normTag);
+                let match = categories.find(c => __normalize(c.name) === normTag);
+                if (!match && Array.isArray(window.PROKURORLUQ_SUBS)) {
+                    const sub = window.PROKURORLUQ_SUBS.find(s => {
+                        const ks = Array.isArray(s.keys) ? s.keys : [];
+                        if (__normalize(s.name) === normTag) return true;
+                        if (ks.some(k => __normalize(k) === normTag)) return true;
+                        if (__normalize(s.name).includes(normTag)) return true;
+                        return ks.some(k => normTag.includes(__normalize(k)));
+                    });
+                    if (sub) {
+                        match = categories.find(c => __normalize(c.name) === __normalize(sub.name));
+                    }
+                }
                 if (match) {
                     cid = String(match.id);
                     fallbackMatches++;
@@ -1160,6 +1030,7 @@ async function attachPublicQuestionsToCategories() {
         if (!byCat.has(cid)) byCat.set(cid, []);
         byCat.get(cid).push(q);
     });
+    console.log(`[DIAGNOSTIC] Questions with no ID: ${noIdCount}. Fallback matches: ${fallbackMatches}. Failed tags sample:`, Array.from(failedTags));
     categories = categories.map(c => {
         const mapped = byCat.get(String(c.id));
         if (mapped && mapped.length) {
@@ -1170,105 +1041,7 @@ async function attachPublicQuestionsToCategories() {
     });
 }
 
-async function ensureProkurorluqIndependentSubs() {
-    const getNames = () => [
-        'Cinayət Məcəlləsi',
-        'Cinayət-Prosessual Məcəlləsi',
-        'Konstitusiya',
-        'Normativ hüquqi aktlar',
-        'İnzibati Xətalar Məcəlləsi',
-        'İnsan hüquqları Konvensiyası',
-        'Mülki Məcəllə',
-        'Mülki-Prosessual Məcəllə',
-        'Əmək Məcəlləsi',
-        'Prokurorluq haqqında Qanun',
-        'Prokurorluqda qulluq haqqında Qanun',
-        'Korrupsiyaya qarşı mübarizə',
-        'Polis haqqında Qanun',
-        'Cinayət icra',
-        'Cinayət mühafizə',
-        'Normativ aktlar toplusu'
-    ];
-    const slug = (s) => String(s || '').toLowerCase().replace(/[^\w\-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    let parent = categories.find(c => c.id === 'special_prokurorluq');
-    if (!parent) {
-        parent = { id: 'special_prokurorluq', name: 'Prokurorluq üzrə sınaq', isSpecial: true, parentId: null, time: 180 };
-        categories.push(parent);
-        if (db) await db.collection('categories').doc('special_prokurorluq').set(parent);
-    } else {
-        parent.isSpecial = true;
-    }
-    for (const name of getNames()) {
-        const exists = categories.find(c => c.parentId === 'special_prokurorluq' && String(c.id).startsWith('prok_') && c.name === name);
-        if (exists) continue;
-        const newId = 'prok_' + slug(name) + '_' + (Date.now() + Math.floor(Math.random() * 1000));
-        const obj = { id: newId, name, parentId: 'special_prokurorluq', isHiddenFromPublic: false, time: 45, questions: [] };
-        categories.push(obj);
-        if (db) await db.collection('categories').doc(newId).set(obj);
-    }
-}
-
-async function populateProkurorluqWithPool425() {
-    const names = [
-        'Cinayət Məcəlləsi',
-        'Cinayət-Prosessual Məcəlləsi',
-        'Konstitusiya',
-        'Normativ hüquqi aktlar',
-        'İnzibati Xətalar Məcəlləsi',
-        'İnsan hüquqları Konvensiyası',
-        'Mülki Məcəllə',
-        'Mülki-Prosessual Məcəllə',
-        'Əmək Məcəlləsi',
-        'Prokurorluq haqqında Qanun',
-        'Prokurorluqda qulluq haqqında Qanun',
-        'Korrupsiyaya qarşı mübarizə',
-        'Polis haqqında Qanun',
-        'Cinayət icra',
-        'Cinayət mühafizə',
-        'Normativ aktlar toplusu'
-    ];
-    const rootMap = new Map();
-    for (const n of names) {
-        const srcCat = categories.find(c => c.name === n) || categories.find(c => (c.name || '').toLowerCase().includes(n.toLowerCase()));
-        if (srcCat) rootMap.set(n, (srcCat.questions || []).slice());
-    }
-    const prokCats = categories.filter(c => c.parentId === 'special_prokurorluq' && String(c.id).startsWith('prok_'));
-    let totalAvailable = 0;
-    prokCats.forEach(pc => {
-        const qs = rootMap.get(pc.name) || [];
-        totalAvailable += qs.length;
-    });
-    const schema = (window.PROKURORLUQ_SUBS || []).slice();
-    let baseSum = 0;
-    schema.forEach(s => { baseSum += s.count || 0; });
-    const targetTotal = 425;
-    const factor = baseSum > 0 ? targetTotal / baseSum : 1;
-    const allocations = new Map();
-    schema.forEach(s => {
-        const quota = Math.max(1, Math.floor((s.count || 1) * factor));
-        allocations.set(s.name, quota);
-    });
-    let selectedTotal = 0;
-    for (const pc of prokCats) {
-        const pool = (rootMap.get(pc.name) || []).slice();
-        const quota = allocations.get(pc.name) || Math.min(10, pool.length);
-        const shuffled = pool.sort(() => 0.5 - Math.random());
-        pc.questions = shuffled.slice(0, Math.min(quota, pool.length)).map(q => ({ ...q, subjectName: pc.name, categoryId: pc.id }));
-        selectedTotal += pc.questions.length;
-        if (db) await db.collection('categories').doc(String(pc.id)).set(pc);
-    }
-    if (selectedTotal > targetTotal) {
-        let over = selectedTotal - targetTotal;
-        for (const pc of prokCats) {
-            if (over <= 0) break;
-            const reduceBy = Math.min(over, Math.floor(pc.questions.length / 4));
-            pc.questions = pc.questions.slice(0, Math.max(0, pc.questions.length - reduceBy));
-            over -= reduceBy;
-            if (db) await db.collection('categories').doc(String(pc.id)).set(pc);
-        }
-    }
-    saveCategories();
-}
+ 
 
 function __normalize(s) {
     try {
@@ -1278,97 +1051,13 @@ function __normalize(s) {
     }
 }
 
-async function applyHierarchyPolicy() {
-    const allowedRoot = new Set([
-        'dövlət qulluğu',
-        'qanunlar',
-        'vergi məcəlləsi',
-        'mülki məcəllə',
-        'cinayət məcəlləsi',
-        'cinayət-prosessual məcəlləsi',
-        'dərslik',
-        'konstitusiya'
-    ].map(__normalize));
-    const bannedRoot = new Set([
-        'cinayət mühafizə',
-        'cinayət icra',
-        'normativ aktlar toplusu',
-        'normatik aktlar toplusu',
-        'ingilis',
-        'ingilis dili'
-    ].map(__normalize));
-    const isGenerated = (id) => String(id).startsWith('prok_') || String(id).startsWith('temp_') || String(id).startsWith('mock_');
-    const lawsParent = categories.find(c => __normalize(c.name) === 'qanunlar');
+ 
 
-    // 0) Liberate allowed roots (Force parentId = null for whitelisted items)
-    for (const c of categories) {
-        if (c.parentId) {
-            const norm = __normalize(c.name);
-            const allowed = allowedRoot.has(norm);
-            if (c.name.includes('Cinayət-Prosessual')) console.log(`[HIERARCHY] Checking CPM: Name='${c.name}', Norm='${norm}', Allowed=${allowed}, Parent=${c.parentId}`);
-            
-            if (allowed) {
-                console.log(`[HIERARCHY] Liberating ${c.name} from parent ${c.parentId}`);
-                c.parentId = null;
-                if (db) {
-                    try { await db.collection('categories').doc(String(c.id)).update({ parentId: null }); } catch(e) { console.warn('Liberate failed', c.id, e); }
-                }
-            }
-        }
-    }
+ 
 
-    // 1) Remove banned root categories
-    const toDelete = [];
-    // Explicitly ban "Hakimlik" and "Vəkillik" from root if they appear there
-    const explicitBans = new Set(['hakimlik', 'vəkillik', 'cinayət mühafizə', 'cinayət icra', 'normativ aktlar toplusu', 'ingilis', 'ingilis dili'].map(__normalize));
+ 
 
-    categories.forEach(c => {
-        if (!c.parentId && (bannedRoot.has(__normalize(c.name)) || explicitBans.has(__normalize(c.name)))) {
-            console.log(`[HIERARCHY] Banning unwanted root: ${c.name}`);
-            toDelete.push(c);
-        }
-    });
-    for (const c of toDelete) {
-        const idx = categories.indexOf(c);
-        if (idx > -1) categories.splice(idx, 1);
-        if (db) {
-            try { await db.collection('categories').doc(String(c.id)).delete(); } catch(e) { console.warn('Delete failed', c.id, e); }
-        }
-    }
-
-    // 2) Deduplicate root by name (keep best)
-    const rootCats = categories.filter(c => !c.parentId);
-    const byName = new Map();
-    for (const c of rootCats) {
-        const key = __normalize(c.name);
-        if (!byName.has(key)) {
-            byName.set(key, c);
-        } else {
-            const kept = byName.get(key);
-            const score = (x) => ((x.questions ? x.questions.length : 0) + (isGenerated(x.id) ? -100 : 0));
-            const winner = score(c) > score(kept) ? c : kept;
-            const loser = winner === c ? kept : c;
-            byName.set(key, winner);
-            const idx = categories.indexOf(loser);
-            if (idx > -1) categories.splice(idx, 1);
-            if (db) {
-                try { await db.collection('categories').doc(String(loser.id)).delete(); } catch(e) { console.warn('Delete dup failed', loser.id, e); }
-            }
-        }
-    }
-
-    // 3) Reparent law categories under "Qanunlar" if not whitelisted
-    if (lawsParent) {
-        for (const c of categories) {
-            if (!c.parentId && isMainLaw(c.name) && !allowedRoot.has(__normalize(c.name)) && c.id !== 'special_prokurorluq') {
-                c.parentId = lawsParent.id;
-                if (db) {
-                    try { await db.collection('categories').doc(String(c.id)).update({ parentId: lawsParent.id }); } catch(e) { console.warn('Update parent failed', c.id, e); }
-                }
-            }
-        }
-    }
-}
+ 
 
 // Initialization
 async function runDovletQulluguMigration() {
@@ -5046,7 +4735,8 @@ function renderCategories() {
             console.log(`XI Sinif tapıldı: ${cat.name}, ID: ${cat.id}, Sual: ${cat.questions ? cat.questions.length : 0}`);
         }
 
-        const isSpecial = cat.id === 'special_prokurorluq';
+        const allowedSpecial = new Set(['special_prokurorluq','special_hakimlik','special_vekillik']);
+        const isSpecial = allowedSpecial.has(String(cat.id));
         const showSub = hasSub && !isSpecial;
 
         div.innerHTML = `
@@ -5055,7 +4745,7 @@ function renderCategories() {
             ${showSub ? '<p class="sub-indicator"><i class="fas fa-folder-open"></i> Alt bölmələr var</p>' : ''}
             <div class="category-actions">
                 ${showSub ? `<button class="btn-secondary" data-action="enter-category" data-cat-id="${cat.id}">Bölmələrə Bax</button>` : ''}
-                ${isSpecial ? `<button class="btn-primary" data-action="start-special-exam" data-cat-id="${cat.id}">İmtahana Başla</button>` : `<button class="btn-primary" data-action="start-quiz-check" data-cat-id="${cat.id}">Testə Başla</button>`}
+                ${isSpecial ? `<button class="btn-primary" data-action="start-special-exam" data-cat-id="${cat.id}">İmtahana Başla</button>` : `${showSub ? '' : `<button class="btn-primary" data-action="start-quiz-check" data-cat-id="${cat.id}">Testə Başla</button>`}`}
                 ${cat.id === 'public_general' ? `<button class="btn-outline" data-action="open-global-public"><i class="fas fa-users"></i> Ümumi Suallar</button>` : ''}
                 
             </div>
@@ -5749,16 +5439,6 @@ async function generateProkurorluqExam() {
         // 3. STRICT ISOLATION: DO NOT FALLBACK TO PUBLIC
         // Əgər xüsusi bölmə tapılmırsa və ya boşdursa, köhnə bazaya müraciət ETMƏ!
         
-        // Əgər yaddaşda yoxdursa və DB varsa, yüklə (yalnız xüsusi ID varsa)
-        if ((!cat || !cat.questions || cat.questions.length === 0) && db && cat) {
-            try {
-                const docId = cat.id; // Yalnız xüsusi kateqoriya ID-si
-                const doc = await db.collection('categories').doc(docId).get();
-                if (doc.exists) {
-                    cat = { id: doc.id, ...doc.data() };
-                }
-            } catch (e) { console.error(`Error fetching special cat ${cat.id}:`, e); }
-        }
 
         if (!cat || !cat.questions || cat.questions.length === 0) {
             log.push(`${item.name}: Xüsusi bölmədə sual yoxdur! (Tələb olunan: ${item.count})`);
@@ -6212,7 +5892,7 @@ window.startQuizCheck = function(catId) {
         (async function(){
             try {
                 const snapshot = await db.collection('public_questions').where('categoryId', '==', catId).get();
-                const qs = snapshot.docs.map((doc, i) => {
+                let qs = snapshot.docs.map((doc, i) => {
                     const d = doc.data() || {};
                     const opts = Array.isArray(d.options) ? d.options : (Array.isArray(d.variants) ? d.variants : []);
                     let correct = 0;
@@ -6221,6 +5901,112 @@ window.startQuizCheck = function(catId) {
                     else if (typeof d.answer === 'number') correct = d.answer;
                     return { id: doc.id, text: d.text || d.question || '', options: opts, correctIndex: correct, image: d.image || d.img || null, explanation: d.explanation || d.explain || '', originalIndex: i };
                 });
+                if (!qs.length) {
+                    const all = await db.collection('public_questions').get();
+                    const normCat = __normalize(cat.name);
+                    let keys = new Set([normCat]);
+                    if (normCat.includes('mulki') && normCat.includes('prosessual')) {
+                        ['mulki-prosessual','mulki prosessual','mpm','mülki-prosessual','mülki prosessual','mulki-prosessual mecellesi','mulki prosessual mecellesi','civil procedure','mülki-prosessual məcəllə','mulki prosessual mecelle','mpm qanunu'].forEach(s => keys.add(__normalize(s)));
+                    }
+                    if (Array.isArray(window.PROKURORLUQ_SUBS)) {
+                        const sub = window.PROKURORLUQ_SUBS.find(s => __normalize(s.name) === normCat || (Array.isArray(s.keys) && s.keys.some(k => __normalize(k) === normCat || normCat.includes(__normalize(k)) || __normalize(k).includes(normCat))));
+                        if (sub && Array.isArray(sub.keys)) {
+                            sub.keys.forEach(k => keys.add(__normalize(k)));
+                        }
+                    }
+                    let idx = 0;
+                    qs = all.docs.reduce((arr, doc) => {
+                        const d = doc.data() || {};
+                        const tags = Array.isArray(d.tags) ? d.tags.map(t => __normalize(t)) : [];
+                        const matched = tags.some(t => keys.has(t) || Array.from(keys).some(k => t.includes(k) || k.includes(t)));
+                        if (matched) {
+                            const opts = Array.isArray(d.options) ? d.options : (Array.isArray(d.variants) ? d.variants : []);
+                            let correct = 0;
+                            if (typeof d.correctIndex === 'number') correct = d.correctIndex;
+                            else if (typeof d.correct === 'number') correct = d.correct;
+                            else if (typeof d.answer === 'number') correct = d.answer;
+                            arr.push({ id: doc.id, text: d.text || d.question || '', options: opts, correctIndex: correct, image: d.image || d.img || null, explanation: d.explanation || d.explain || '', originalIndex: idx++ });
+                        }
+                        return arr;
+                    }, []);
+                    if (!qs.length) {
+                        let idx2 = 0;
+                        qs = all.docs.reduce((arr, doc) => {
+                            const d = doc.data() || {};
+                            const topic = __normalize(d.topic || d.subject || d.subjectName || d.categoryName || '');
+                            const matchedTopic = topic && Array.from(keys).some(k => topic.includes(k) || k.includes(topic));
+                            if (matchedTopic) {
+                                const opts = Array.isArray(d.options) ? d.options : (Array.isArray(d.variants) ? d.variants : []);
+                                let correct = 0;
+                                if (typeof d.correctIndex === 'number') correct = d.correctIndex;
+                                else if (typeof d.correct === 'number') correct = d.correct;
+                                else if (typeof d.answer === 'number') correct = d.answer;
+                                arr.push({ id: doc.id, text: d.text || d.question || '', options: opts, correctIndex: correct, image: d.image || d.img || null, explanation: d.explanation || d.explain || '', originalIndex: idx2++ });
+                            }
+                            return arr;
+                        }, []);
+                    }
+                    if (!qs.length) {
+                        let idx3 = 0;
+                        const textKeys = Array.from(keys);
+                        qs = all.docs.reduce((arr, doc) => {
+                            const d = doc.data() || {};
+                            const txt = __normalize(d.text || d.question || '');
+                            const matchTxt = txt && textKeys.some(k => txt.includes(k) || k.includes(txt));
+                            if (matchTxt) {
+                                const opts = Array.isArray(d.options) ? d.options : (Array.isArray(d.variants) ? d.variants : []);
+                                let correct = 0;
+                                if (typeof d.correctIndex === 'number') correct = d.correctIndex;
+                                else if (typeof d.correct === 'number') correct = d.correct;
+                                else if (typeof d.answer === 'number') correct = d.answer;
+                                arr.push({ id: doc.id, text: d.text || d.question || '', options: opts, correctIndex: correct, image: d.image || d.img || null, explanation: d.explanation || d.explain || '', originalIndex: idx3++ });
+                            }
+                            return arr;
+                        }, []);
+                    }
+                    if (!qs.length) {
+                        const normKeys = Array.from(keys);
+                        const fromLocal = categories.filter(c => {
+                            const n = __normalize(c.name);
+                            return n === normCat || normKeys.some(k => n.includes(k) || k.includes(n));
+                        }).reduce((acc, c) => {
+                            const cq = Array.isArray(c.questions) ? c.questions : [];
+                            cq.forEach(q => acc.push(q));
+                            return acc;
+                        }, []);
+                        if (fromLocal.length > 0) {
+                            qs = fromLocal.map((q, i) => {
+                                const opts = Array.isArray(q.options) ? q.options : (Array.isArray(q.variants) ? q.variants : []);
+                                let correct = (typeof q.correctIndex === 'number') ? q.correctIndex
+                                    : (typeof q.correct === 'number') ? q.correct
+                                    : (typeof q.answer === 'number') ? q.answer
+                                    : 0;
+                                return { id: q.id || ('local_' + i), text: q.text || q.question || '', options: opts, correctIndex: correct, image: q.image || q.img || null, explanation: q.explanation || q.explain || '', originalIndex: i };
+                            });
+                        }
+                    }
+                    if (!qs.length) {
+                        try {
+                            const catsSnap = await db.collection('categories').get();
+                            let idx3 = 0;
+                            qs = catsSnap.docs.reduce((arr, doc) => {
+                                const d = doc.data() || {};
+                                const cname = __normalize(d.name || '');
+                                const matchedName = cname && (cname === normCat || Array.from(keys).some(k => cname.includes(k) || k.includes(cname)));
+                                const cq = matchedName && Array.isArray(d.questions) ? d.questions : [];
+                                cq.forEach(q => {
+                                    const opts = Array.isArray(q.options) ? q.options : (Array.isArray(q.variants) ? q.variants : []);
+                                    let correct = (typeof q.correctIndex === 'number') ? q.correctIndex
+                                        : (typeof q.correct === 'number') ? q.correct
+                                        : (typeof q.answer === 'number') ? q.answer
+                                        : 0;
+                                    arr.push({ id: q.id || ('db_' + (idx3++)), text: q.text || q.question || '', options: opts, correctIndex: correct, image: q.image || q.img || null, explanation: q.explanation || q.explain || '', originalIndex: idx3 });
+                                });
+                                return arr;
+                            }, []);
+                        } catch(e) { /* ignore */ }
+                    }
+                }
                 cat.questions = qs;
                 saveCategories();
             } catch(e) {}
@@ -10830,8 +10616,7 @@ window.organizeProkurorluqQuestions = async function() {
 
     if (typeof showLoading === 'function') showLoading("Suallar təhlil edilir...");
 
-    // Ensure subcategories exist
-    await window.seedProkurorluqSubcategories();
+    
 
     const sourceCat = categories.find(c => c.id === 'special_prokurorluq');
     if (!sourceCat || !sourceCat.questions || sourceCat.questions.length === 0) {
@@ -10900,18 +10685,7 @@ window.organizeProkurorluqQuestions = async function() {
 
     saveCategories();
     
-    // Sync with Firebase
-    try {
-        if (typeof syncCategory === 'function') {
-            await syncCategory('special_prokurorluq');
-            const changedTargets = new Set(questionsToMove.map(i => i.targetId));
-            for (const tid of changedTargets) {
-                await syncCategory(tid);
-            }
-        }
-    } catch(e) {
-        console.error("Sync error:", e);
-    }
+    
 
     if (typeof hideLoading === 'function') hideLoading();
     if (typeof renderAdminCategories === 'function') renderAdminCategories();

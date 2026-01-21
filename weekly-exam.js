@@ -134,9 +134,16 @@
       if (!db) return showNotification('Verilənlər bazası bağlantısı yoxdur!', 'error');
       if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
       let schema = [];
-      if (type === 'prokurorluq') schema = window.PROKURORLUQ_SUBS || [];
-      else if (type === 'hakimlik') schema = window.HAKIMLIK_SUBS || [];
-      else if (type === 'vekillik') schema = window.VEKILLIK_SUBS || [];
+      if (type === 'prokurorluq') {
+        const subs = categories.filter(c => c.parentId === 'special_prokurorluq');
+        schema = subs.map(s => ({ id: s.id, name: s.name, count: 6 }));
+      } else if (type === 'hakimlik') {
+        const subs = categories.filter(c => c.parentId === 'special_hakimlik');
+        schema = subs.map(s => ({ id: s.id, name: s.name, count: 6 }));
+      } else if (type === 'vekillik') {
+        const subs = categories.filter(c => c.parentId === 'special_vekillik');
+        schema = subs.map(s => ({ id: s.id, name: s.name, count: 6 }));
+      }
       
       if (!schema || schema.length === 0) {
         return showNotification('Bu imtahan növü üçün sual bölgüsü (sxem) hələ təyin edilməyib.', 'warning');
