@@ -1114,7 +1114,25 @@ async function attachPublicQuestionsToCategories() {
     snapshot.docs.forEach(doc => {
         const d = doc.data() || {};
         // Explicitly check for categoryId mismatch
-        const cid = String(d.categoryId || d.category_id || d.catId || '');
+        let cid = String(d.categoryId || d.category_id || d.catId || '');
+        
+        // FALLBACK: If no ID, try to match by TAGS
+        if (!cid && Array.isArray(d.tags)) {
+            for (const tag of d.tags) {
+                const normTag = String(tag).trim().toLowerCase().replace(/ə/g,'e').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ğ/g,'g').replace(/ç/g,'c').replace(/ş/g,'s');
+                // Find a category with matching name
+                const match = categories.find(c => {
+                    const normName = String(c.name).trim().toLowerCase().replace(/ə/g,'e').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ü/g,'u').replace(/ğ/g,'g').replace(/ç/g,'c').replace(/ş/g,'s');
+                    return normName === normTag;
+                });
+                if (match) {
+                    cid = String(match.id);
+                    // console.log(`[DIAGNOSTIC] Matched question ${doc.id} to category ${match.name} via tag "${tag}"`);
+                    break;
+                }
+            }
+        }
+
         if (!cid) {
             // console.warn(`[DIAGNOSTIC] Question ${doc.id} has no categoryId!`);
             return;
