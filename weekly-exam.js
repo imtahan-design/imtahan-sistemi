@@ -274,6 +274,7 @@
       const draft = {
         id: 'weekly_draft_' + type,
         type: type,
+        exam_type: 'special',
         questions: examQuestions,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         createdBy: currentUser.id,
@@ -679,6 +680,7 @@
           weekId: weekId,
           status: 'active',
           isSpecial: true,
+          exam_type: 'special',
           name: `Həftəlik Sınaq - ${typeName} (${weekId})`,
           description: `${typeName} üzrə həftəlik rəsmi sınaq imtahanı`
         });

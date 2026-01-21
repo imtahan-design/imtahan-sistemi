@@ -933,10 +933,8 @@ const storageManager = {
 // Save Helpers
 async function saveCategories(syncToDb = false) {
     if (db && syncToDb) {
-        // Full sync is dangerous for performance, use sparingly
-        console.warn("Full categories sync started...");
         for (const cat of categories) {
-             await db.collection('categories').doc(String(cat.id)).set(cat);
+             await db.collection('categories').doc(String(cat.id)).set(cat, { merge: true });
         }
     }
     localStorage.setItem('categories', JSON.stringify(categories));
@@ -5580,6 +5578,7 @@ window.startActiveWeeklyExam = async function(examType, catId) {
             questions: data.questions,
             isSpecial: true,
             examType: examType,
+            exam_type: __computeExamType(examType),
             weekId: data.weekId,
             publishedAt: data.publishedAt
         };
@@ -6075,7 +6074,7 @@ window.saveCategory = function() {
 
 async function addCategoryToDB(cat) {
     if (db) {
-        await db.collection('categories').doc(String(cat.id)).set(cat);
+        await db.collection('categories').doc(String(cat.id)).set(cat, { merge: true });
     }
 }
 
@@ -6086,6 +6085,25 @@ async function updateCategoryInDB(cat) {
             time: cat.time
         });
     }
+}
+function __computeExamType(val) {
+    const v = String(val || '').toLowerCase();
+    if (v.includes('prokurorluq') || v.includes('hakimlik') || v.includes('vekillik')) return 'special';
+    return 'general';
+}
+async function createExamSafe(examId, meta) {
+    if (!db) return;
+    const payload = { ...meta, exam_type: __computeExamType(meta.examType || meta.type || meta.name) };
+    await db.collection('exams').doc(String(examId)).set(payload, { merge: true });
+}
+async function addExamQuestionsSafe(examId, questions) {
+    if (!db || !Array.isArray(questions)) return;
+    const batch = db.batch();
+    questions.forEach((q, idx) => {
+        const docRef = db.collection('exam_questions').doc(`${examId}_${idx}_${String(q.id || idx)}`);
+        batch.set(docRef, { examId: String(examId), ...q }, { merge: true });
+    });
+    await batch.commit();
 }
 
 window.deleteCategory = function(id, event) {

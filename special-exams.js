@@ -77,6 +77,7 @@
       questions: examQuestions,
       isSpecial: true,
       examType: 'prokurorluq',
+      exam_type: 'special',
       createdAt: Date.now()
     };
   };
