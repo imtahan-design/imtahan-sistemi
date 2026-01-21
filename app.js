@@ -158,6 +158,53 @@ try {
     console.error("Firebase initialization error:", e);
 }
 
+// --- Global Categories Cache (Single Source of Truth) ---
+window.__CATEGORIES_CACHE = { list: null, fetchedAt: 0, promise: null };
+function __isSpecialRoot(cat) {
+    const isSpec = (cat.examType === 'special' || cat.exam_type === 'special' || String(cat.id||'').startsWith('special_'));
+    return isSpec && (!cat.parentId);
+}
+async function __restoreSpecialRootIfDeleted(doc) {
+    try {
+        const data = doc.data() || {};
+        const cat = { id: doc.id, ...data };
+        if (__isSpecialRoot(cat) && data.deleted === true) {
+            await db.collection('categories').doc(doc.id).update({ deleted: false, restoredAt: firebase.firestore.FieldValue.serverTimestamp() });
+        }
+    } catch (e) { console.warn('Special root restore failed:', e); }
+}
+function invalidateCategoriesCache() {
+    window.__CATEGORIES_CACHE = { list: null, fetchedAt: 0, promise: null };
+}
+async function getCategoriesOnce() {
+    if (!db) return [];
+    if (window.__CATEGORIES_CACHE.list) return window.__CATEGORIES_CACHE.list;
+    if (window.__CATEGORIES_CACHE.promise) return window.__CATEGORIES_CACHE.promise;
+    window.__CATEGORIES_CACHE.promise = (async () => {
+        const snap = await db.collection('categories').get();
+        const restoreOps = [];
+        for (const d of snap.docs) {
+            const data = d.data() || {};
+            const cat = { id: d.id, ...data };
+            if (__isSpecialRoot(cat) && data.deleted === true) {
+                restoreOps.push(__restoreSpecialRootIfDeleted(d));
+            }
+        }
+        if (restoreOps.length) {
+            try { await Promise.all(restoreOps); } catch(e) {}
+        }
+        const list = snap.docs.map(doc => {
+            const data = doc.data();
+            return { id: doc.id, parentId: data.parentId || null, ...data };
+        });
+        window.__CATEGORIES_CACHE.list = list;
+        window.__CATEGORIES_CACHE.fetchedAt = Date.now();
+        window.__CATEGORIES_CACHE.promise = null;
+        return list;
+    })();
+    return window.__CATEGORIES_CACHE.promise;
+}
+
  
 
 // Ziyarətçi izləmə funksiyası
@@ -499,44 +546,13 @@ function showNotification(message, type = 'info') {
 async function loadData() {
     if (db) {
         try {
-            // Load Categories (Public) with Timeout
-            const catPromise = db.collection('categories').get();
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error("Firestore bağlantısı çox gecikir (Timeout)")), 8000)
-            );
-            
-            const catSnapshot = await Promise.race([catPromise, timeoutPromise]);
-            
-            categories = catSnapshot.docs.map(doc => {
-                const data = doc.data();
-                data.isHiddenFromPublic = false;
-                return { 
-                    id: doc.id, 
-                    parentId: data.parentId || null,
-                    ...data 
-                };
-            });
-            console.log("Firestore-dan gələn hamısı:", categories);
-            
-            // Moved to global scope
+            categories = await getCategoriesOnce();
             categories = categories
                 .filter(c => !(c.name && c.name.toLowerCase().includes('ingilis dili')))
                 .filter(c => !c.deleted);
-            
-            // NOTE: Users and Private Quizzes are NOT loaded kütləvi for security reasons.
-            // They are fetched only when needed.
             users = []; 
             privateQuizzes = [];
-
-            console.log("Categories loaded from Firebase");
-            saveCategories(); 
-            
-            // Dövlət qulluğu miqrasiyası (Tamamilə deaktiv edildi)
-            // setTimeout(() => runDovletQulluguMigration(), 2000); 
-
-            // Public Questions Migration (v1)
-            // setTimeout(() => migratePublicQuestionsToGlobal(), 3000); 
-
+            saveCategories();
         } catch (error) {
             console.error("Error loading from Firebase:", error);
             categories = [];
@@ -593,8 +609,7 @@ async function loadData() {
         if (typeof showLoading === 'function') showLoading("Verilənlər bazası yoxlanılır...");
         
         try {
-            const snapshot = await db.collection('categories').get();
-            const dbCategories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const dbCategories = await getCategoriesOnce();
             
             let restoredInfo = [];
             let updatedCategories = [];
@@ -954,8 +969,14 @@ const storageManager = {
 async function saveCategories(syncToDb = false) {
     if (db && syncToDb) {
         for (const cat of categories) {
-             await db.collection('categories').doc(String(cat.id)).set(cat, { merge: true });
+             const payload = { ...cat };
+             if (__isSpecialRoot(payload) && payload.deleted === true) {
+                 delete payload.deleted;
+                 payload.deleted = false;
+             }
+             await db.collection('categories').doc(String(cat.id)).set(payload, { merge: true });
         }
+        invalidateCategoriesCache();
     }
     localStorage.setItem('categories', JSON.stringify(categories));
 }
@@ -1077,6 +1098,10 @@ async function syncCategory(catId, includeSubtree = false) {
                 delete safeCat.questions;
                 safeCat.questionsInline = false;
                 safeCat.questionsCount = qCount;
+                if (__isSpecialRoot(safeCat) && safeCat.deleted === true) {
+                    delete safeCat.deleted;
+                    safeCat.deleted = false;
+                }
                 batch.set(sref, safeCat, { merge: true });
                 count++; written++; batchCount++;
                 updateProgressBanner(`Staging: ${written}/${toSync.length} (split: ${qCount})`);
@@ -1095,7 +1120,12 @@ async function syncCategory(catId, includeSubtree = false) {
                 await __delay(0);
                 continue;
             } else {
-                batch.set(sref, cat, { merge: true });
+                const payload = { ...cat };
+                if (__isSpecialRoot(payload) && payload.deleted === true) {
+                    delete payload.deleted;
+                    payload.deleted = false;
+                }
+                batch.set(sref, payload, { merge: true });
                 count++; written++; batchCount++;
             }
             updateProgressBanner(`Staging: ${written}/${toSync.length}`);
@@ -1136,6 +1166,10 @@ async function syncCategory(catId, includeSubtree = false) {
                 delete safeCat.questions;
                 safeCat.questionsInline = false;
                 safeCat.questionsCount = qCount;
+                if (__isSpecialRoot(safeCat) && safeCat.deleted === true) {
+                    delete safeCat.deleted;
+                    safeCat.deleted = false;
+                }
                 fBatch.set(ref, safeCat, { merge: true });
                 fCount++; fWritten++;
                 updateProgressBanner(`Final: ${fWritten}/${toSync.length} (split: ${qCount})`);
@@ -1153,7 +1187,12 @@ async function syncCategory(catId, includeSubtree = false) {
                 await __delay(0);
                 continue;
             } else {
-                fBatch.set(ref, cat, { merge: true });
+                const payload = { ...cat };
+                if (__isSpecialRoot(payload) && payload.deleted === true) {
+                    delete payload.deleted;
+                    payload.deleted = false;
+                }
+                fBatch.set(ref, payload, { merge: true });
                 fCount++; fWritten++;
             }
             updateProgressBanner(`Final: ${fWritten}/${toSync.length}`);
@@ -1217,6 +1256,7 @@ async function syncCategory(catId, includeSubtree = false) {
     }
     finally {
         if (window.OpsLock && window.OpsLock.release) window.OpsLock.release(String(catId));
+        invalidateCategoriesCache();
     }
 }
 
@@ -5074,8 +5114,7 @@ function renderCategories() {
             console.log(`XI Sinif tapıldı: ${cat.name}, ID: ${cat.id}, Sual: ${cat.questions ? cat.questions.length : 0}`);
         }
 
-        const allowedSpecial = new Set(['special_prokurorluq','special_hakimlik','special_vekillik']);
-        const isSpecial = allowedSpecial.has(String(cat.id));
+        const isSpecial = __isSpecialRoot(cat) && cat.deleted !== true;
         const showSub = hasSub && !isSpecial;
 
         div.innerHTML = `
@@ -6327,10 +6366,9 @@ window.startQuizCheck = function(catId) {
                     }
                     if (!qs.length) {
                         try {
-                            const catsSnap = await db.collection('categories').get();
+                            const catsList = await getCategoriesOnce();
                             let idx3 = 0;
-                            qs = catsSnap.docs.reduce((arr, doc) => {
-                                const d = doc.data() || {};
+                            qs = catsList.reduce((arr, d) => {
                                 const cname = __normalize(d.name || '');
                                 const matchedName = cname && (cname === normCat || Array.from(keys).some(k => cname.includes(k) || k.includes(cname)));
                                 const cq = matchedName && Array.isArray(d.questions) ? d.questions : [];
@@ -6344,7 +6382,7 @@ window.startQuizCheck = function(catId) {
                                 });
                                 return arr;
                             }, []);
-                        } catch(e) { /* ignore */ }
+                        } catch(e) {}
                     }
                 }
                 cat.questions = qs;
@@ -6416,16 +6454,28 @@ window.saveCategory = function() {
 
 async function addCategoryToDB(cat) {
     if (db) {
-        await db.collection('categories').doc(String(cat.id)).set(cat, { merge: true });
+        const payload = { ...cat };
+        if (__isSpecialRoot(payload) && payload.deleted === true) {
+            delete payload.deleted;
+            payload.deleted = false;
+        }
+        await db.collection('categories').doc(String(cat.id)).set(payload, { merge: true });
+        invalidateCategoriesCache();
     }
 }
 
 async function updateCategoryInDB(cat) {
     if (db) {
-        await db.collection('categories').doc(String(cat.id)).update({
+        const payload = {
             name: cat.name,
             time: cat.time
-        });
+        };
+        // Deleted guard for special root (do not set true accidentally)
+        if (__isSpecialRoot(cat)) {
+            payload.deleted = false;
+        }
+        await db.collection('categories').doc(String(cat.id)).update(payload);
+        invalidateCategoriesCache();
     }
 }
 function __computeExamType(val) {
@@ -9021,11 +9071,11 @@ window.submitReport = async function() {
 
                 // 3. Əgər hələ də yoxdursa, kateqoriyalarda axtaraq (categoryId tapmaq üçün)
                 if (!report.categoryId) {
-                    const catSnapshot = await db.collection('categories').get();
-                    for (const doc of catSnapshot.docs) {
-                        const data = doc.data();
+                    const catsList = await getCategoriesOnce();
+                    for (const cat of catsList) {
+                        const data = cat;
                         if (data.questions && data.questions.some(q => q.id == qId || (qTitle && q.text && q.text.includes(qTitle.substring(0, 30))))) {
-                            report.categoryId = doc.id;
+                            report.categoryId = cat.id;
                             break;
                         }
                     }
@@ -9092,12 +9142,11 @@ window.loadReports = async function(initial = false) {
 
         if (db) {
             if (initial || !state.meta || state.meta.allQuizzes.length === 0) {
-                const [quizSnapshot, catSnapshot] = await Promise.all([
+                const [quizSnapshot, allCats] = await Promise.all([
                     db.collection('private_quizzes').get(),
-                    db.collection('categories').get()
+                    getCategoriesOnce()
                 ]);
                 const allQuizzes = quizSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                const allCats = catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 state.meta = { allQuizzes: [...allQuizzes, ...allCats], allUsers: [] };
             }
             try {
@@ -9672,16 +9721,16 @@ window.goToReportedQuestion = async function(catId, qId, qType, questionText = "
                         qId = pubQuery.docs[0].id;
                     } else {
                         // 3. Kateqoriyalarda axtar (İçindəki suallar massivində)
-                        const cats = await db.collection('categories').get();
-                        for (let doc of cats.docs) {
-                            const catData = doc.data();
+                        const catsList = await getCategoriesOnce();
+                        for (let cat of catsList) {
+                            const catData = cat;
                             if (catData.questions && Array.isArray(catData.questions)) {
                                 const found = catData.questions.find(q => 
                                     (qId && (q.id == qId || String(q.id) === String(qId))) || 
                                     (cleanText && q.text && (q.text === cleanText || q.text.includes(cleanText.substring(0, 50)) || cleanText.includes(q.text.substring(0, 50))))
                                 );
                                 if (found) {
-                                    catId = doc.id;
+                                    catId = cat.id;
                                     qType = 'category';
                                     qId = found.id;
                                     break;
