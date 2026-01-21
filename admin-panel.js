@@ -2,6 +2,24 @@
 // Bu modul admin və moderatorlar üçün idarəetmə səhifəsini, kateqoriya renderini və util funksiyaları bir mərkəzdə toplayır.
 (function() {
   window.adminExamFilter = 'general';
+  window.adminSyncIncludeSubtree = (function(){ try { return JSON.parse(localStorage.getItem('admin_sync_include_subtree')||'false'); } catch(_) { return false; } })();
+  function slugify(str) {
+    return (str || '')
+      .toLowerCase()
+      .replace(/ğ/g,'g').replace(/ə/g,'e').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c').replace(/ş/g,'s').replace(/ü/g,'u')
+      .replace(/[^a-z0-9\s-]/g,'')
+      .trim()
+      .replace(/\s+/g,'-')
+      .replace(/-+/g,'-')
+      .slice(0, 120);
+  }
+  function computeSpecialId(name) {
+    var n = (name || '').toString().toLowerCase();
+    if (n.indexOf('prokuror') > -1 || n.indexOf('prokurorluq') > -1) return 'special_prokurorluq';
+    if (n.indexOf('hakim') > -1) return 'special_hakimlik';
+    if (n.indexOf('vekil') > -1 || n.indexOf('vəkil') > -1) return 'special_vekillik';
+    return 'special_' + slugify(name);
+  }
   // Admin Dashboard açılışı və istiqamətləmə
   window.showAdminDashboard = function(doPush) {
     if (doPush === undefined) doPush = true;
@@ -139,8 +157,21 @@
         }
       });
     }
+    var __isSpecialCache = new Map();
     function isSpecial(cat){
-      return specialSet.has(cat.id) || specialSet.has(cat.parentId) || (cat.examType === 'special' || cat.exam_type === 'special');
+      if (__isSpecialCache.has(cat.id)) return __isSpecialCache.get(cat.id);
+      var overrideIds = Array.isArray(window.SPECIAL_CATEGORY_IDS) ? new Set(window.SPECIAL_CATEGORY_IDS.map(function(x){ return String(x); })) : new Set();
+      var nrm = function(s){ try { return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); } catch(_) { return (s||'').toString().toLowerCase(); } };
+      var nameCheck = function(s){
+        var n = nrm(s);
+        return n.indexOf('prokurorluq') > -1 || n.indexOf('hakim') > -1 || n.indexOf('vekil') > -1 || n.indexOf('vekil') > -1 || n.indexOf('vəkil') > -1;
+      };
+      var byId = specialSet.has(cat.id) || specialSet.has(cat.parentId) || overrideIds.has(String(cat.id)) || overrideIds.has(String(cat.parentId));
+      var byType = (cat.examType === 'special' || cat.exam_type === 'special');
+      var byName = nameCheck(cat.name);
+      var res = byId || byType || byName;
+      __isSpecialCache.set(cat.id, res);
+      return res;
     }
     var filteredCategories = categories.filter(function(cat) { return cat.parentId === currentAdminParentId; })
       .filter(function(cat){
@@ -288,6 +319,22 @@
       } else {
         typeInfo.textContent = labelText;
       }
+      var subtreeCtl = document.getElementById('admin-subtree-toggle');
+      if (!subtreeCtl) {
+        subtreeCtl = document.createElement('label');
+        subtreeCtl.id = 'admin-subtree-toggle';
+        subtreeCtl.className = 'flex items-center gap-2 p-2 mb-2 text-xs border rounded-md';
+        subtreeCtl.innerHTML = '<input type="checkbox" id="admin-sync-subtree-toggle-input"' + (window.adminSyncIncludeSubtree ? ' checked' : '') + '><span>Parent + subtree sinxronizasiya</span>';
+        var btn3 = document.getElementById('save-category-btn');
+        if (btn3 && btn3.parentNode) btn3.parentNode.insertBefore(subtreeCtl, btn3);
+        var inp = subtreeCtl.querySelector('#admin-sync-subtree-toggle-input');
+        if (inp) {
+          inp.addEventListener('change', function(){
+            window.adminSyncIncludeSubtree = !!inp.checked;
+            try { localStorage.setItem('admin_sync_include_subtree', JSON.stringify(window.adminSyncIncludeSubtree)); } catch(_){}
+          });
+        }
+      }
     }
     document.getElementById('category-modal').classList.remove('hidden');
   };
@@ -337,6 +384,22 @@
       } else {
         typeInfo.textContent = labelText;
       }
+      var subtreeCtl = document.getElementById('admin-subtree-toggle');
+      if (!subtreeCtl) {
+        subtreeCtl = document.createElement('label');
+        subtreeCtl.id = 'admin-subtree-toggle';
+        subtreeCtl.className = 'flex items-center gap-2 p-2 mb-2 text-xs border rounded-md';
+        subtreeCtl.innerHTML = '<input type="checkbox" id="admin-sync-subtree-toggle-input"' + (window.adminSyncIncludeSubtree ? ' checked' : '') + '><span>Parent + subtree sinxronizasiya</span>';
+        var btn3 = document.getElementById('save-category-btn');
+        if (btn3 && btn3.parentNode) btn3.parentNode.insertBefore(subtreeCtl, btn3);
+        var inp = subtreeCtl.querySelector('#admin-sync-subtree-toggle-input');
+        if (inp) {
+          inp.addEventListener('change', function(){
+            window.adminSyncIncludeSubtree = !!inp.checked;
+            try { localStorage.setItem('admin_sync_include_subtree', JSON.stringify(window.adminSyncIncludeSubtree)); } catch(_){}
+          });
+        }
+      }
     }
     document.getElementById('category-modal').classList.remove('hidden');
   };
@@ -356,7 +419,7 @@
       }
     } else {
       var newCat = {
-        id: String(Date.now()),
+        id: (window.adminExamFilter === 'special' && !currentAdminParentId) ? computeSpecialId(name) : String(Date.now()),
         name: name,
         time: time || 45,
         questions: [],
@@ -366,6 +429,10 @@
       };
       categories.push(newCat);
       addCategoryToDB(newCat);
+      if (window.adminExamFilter === 'special') {
+        if (!Array.isArray(window.SPECIAL_CATEGORY_IDS)) window.SPECIAL_CATEGORY_IDS = [];
+        if (window.SPECIAL_CATEGORY_IDS.indexOf(String(newCat.id)) === -1) window.SPECIAL_CATEGORY_IDS.push(String(newCat.id));
+      }
     }
     if (typeof saveCategories === 'function') saveCategories();
     closeModal('category-modal');
@@ -387,24 +454,87 @@
     }
   }
 
-  window.deleteCategory = function(id, event) {
+  window.deleteCategory = async function(id, event) {
     event.stopPropagation();
     if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu hərəkət üçün admin icazəsi lazımdır!', 'error');
-    if (confirm('Bu kateqoriyanı silmək istədiyinizə əminsiniz?')) {
+    if (!confirm('Bu kateqoriyanı və alt bölmələrini silmək istədiyinizə əminsiniz?')) return;
+    try {
+      async function __delay(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+      const toDeleteIds = new Set([String(id)]);
       if (db) {
-        const ref = db.collection('categories').doc(String(id));
-        db.runTransaction(async function(t){
-          const snap = await t.get(ref);
-          if (!snap.exists) return;
-          t.update(ref, { deleted: true, deletedAt: firebase.firestore.FieldValue.serverTimestamp() });
-        }).catch(console.error);
+        // 1) Parent soft-delete via transaction
+        const parentRef = db.collection('categories').doc(String(id));
+        await db.runTransaction(async function(t){
+          const snap = await t.get(parentRef);
+          if (snap.exists) {
+            t.update(parentRef, { deleted: true, deletedAt: firebase.firestore.FieldValue.serverTimestamp(), questionsSoftDeleted: true });
+          }
+        });
+        // 2) Cascade: find children recursively and soft-delete them in batches
+        let queue = [String(id)];
+        while (queue.length > 0) {
+          const current = queue.shift();
+          const snap = await db.collection('categories').where('parentId','==', current).get();
+          if (!snap.empty) {
+            // Mark children for deletion and enqueue their children
+            const batchLimit = 450;
+            let batch = db.batch();
+            let count = 0;
+            for (const doc of snap.docs) {
+              const childId = String(doc.id);
+              toDeleteIds.add(childId);
+              batch.update(doc.ref, { deleted: true, deletedAt: firebase.firestore.FieldValue.serverTimestamp(), questionsSoftDeleted: true });
+              count++;
+              queue.push(childId);
+              if (count >= batchLimit) {
+                await batch.commit();
+                batch = db.batch();
+                count = 0;
+                await __delay(150);
+              }
+            }
+            if (count > 0) await batch.commit();
+            if (count > 0) await __delay(150);
+          }
+        }
+        // 3) Mark questions in category_questions for all collected ids
+        for (const cid of Array.from(toDeleteIds)) {
+          const qsSnap = await db.collection('category_questions').where('categoryId','==', cid).get();
+          if (!qsSnap.empty) {
+            const batchLimit2 = 450;
+            let batch2 = db.batch();
+            let cnt2 = 0;
+            for (const qdoc of qsSnap.docs) {
+              batch2.update(qdoc.ref, { deleted: true, deletedAt: firebase.firestore.FieldValue.serverTimestamp() });
+              cnt2++;
+              if (cnt2 >= batchLimit2) {
+                await batch2.commit();
+                batch2 = db.batch();
+                cnt2 = 0;
+                await __delay(150);
+              }
+            }
+            if (cnt2 > 0) await batch2.commit();
+            if (cnt2 > 0) await __delay(150);
+          }
+        }
       }
+      // 3) Update local memory/UI
       categories = categories.map(function(c) { 
-        if (String(c.id) === String(id)) return { ...c, deleted: true, deletedAt: Date.now() };
+        if (toDeleteIds.has(String(c.id))) return { ...c, deleted: true, deletedAt: Date.now() };
         return c;
       }).filter(function(c){ return !c.deleted; });
       if (typeof saveCategories === 'function') saveCategories();
-      renderAdminCategories();
+      // Exit deleted parent view to avoid showing orphan children
+      if (currentAdminParentId === String(id)) {
+        window.navigateAdminUp();
+      } else {
+        renderAdminCategories();
+      }
+      showNotification('Silindi (soft-delete): seçilmiş bölmə və bütün alt bölmələr gizlədildi.', 'success');
+    } catch (e) {
+      console.error(e);
+      showNotification('Silinərkən xəta baş verdi: ' + e.message, 'error');
     }
   };
 

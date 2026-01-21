@@ -120,6 +120,24 @@ try {
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         auth = firebase.auth();
+        window.OpsLock = {
+            locks: new Map(),
+            acquire: async function(key) {
+                key = String(key);
+                if (this.locks.has(key)) return false;
+                this.locks.set(key, true);
+                return true;
+            },
+            release: function(key) {
+                key = String(key);
+                this.locks.delete(key);
+            },
+            sync: false,
+            restore: false
+        };
+        try {
+            window.adminSyncIncludeSubtree = (function(){ try { return JSON.parse(localStorage.getItem('admin_sync_include_subtree')||'false'); } catch(_) { return false; } })();
+        } catch(_) {}
         // Initialize Analytics if possible
         try {
             if (typeof firebase.analytics === 'function') {
@@ -620,7 +638,7 @@ async function loadData() {
                 
                 // Bazaya da geri yaz (sinxronizasiya)
                 for (const cat of updatedCategories) {
-                    await syncCategory(cat.id);
+                    await syncCategory(cat.id, !!window.adminSyncIncludeSubtree);
                 }
 
                 if (typeof hideLoading === 'function') hideLoading();
@@ -942,16 +960,331 @@ async function saveCategories(syncToDb = false) {
     localStorage.setItem('categories', JSON.stringify(categories));
 }
 
-// Yeni: Tək kateqoriyanı sinxron etmək üçün
-async function syncCategory(catId) {
+async function syncCategory(catId, includeSubtree = false) {
     try {
         if (!db) return;
-        const cat = categories.find(c => String(c.id) === String(catId));
-        if (!cat) return;
-        await db.collection('categories').doc(String(catId)).set(cat, { merge: true });
+        if (window.OpsLock && window.OpsLock.locks && window.OpsLock.locks.has(String(catId))) { showNotification('Bu kateqoriya üzərində başqa əməliyyat gedir.', 'warning'); return; }
+        if (window.OpsLock && window.OpsLock.acquire) {
+            const ok = await window.OpsLock.acquire(String(catId));
+            if (!ok) return;
+        }
+        async function __delay(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+        function showProgressBanner(title){
+            let el = document.getElementById('sync-progress-banner');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'sync-progress-banner';
+                el.style.position = 'fixed';
+                el.style.bottom = '20px';
+                el.style.right = '20px';
+                el.style.zIndex = '9999';
+                el.style.background = '#111';
+                el.style.color = '#fff';
+                el.style.padding = '12px 16px';
+                el.style.border = '1px solid #444';
+                el.style.borderRadius = '8px';
+                el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.35)';
+                el.innerHTML = '<div id="sync-title" style="font-weight:bold;margin-bottom:6px;"></div><div id="sync-status"></div>';
+                document.body.appendChild(el);
+            }
+            const t = el.querySelector('#sync-title'); if (t) t.textContent = title || 'Sinxronizasiya';
+            const s = el.querySelector('#sync-status'); if (s) s.textContent = 'Hazırlanır...';
+        }
+        function updateProgressBanner(text){
+            const el = document.getElementById('sync-progress-banner');
+            if (!el) return;
+            const s = el.querySelector('#sync-status'); if (s) s.textContent = text;
+        }
+        function hideProgressBanner(){
+            const el = document.getElementById('sync-progress-banner');
+            if (el) el.remove();
+        }
+        const MAX_INLINE_QUESTIONS = 200;
+        const MAX_DOC_BYTES = 800000;
+        function __byteSize(obj){
+            try { return new TextEncoder().encode(JSON.stringify(obj)).length; } catch(_) { return JSON.stringify(obj).length; }
+        }
+        function __byteSize(obj){
+            try { return new TextEncoder().encode(JSON.stringify(obj)).length; } catch(_) { return JSON.stringify(obj).length; }
+        }
+        function __stableHash(s) {
+            let h = 0;
+            for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
+            return Math.abs(h).toString(36);
+        }
+        async function __upsertCategoryQuestions(cat, collectionName){
+            if (!Array.isArray(cat.questions)) return;
+            let batch = db.batch();
+            let count = 0;
+            const seen = new Set();
+            for (let idx = 0; idx < cat.questions.length; idx++) {
+                const q = cat.questions[idx];
+                const base = String(q.text || '') + '|' + (Array.isArray(q.options) ? q.options.join('|') : '') + '|' + String(cat.id);
+                const sid = __stableHash(base);
+                const qid = String(q.id || ('q_' + sid));
+                if (seen.has(qid)) continue;
+                seen.add(qid);
+                const ref = db.collection(collectionName).doc(qid);
+                const page = Math.floor(idx / 100);
+                batch.set(ref, { categoryId: String(cat.id), page, createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...q }, { merge: true });
+                count++;
+                if (count >= 450) {
+                    await batch.commit();
+                    batch = db.batch();
+                    count = 0;
+                    await __delay(150);
+                }
+            }
+            if (count > 0) await batch.commit();
+            if (count > 0) await __delay(150);
+        }
+        const root = categories.find(c => String(c.id) === String(catId));
+        if (!root) return;
+        const startAt = performance.now ? performance.now() : Date.now();
+        const visited = new Set();
+        const queue = [String(catId)];
+        const toSync = [];
+        while (queue.length) {
+            const current = queue.shift();
+            if (visited.has(current)) continue;
+            visited.add(current);
+            toSync.push(current);
+            if (includeSubtree) {
+                const children = categories.filter(c => String(c.parentId) === String(current)).map(c => String(c.id));
+                for (const ch of children) {
+                    if (!visited.has(ch)) queue.push(ch);
+                }
+            }
+        }
+        showProgressBanner('Sinxronizasiya başladı');
+        updateProgressBanner(`Yazılacaq sənədlər: ${toSync.length}`);
+        let written = 0;
+        let dynamicDelay = 150;
+        let peakCommitMs = 0;
+        let batchCount = 0;
+        let failCount = 0;
+        let batch = db.batch();
+        let count = 0;
+        for (const id of toSync) {
+            const cat = categories.find(c => String(c.id) === String(id));
+            if (!cat) continue;
+            const size = __byteSize(cat);
+            const needsSplit = (Array.isArray(cat.questions) && cat.questions.length > MAX_INLINE_QUESTIONS) || size > MAX_DOC_BYTES;
+            const sref = db.collection('staging_categories').doc(String(id));
+            if (needsSplit) {
+                const safeCat = { ...cat };
+                const qCount = Array.isArray(safeCat.questions) ? safeCat.questions.length : 0;
+                delete safeCat.questions;
+                safeCat.questionsInline = false;
+                safeCat.questionsCount = qCount;
+                batch.set(sref, safeCat, { merge: true });
+                count++; written++; batchCount++;
+                updateProgressBanner(`Staging: ${written}/${toSync.length} (split: ${qCount})`);
+                if (count >= 450) {
+                    const cStart = performance.now ? performance.now() : Date.now();
+                    await batch.commit();
+                    const cEnd = performance.now ? performance.now() : Date.now();
+                    const last = Math.max(1, cEnd - cStart);
+                    peakCommitMs = Math.max(peakCommitMs, last);
+                    dynamicDelay = Math.min(500, Math.max(100, Math.round(last * 0.3)));
+                    batch = db.batch();
+                    count = 0;
+                    await __delay(dynamicDelay);
+                }
+                await __upsertCategoryQuestions(cat, 'staging_category_questions');
+                await __delay(0);
+                continue;
+            } else {
+                batch.set(sref, cat, { merge: true });
+                count++; written++; batchCount++;
+            }
+            updateProgressBanner(`Staging: ${written}/${toSync.length}`);
+            if (count >= 450) {
+                const cStart = performance.now ? performance.now() : Date.now();
+                await batch.commit();
+                const cEnd = performance.now ? performance.now() : Date.now();
+                const last = Math.max(1, cEnd - cStart);
+                peakCommitMs = Math.max(peakCommitMs, last);
+                dynamicDelay = Math.min(500, Math.max(100, Math.round(last * 0.3)));
+                batch = db.batch();
+                count = 0;
+                await __delay(dynamicDelay);
+            }
+            if (written % 100 === 0) await __delay(0);
+        }
+        if (count > 0) {
+            const cStart = performance.now ? performance.now() : Date.now();
+            await batch.commit();
+            const cEnd = performance.now ? performance.now() : Date.now();
+            const last = Math.max(1, cEnd - cStart);
+            peakCommitMs = Math.max(peakCommitMs, last);
+            dynamicDelay = Math.min(500, Math.max(100, Math.round(last * 0.3)));
+            await __delay(dynamicDelay);
+        }
+        let fBatch = db.batch();
+        let fCount = 0;
+        let fWritten = 0;
+        for (const id of toSync) {
+            const cat = categories.find(c => String(c.id) === String(id));
+            if (!cat) continue;
+            const size = __byteSize(cat);
+            const needsSplit = (Array.isArray(cat.questions) && cat.questions.length > MAX_INLINE_QUESTIONS) || size > MAX_DOC_BYTES;
+            const ref = db.collection('categories').doc(String(id));
+            if (needsSplit) {
+                const safeCat = { ...cat };
+                const qCount = Array.isArray(safeCat.questions) ? safeCat.questions.length : 0;
+                delete safeCat.questions;
+                safeCat.questionsInline = false;
+                safeCat.questionsCount = qCount;
+                fBatch.set(ref, safeCat, { merge: true });
+                fCount++; fWritten++;
+                updateProgressBanner(`Final: ${fWritten}/${toSync.length} (split: ${qCount})`);
+                if (fCount >= 450) {
+                    const cStart = performance.now ? performance.now() : Date.now();
+                    await fBatch.commit();
+                    const cEnd = performance.now ? performance.now() : Date.now();
+                    const last = Math.max(1, cEnd - cStart);
+                    peakCommitMs = Math.max(peakCommitMs, last);
+                    fBatch = db.batch();
+                    fCount = 0;
+                    await __delay(dynamicDelay);
+                }
+                await __upsertCategoryQuestions(cat, 'category_questions');
+                await __delay(0);
+                continue;
+            } else {
+                fBatch.set(ref, cat, { merge: true });
+                fCount++; fWritten++;
+            }
+            updateProgressBanner(`Final: ${fWritten}/${toSync.length}`);
+            if (fCount >= 450) {
+                const cStart = performance.now ? performance.now() : Date.now();
+                await fBatch.commit();
+                const cEnd = performance.now ? performance.now() : Date.now();
+                const last = Math.max(1, cEnd - cStart);
+                peakCommitMs = Math.max(peakCommitMs, last);
+                fBatch = db.batch();
+                fCount = 0;
+                await __delay(dynamicDelay);
+            }
+        }
+        if (fCount > 0) {
+            const cStart = performance.now ? performance.now() : Date.now();
+            await fBatch.commit();
+            const cEnd = performance.now ? performance.now() : Date.now();
+            const last = Math.max(1, cEnd - cStart);
+            peakCommitMs = Math.max(peakCommitMs, last);
+            await __delay(dynamicDelay);
+        }
+        try {
+            for (const id of toSync) {
+                await db.collection('staging_categories').doc(String(id)).delete();
+                const qs = await db.collection('staging_category_questions').where('categoryId','==', String(id)).get();
+                if (!qs.empty) {
+                    let dBatch = db.batch();
+                    let dCount = 0;
+                    for (const d of qs.docs) {
+                        dBatch.delete(d.ref);
+                        dCount++;
+                        if (dCount >= 450) {
+                            await dBatch.commit();
+                            dBatch = db.batch();
+                            dCount = 0;
+                        }
+                    }
+                    if (dCount > 0) await dBatch.commit();
+                }
+            }
+        } catch(e) { failCount++; }
+        const endAt = performance.now ? performance.now() : Date.now();
+        updateProgressBanner(`Tamamlandı: ${fWritten}/${toSync.length} sənəd. Müddət: ${Math.round(endAt - startAt)} ms`);
+        setTimeout(hideProgressBanner, 1200);
+        try {
+            await db.collection('sync_logs').add({
+                rootId: String(catId),
+                totalDocs: toSync.length,
+                writtenDocs: fWritten,
+                durationMs: Math.round(endAt - startAt),
+                peakCommitMs: Math.round(peakCommitMs),
+                batchCount: batchCount,
+                failCount: failCount,
+                includeSubtree: !!includeSubtree,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (_) {}
     } catch (e) {
         console.error('syncCategory error:', e);
     }
+    finally {
+        if (window.OpsLock && window.OpsLock.release) window.OpsLock.release(String(catId));
+    }
+}
+
+async function fetchCategoryQuestions(catId) {
+    try {
+        if (!db) return [];
+        let attempts = 0;
+        let snap = null;
+        while (attempts < 3) {
+            try {
+                snap = await db.collection('category_questions').where('categoryId','==', String(catId)).orderBy('createdAt','asc').get();
+                break;
+            } catch (err) {
+                attempts++;
+                if (attempts >= 3) throw err;
+                await new Promise(r => setTimeout(r, 300 * attempts));
+            }
+        }
+        const qs = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => !x.deleted);
+        const idxd = qs.map((q, i) => ({ ...q, originalIndex: i }));
+        categories = categories.map(c => {
+            if (String(c.id) === String(catId)) {
+                const base = { ...c };
+                base.questions = idxd;
+                base.questionsInline = base.questionsInline === false ? false : true;
+                base.questionsCount = idxd.length;
+                return base;
+            }
+            return c;
+        });
+        return idxd;
+    } catch (e) {
+        console.error('fetchCategoryQuestions error:', e);
+        showNotification('Suallar yüklənərkən xəta baş verdi. Şəbəkə/İcazə problem ola bilər.', 'error');
+        return [];
+    }
+}
+
+async function fetchCategoryQuestionsPaged(catId, page = 0, pageSize = 100) {
+    try {
+        if (!db) return [];
+        const snap = await db.collection('category_questions')
+            .where('categoryId','==', String(catId))
+            .where('page','==', page)
+            .orderBy('createdAt','asc')
+            .limit(pageSize)
+            .get();
+        const qs = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => !x.deleted);
+        const idxd = qs.map((q, i) => ({ ...q, originalIndex: (page * pageSize) + i }));
+        const cat = categories.find(c => String(c.id) === String(catId));
+        if (cat) {
+            const merged = Array.isArray(cat.questions) ? cat.questions.concat(idxd) : idxd;
+            categories = categories.map(c => String(c.id) === String(catId) ? { ...c, questions: merged } : c);
+        }
+        return idxd;
+    } catch (e) {
+        console.error('fetchCategoryQuestionsPaged error:', e);
+        showNotification('Sual səhifəsi yüklənmədi.', 'error');
+        return [];
+    }
+}
+
+window.loadMoreCategoryQuestions = async function(catId) {
+    const cat = categories.find(c => String(c.id) === String(catId));
+    const loaded = Array.isArray(cat && cat.questions) ? cat.questions.length : 0;
+    const nextPage = Math.floor(loaded / 100);
+    await fetchCategoryQuestionsPaged(catId, nextPage, 100);
+    renderQuestions();
 }
 
 async function saveUsers() {
@@ -6115,26 +6448,6 @@ async function addExamQuestionsSafe(examId, questions) {
     await batch.commit();
 }
 
-window.deleteCategory = function(id, event) {
-    event.stopPropagation();
-    if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu hərəkət üçün admin icazəsi lazımdır!', 'error');
-    if (confirm('Bu kateqoriyanı silmək istədiyinizə əminsiniz?')) {
-        if (db) {
-            const ref = db.collection('categories').doc(String(id));
-            db.runTransaction(async function(t){
-                const snap = await t.get(ref);
-                if (!snap.exists) return;
-                t.update(ref, { deleted: true, deletedAt: firebase.firestore.FieldValue.serverTimestamp() });
-            }).catch(console.error);
-        }
-        categories = categories.map(function(c) { 
-            if (String(c.id) === String(id)) return { ...c, deleted: true, deletedAt: Date.now() };
-            return c;
-        }).filter(function(c){ return !c.deleted; });
-        saveCategories();
-        renderAdminCategories(); // Update admin view
-    }
-}
 
 // --- Category Admin & Questions ---
 let activeCategoryId = null;
@@ -7033,15 +7346,36 @@ let adminQuestionViewState = {
     topCount: 5
 };
 
-function openCategory(id) {
+async function openCategory(id) {
     activeCategoryId = id;
-    const cat = categories.find(c => c.id === id);
+    let cat = categories.find(c => c.id === id);
+    if (!cat) return;
+    if (!cat.questions || cat.questionsInline === false) {
+        try {
+            await fetchCategoryQuestionsPaged(id, 0, 100);
+        } catch (_) {
+            await fetchCategoryQuestions(id);
+        }
+        cat = categories.find(c => c.id === id);
+    }
     hideAllSections();
     
     // Təhlükəsizlik: Yalnız səlahiyyətli şəxslər (admin və ya moderator) admin panelini görə bilər
     if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator')) {
         document.getElementById('category-admin-section').classList.remove('hidden');
         document.getElementById('current-category-title').textContent = cat.name;
+        const titleEl = document.getElementById('current-category-title');
+        if (cat && cat.questionsSoftDeleted && titleEl) {
+            let btn = document.getElementById('restore-questions-btn');
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.id = 'restore-questions-btn';
+                btn.className = 'btn-warning ml-2';
+                btn.innerHTML = '<i class="fas fa-undo"></i> Sualları Bərpa Et';
+                btn.onclick = function(){ restoreCategoryQuestions(id); };
+                titleEl.parentNode && titleEl.parentNode.appendChild(btn);
+            }
+        }
         
         const adminArea = document.querySelector('.admin-panel-area');
         adminArea.classList.remove('hidden');
@@ -7133,6 +7467,88 @@ function renderQuestions() {
 window.loadMoreAdminQuestions = function() {
     adminQuestionViewState.topCount += 5;
     renderQuestions();
+}
+
+window.restoreCategoryQuestions = async function(catId) {
+    if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu əməliyyat üçün admin icazəsi lazımdır!', 'error');
+    if (!confirm('Silinmiş suallar bərpa edilsin?')) return;
+    try {
+        if (!db) return;
+        if (window.OpsLock && window.OpsLock.locks && window.OpsLock.locks.has(String(catId))) { showNotification('Bu kateqoriya üzərində başqa əməliyyat gedir.', 'warning'); return; }
+        if (window.OpsLock && window.OpsLock.acquire) {
+            const ok = await window.OpsLock.acquire(String(catId));
+            if (!ok) return;
+        }
+        function showProgressBanner(title){
+            let el = document.getElementById('sync-progress-banner');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'sync-progress-banner';
+                el.style.position = 'fixed';
+                el.style.bottom = '20px';
+                el.style.right = '20px';
+                el.style.zIndex = '9999';
+                el.style.background = '#111';
+                el.style.color = '#fff';
+                el.style.padding = '12px 16px';
+                el.style.border = '1px solid #444';
+                el.style.borderRadius = '8px';
+                el.innerHTML = '<div id="sync-title" style="font-weight:bold;margin-bottom:6px;"></div><div id="sync-status"></div>';
+                document.body.appendChild(el);
+            }
+            const t = el.querySelector('#sync-title'); if (t) t.textContent = title || 'Bərpa';
+            const s = el.querySelector('#sync-status'); if (s) s.textContent = 'Hazırlanır...';
+        }
+        function updateProgressBanner(text){
+            const el = document.getElementById('sync-progress-banner');
+            if (!el) return;
+            const s = el.querySelector('#sync-status'); if (s) s.textContent = text;
+        }
+        function hideProgressBanner(){
+            const el = document.getElementById('sync-progress-banner');
+            if (el) el.remove();
+        }
+        showProgressBanner('Sualları bərpa et');
+        const snap = await db.collection('category_questions').where('categoryId','==', String(catId)).where('deleted','==', true).get();
+        if (snap.empty) {
+            updateProgressBanner('Bərpa ediləcək sual yoxdur.');
+            setTimeout(hideProgressBanner, 1200);
+            return;
+        }
+        const docs = snap.docs;
+        const chunkSize = 75;
+        let total = docs.length;
+        let done = 0;
+        let dynamicDelay = 150;
+        function __idle(){ return new Promise(function(resolve){ if (typeof requestIdleCallback === 'function') requestIdleCallback(function(){ resolve(); }); else setTimeout(resolve, 0); }); }
+        for (let i = 0; i < docs.length; i += chunkSize) {
+            const chunk = docs.slice(i, i + chunkSize);
+            await __idle();
+            let batch = db.batch();
+            let count = 0;
+            for (const d of chunk) {
+                batch.update(d.ref, { deleted: false, restoredAt: firebase.firestore.FieldValue.serverTimestamp() });
+                count++;
+            }
+            const cStart = performance.now ? performance.now() : Date.now();
+            await batch.commit();
+            const cEnd = performance.now ? performance.now() : Date.now();
+            const last = Math.max(1, cEnd - cStart);
+            dynamicDelay = Math.min(500, Math.max(100, Math.round(last * 0.3)));
+            done += count;
+            updateProgressBanner(`Bərpa: ${done}/${total}`);
+            await new Promise(r => setTimeout(r, dynamicDelay));
+        }
+        await fetchCategoryQuestions(catId);
+        updateProgressBanner('Tamamlandı.');
+        setTimeout(hideProgressBanner, 1200);
+        showNotification('Silinmiş suallar bərpa edildi!', 'success');
+    } catch (e) {
+        console.error('restoreCategoryQuestions error:', e);
+        showNotification('Bərpa zamanı xəta baş verdi.', 'error');
+    } finally {
+        if (window.OpsLock && window.OpsLock.release) window.OpsLock.release(String(catId));
+    }
 }
 
 window.generateAdminAIQuestions = async function() {
@@ -7771,7 +8187,7 @@ window.saveAdminQuestions = async function() {
     }
 
     saveCategories();
-    await syncCategory(activeCategoryId); // Kateqoriyanı dərhal bazaya sinxron et
+    await syncCategory(activeCategoryId, !!window.adminSyncIncludeSubtree);
     hideAdminQuestionPage();
     
     // Redaktə vəziyyətini sıfırla
@@ -7879,14 +8295,14 @@ window.deleteQuestion = async function(qId) {
                     
                     // Əgər digər kateqoriyada da dəyişiklik oldusa, onu da bazada yenilə
                     if (otherCat.id !== cat.id && (otherCat.questions ? otherCat.questions.length : 0) !== originalCount) {
-                        await syncCategory(otherCat.id);
+                        await syncCategory(otherCat.id, false);
                     }
                 }
             }
         }
 
         saveCategories(); 
-        syncCategory(activeCategoryId); // DB ilə sinxron et
+        syncCategory(activeCategoryId, false);
         openCategory(activeCategoryId);
     }
 }
