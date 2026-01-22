@@ -54,7 +54,53 @@
       if (now < s) throw new Error('Kupon hələ aktiv deyil');
       if (now > e) throw new Error('Kuponun müddəti bitib');
       if (d.usedBy) {
-        if (String(d.usedBy) === String(uid)) return { status: 'already_used' };
+        if (String(d.usedBy) === String(uid)) return { status: 'ok', couponDocId: couponDocId };
+        throw new Error('Kupon artıq istifadə olunub');
+      }
+      return { status: 'ok', couponDocId: couponDocId };
+    });
+    if (res && res.status) return res;
+    return { status: 'ok', couponDocId: couponDocId };
+  };
+  window.markCouponUsed = async function(code, examId, couponDocId) {
+    if (!db) throw new Error('Verilənlər bazası bağlantısı yoxdur');
+    code = String(code || '').trim();
+    if (!code) throw new Error('Kupon kodu daxil edin');
+    var uid = '';
+    try {
+      uid = String(currentUser && (currentUser.id || currentUser.uid) ? (currentUser.id || currentUser.uid) : '');
+      if (!uid) {
+        var lsUser = null;
+        try { lsUser = JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch(_) { lsUser = null; }
+        uid = String(lsUser && (lsUser.id || lsUser.uid) ? (lsUser.id || lsUser.uid) : '');
+      }
+    } catch(_) { uid = ''; }
+    if (!uid) throw new Error('Zəhmət olmasa hesabla daxil olun');
+    var docId = String(couponDocId || '').trim();
+    if (!docId) {
+      const byId = await db.collection('exam_coupons').doc(code).get();
+      let doc = byId.exists ? byId : null;
+      if (!doc) {
+        const q = await db.collection('exam_coupons').where('code','==', code).limit(1).get();
+        doc = q.empty ? null : q.docs[0];
+      }
+      if (!doc) throw new Error('Kupon tapılmadı');
+      docId = doc.id;
+    }
+    const res = await db.runTransaction(async function(t) {
+      const ref = db.collection('exam_coupons').doc(docId);
+      const snap = await t.get(ref);
+      if (!snap.exists) throw new Error('Kupon tapılmadı');
+      const d = snap.data() || {};
+      if (String(d.examId || '') !== String(examId)) throw new Error('Bu kupon bu imtahana uyğun deyil');
+      const now = new Date();
+      const s = d.startTime && typeof d.startTime.toDate === 'function' ? d.startTime.toDate() : new Date(d.startTime || 0);
+      const e = d.endTime && typeof d.endTime.toDate === 'function' ? d.endTime.toDate() : new Date(d.endTime || 0);
+      if (isNaN(s.getTime()) || isNaN(e.getTime())) throw new Error('Kupon tarix intervalı düzgün deyil');
+      if (now < s) throw new Error('Kupon hələ aktiv deyil');
+      if (now > e) throw new Error('Kuponun müddəti bitib');
+      if (d.usedBy) {
+        if (String(d.usedBy) === String(uid)) return { status: 'ok' };
         throw new Error('Kupon artıq istifadə olunub');
       }
       t.update(ref, { usedBy: String(uid) });
@@ -110,18 +156,9 @@
         if (err) err.classList.add('hidden');
         const code = String((m.querySelector('#coupon-code-input') || {}).value || '').trim();
         const result = await window.validateCoupon(code, examId);
-        if (result && result.status === 'already_used') {
-          if (err) {
-            err.textContent = 'Bu kupon artıq sizin hesabla istifadə olunub.';
-            err.classList.remove('hidden');
-          }
-          if (btn) btn.innerHTML = 'Təsdiqlə';
-          setTimeout(function(){ if (btn) btn.disabled = false; }, debounceMs);
-          return;
-        }
         if (result && result.status === 'ok') {
           document.getElementById('coupon-modal').remove();
-          if (typeof onSuccess === 'function') onSuccess();
+          if (typeof onSuccess === 'function') onSuccess({ code: code, examId: examId, couponDocId: result && result.couponDocId ? result.couponDocId : null });
           return;
         }
         throw new Error('Kupon yoxlama xətası');
@@ -956,13 +993,14 @@
     if (window.__DEBUG) console.log(`Starting active weekly exam: ${examType}, category: ${catId}`);
     const __u = window.currentUser || (function(){ try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch (_) { return null; } })();
     if (!window.currentUser && __u) window.currentUser = __u;
+    var couponInfo = null;
     if (window.COUPON_REQUIRED_TYPES && window.COUPON_REQUIRED_TYPES.has(String(examType))) {
       if (!window.currentUser || !window.currentUser.id) {
         if (typeof showNotification === 'function') showNotification('Zəhmət olmasa hesabla daxil olun', 'error');
         return;
       }
       const examId = 'active_' + String(examType);
-      await new Promise((resolve) => { window.showCouponModal(examId, resolve); });
+      couponInfo = await new Promise((resolve) => { window.showCouponModal(examId, resolve); });
     }
     const modal = document.getElementById('exam-selection-modal');
     let btn = null;
@@ -995,8 +1033,17 @@
         weekId: data.weekId,
         publishedAt: data.publishedAt
       };
+      console.log('BEFORE_LS_WRITE');
       localStorage.setItem('generatedExamData', JSON.stringify(generatedExam));
       localStorage.setItem('activeSpecialCategory', 'weekly_exam_' + examType);
+      if (couponInfo && couponInfo.code && typeof window.markCouponUsed === 'function') {
+        try {
+          console.log('BEFORE_MARK_USED');
+          await window.markCouponUsed(couponInfo.code, couponInfo.examId || ('active_' + String(examType)), couponInfo.couponDocId || null);
+        } catch(e) {
+          console.error('Coupon mark failed:', e);
+        }
+      }
       window.location.href = 'dim_view.html';
     } catch (e) {
       console.error("Weekly Exam Error:", e);
