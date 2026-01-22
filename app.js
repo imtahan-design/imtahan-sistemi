@@ -1060,6 +1060,20 @@ async function syncCategory(catId, includeSubtree = false) {
             for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
             return Math.abs(h).toString(36);
         }
+        function __docPart(s) {
+            const v = String(s == null ? '' : s);
+            const cleaned = v.replace(/\//g, '_').replace(/[\u0000-\u001F\u007F]/g, '').trim();
+            if (!cleaned) return 'x';
+            if (cleaned.length <= 400) return cleaned;
+            return 'h_' + __stableHash(cleaned);
+        }
+        function __makeDocId(catIdValue, qidValue) {
+            const catPart = __docPart(catIdValue);
+            const qPart = __docPart(qidValue);
+            const docId = catPart + '_' + qPart;
+            if (docId.length <= 900) return docId;
+            return catPart + '_h_' + __stableHash(String(qidValue || ''));
+        }
         async function __upsertCategoryQuestions(cat, collectionName){
             if (!Array.isArray(cat.questions)) return;
             let batch = db.batch();
@@ -1070,11 +1084,13 @@ async function syncCategory(catId, includeSubtree = false) {
                 const base = String(q.text || '') + '|' + (Array.isArray(q.options) ? q.options.join('|') : '') + '|' + String(cat.id);
                 const sid = __stableHash(base);
                 const qid = String(q.id || ('q_' + sid));
+                if (!q.id) q.id = qid;
                 if (seen.has(qid)) continue;
                 seen.add(qid);
-                const ref = db.collection(collectionName).doc(qid);
+                const docId = __makeDocId(cat.id, qid);
+                const ref = db.collection(collectionName).doc(docId);
                 const page = Math.floor(idx / 100);
-                batch.set(ref, { categoryId: String(cat.id), page, createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...q }, { merge: true });
+                batch.set(ref, { categoryId: String(cat.id), page, createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...q, id: qid }, { merge: true });
                 count++;
                 if (count >= 450) {
                     await batch.commit();
@@ -6043,7 +6059,8 @@ window.startSpecialQuiz = async function(catId) {
         }
         
         // Fallback for unknown special types
-        localStorage.setItem('activeSpecialCategory', catId);
+        try { window.__ACTIVE_SPECIAL_CATEGORY__ = catId; } catch(_) {}
+        try { if (typeof window.safeSet === 'function') window.safeSet('activeSpecialCategory', catId); else localStorage.setItem('activeSpecialCategory', catId); } catch(_) {}
         window.location.href = 'dim_view.html';
         
     } catch (e) {
@@ -7431,6 +7448,34 @@ async function openCategory(id) {
                 titleEl.parentNode && titleEl.parentNode.appendChild(btn);
             }
         }
+        if (currentUser && currentUser.role === 'admin' && titleEl) {
+            let mbtn = document.getElementById('legacy-mark-btn');
+            if (!mbtn) {
+                mbtn = document.createElement('button');
+                mbtn.id = 'legacy-mark-btn';
+                mbtn.className = 'btn-warning ml-2';
+                mbtn.innerHTML = '<i class="fas fa-broom"></i> Legacy İşarələ';
+                mbtn.onclick = async function(){
+                    if (!confirm('Legacy doc-lar soft-delete edilsin?')) return;
+                    const res = await window.markLegacyCategoryQuestionDocs(id, { limit: 200 });
+                    showNotification(`Legacy: ${res && res.marked != null ? res.marked : 0} işarələndi`, 'success');
+                };
+                titleEl.parentNode && titleEl.parentNode.appendChild(mbtn);
+            }
+            let pbtn = document.getElementById('legacy-purge-btn');
+            if (!pbtn) {
+                pbtn = document.createElement('button');
+                pbtn.id = 'legacy-purge-btn';
+                pbtn.className = 'btn-warning ml-2';
+                pbtn.innerHTML = '<i class="fas fa-trash"></i> Legacy Purge';
+                pbtn.onclick = async function(){
+                    if (!confirm('Legacy (deleted:true, legacy:true) doc-lar hard delete edilsin?')) return;
+                    const res = await window.purgeLegacyCategoryQuestionDocs(id, { limit: 200 });
+                    showNotification(`Purge: ${res && res.deleted != null ? res.deleted : 0} silindi`, 'success');
+                };
+                titleEl.parentNode && titleEl.parentNode.appendChild(pbtn);
+            }
+        }
         
         const adminArea = document.querySelector('.admin-panel-area');
         adminArea.classList.remove('hidden');
@@ -7605,6 +7650,95 @@ window.restoreCategoryQuestions = async function(catId) {
         if (window.OpsLock && window.OpsLock.release) window.OpsLock.release(String(catId));
     }
 }
+
+window.markLegacyCategoryQuestionDocs = async function(catId, opts) {
+    const o = opts || {};
+    const limit = Math.max(1, Math.min(200, parseInt(o.limit || 200, 10) || 200));
+    const collectionName = String(o.collectionName || 'category_questions');
+    if (!currentUser || currentUser.role !== 'admin') throw new Error('admin_only');
+    if (!db) throw new Error('no_db');
+    function __stableHash(s) {
+        let h = 0;
+        for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
+        return Math.abs(h).toString(36);
+    }
+    function __docPart(s) {
+        const v = String(s == null ? '' : s);
+        const cleaned = v.replace(/\//g, '_').replace(/[\u0000-\u001F\u007F]/g, '').trim();
+        if (!cleaned) return 'x';
+        if (cleaned.length <= 400) return cleaned;
+        return 'h_' + __stableHash(cleaned);
+    }
+    function __makeDocId(catIdValue, qidValue) {
+        const catPart = __docPart(catIdValue);
+        const qPart = __docPart(qidValue);
+        const docId = catPart + '_' + qPart;
+        if (docId.length <= 900) return docId;
+        return catPart + '_h_' + __stableHash(String(qidValue || ''));
+    }
+    const cid = String(catId);
+    const snap = await db.collection(collectionName).where('categoryId','==', cid).orderBy('createdAt','asc').limit(limit).get();
+    if (snap.empty) return { scanned: 0, marked: 0 };
+    let batch = db.batch();
+    let scanned = 0;
+    let marked = 0;
+    let count = 0;
+    for (const doc of snap.docs) {
+        scanned++;
+        const data = doc.data() || {};
+        const dataCid = data && data.categoryId != null ? String(data.categoryId) : '';
+        const dataId = data && data.id != null ? String(data.id).trim() : '';
+        if (dataCid !== cid) continue;
+        if (!dataId) continue;
+        const expected = __makeDocId(cid, dataId);
+        if (String(doc.id) === expected) continue;
+        if (data.deleted === true && data.legacy === true) continue;
+        batch.update(doc.ref, { deleted: true, deletedAt: firebase.firestore.FieldValue.serverTimestamp(), legacy: true, legacyExpectedId: expected });
+        marked++;
+        count++;
+        if (count >= 450) {
+            await batch.commit();
+            batch = db.batch();
+            count = 0;
+        }
+    }
+    if (count > 0) await batch.commit();
+    return { scanned, marked };
+};
+
+window.purgeLegacyCategoryQuestionDocs = async function(catId, opts) {
+    const o = opts || {};
+    const limit = Math.max(1, Math.min(200, parseInt(o.limit || 200, 10) || 200));
+    const collectionName = String(o.collectionName || 'category_questions');
+    if (!currentUser || currentUser.role !== 'admin') throw new Error('admin_only');
+    if (!db) throw new Error('no_db');
+    const cid = String(catId);
+    const snap = await db.collection(collectionName)
+        .where('categoryId','==', cid)
+        .where('legacy','==', true)
+        .where('deleted','==', true)
+        .orderBy('deletedAt','asc')
+        .limit(limit)
+        .get();
+    if (snap.empty) return { scanned: 0, deleted: 0 };
+    let batch = db.batch();
+    let scanned = 0;
+    let deleted = 0;
+    let count = 0;
+    for (const doc of snap.docs) {
+        scanned++;
+        batch.delete(doc.ref);
+        deleted++;
+        count++;
+        if (count >= 450) {
+            await batch.commit();
+            batch = db.batch();
+            count = 0;
+        }
+    }
+    if (count > 0) await batch.commit();
+    return { scanned, deleted };
+};
 
 window.generateAdminAIQuestions = async function() {
     const context = document.getElementById('admin-ai-context-text').value.trim();
@@ -8004,6 +8138,8 @@ window.handleAdminBulkFileUpload = function(input) {
                 const uniqueId = 'admin_file_' + Date.now() + '_' + idx;
                 const div = document.createElement('div');
                 div.className = 'manual-question-item';
+                div.dataset.qid = uniqueId;
+                div.dataset.questionId = __makeAdminQuestionId(uniqueId);
 
                 div.innerHTML = `
                     <div class="manual-q-header">
@@ -8080,6 +8216,8 @@ window.addAdminQuestionForm = function() {
     
     const div = document.createElement('div');
     div.className = 'manual-question-item';
+    div.dataset.qid = uniqueId;
+    div.dataset.questionId = __makeAdminQuestionId(uniqueId);
 
     div.innerHTML = `
         <div class="manual-q-header">
@@ -8129,78 +8267,327 @@ window.addAdminQuestionForm = function() {
     list.scrollTop = list.scrollHeight;
 }
 
-window.saveAdminQuestions = async function() {
+window.getFlaggedQuestions = function(questions) {
+    const flagged = [];
+    const arr = Array.isArray(questions) ? questions : [];
+    for (let i = 0; i < arr.length; i++) {
+        const q = arr[i] || {};
+        const rawId = (q.id !== undefined && q.id !== null && String(q.id).trim() !== '') ? q.id : q._qid;
+        const id = String(rawId || '').trim();
+        if (!id) continue;
+        const opts = Array.isArray(q.options) ? q.options.map(o => String(o || '').trim()).filter(Boolean) : [];
+        let correctIndex = q.correctIndex !== undefined ? q.correctIndex : (q.correct !== undefined ? q.correct : q.answer);
+        correctIndex = Number.isInteger(correctIndex) ? correctIndex : parseInt(correctIndex, 10);
+        const reasons = [];
+        if (opts.length >= 2 && Number.isInteger(correctIndex) && correctIndex >= 0 && correctIndex < opts.length) {
+            const correctText = String(opts[correctIndex] || '').trim();
+            const wrongTexts = opts.filter((_, idx) => idx !== correctIndex);
+            const yalnizCount = opts.filter(t => String(t || '').toLowerCase().startsWith('yalnız')).length;
+            if (yalnizCount >= Math.max(2, opts.length - 1) && yalnizCount < opts.length) {
+                reasons.push(yalnizCount + " variant 'Yalnız' ilə başlayır, digəri fərqlidir");
+            }
+            const allWrongYalniz = wrongTexts.length > 0 && wrongTexts.every(t => String(t || '').toLowerCase().startsWith('yalnız'));
+            const correctYalniz = correctText.toLowerCase().startsWith('yalnız');
+            if (allWrongYalniz && !correctYalniz) {
+                reasons.push("Bütün səhv variantlar 'Yalnız' ilə başlayır, düzgün variant isə yox");
+            }
+            const wrongLens = wrongTexts.map(t => String(t || '').length).filter(n => n > 0);
+            const maxWrongLen = wrongLens.length ? Math.max.apply(null, wrongLens) : 0;
+            if (maxWrongLen > 0 && correctText.length > 2.5 * maxWrongLen) {
+                reasons.push('Düzgün cavab digər variantlardan həddindən artıq uzundur');
+            }
+        }
+        if (reasons.length) {
+            flagged.push({ id, reasons, question: q });
+        }
+    }
+    return flagged;
+};
+
+function __openFlaggedQuestionModal(payload) {
+    return new Promise((resolve) => {
+        const existing = document.getElementById('flagged-question-modal');
+        if (existing) existing.remove();
+
+        const p = payload || {};
+        const q = p.question || {};
+        const reasons = Array.isArray(p.reasons) ? p.reasons : [];
+        const questionText = String(q.text || q.question || '').trim();
+        const rawOpts = Array.isArray(q._rawOptions) ? q._rawOptions : (Array.isArray(q.options) ? q.options : []);
+        const options = rawOpts.map(o => String(o || '').trim());
+        const correctIndex = Number.isInteger(q._rawCorrectIndex) ? q._rawCorrectIndex : (Number.isInteger(q.correctIndex) ? q.correctIndex : parseInt(q.correctIndex, 10));
+
+        const modal = document.createElement('div');
+        modal.id = 'flagged-question-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4';
+
+        const reasonsHtml = reasons.map(r => `<li class="text-sm text-gray-300">${escapeHtml(r)}</li>`).join('');
+        const optsHtml = options.map((t, idx) => {
+            const isCorrect = idx === correctIndex;
+            const rowCls = isCorrect ? 'bg-green-900/30 border-green-600' : 'bg-gray-800 border-gray-700';
+            const badgeCls = isCorrect ? 'bg-green-600' : 'bg-gray-700';
+            const label = String.fromCharCode(65 + idx);
+            return `
+                <div class="flex items-start gap-3 p-3 rounded-md border ${rowCls}">
+                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-sm ${badgeCls}">${label}</span>
+                    <div class="text-sm text-white break-words">${escapeHtml(t || '(boş)')}</div>
+                </div>
+            `;
+        }).join('');
+
+        modal.innerHTML = `
+            <div class="bg-gray-900 rounded-xl border border-gray-700 w-full max-w-2xl p-6 animate-up">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-white">Şübhəli sual aşkarlandı</h3>
+                    <button class="text-gray-400 hover:text-white" data-action="close-flagged-modal"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="mb-4">
+                    <div class="text-xs text-gray-400 mb-2">${escapeHtml(String(p.progressText || '').trim())}</div>
+                    <div class="text-sm text-gray-200 mb-3">${escapeHtml(questionText || '(Sual mətni boşdur)')}</div>
+                    <ul class="list-disc pl-5 space-y-1 mb-4">${reasonsHtml}</ul>
+                    <div class="grid gap-2">${optsHtml}</div>
+                </div>
+                <div class="flex flex-wrap gap-2 justify-end">
+                    <button class="px-4 py-2 rounded-md bg-yellow-600 hover:bg-yellow-500 text-black font-semibold" data-action="edit-flagged">Düzəlt (Edit)</button>
+                    <button class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-500 text-white font-semibold" data-action="delete-flagged">Sil (Delete)</button>
+                    <button class="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-semibold" data-action="keep-flagged">Olduğu kimi qəbul et (Keep anyway)</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const close = function() {
+            const m = document.getElementById('flagged-question-modal');
+            if (m) m.remove();
+        };
+
+        modal.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            if (action === 'close-flagged-modal') {
+                close();
+                resolve({ action: 'cancel' });
+                return;
+            }
+            if (action === 'edit-flagged') {
+                close();
+                resolve({ action: 'edit' });
+                return;
+            }
+            if (action === 'delete-flagged') {
+                close();
+                resolve({ action: 'delete' });
+                return;
+            }
+            if (action === 'keep-flagged') {
+                close();
+                resolve({ action: 'keep' });
+                return;
+            }
+        });
+    });
+}
+
+function __makeAdminQuestionId(seed) {
+    try {
+        if (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    } catch (_) {}
+    const s = String(seed || '') + '|' + String(activeCategoryId || '') + '|' + String(currentUser && currentUser.id ? currentUser.id : '');
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
+    const short = Math.abs(h).toString(36).slice(0, 12);
+    return 'q_' + short;
+}
+
+function __ensureAdminQuestionIds() {
+    const items = document.querySelectorAll('#admin-questions-list .manual-question-item');
+    for (const item of items) {
+        const cur = String(item.dataset.questionId || '').trim();
+        if (cur) continue;
+        const seed = String(item.dataset.qid || '').trim();
+        item.dataset.questionId = __makeAdminQuestionId(seed);
+    }
+}
+
+function __collectAdminDraftQuestions() {
     const questionItems = document.querySelectorAll('#admin-questions-list .manual-question-item');
-    const newQuestionsData = [];
-    
+    const drafts = [];
     for (const item of questionItems) {
-        const text = item.querySelector('.manual-q-text').value.trim();
-        const image = item.querySelector('.manual-q-img-data').value;
-        const explanation = item.querySelector('.manual-q-explanation') ? item.querySelector('.manual-q-explanation').value.trim() : '';
+        const qid = String(item.dataset.qid || '');
+        let questionId = String(item.dataset.questionId || '').trim();
+        if (!questionId) {
+            questionId = __makeAdminQuestionId(qid);
+            item.dataset.questionId = questionId;
+        }
+        const textEl = item.querySelector('.manual-q-text');
+        const imgEl = item.querySelector('.manual-q-img-data');
+        const expEl = item.querySelector('.manual-q-explanation');
         const optionInputs = item.querySelectorAll('.manual-opt');
         const correctRadio = item.querySelector('input[type="radio"]:checked');
-        
-        const options = [];
-        optionInputs.forEach(opt => {
-            if (opt.value.trim()) options.push(opt.value.trim());
-        });
-
-        if (!text) {
-            showNotification('Bütün sualların mətnini daxil edin!', 'error');
-            return;
-        }
-        if (options.length < 2) {
-            showNotification('Hər sualda ən azı 2 variant olmalıdır!', 'error');
-            return;
-        }
-        if (!correctRadio) {
-            showNotification('Bütün suallar üçün düzgün variantı seçin!', 'error');
-            item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-        }
-
-        const correctIndex = parseInt(correctRadio.value);
-        
-        // --- KEYFİYYƏT NƏZARƏTİ (Start) ---
-        const correctText = options[correctIndex];
-        // Note: Existing logic assumes radio value matches options index. 
-        // If options were filtered for empty strings, this might be risky, but we follow existing pattern.
-        
-        if (correctText) {
-            const wrongTexts = options.filter((_, i) => i !== correctIndex);
-
-            // Kriteriya 1: "Yalnız" patterni
-            const allWrongYalniz = wrongTexts.every(t => t.toLowerCase().startsWith('yalnız'));
-            const correctYalniz = correctText.toLowerCase().startsWith('yalnız');
-            
-            if (allWrongYalniz && !correctYalniz && wrongTexts.length > 0) {
-                showNotification('Sual keyfiyyət standartına cavab vermir: Bütün səhv variantlar "Yalnız" ilə başlayır, düzgün variant isə yox. Zəhmət olmasa variantları dəyişdirin.', 'error');
-                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                item.style.border = "2px solid red";
-                setTimeout(() => item.style.border = "", 5000);
-                return;
-            }
-
-            // Kriteriya 2: Uzunluq fərqi (> 2.5x)
-            const maxWrongLen = Math.max(...wrongTexts.map(t => t.length));
-            if (maxWrongLen > 0 && correctText.length > 2.5 * maxWrongLen) {
-                showNotification('Sual keyfiyyət standartına cavab vermir: Düzgün cavab səhv cavablardan həddindən artıq uzundur (>2.5x). Zəhmət olmasa variantları balanslaşdırın.', 'error');
-                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                item.style.border = "2px solid red";
-                setTimeout(() => item.style.border = "", 5000);
-                return;
-            }
-        }
-        // --- KEYFİYYƏT NƏZARƏTİ (End) ---
-
-        newQuestionsData.push({
+        const rawOptions = Array.from(optionInputs).map(opt => String(opt.value || '').trim());
+        const options = rawOptions.filter(Boolean);
+        const text = textEl && textEl.value ? String(textEl.value).trim() : '';
+        const image = imgEl && imgEl.value ? String(imgEl.value) : '';
+        const explanation = expEl && expEl.value ? String(expEl.value).trim() : '';
+        const correctIndex = correctRadio ? parseInt(correctRadio.value, 10) : null;
+        drafts.push({
+            _qid: qid,
+            _dom: item,
+            id: questionId,
             text,
             image,
+            explanation,
             options,
-            correctIndex: correctIndex,
-            explanation: explanation
+            _rawOptions: rawOptions,
+            _rawCorrectIndex: correctIndex
         });
     }
+    return drafts;
+}
+
+async function __runFlaggedReviewFlow(session) {
+    const s = session || {};
+    if (!s.ignoredFlagIds) s.ignoredFlagIds = new Set();
+    if (!s.reviewOverrideIds) s.reviewOverrideIds = new Set();
+    const openModal = (s && typeof s.__modalOpener === 'function') ? s.__modalOpener : __openFlaggedQuestionModal;
+
+    for (let safety = 0; safety < 200; safety++) {
+        try { __ensureAdminQuestionIds(); } catch (_) {}
+        const drafts = __collectAdminDraftQuestions();
+        const invalid = drafts.find(d => !d.text || d.options.length < 2 || d._rawCorrectIndex === null || Number.isNaN(d._rawCorrectIndex));
+        if (invalid) {
+            if (Array.isArray(s.__debugLog)) s.__debugLog.push({ t: Date.now(), status: 'invalid' });
+            return { status: 'invalid', session: s };
+        }
+
+        const flaggedAll = window.getFlaggedQuestions(drafts);
+        const flagged = flaggedAll
+            .map(f => {
+                const d = drafts.find(x => String(x.id) === String(f.id));
+                const q = d ? { ...d } : (f.question || {});
+                q._dom = d ? d._dom : null;
+                return { ...f, question: q, _dom: q._dom };
+            })
+            .filter(f => !s.ignoredFlagIds.has(String(f.id)));
+        s.__newSession = false;
+
+        if (Array.isArray(s.__debugLog)) s.__debugLog.push({ t: Date.now(), status: 'scan', flagged: flagged.length, ignored: s.ignoredFlagIds.size, safety });
+        if (!flagged.length) return { status: 'ok', session: s };
+
+        let idx = 0;
+        if (s.nextFlaggedIndex != null && Number.isInteger(s.nextFlaggedIndex) && s.nextFlaggedIndex >= 0) {
+            idx = Math.min(s.nextFlaggedIndex, flagged.length - 1);
+        }
+        if (s.resumeFromId) {
+            const at = flagged.findIndex(x => String(x.id) === String(s.resumeFromId));
+            if (at >= 0) idx = at;
+        }
+
+        const current = flagged[idx];
+        const dom = current && current._dom ? current._dom : null;
+        const progressText = (idx + 1) + '/' + flagged.length;
+        const res = await openModal({
+            id: current.id,
+            reasons: current.reasons,
+            question: current.question,
+            progressText: progressText
+        });
+
+        if (!res || res.action === 'cancel') {
+            if (Array.isArray(s.__debugLog)) s.__debugLog.push({ t: Date.now(), status: 'cancel', id: String(current && current.id) });
+            return { status: 'cancel', session: s };
+        }
+
+        if (res.action === 'keep') {
+            if (Array.isArray(s.__debugLog)) s.__debugLog.push({ t: Date.now(), status: 'keep', id: String(current.id), idx, total: flagged.length });
+            s.ignoredFlagIds.add(String(current.id));
+            s.reviewOverrideIds.add(String(current.id));
+            s.resumeFromId = null;
+            if (dom) dom.dataset.reviewOverride = 'true';
+            continue;
+        }
+
+        if (res.action === 'delete') {
+            if (Array.isArray(s.__debugLog)) s.__debugLog.push({ t: Date.now(), status: 'delete', id: String(current.id), idx, total: flagged.length });
+            if (dom && typeof dom.remove === 'function') dom.remove();
+            s.resumeFromId = null;
+            continue;
+        }
+
+        if (res.action === 'edit') {
+            if (Array.isArray(s.__debugLog)) s.__debugLog.push({ t: Date.now(), status: 'edit', id: String(current.id), idx, total: flagged.length });
+            s.resumeFromId = String(current.id);
+            if (dom) {
+                dom.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                dom.style.border = "2px solid #fbbf24";
+                setTimeout(() => { try { dom.style.border = ""; } catch(_) {} }, 4000);
+                const ta = dom.querySelector('.manual-q-text');
+                if (ta && typeof ta.focus === 'function') ta.focus();
+            }
+            return { status: 'edit', session: s };
+        }
+    }
+    if (Array.isArray(s.__debugLog)) s.__debugLog.push({ t: Date.now(), status: 'error' });
+    return { status: 'error', session: s };
+}
+
+window.saveAdminQuestions = async function() {
+    try { __ensureAdminQuestionIds(); } catch (_) {}
+    let drafts = __collectAdminDraftQuestions();
+    if (!drafts.length) {
+        showNotification('Heç bir sual əlavə edilməyib!', 'error');
+        return;
+    }
+
+    for (const d of drafts) {
+        if (!d.text) {
+            showNotification('Bütün sualların mətnini daxil edin!', 'error');
+            if (d._dom) d._dom.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+        if (d.options.length < 2) {
+            showNotification('Hər sualda ən azı 2 variant olmalıdır!', 'error');
+            if (d._dom) d._dom.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+        if (d._rawCorrectIndex === null || Number.isNaN(d._rawCorrectIndex)) {
+            showNotification('Bütün suallar üçün düzgün variantı seçin!', 'error');
+            if (d._dom) d._dom.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+    }
+
+    const sessionKey = 'admin_question_save_' + String(activeCategoryId || '');
+    if (!window.__FLAG_REVIEW_SESSION__ || window.__FLAG_REVIEW_SESSION__.key !== sessionKey) {
+        window.__FLAG_REVIEW_SESSION__ = { key: sessionKey, ignoredFlagIds: new Set(), reviewOverrideIds: new Set(), nextFlaggedIndex: 0, resumeFromId: null, __newSession: true, __resetNoticeShown: false };
+    } else {
+        window.__FLAG_REVIEW_SESSION__.__newSession = false;
+    }
+    const reviewRes = await __runFlaggedReviewFlow(window.__FLAG_REVIEW_SESSION__);
+    if (reviewRes && reviewRes.session) window.__FLAG_REVIEW_SESSION__ = reviewRes.session;
+    if (!reviewRes || reviewRes.status === 'cancel') return;
+    if (reviewRes.status === 'invalid') {
+        showNotification('Sual məlumatları natamamdır. Validator dayandırıldı.', 'error');
+        return;
+    }
+    if (reviewRes.status === 'error') {
+        showNotification('Validator təhlükəsizlik limiti doldu. Sual axınını yoxlayın.', 'error');
+        try { alert('Validator təhlükəsizlik limiti doldu. Save dayandırıldı.'); } catch (_) {}
+        return;
+    }
+    if (reviewRes.status === 'edit') return;
+
+    drafts = __collectAdminDraftQuestions();
+    const newQuestionsData = drafts.map(d => ({
+        id: String(d.id),
+        text: d.text,
+        image: d.image,
+        options: d.options,
+        correctIndex: d._rawCorrectIndex,
+        explanation: d.explanation
+    }));
 
     if (newQuestionsData.length === 0) {
         showNotification('Heç bir sual əlavə edilməyib!', 'error');
@@ -8222,7 +8609,8 @@ window.saveAdminQuestions = async function() {
         if (qIdx !== -1) {
             cat.questions[qIdx] = {
                 ...cat.questions[qIdx],
-                ...newQuestionsData[0]
+                ...newQuestionsData[0],
+                id: cat.questions[qIdx].id
             };
             showNotification('Sual uğurla yeniləndi!', 'success');
         } else {
@@ -8234,7 +8622,6 @@ window.saveAdminQuestions = async function() {
         // Yeni suallar əlavə et
         newQuestionsData.forEach(qData => {
             cat.questions.push({
-                id: Date.now() + Math.random(),
                 ...qData
             });
         });
@@ -8247,7 +8634,126 @@ window.saveAdminQuestions = async function() {
     
     // Redaktə vəziyyətini sıfırla
     resetEditingState();
+    window.__FLAG_REVIEW_SESSION__ = null;
 }
+
+window.demoValidatorFlagged3Scenario = async function() {
+    const prev = {
+        getFlaggedQuestions: window.getFlaggedQuestions,
+        syncCategory: window.syncCategory,
+        saveCategories: window.saveCategories,
+        hideAdminQuestionPage: window.hideAdminQuestionPage,
+        resetEditingState: window.resetEditingState,
+        showNotification: window.showNotification
+    };
+    const logs = [];
+    function noop(){}
+    try {
+        if (!window.showNotification) window.showNotification = noop;
+        window.syncCategory = async function(){};
+        window.saveCategories = function(){};
+        window.hideAdminQuestionPage = function(){};
+        window.resetEditingState = function(){};
+        if (!document.getElementById('admin-questions-list')) {
+            const wrap = document.createElement('div');
+            wrap.id = 'admin-questions-list';
+            document.body.appendChild(wrap);
+        }
+        const list = document.getElementById('admin-questions-list');
+        list.innerHTML = '';
+        const demoCatId = '__demo_cat__';
+        if (!Array.isArray(window.categories)) window.categories = [];
+        if (!categories.find(c => String(c.id) === demoCatId)) categories.push({ id: demoCatId, name: 'DEMO', time: 45, questions: [] });
+        window.activeCategoryId = demoCatId;
+        if (!window.currentUser) window.currentUser = { id: '__demo_admin__', role: 'admin', username: 'demo' };
+
+        function addItem(seed, text) {
+            const item = document.createElement('div');
+            item.className = 'manual-question-item';
+            item.dataset.qid = seed;
+            item.dataset.questionId = __makeAdminQuestionId(seed);
+            const qText = document.createElement('textarea');
+            qText.className = 'manual-q-text';
+            qText.value = text;
+            const img = document.createElement('input');
+            img.type = 'hidden';
+            img.className = 'manual-q-img-data';
+            const exp = document.createElement('textarea');
+            exp.className = 'manual-q-explanation';
+            exp.value = '';
+            item.appendChild(qText);
+            item.appendChild(img);
+            item.appendChild(exp);
+            for (let i = 0; i < 4; i++) {
+                const r = document.createElement('input');
+                r.type = 'radio';
+                r.name = 'correct_' + seed;
+                r.value = String(i);
+                if (i === 0) r.checked = true;
+                item.appendChild(r);
+                const opt = document.createElement('input');
+                opt.type = 'text';
+                opt.className = 'manual-opt';
+                opt.value = (i === 0 ? 'Yalnız demo' : 'Yalnız demo ' + i);
+                item.appendChild(opt);
+            }
+            list.appendChild(item);
+            return item.dataset.questionId;
+        }
+
+        const id1 = addItem('d1', 'Demo sual 1');
+        const id2 = addItem('d2', 'Demo sual 2');
+        const id3 = addItem('d3', 'Demo sual 3');
+
+        let phase = 1;
+        window.getFlaggedQuestions = function() {
+            if (phase === 1) {
+                return [
+                    { id: id1, reasons: ['demo-flag'], question: {} },
+                    { id: id2, reasons: ['demo-flag'], question: {} },
+                    { id: id3, reasons: ['demo-flag'], question: {} }
+                ];
+            }
+            return [];
+        };
+
+        const actions = ['keep', 'keep', 'edit'];
+        let ai = 0;
+        const sessionKey = 'admin_question_save_' + String(demoCatId);
+        window.__FLAG_REVIEW_SESSION__ = {
+            key: sessionKey,
+            ignoredFlagIds: new Set(),
+            reviewOverrideIds: new Set(),
+            nextFlaggedIndex: 0,
+            resumeFromId: null,
+            __newSession: false,
+            __resetNoticeShown: true,
+            __debugLog: logs,
+            __modalOpener: async function(payload) {
+                const act = actions[ai] || 'cancel';
+                ai++;
+                logs.push({ t: Date.now(), status: 'modal', id: String(payload && payload.id), action: act, progress: String(payload && payload.progressText) });
+                return { action: act };
+            }
+        };
+
+        await window.saveAdminQuestions();
+        logs.push({ t: Date.now(), status: 'save1_done', next: 'user_edit' });
+
+        phase = 2;
+        await window.saveAdminQuestions();
+        logs.push({ t: Date.now(), status: 'save2_done', next: 'completed' });
+
+        return logs;
+    } finally {
+        if (prev.getFlaggedQuestions) window.getFlaggedQuestions = prev.getFlaggedQuestions;
+        if (prev.syncCategory) window.syncCategory = prev.syncCategory;
+        if (prev.saveCategories) window.saveCategories = prev.saveCategories;
+        if (prev.hideAdminQuestionPage) window.hideAdminQuestionPage = prev.hideAdminQuestionPage;
+        if (prev.resetEditingState) window.resetEditingState = prev.resetEditingState;
+        if (prev.showNotification) window.showNotification = prev.showNotification;
+    }
+};
 
 window.resetEditingState = function() {
     editingQuestionId = null;
@@ -8290,6 +8796,7 @@ window.editCategoryQuestion = function(qId) {
     // addAdminQuestionForm() funksiyasının məntiqini istifadə et
     addAdminQuestionForm();
     const item = list.querySelector('.manual-question-item');
+    if (item) item.dataset.questionId = String(q.id);
     
     // Redaktə zamanı silmə düyməsini götür
     const delBtn = item.querySelector('.delete-q-btn');

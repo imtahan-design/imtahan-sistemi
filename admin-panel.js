@@ -271,11 +271,7 @@
       +   '</div>'
       +   '<div class="space-y-3">'
       +     '<label class="block text-sm text-gray-300">Hədəf sınaq</label>'
-      +     '<select id="coupon-exam-type" class="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-700">'
-      +       '<option value="prokurorluq">Prokurorluq (active_prokurorluq)</option>'
-      +       '<option value="hakimlik">Hakimlik (active_hakimlik)</option>'
-      +       '<option value="vekillik">Vəkillik (active_vekillik)</option>'
-      +     '</select>'
+      +     '<select id="coupon-exam-type" class="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-700"><option value="" disabled selected>Seçin</option></select>'
       +     '<label class="block text-sm text-gray-300">Kupon kodu</label>'
       +     '<div class="flex gap-2"><input id="coupon-code-input-admin" type="text" class="flex-1 p-3 rounded-md bg-gray-800 text-white border border-gray-700" placeholder="PROK12345" /><button class="btn-secondary" onclick="generateCouponCodeAdmin()">Generasiya</button></div>'
       +     '<label class="block text-sm text-gray-300">Etibarlılıq müddəti</label>'
@@ -289,6 +285,38 @@
       +   '</div>'
       + '</div>';
     document.body.appendChild(m);
+    (async function populateTypes(){
+      try {
+        var sel = document.getElementById('coupon-exam-type');
+        if (!sel) return;
+        if (typeof invalidateCategoriesCache === 'function') invalidateCategoriesCache();
+        var list = (typeof getCategoriesOnce === 'function') ? await getCategoriesOnce() : (Array.isArray(categories) ? categories : []);
+        var roots = Array.isArray(list) ? list.filter(function(c){
+          var isSpecial = (String(c.id||'').indexOf('special_') === 0) || (c.examType === 'special' || c.exam_type === 'special');
+          return isSpecial && (!c.parentId) && (c.deleted !== true);
+        }) : [];
+        var sentinel = new Map([
+          ['special_prokurorluq','prokurorluq'],
+          ['special_hakimlik','hakimlik'],
+          ['special_vekillik','vekillik']
+        ]);
+        var available = [];
+        roots.forEach(function(c){
+          var t = sentinel.get(String(c.id)) || (String(c.id).includes('prokuror') ? 'prokurorluq' : (String(c.id).includes('hakim') ? 'hakimlik' : (String(c.id).includes('vekil') || String(c.id).includes('vəkil') ? 'vekillik' : null)));
+          if (t && available.indexOf(t) === -1) available.push(t);
+        });
+        if (available.length === 0) {
+          sel.innerHTML = '<option value="" disabled selected>Seçim yoxdur</option>';
+        } else {
+          sel.innerHTML = available.map(function(t){
+            var label = t === 'prokurorluq' ? 'Prokurorluq' : (t === 'hakimlik' ? 'Hakimlik' : 'Vəkillik');
+            var idLabel = 'active_' + t;
+            return '<option value="'+t+'">'+label+' ('+idLabel+')</option>';
+          }).join('');
+          sel.value = available[0];
+        }
+      } catch(_) {}
+    })();
   };
   window.generateCouponCodeAdmin = function() {
     var sel = document.getElementById('coupon-exam-type');

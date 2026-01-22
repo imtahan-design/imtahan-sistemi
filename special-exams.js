@@ -117,7 +117,8 @@
           return;
         }
       }
-      localStorage.setItem('activeSpecialCategory', catId);
+      try { window.__ACTIVE_SPECIAL_CATEGORY__ = catId; } catch(_) {}
+      try { if (typeof window.safeSet === 'function') window.safeSet('activeSpecialCategory', catId); else localStorage.setItem('activeSpecialCategory', catId); } catch(_) {}
       window.location.href = 'dim_view.html';
     } catch (e) {
       console.error("Special Quiz Error:", e);

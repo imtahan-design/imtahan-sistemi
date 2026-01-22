@@ -736,12 +736,17 @@
             setTimeout(initDimExam, 1000);
         };
 
-        function __lsGet(key) {
-            try { return localStorage.getItem(key); } catch (_) { return null; }
-        }
-        function __lsJson(key) {
+        function __safeGet(key) {
             try {
-                const v = __lsGet(key);
+                if (typeof window !== 'undefined' && typeof window.safeGet === 'function') return window.safeGet(key);
+            } catch (_) {}
+            try { return localStorage.getItem(key); } catch (_) {
+                try { return window.__MEM_STORE__ ? window.__MEM_STORE__[String(key)] : null; } catch (_) { return null; }
+            }
+        }
+        function __safeJson(key) {
+            try {
+                const v = __safeGet(key);
                 return v ? JSON.parse(v) : null;
             } catch (_) {
                 return null;
@@ -769,7 +774,7 @@
             if (weeklyExamType) {
                 catId = 'weekly_exam_' + String(weeklyExamType);
             } else {
-                try { catId = localStorage.getItem('activeSpecialCategory'); } catch(_) { catId = null; }
+                try { catId = (typeof window !== 'undefined' ? window.__ACTIVE_SPECIAL_CATEGORY__ : null) || __safeGet('activeSpecialCategory'); } catch(_) { catId = null; }
             }
             if (!catId) {
                 alert('İmtahan seçilməyib!');
@@ -811,8 +816,9 @@
                 // Check for generated exam
                 if (catId === 'generated_prokurorluq' || catId.startsWith('weekly_exam_') || catId === 'weekly_draft_view') {
                     try {
-                        const genData = localStorage.getItem('generatedExamData');
-                        if (genData) cat = JSON.parse(genData);
+                        const fromMem = (typeof window !== 'undefined' ? window.__GENERATED_EXAM_DATA__ : null);
+                        if (fromMem) cat = fromMem;
+                        if (!cat) cat = __safeJson('generatedExamData');
                     } catch(e) { console.error(e); }
                 }
             }
@@ -835,7 +841,7 @@
             if (!cat) {
                 // Try local storage fallback
                 try {
-                    const localCats = JSON.parse(__lsGet('categories') || '[]');
+                    const localCats = JSON.parse(__safeGet('categories') || '[]');
                     cat = localCats.find(c => c.id === catId);
                 } catch(_) { cat = null; }
             }
@@ -850,7 +856,7 @@
 
             // Initialize Quiz
             document.getElementById('exam-title').textContent = cat.name;
-            const user = __lsJson('currentUser');
+            const user = __safeJson('currentUser');
             if(user) document.getElementById('user-name').textContent = user.username || user.email;
 
             // Prepare questions (Shuffle if needed, currently taking all)
@@ -1080,13 +1086,13 @@
 
             // Save attempt if user is logged in
             if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined' && db) {
-                 const catId = String((dimQuiz && dimQuiz.meta && dimQuiz.meta.catId) ? dimQuiz.meta.catId : (function(){ try { return localStorage.getItem('activeSpecialCategory'); } catch(_) { return ''; } })() || '');
+                 const catId = String((dimQuiz && dimQuiz.meta && dimQuiz.meta.catId) ? dimQuiz.meta.catId : ((typeof window !== 'undefined' ? window.__ACTIVE_SPECIAL_CATEGORY__ : null) || __safeGet('activeSpecialCategory') || ''));
                  let examName = document.getElementById('exam-title').textContent;
                  let weekId = null;
                  let examType = 'special_exam';
 
                  try {
-                     const genData = (dimQuiz && dimQuiz.meta && dimQuiz.meta.exam) ? dimQuiz.meta.exam : JSON.parse(localStorage.getItem('generatedExamData') || '{}');
+                     const genData = (dimQuiz && dimQuiz.meta && dimQuiz.meta.exam) ? dimQuiz.meta.exam : ((typeof window !== 'undefined' ? window.__GENERATED_EXAM_DATA__ : null) || __safeJson('generatedExamData') || {});
                      if (genData && (genData.id === catId || (catId && catId.includes('weekly')))) {
                          if (genData.name) examName = genData.name;
                          if (genData.weekId) weekId = genData.weekId;
@@ -1161,7 +1167,7 @@
             const existingEditBtn = footer.querySelector('.btn-edit');
             if (existingEditBtn) existingEditBtn.remove();
 
-            const currentUser = __lsJson('currentUser');
+            const currentUser = __safeJson('currentUser');
             if (currentUser && currentUser.role === 'admin') {
                 const editBtn = document.createElement('button');
                 editBtn.className = 'btn-dim btn-edit';
@@ -1171,7 +1177,7 @@
                 editBtn.style.color = '#000';
                 editBtn.onclick = () => {
                     // Use source category if available (for weekly exams), else fallback to question's category or active exam category
-                    const catId = q._sourceCategoryId || q.categoryId || (dimQuiz && dimQuiz.meta ? dimQuiz.meta.catId : null) || (function(){ try { return localStorage.getItem('activeSpecialCategory'); } catch(_) { return null; } })();
+                    const catId = q._sourceCategoryId || q.categoryId || (dimQuiz && dimQuiz.meta ? dimQuiz.meta.catId : null) || (typeof window !== 'undefined' ? window.__ACTIVE_SPECIAL_CATEGORY__ : null) || __safeGet('activeSpecialCategory');
                     if (catId && q.id) {
                          window.location.href = `index.html?page=admin&adminCat=${catId}&editQuestionId=${q.id}`;
                     } else {
