@@ -23,6 +23,16 @@
     if (!db) throw new Error('Verilənlər bazası bağlantısı yoxdur');
     code = String(code || '').trim();
     if (!code) throw new Error('Kupon kodu daxil edin');
+    var uid = '';
+    try {
+      uid = String(currentUser && (currentUser.id || currentUser.uid) ? (currentUser.id || currentUser.uid) : '');
+      if (!uid) {
+        var lsUser = null;
+        try { lsUser = JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch(_) { lsUser = null; }
+        uid = String(lsUser && (lsUser.id || lsUser.uid) ? (lsUser.id || lsUser.uid) : '');
+      }
+    } catch(_) { uid = ''; }
+    if (!uid) throw new Error('Zəhmət olmasa hesabla daxil olun');
     const byId = await db.collection('exam_coupons').doc(code).get();
     let doc = byId.exists ? byId : null;
     if (!doc) {
@@ -30,27 +40,24 @@
       doc = q.empty ? null : q.docs[0];
     }
     if (!doc) throw new Error('Kupon tapılmadı');
-    const data = doc.data() || {};
-    if (String(data.examId || '') !== String(examId)) throw new Error('Bu kupon bu imtahana uyğun deyil');
-    const now = new Date();
-    const s = data.startTime && typeof data.startTime.toDate === 'function' ? data.startTime.toDate() : new Date(data.startTime || 0);
-    const e = data.endTime && typeof data.endTime.toDate === 'function' ? data.endTime.toDate() : new Date(data.endTime || 0);
-    if (isNaN(s.getTime()) || isNaN(e.getTime())) throw new Error('Kupon tarix intervalı düzgün deyil');
-    if (now < s) throw new Error('Kupon hələ aktiv deyil');
-    if (now > e) throw new Error('Kuponun müddəti bitib');
-    var uid = String(currentUser && currentUser.id ? currentUser.id : '');
-    if (!uid) throw new Error('Zəhmət olmasa hesabla daxil olun');
-    const res = await db.runTransaction(async (t) => {
-      const ref = db.collection('exam_coupons').doc(doc.id);
+    const couponDocId = doc.id;
+    const res = await db.runTransaction(async function(t) {
+      const ref = db.collection('exam_coupons').doc(couponDocId);
       const snap = await t.get(ref);
       if (!snap.exists) throw new Error('Kupon tapılmadı');
       const d = snap.data() || {};
       if (String(d.examId || '') !== String(examId)) throw new Error('Bu kupon bu imtahana uyğun deyil');
+      const now = new Date();
+      const s = d.startTime && typeof d.startTime.toDate === 'function' ? d.startTime.toDate() : new Date(d.startTime || 0);
+      const e = d.endTime && typeof d.endTime.toDate === 'function' ? d.endTime.toDate() : new Date(d.endTime || 0);
+      if (isNaN(s.getTime()) || isNaN(e.getTime())) throw new Error('Kupon tarix intervalı düzgün deyil');
+      if (now < s) throw new Error('Kupon hələ aktiv deyil');
+      if (now > e) throw new Error('Kuponun müddəti bitib');
       if (d.usedBy) {
-        if (String(d.usedBy) === uid) return { status: 'already_used' };
+        if (String(d.usedBy) === String(uid)) return { status: 'already_used' };
         throw new Error('Kupon artıq istifadə olunub');
       }
-      t.update(ref, { usedBy: uid });
+      t.update(ref, { usedBy: String(uid) });
       return { status: 'ok' };
     });
     if (res && res.status) return res;
@@ -82,61 +89,49 @@
     var debounceMs = 1200;
     const form = m.querySelector('#coupon-form');
     const btn = m.querySelector('#coupon-submit-btn');
-    const input = m.querySelector('#coupon-code-input');
     const err = m.querySelector('#coupon-error');
     if (form) form.onsubmit = null;
     if (btn) btn.onclick = null;
-    if (input) input.onkeydown = null;
-
-    if (input) {
-      input.onkeydown = function(e) {
-        if (!e) return;
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          e.stopPropagation();
-          if (form && typeof form.requestSubmit === 'function') form.requestSubmit();
-          else if (form) form.dispatchEvent(new Event('submit', { cancelable: true }));
-        }
-      };
-    }
 
     const handler = async function(e) {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
-      const code = m.querySelector('#coupon-code-input').value;
+      if (e && typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
       const now = Date.now();
       if (pending) return;
       if (lastAt && (now - lastAt) < debounceMs) return;
       lastAt = now;
       pending = true;
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yoxlanır...';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yoxlanır...';
+      }
       try {
         if (err) err.classList.add('hidden');
+        const code = String((m.querySelector('#coupon-code-input') || {}).value || '').trim();
         const result = await window.validateCoupon(code, examId);
         if (result && result.status === 'already_used') {
           if (err) {
             err.textContent = 'Bu kupon artıq sizin hesabla istifadə olunub.';
             err.classList.remove('hidden');
           }
-          btn.innerHTML = 'Təsdiqlə';
-          setTimeout(function(){ btn.disabled = false; }, debounceMs);
-          pending = false;
+          if (btn) btn.innerHTML = 'Təsdiqlə';
+          setTimeout(function(){ if (btn) btn.disabled = false; }, debounceMs);
           return;
         }
         if (result && result.status === 'ok') {
           document.getElementById('coupon-modal').remove();
           if (typeof onSuccess === 'function') onSuccess();
-          pending = false;
           return;
         }
         throw new Error('Kupon yoxlama xətası');
       } catch(e) {
         if (err) { err.textContent = e && e.message ? e.message : 'Xəta baş verdi'; err.classList.remove('hidden'); }
-        btn.innerHTML = 'Təsdiqlə';
-        setTimeout(function(){ btn.disabled = false; }, debounceMs);
+        if (btn) btn.innerHTML = 'Təsdiqlə';
+        setTimeout(function(){ if (btn) btn.disabled = false; }, debounceMs);
+      } finally {
+        pending = false;
       }
-      pending = false;
     };
     if (form) form.onsubmit = handler;
   };
