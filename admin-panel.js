@@ -195,6 +195,43 @@
         toolBtn.innerHTML = '<i class="fas fa-magic"></i> Sualları Bölmələrə Payla';
         toolBtn.onclick = window.organizeProkurorluqQuestions;
         title.appendChild(toolBtn);
+
+        var migBtn = document.createElement('button');
+        migBtn.className = 'btn-outline ml-2';
+        migBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Root-u Bağla (Migration)';
+        migBtn.onclick = function() {
+          (async function() {
+            if (!window.migrateProkurorluqRootCategory) {
+              showNotification('Migration funksiyası tapılmadı (migrateProkurorluqRootCategory).', 'error');
+              return;
+            }
+            if (!confirm('Bu əməliyyat categories/special_prokurorluq sənədində root sualları bağlayacaq (questionsMode:none, questions:[]). Davam edilsin?')) return;
+            migBtn.disabled = true;
+            var prev = migBtn.innerHTML;
+            migBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşləyir...';
+            try {
+              var res = await window.migrateProkurorluqRootCategory({ persist: true, limit: 450, logDoc: true });
+              if (res && res.ok) {
+                showNotification('Root migrasiya tamamlandı (runId: ' + res.runId + ')', 'success');
+                try { if (typeof invalidateCategoriesCache === 'function') invalidateCategoriesCache(); } catch(_) {}
+                try {
+                  if (typeof getCategoriesOnce === 'function') {
+                    categories = await getCategoriesOnce();
+                  }
+                } catch(_) {}
+                renderAdminCategories();
+              } else {
+                showNotification('Migration uğursuz: ' + (res && (res.reason || res.error) ? (res.reason || res.error) : 'naməlum'), 'error');
+              }
+            } catch (e) {
+              showNotification('Migration xətası: ' + (e && e.message ? e.message : String(e)), 'error');
+            } finally {
+              migBtn.disabled = false;
+              migBtn.innerHTML = prev;
+            }
+          })();
+        };
+        title.appendChild(migBtn);
       }
     } else {
       var baseTitle = currentUser.role === 'moderator' ? 'Moderator Paneli' : 'Admin Paneli - Kateqoriyalar';

@@ -4876,6 +4876,30 @@ window.showAdminDashboard = function(doPush = true) {
     if (currentUser.role === 'admin' && typeof WeeklyExamManager !== 'undefined') {
         WeeklyExamManager.checkAutoGenerateWeeklyExam();
     }
+
+    if (currentUser.role === 'admin' && db && typeof window.migrateProkurorluqRootCategory === 'function') {
+        (async function() {
+            try {
+                const onceKey = 'prok_root_mig_auto_v1';
+                if (sessionStorage.getItem(onceKey) === '1') return;
+                sessionStorage.setItem(onceKey, '1');
+                const root = Array.isArray(categories) ? categories.find(c => String(c && c.id) === 'special_prokurorluq') : null;
+                const needs = !!root && (String(root.questionsMode || '').toLowerCase() !== 'none' || (Array.isArray(root.questions) && root.questions.length > 0) || root.questionsSoftDeleted !== true);
+                if (!needs) return;
+                showNotification('Prokurorluq root migrasiya edilir...', 'info');
+                const res = await window.migrateProkurorluqRootCategory({ persist: true, limit: 450, logDoc: true });
+                if (res && res.ok) {
+                    showNotification('Prokurorluq root migrasiya tamamlandı (runId: ' + res.runId + ')', 'success');
+                    try { if (typeof invalidateCategoriesCache === 'function') invalidateCategoriesCache(); } catch(_) {}
+                    try { renderAdminCategories(); } catch(_) {}
+                } else {
+                    showNotification('Prokurorluq root migrasiya uğursuz: ' + (res && (res.reason || res.error) ? (res.reason || res.error) : 'naməlum'), 'error');
+                }
+            } catch (e) {
+                showNotification('Prokurorluq root migrasiya xətası: ' + (e && e.message ? e.message : String(e)), 'error');
+            }
+        })();
+    }
     
     if (doPush) {
         const url = new URL(window.location);
