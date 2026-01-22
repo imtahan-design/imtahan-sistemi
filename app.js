@@ -62,19 +62,18 @@ window.onerror = function(message, source, lineno, colno, error) {
         return false;
     }
 
-    // Disable global error UI to prevent "System Failed" on minor non-fatal errors
-    // const loadingScreen = document.getElementById('loading-screen');
-    // if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
-    //    ...
-    // }
-    
+    var name = error && error.name ? error.name : undefined;
+    var code = error && error.code ? error.code : undefined;
+    var msg = (error && error.message ? error.message : undefined) || message;
+    alert('ERR name=' + (name) + ' code=' + (code) + ' msg=' + (msg) + ' at ' + (source) + ':' + (lineno) + ':' + (colno));
     return false;
 };
 
-// Catch unhandled promise rejections
-window.onunhandledrejection = function(event) {
-    console.error("Unhandled Promise Rejection:", event.reason);
-};
+window.addEventListener('unhandledrejection', function(ev) {
+    try { console.error("Unhandled Promise Rejection:", ev && ev.reason); } catch (_) {}
+    var r = ev ? ev.reason : undefined;
+    alert('REJ name=' + (r && r.name ? r.name : undefined) + ' code=' + (r && r.code ? r.code : undefined) + ' msg=' + ((r && r.message ? r.message : r)));
+});
 
 function escapeHtml(str) {
     if (str === undefined || str === null) return '';
