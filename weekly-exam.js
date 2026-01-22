@@ -163,6 +163,7 @@
         }
         throw new Error('Kupon yoxlama xətası');
       } catch(e) {
+        alert('ERR name='+(e?.name)+' code='+(e?.code)+' msg='+(e?.message));
         if (err) { err.textContent = e && e.message ? e.message : 'Xəta baş verdi'; err.classList.remove('hidden'); }
         if (btn) btn.innerHTML = 'Təsdiqlə';
         setTimeout(function(){ if (btn) btn.disabled = false; }, debounceMs);
