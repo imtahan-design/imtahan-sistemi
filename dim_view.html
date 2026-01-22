@@ -736,6 +736,18 @@
             setTimeout(initDimExam, 1000);
         };
 
+        function __lsGet(key) {
+            try { return localStorage.getItem(key); } catch (_) { return null; }
+        }
+        function __lsJson(key) {
+            try {
+                const v = __lsGet(key);
+                return v ? JSON.parse(v) : null;
+            } catch (_) {
+                return null;
+            }
+        }
+
         let dimQuiz = {
             questions: [],
             currentIndex: 0,
@@ -747,7 +759,18 @@
         };
 
         async function initDimExam() {
-            const catId = localStorage.getItem('activeSpecialCategory');
+            let weeklyExamType = null;
+            try {
+                const sp = new URLSearchParams(window.location.search || '');
+                weeklyExamType = sp.get('weeklyExamType');
+            } catch(_) { weeklyExamType = null; }
+
+            let catId = null;
+            if (weeklyExamType) {
+                catId = 'weekly_exam_' + String(weeklyExamType);
+            } else {
+                try { catId = localStorage.getItem('activeSpecialCategory'); } catch(_) { catId = null; }
+            }
             if (!catId) {
                 alert('İmtahan seçilməyib!');
                 window.location.href = 'index.html';
@@ -757,12 +780,41 @@
             // Load Category
             let cat = null;
 
-            // Check for generated exam
-            if (catId === 'generated_prokurorluq' || catId.startsWith('weekly_exam_') || catId === 'weekly_draft_view') {
+            if (weeklyExamType) {
+                if (!db) {
+                    alert('Verilənlər bazası ilə əlaqə yoxdur. Səhifəni yeniləyin.');
+                    window.location.href = 'index.html';
+                    return;
+                }
                 try {
-                    const genData = localStorage.getItem('generatedExamData');
-                    if (genData) cat = JSON.parse(genData);
-                } catch(e) { console.error(e); }
+                    const docRef = db.collection('weekly_exams').doc('active_' + String(weeklyExamType));
+                    const doc = await docRef.get();
+                    if (!doc.exists) throw new Error("Bu kateqoriya üçün hələlik aktiv sınaq yoxdur.");
+                    const data = doc.data() || {};
+                    cat = {
+                        id: catId,
+                        name: data.name || 'Həftəlik Sınaq',
+                        description: data.description || '',
+                        time: 180,
+                        questions: data.questions || [],
+                        isSpecial: true,
+                        examType: String(weeklyExamType),
+                        weekId: data.weekId,
+                        publishedAt: data.publishedAt
+                    };
+                } catch(e) {
+                    alert(e && e.message ? e.message : 'Xəta baş verdi');
+                    window.location.href = 'index.html';
+                    return;
+                }
+            } else {
+                // Check for generated exam
+                if (catId === 'generated_prokurorluq' || catId.startsWith('weekly_exam_') || catId === 'weekly_draft_view') {
+                    try {
+                        const genData = localStorage.getItem('generatedExamData');
+                        if (genData) cat = JSON.parse(genData);
+                    } catch(e) { console.error(e); }
+                }
             }
 
             // Normal loading
@@ -782,8 +834,10 @@
 
             if (!cat) {
                 // Try local storage fallback
-                const localCats = JSON.parse(localStorage.getItem('categories') || '[]');
-                cat = localCats.find(c => c.id === catId);
+                try {
+                    const localCats = JSON.parse(__lsGet('categories') || '[]');
+                    cat = localCats.find(c => c.id === catId);
+                } catch(_) { cat = null; }
             }
 
             if (!cat || !cat.questions || cat.questions.length === 0) {
@@ -792,9 +846,11 @@
                 return;
             }
 
+            dimQuiz.meta = { catId: catId, exam: cat, weeklyExamType: weeklyExamType };
+
             // Initialize Quiz
             document.getElementById('exam-title').textContent = cat.name;
-            const user = JSON.parse(localStorage.getItem('currentUser'));
+            const user = __lsJson('currentUser');
             if(user) document.getElementById('user-name').textContent = user.username || user.email;
 
             // Prepare questions (Shuffle if needed, currently taking all)
@@ -908,7 +964,7 @@
             container.innerHTML = ''; 
             
             // 1. Header Section
-            const user = JSON.parse(localStorage.getItem('currentUser'));
+            const user = __lsJson('currentUser');
             const userName = user ? (user.username || user.email) : 'NAMİZƏD';
             const examTitle = document.getElementById('exam-title').textContent || 'SINAQ İMTAHANI';
             
@@ -1024,14 +1080,14 @@
 
             // Save attempt if user is logged in
             if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined' && db) {
-                 const catId = localStorage.getItem('activeSpecialCategory');
+                 const catId = String((dimQuiz && dimQuiz.meta && dimQuiz.meta.catId) ? dimQuiz.meta.catId : (function(){ try { return localStorage.getItem('activeSpecialCategory'); } catch(_) { return ''; } })() || '');
                  let examName = document.getElementById('exam-title').textContent;
                  let weekId = null;
                  let examType = 'special_exam';
 
                  try {
-                     const genData = JSON.parse(localStorage.getItem('generatedExamData') || '{}');
-                     if (genData && (genData.id === catId || catId.includes('weekly'))) {
+                     const genData = (dimQuiz && dimQuiz.meta && dimQuiz.meta.exam) ? dimQuiz.meta.exam : JSON.parse(localStorage.getItem('generatedExamData') || '{}');
+                     if (genData && (genData.id === catId || (catId && catId.includes('weekly')))) {
                          if (genData.name) examName = genData.name;
                          if (genData.weekId) weekId = genData.weekId;
                          if (genData.examType) examType = genData.examType;
@@ -1051,7 +1107,7 @@
 
                  // Save Exam History for Dynamic Exams (Prevent repeats)
                  // Also save for Weekly exams to track what user has seen (though weekly is fixed per week)
-                 if (catId.includes('prokurorluq') || catId.includes('weekly') || catId.includes('generated')) {
+                 if (catId && (catId.includes('prokurorluq') || catId.includes('weekly') || catId.includes('generated'))) {
                      try {
                          if (questions.length > 0) {
                              const qIds = questions.map(q => String(q.id));
@@ -1105,7 +1161,7 @@
             const existingEditBtn = footer.querySelector('.btn-edit');
             if (existingEditBtn) existingEditBtn.remove();
 
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const currentUser = __lsJson('currentUser');
             if (currentUser && currentUser.role === 'admin') {
                 const editBtn = document.createElement('button');
                 editBtn.className = 'btn-dim btn-edit';
@@ -1115,7 +1171,7 @@
                 editBtn.style.color = '#000';
                 editBtn.onclick = () => {
                     // Use source category if available (for weekly exams), else fallback to question's category or active exam category
-                    const catId = q._sourceCategoryId || q.categoryId || localStorage.getItem('activeSpecialCategory');
+                    const catId = q._sourceCategoryId || q.categoryId || (dimQuiz && dimQuiz.meta ? dimQuiz.meta.catId : null) || (function(){ try { return localStorage.getItem('activeSpecialCategory'); } catch(_) { return null; } })();
                     if (catId && q.id) {
                          window.location.href = `index.html?page=admin&adminCat=${catId}&editQuestionId=${q.id}`;
                     } else {

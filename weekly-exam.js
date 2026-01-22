@@ -9,6 +9,20 @@
 
 (function(){
   let __WEEKLY_POOL_QUESTIONS = null;
+  function __getUid() {
+    try {
+      var u = (typeof window !== 'undefined' ? window.currentUser : null) || (typeof currentUser !== 'undefined' ? currentUser : null);
+      var id = u && (u.id || u.uid) ? (u.id || u.uid) : '';
+      if (id) return String(id);
+    } catch(_) {}
+    try {
+      if (typeof firebase !== 'undefined' && firebase && typeof firebase.auth === 'function') {
+        var au = firebase.auth().currentUser;
+        if (au && au.uid) return String(au.uid);
+      }
+    } catch(_) {}
+    return '';
+  }
   window.COUPON_REQUIRED_TYPES = new Set(['prokurorluq']);
   try {
     var __crt = localStorage.getItem('coupon_required_types') || '';
@@ -23,15 +37,7 @@
     if (!db) throw new Error('Verilənlər bazası bağlantısı yoxdur');
     code = String(code || '').trim();
     if (!code) throw new Error('Kupon kodu daxil edin');
-    var uid = '';
-    try {
-      uid = String(currentUser && (currentUser.id || currentUser.uid) ? (currentUser.id || currentUser.uid) : '');
-      if (!uid) {
-        var lsUser = null;
-        try { lsUser = JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch(_) { lsUser = null; }
-        uid = String(lsUser && (lsUser.id || lsUser.uid) ? (lsUser.id || lsUser.uid) : '');
-      }
-    } catch(_) { uid = ''; }
+    var uid = __getUid();
     if (!uid) throw new Error('Zəhmət olmasa hesabla daxil olun');
     const byId = await db.collection('exam_coupons').doc(code).get();
     let doc = byId.exists ? byId : null;
@@ -66,15 +72,7 @@
     if (!db) throw new Error('Verilənlər bazası bağlantısı yoxdur');
     code = String(code || '').trim();
     if (!code) throw new Error('Kupon kodu daxil edin');
-    var uid = '';
-    try {
-      uid = String(currentUser && (currentUser.id || currentUser.uid) ? (currentUser.id || currentUser.uid) : '');
-      if (!uid) {
-        var lsUser = null;
-        try { lsUser = JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch(_) { lsUser = null; }
-        uid = String(lsUser && (lsUser.id || lsUser.uid) ? (lsUser.id || lsUser.uid) : '');
-      }
-    } catch(_) { uid = ''; }
+    var uid = __getUid();
     if (!uid) throw new Error('Zəhmət olmasa hesabla daxil olun');
     var docId = String(couponDocId || '').trim();
     if (!docId) {
@@ -992,11 +990,9 @@
   // UI: Aktiv həftəlik sınağı backend-dən götürüb imtahana başlatmaq
   window.startActiveWeeklyExam = async function(examType, catId) {
     if (window.__DEBUG) console.log(`Starting active weekly exam: ${examType}, category: ${catId}`);
-    const __u = window.currentUser || (function(){ try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); } catch (_) { return null; } })();
-    if (!window.currentUser && __u) window.currentUser = __u;
     var couponInfo = null;
     if (window.COUPON_REQUIRED_TYPES && window.COUPON_REQUIRED_TYPES.has(String(examType))) {
-      if (!window.currentUser || !window.currentUser.id) {
+      if (!__getUid()) {
         if (typeof showNotification === 'function') showNotification('Zəhmət olmasa hesabla daxil olun', 'error');
         return;
       }
@@ -1021,31 +1017,10 @@
       if (!doc.exists) {
         throw new Error("Bu kateqoriya üçün hələlik aktiv sınaq yoxdur. Admin sınağı yayımladıqdan sonra cəhd edin.");
       }
-      const data = doc.data();
-      const cat = categories.find(c => c.id === catId) || { name: 'Sınaq', description: '', time: 180 };
-      const generatedExam = {
-        id: 'weekly_exam_' + examType,
-        name: data.name || cat.name,
-        description: data.description || cat.description,
-        time: cat.time || 180,
-        questions: data.questions,
-        isSpecial: true,
-        examType: examType,
-        weekId: data.weekId,
-        publishedAt: data.publishedAt
-      };
-      console.log('BEFORE_LS_WRITE');
-      localStorage.setItem('generatedExamData', JSON.stringify(generatedExam));
-      localStorage.setItem('activeSpecialCategory', 'weekly_exam_' + examType);
       if (couponInfo && couponInfo.code && typeof window.markCouponUsed === 'function') {
-        try {
-          console.log('BEFORE_MARK_USED');
-          await window.markCouponUsed(couponInfo.code, couponInfo.examId || ('active_' + String(examType)), couponInfo.couponDocId || null);
-        } catch(e) {
-          console.error('Coupon mark failed:', e);
-        }
+        await window.markCouponUsed(couponInfo.code, couponInfo.examId || ('active_' + String(examType)), couponInfo.couponDocId || null);
       }
-      window.location.href = 'dim_view.html';
+      window.location.href = 'dim_view.html?weeklyExamType=' + encodeURIComponent(String(examType || ''));
     } catch (e) {
       console.error("Weekly Exam Error:", e);
       alert(e.message);

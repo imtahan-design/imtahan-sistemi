@@ -75,6 +75,34 @@ window.addEventListener('unhandledrejection', function(ev) {
     alert('REJ name=' + (r && r.name ? r.name : undefined) + ' code=' + (r && r.code ? r.code : undefined) + ' msg=' + ((r && r.message ? r.message : r)));
 });
 
+function safeSet(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (e) {
+        try { console.warn('iOS storage blocked, fallback to memory'); } catch (_) {}
+        try {
+            if (!window.__MEM_STORE__) window.__MEM_STORE__ = {};
+            window.__MEM_STORE__[String(key)] = String(value);
+        } catch (_) {}
+        return false;
+    }
+}
+window.safeSet = safeSet;
+
+function safeGet(key) {
+    try {
+        return localStorage.getItem(key);
+    } catch (e) {
+        try {
+            return window.__MEM_STORE__ ? window.__MEM_STORE__[String(key)] : null;
+        } catch (_) {
+            return null;
+        }
+    }
+}
+window.safeGet = safeGet;
+
 function escapeHtml(str) {
     if (str === undefined || str === null) return '';
     return String(str)
@@ -5944,30 +5972,8 @@ window.startActiveWeeklyExam = async function(examType, catId) {
         if (!doc.exists) {
             throw new Error("Bu kateqoriya üçün hələlik aktiv sınaq yoxdur. Admin sınağı yayımladıqdan sonra cəhd edin.");
         }
-
-        const data = doc.data();
-        // Fallback for category if not found in memory (rare)
-        const cat = categories.find(c => c.id === catId) || { name: 'Sınaq', description: '', time: 180 };
         
-        // Construct exam object
-        const generatedExam = {
-            id: 'weekly_exam_' + examType,
-            name: data.name || cat.name,
-            description: data.description || cat.description,
-            time: cat.time || 180,
-            questions: data.questions,
-            isSpecial: true,
-            examType: examType,
-            exam_type: __computeExamType(examType),
-            weekId: data.weekId,
-            publishedAt: data.publishedAt
-        };
-        
-        // Save to localStorage
-        localStorage.setItem('generatedExamData', JSON.stringify(generatedExam));
-        localStorage.setItem('activeSpecialCategory', 'weekly_exam_' + examType);
-        
-        window.location.href = 'dim_view.html';
+        window.location.href = 'dim_view.html?weeklyExamType=' + encodeURIComponent(String(examType || ''));
     } catch (e) {
         console.error("Weekly Exam Error:", e);
         alert(e.message);
