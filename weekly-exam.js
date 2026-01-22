@@ -38,17 +38,23 @@
     if (isNaN(s.getTime()) || isNaN(e.getTime())) throw new Error('Kupon tarix intervalı düzgün deyil');
     if (now < s) throw new Error('Kupon hələ aktiv deyil');
     if (now > e) throw new Error('Kuponun müddəti bitib');
-    if (data.usedBy) throw new Error('Kupon artıq istifadə olunub');
-    await db.runTransaction(async (t) => {
+    var uid = String(currentUser && currentUser.id ? currentUser.id : '');
+    if (!uid) throw new Error('Zəhmət olmasa hesabla daxil olun');
+    const res = await db.runTransaction(async (t) => {
       const ref = db.collection('exam_coupons').doc(doc.id);
       const snap = await t.get(ref);
       if (!snap.exists) throw new Error('Kupon tapılmadı');
       const d = snap.data() || {};
-      if (d.usedBy) throw new Error('Kupon artıq istifadə olunub');
       if (String(d.examId || '') !== String(examId)) throw new Error('Bu kupon bu imtahana uyğun deyil');
-      t.update(ref, { usedBy: String(currentUser && currentUser.id ? currentUser.id : 'guest') });
+      if (d.usedBy) {
+        if (String(d.usedBy) === uid) return { status: 'already_used' };
+        throw new Error('Kupon artıq istifadə olunub');
+      }
+      t.update(ref, { usedBy: uid });
+      return { status: 'ok' };
     });
-    return true;
+    if (res && res.status) return res;
+    return { status: 'ok' };
   };
   window.showCouponModal = function(examId, onSuccess) {
     let m = document.getElementById('coupon-modal');
@@ -62,31 +68,77 @@
           <h3 class="text-lg font-bold text-white">Kuponu daxil edin</h3>
           <button class="text-gray-400 hover:text-white" onclick="document.getElementById('coupon-modal').remove()"><i class="fas fa-times"></i></button>
         </div>
-        <div class="space-y-3">
+        <form id="coupon-form" class="space-y-3">
           <label class="block text-sm text-gray-300">Kupon kodu</label>
           <input id="coupon-code-input" type="text" class="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-700" placeholder="PROK12345" />
-          <button id="coupon-submit-btn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md">Təsdiqlə</button>
+          <button id="coupon-submit-btn" type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md">Təsdiqlə</button>
           <p id="coupon-error" class="text-red-400 text-sm hidden"></p>
-        </div>
+        </form>
       </div>
     `;
     document.body.appendChild(m);
+    var pending = false;
+    var lastAt = 0;
+    var debounceMs = 1200;
+    const form = m.querySelector('#coupon-form');
     const btn = m.querySelector('#coupon-submit-btn');
-    btn.onclick = async function() {
+    const input = m.querySelector('#coupon-code-input');
+    const err = m.querySelector('#coupon-error');
+    if (form) form.onsubmit = null;
+    if (btn) btn.onclick = null;
+    if (input) input.onkeydown = null;
+
+    if (input) {
+      input.onkeydown = function(e) {
+        if (!e) return;
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          if (form && typeof form.requestSubmit === 'function') form.requestSubmit();
+          else if (form) form.dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+      };
+    }
+
+    const handler = async function(e) {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       const code = m.querySelector('#coupon-code-input').value;
+      const now = Date.now();
+      if (pending) return;
+      if (lastAt && (now - lastAt) < debounceMs) return;
+      lastAt = now;
+      pending = true;
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yoxlanır...';
       try {
-        await window.validateCoupon(code, examId);
-        document.getElementById('coupon-modal').remove();
-        if (typeof onSuccess === 'function') onSuccess();
+        if (err) err.classList.add('hidden');
+        const result = await window.validateCoupon(code, examId);
+        if (result && result.status === 'already_used') {
+          if (err) {
+            err.textContent = 'Bu kupon artıq sizin hesabla istifadə olunub.';
+            err.classList.remove('hidden');
+          }
+          btn.innerHTML = 'Təsdiqlə';
+          setTimeout(function(){ btn.disabled = false; }, debounceMs);
+          pending = false;
+          return;
+        }
+        if (result && result.status === 'ok') {
+          document.getElementById('coupon-modal').remove();
+          if (typeof onSuccess === 'function') onSuccess();
+          pending = false;
+          return;
+        }
+        throw new Error('Kupon yoxlama xətası');
       } catch(e) {
-        const err = m.querySelector('#coupon-error');
-        if (err) { err.textContent = e.message; err.classList.remove('hidden'); }
-        btn.disabled = false;
+        if (err) { err.textContent = e && e.message ? e.message : 'Xəta baş verdi'; err.classList.remove('hidden'); }
         btn.innerHTML = 'Təsdiqlə';
+        setTimeout(function(){ btn.disabled = false; }, debounceMs);
       }
+      pending = false;
     };
+    if (form) form.onsubmit = handler;
   };
   // Helper: Weekly Exam sistemində kateqoriyanı tapmaq
   // İstifadə: Qaralama yaradarkən sxem elementinə görə uyğun kateqoriya tapılır
