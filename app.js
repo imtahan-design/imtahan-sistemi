@@ -191,6 +191,173 @@ function __isSpecialRoot(cat) {
     const isSpec = (cat.examType === 'special' || cat.exam_type === 'special' || String(cat.id||'').startsWith('special_'));
     return isSpec && (!cat.parentId);
 }
+function __isQuestionsDisabled(cat) {
+    return !!cat && String(cat.questionsMode || '').toLowerCase() === 'none';
+}
+function __hasChildren(catId) {
+    const id = String(catId || '');
+    try { return categories.some(c => String(c.parentId) === id); } catch (_) { return false; }
+}
+function __isUnderRoot(childId, rootId) {
+    try {
+        const root = String(rootId || '');
+        let cur = categories.find(c => String(c.id) === String(childId));
+        for (let i = 0; i < 30 && cur; i++) {
+            if (String(cur.id) === root) return true;
+            if (!cur.parentId) return false;
+            cur = categories.find(c => String(c.id) === String(cur.parentId));
+        }
+    } catch (_) {}
+    return false;
+}
+window.migrateProkurorluqRootCategory = async function(opts) {
+    opts = opts || {};
+    const rootId = 'special_prokurorluq';
+    const legacyReason = 'root_category_contamination';
+    if (!Array.isArray(categories)) categories = [];
+    const root = categories.find(c => String(c.id) === rootId);
+    if (!root) return { ok: false, reason: 'missing_root' };
+    const runId = 'mig_' + Date.now().toString(36) + '_' + Math.random().toString(16).slice(2, 10);
+
+    const needsModeUpdate = String(root.questionsMode || '').toLowerCase() !== 'none';
+    if (needsModeUpdate) root.questionsMode = 'none';
+
+    const qs = Array.isArray(root.questions) ? root.questions : [];
+    let mutatedQuestions = 0;
+    function stableHash(s) {
+        let h = 0;
+        s = String(s || '');
+        for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
+        return Math.abs(h).toString(36);
+    }
+    function ensureQid(q) {
+        const cur = q && q.id != null ? String(q.id).trim() : '';
+        if (cur) return cur;
+        const base = String(q && (q.text || q.question) || '') + '|' + (Array.isArray(q && (q.options || q.variants)) ? (q.options || q.variants).join('|') : '');
+        const id = 'q_' + stableHash(base).slice(0, 16);
+        if (q) q.id = id;
+        return id;
+    }
+    for (let i = 0; i < qs.length; i++) {
+        const q = qs[i];
+        if (!q) continue;
+        ensureQid(q);
+        const should = (q.legacy !== true) || (q.deleted !== true) || (String(q.legacyReason || '') !== legacyReason);
+        if (should) {
+            q.legacy = true;
+            q.deleted = true;
+            q.legacyReason = legacyReason;
+            mutatedQuestions++;
+        }
+    }
+
+    const sanitizedRoot = {
+        ...root,
+        questionsMode: 'none',
+        questions: [],
+        questionsInline: false,
+        questionsCount: 0,
+        questionsSoftDeleted: true,
+        questionsSoftDeletedReason: legacyReason,
+        rootLegacyQuestionsCount: qs.length,
+        rootLegacyMigrationRunId: runId
+    };
+    categories = categories.map(c => String(c.id) === rootId ? sanitizedRoot : c);
+
+    const persist = (opts.persist !== false) && !!db;
+    if (!persist) return { ok: true, persisted: false, mutatedQuestions, totalQuestions: qs.length, runId };
+
+    const version = 1;
+    const already = (root.rootLegacyMigrationVersion != null) ? Number(root.rootLegacyMigrationVersion) : 0;
+    if (already >= version && !needsModeUpdate && mutatedQuestions === 0) return { ok: true, persisted: false, mutatedQuestions, totalQuestions: qs.length, runId };
+
+    try {
+        await db.collection('categories').doc(rootId).set({
+            questionsMode: 'none',
+            questions: [],
+            questionsInline: false,
+            questionsCount: 0,
+            questionsSoftDeleted: true,
+            questionsSoftDeletedReason: legacyReason,
+            rootLegacyMigrationVersion: version,
+            rootLegacyReason: legacyReason,
+            rootLegacyQuestionsCount: qs.length,
+            rootLegacyMigrationRunId: runId,
+            rootLegacyMigratedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            examType: 'special',
+            exam_type: 'special'
+        }, { merge: true });
+    } catch (e) {
+        return { ok: false, reason: 'persist_root_failed', error: e && e.message ? e.message : String(e), mutatedQuestions, totalQuestions: qs.length, runId };
+    }
+
+    const writeLegacyDocs = (opts.writeLegacyDocs !== false) && qs.length > 0;
+    if (!writeLegacyDocs) return { ok: true, persisted: true, mutatedQuestions, totalQuestions: qs.length, runId };
+
+    function docPart(s) {
+        const v = String(s == null ? '' : s);
+        const cleaned = v.replace(/\//g, '_').replace(/[\u0000-\u001F\u007F]/g, '').trim();
+        if (!cleaned) return 'x';
+        if (cleaned.length <= 400) return cleaned;
+        return 'h_' + stableHash(cleaned);
+    }
+    function makeDocId(catIdValue, qidValue) {
+        const catPart = docPart(catIdValue);
+        const qPart = docPart(qidValue);
+        const docId = catPart + '_' + qPart;
+        if (docId.length <= 900) return docId;
+        return catPart + '_h_' + stableHash(String(qidValue || ''));
+    }
+
+    const limit = (opts.limit != null) ? Math.max(1, Math.min(450, Number(opts.limit))) : 450;
+    const take = Math.min(limit, qs.length);
+    let batch = db.batch();
+    let count = 0;
+    let written = 0;
+    let commitCount = 0;
+    for (let i = 0; i < take; i++) {
+        const q = qs[i];
+        if (!q) continue;
+        const qid = ensureQid(q);
+        const docId = makeDocId(rootId, qid);
+        const ref = db.collection('legacy_category_questions').doc(docId);
+        const payload = { ...q, id: qid, categoryId: rootId, legacy: true, deleted: true, legacyReason: legacyReason, migrationRunId: runId, migrationVersion: version, migratedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        batch.set(ref, payload, { merge: true });
+        count++;
+        written++;
+        if (count >= 400) {
+            await batch.commit();
+            commitCount++;
+            batch = db.batch();
+            count = 0;
+        }
+    }
+    if (count > 0) {
+        await batch.commit();
+        commitCount++;
+    }
+
+    const shouldLog = (opts.logDoc !== false);
+    if (shouldLog) {
+        try {
+            const ref = db.collection('weekly_exams').doc('migration_prokurorluq_root');
+            const entry = {
+                runId: runId,
+                version: version,
+                mutatedQuestions: mutatedQuestions,
+                totalQuestions: qs.length,
+                legacyDocsWritten: written,
+                legacyDocsLimited: take !== qs.length,
+                commitCount: commitCount,
+                legacyReason: legacyReason,
+                at: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await ref.set({ lastRunId: runId, lastRunAt: firebase.firestore.FieldValue.serverTimestamp(), ['runs.' + runId]: entry }, { merge: true });
+        } catch (_) {}
+    }
+
+    return { ok: true, persisted: true, mutatedQuestions, totalQuestions: qs.length, legacyDocsWritten: written, legacyDocsLimited: take !== qs.length, commitCount, runId };
+};
 async function __restoreSpecialRootIfDeleted(doc) {
     try {
         const data = doc.data() || {};
@@ -1075,6 +1242,7 @@ async function syncCategory(catId, includeSubtree = false) {
             return catPart + '_h_' + __stableHash(String(qidValue || ''));
         }
         async function __upsertCategoryQuestions(cat, collectionName){
+            if (__isQuestionsDisabled(cat)) return;
             if (!Array.isArray(cat.questions)) return;
             let batch = db.batch();
             let count = 0;
@@ -1306,6 +1474,8 @@ async function syncCategory(catId, includeSubtree = false) {
 async function fetchCategoryQuestions(catId) {
     try {
         if (!db) return [];
+        const cat = categories.find(c => String(c.id) === String(catId));
+        if (cat && __isQuestionsDisabled(cat)) return [];
         let attempts = 0;
         let snap = null;
         while (attempts < 3) {
@@ -1318,7 +1488,7 @@ async function fetchCategoryQuestions(catId) {
                 await new Promise(r => setTimeout(r, 300 * attempts));
             }
         }
-        const qs = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => !x.deleted);
+        const qs = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.deleted !== true && x.legacy !== true);
         const idxd = qs.map((q, i) => ({ ...q, originalIndex: i }));
         categories = categories.map(c => {
             if (String(c.id) === String(catId)) {
@@ -1341,15 +1511,16 @@ async function fetchCategoryQuestions(catId) {
 async function fetchCategoryQuestionsPaged(catId, page = 0, pageSize = 100) {
     try {
         if (!db) return [];
+        const cat = categories.find(c => String(c.id) === String(catId));
+        if (cat && __isQuestionsDisabled(cat)) return [];
         const snap = await db.collection('category_questions')
             .where('categoryId','==', String(catId))
             .where('page','==', page)
             .orderBy('createdAt','asc')
             .limit(pageSize)
             .get();
-        const qs = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => !x.deleted);
+        const qs = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.deleted !== true && x.legacy !== true);
         const idxd = qs.map((q, i) => ({ ...q, originalIndex: (page * pageSize) + i }));
-        const cat = categories.find(c => String(c.id) === String(catId));
         if (cat) {
             const merged = Array.isArray(cat.questions) ? cat.questions.concat(idxd) : idxd;
             categories = categories.map(c => String(c.id) === String(catId) ? { ...c, questions: merged } : c);
@@ -6289,6 +6460,10 @@ window.startQuizCheck = function(catId) {
     // For now, allow guests to take quiz as per "Initial view categories" request
     activeCategoryId = catId;
     const cat = categories.find(c => c.id === catId);
+    if (cat && (__isQuestionsDisabled(cat) || (__isSpecialRoot(cat) && !cat.parentId))) {
+        showNotification('Bu kateqoriya sual mənbəyi kimi deaktiv edilib.', 'warning');
+        return;
+    }
     if (db && cat && (!cat.questions || cat.questions.length === 0)) {
         (async function(){
             try {
@@ -6368,6 +6543,7 @@ window.startQuizCheck = function(catId) {
                     if (!qs.length) {
                         const normKeys = Array.from(keys);
                         const fromLocal = categories.filter(c => {
+                            if (__isQuestionsDisabled(c) || (__isSpecialRoot(c) && !c.parentId)) return false;
                             const n = __normalize(c.name);
                             return n === normCat || normKeys.some(k => n.includes(k) || k.includes(n));
                         }).reduce((acc, c) => {
@@ -6391,6 +6567,7 @@ window.startQuizCheck = function(catId) {
                             const catsList = await getCategoriesOnce();
                             let idx3 = 0;
                             qs = catsList.reduce((arr, d) => {
+                                if (d && (String(d.questionsMode || '').toLowerCase() === 'none' || (__isSpecialRoot(d) && !d.parentId))) return arr;
                                 const cname = __normalize(d.name || '');
                                 const matchedName = cname && (cname === normCat || Array.from(keys).some(k => cname.includes(k) || k.includes(cname)));
                                 const cq = matchedName && Array.isArray(d.questions) ? d.questions : [];
@@ -6407,7 +6584,7 @@ window.startQuizCheck = function(catId) {
                         } catch(e) {}
                     }
                 }
-                cat.questions = qs;
+                cat.questions = (Array.isArray(qs) ? qs.filter(q => q && q.deleted !== true) : []);
                 saveCategories();
             } catch(e) {}
             startQuiz();
@@ -7422,6 +7599,10 @@ async function openCategory(id) {
     activeCategoryId = id;
     let cat = categories.find(c => c.id === id);
     if (!cat) return;
+    if (__isQuestionsDisabled(cat)) {
+        categories = categories.map(c => String(c.id) === String(id) ? { ...c, questions: [], questionsCount: 0, questionsInline: true } : c);
+        cat = categories.find(c => c.id === id);
+    }
     if (!cat.questions || cat.questionsInline === false) {
         try {
             await fetchCategoryQuestionsPaged(id, 0, 100);
@@ -7482,7 +7663,8 @@ async function openCategory(id) {
         
         // Start button logic inside admin view
         const startBtn = document.getElementById('start-quiz-btn');
-        if (cat.questions.length === 0) {
+        const availableCount = Array.isArray(cat.questions) ? cat.questions.filter(q => q && q.deleted !== true).length : 0;
+        if (__isQuestionsDisabled(cat) || availableCount === 0) {
             startBtn.disabled = true;
             startBtn.classList.add('opacity-50');
             startBtn.textContent = "Sual yoxdur";
@@ -8876,8 +9058,13 @@ window.startQuiz = function() {
         console.error("Kateqoriya tapılmadı:", activeCategoryId);
         return;
     }
+    if (__isQuestionsDisabled(cat) || (__isSpecialRoot(cat) && !cat.parentId)) {
+        showNotification('Bu kateqoriya sual mənbəyi kimi deaktiv edilib.', 'warning');
+        return;
+    }
+    const available = Array.isArray(cat.questions) ? cat.questions.filter(q => q && q.deleted !== true) : [];
     
-    if (!cat.questions || cat.questions.length === 0) {
+    if (!available.length) {
         console.warn("Bu kateqoriyada sual yoxdur:", cat.name);
         showNotification('Bu testdə hələ sual yoxdur.', 'warning');
         return;
@@ -8892,7 +9079,7 @@ window.startQuiz = function() {
     // Sual sayını müəyyən edin mətnini bərpa et
     const infoText = document.querySelector('.quiz-setup-content p');
     if (infoText) {
-        infoText.innerHTML = `Sual sayını müəyyən edin (Cəmi: ${cat.questions.length})`;
+        infoText.innerHTML = `Sual sayını müəyyən edin (Cəmi: ${available.length})`;
     }
     
     // Reset radio selection to 15 (default)
@@ -8912,15 +9099,24 @@ window.startQuiz = function() {
 window.confirmStartQuiz = function() {
     const cat = categories.find(c => c.id === activeCategoryId);
     if (!cat) return;
+    if (__isQuestionsDisabled(cat) || (__isSpecialRoot(cat) && !cat.parentId)) {
+        showNotification('Bu kateqoriya sual mənbəyi kimi deaktiv edilib.', 'warning');
+        return;
+    }
 
     const selectedCountValue = document.querySelector('input[name="question-count"]:checked').value;
     let finalQuestions = [];
     
     // Bütün sualları qarışdır (Təsdiqlənmə statusundan asılı olmayaraq)
-    const shuffledAll = [...cat.questions].sort(() => 0.5 - Math.random());
+    const available = Array.isArray(cat.questions) ? cat.questions.filter(q => q && q.deleted !== true) : [];
+    const shuffledAll = [...available].sort(() => 0.5 - Math.random());
 
     const count = parseInt(selectedCountValue);
     finalQuestions = shuffledAll.slice(0, Math.min(count, shuffledAll.length));
+    if (!finalQuestions.length) {
+        showNotification('Bu testdə istifadə edilə bilən sual yoxdur.', 'warning');
+        return;
+    }
 
     currentQuiz = {
         categoryId: cat.id,

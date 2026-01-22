@@ -8,6 +8,99 @@
 
   window.seedProkurorluqSubcategories = async function() { return; };
 
+  function __isQuestionsDisabled(cat) {
+    return !!cat && String(cat.questionsMode || '').toLowerCase() === 'none';
+  }
+
+  function __isSpecialRoot(cat) {
+    if (!cat) return false;
+    const isSpec = (cat.examType === 'special' || cat.exam_type === 'special' || String(cat.id || '').startsWith('special_'));
+    return isSpec && (!cat.parentId);
+  }
+
+  function __collectSubtreeIds(rootId) {
+    rootId = String(rootId || '');
+    const all = Array.isArray(categories) ? categories : [];
+    const byParent = new Map();
+    for (var i = 0; i < all.length; i++) {
+      var c = all[i];
+      var pid = c && c.parentId != null ? String(c.parentId) : null;
+      var id = c && c.id != null ? String(c.id) : null;
+      if (!id) continue;
+      if (!byParent.has(pid)) byParent.set(pid, []);
+      byParent.get(pid).push(id);
+    }
+    const visited = new Set();
+    const q = [rootId];
+    while (q.length) {
+      var cur = q.shift();
+      if (visited.has(cur)) continue;
+      visited.add(cur);
+      var kids = byParent.get(cur) || [];
+      for (var k = 0; k < kids.length; k++) q.push(kids[k]);
+    }
+    return visited;
+  }
+
+  function __leafCategoriesUnder(rootId) {
+    const subtree = __collectSubtreeIds(rootId);
+    const all = Array.isArray(categories) ? categories : [];
+    const hasChild = new Set();
+    all.forEach(function(c) {
+      if (!c || c.parentId == null) return;
+      var pid = String(c.parentId);
+      if (subtree.has(pid)) hasChild.add(pid);
+    });
+    return all.filter(function(c) {
+      if (!c || c.id == null) return false;
+      var id = String(c.id);
+      if (id === String(rootId)) return false;
+      if (!subtree.has(id)) return false;
+      if (c.deleted === true) return false;
+      if (__isQuestionsDisabled(c)) return false;
+      if (hasChild.has(id)) return false;
+      if (__isSpecialRoot(c)) return false;
+      return true;
+    });
+  }
+
+  async function __loadQuestionsForExam(cat, targetCount) {
+    if (!cat || __isQuestionsDisabled(cat) || cat.deleted === true) return [];
+    var inlineQs = (Array.isArray(cat.questions) && cat.questionsInline !== false) ? cat.questions : null;
+    var qs = inlineQs ? inlineQs.slice() : [];
+    if (qs.length > 0) {
+      return qs.filter(function(q){ return q && q.deleted !== true && q.legacy !== true; });
+    }
+    if (!db) return [];
+    var pageSize = 100;
+    var maxFetch = Math.max(300, Math.min(1500, (targetCount || 0) * 6));
+    var out = [];
+    var page = 0;
+    while (out.length < maxFetch) {
+      try {
+        var snap = await db.collection('category_questions')
+          .where('categoryId', '==', String(cat.id))
+          .where('page', '==', page)
+          .orderBy('createdAt', 'asc')
+          .limit(pageSize)
+          .get();
+        if (snap.empty) break;
+        for (var i = 0; i < snap.docs.length; i++) {
+          var d = snap.docs[i];
+          var data = d.data() || {};
+          if (data.deleted === true || data.legacy === true) continue;
+          var q = { id: data.id || d.id, ...data };
+          out.push(q);
+        }
+        if (snap.docs.length < pageSize) break;
+        page++;
+      } catch (_e) {
+        break;
+      }
+    }
+    return out;
+  }
+
   // Prokurorluq sınağını istifadəçi tarixçəsinə əsaslanaraq generasiya edir
   window.generateProkurorluqExam = async function() {
     if (!currentUser) {
@@ -35,7 +128,8 @@
     }
 
     var examQuestions = [];
-    var subs = categories.filter(function(c) { return c.parentId === 'special_prokurorluq'; });
+    var rootId = 'special_prokurorluq';
+    var subs = __leafCategoriesUnder(rootId);
     if (!subs || subs.length === 0) {
       throw new Error("Prokurorluq alt-bölmələri tapılmadı.");
     }
@@ -43,8 +137,12 @@
     var perSub = Math.max(1, Math.floor(DEFAULT_TOTAL / subs.length));
     for (var sIndex = 0; sIndex < subs.length; sIndex++) {
       var cat = subs[sIndex];
-      if (!cat || !cat.questions || cat.questions.length === 0) continue;
-      var availableQuestions = cat.questions.filter(function(q) { return !usedQuestionIds.has(String(q.id)); });
+      var sourceQs = await __loadQuestionsForExam(cat, perSub);
+      if (!sourceQs || sourceQs.length === 0) continue;
+      var availableQuestions = sourceQs.filter(function(q) {
+        if (!q || q.deleted === true) return false;
+        return !usedQuestionIds.has(String(q.id));
+      });
       var shuffled = availableQuestions.sort(function() { return 0.5 - Math.random(); });
       var selectedCount = 0;
       var subjectSelected = [];

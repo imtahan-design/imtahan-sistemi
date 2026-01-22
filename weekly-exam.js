@@ -8,20 +8,71 @@
 // Dəyişilməyənlər: ID-lər, backend sənədləri, localStorage açarları
 
 (function(){
-  let __WEEKLY_POOL_QUESTIONS = null;
   function __getUid() {
-    try {
-      var u = (typeof window !== 'undefined' ? window.currentUser : null) || (typeof currentUser !== 'undefined' ? currentUser : null);
-      var id = u && (u.id || u.uid) ? (u.id || u.uid) : '';
-      if (id) return String(id);
-    } catch(_) {}
     try {
       if (typeof firebase !== 'undefined' && firebase && typeof firebase.auth === 'function') {
         var au = firebase.auth().currentUser;
         if (au && au.uid) return String(au.uid);
       }
     } catch(_) {}
+    try {
+      var u = (typeof window !== 'undefined' ? window.currentUser : null) || (typeof currentUser !== 'undefined' ? currentUser : null);
+      var id = u && (u.id || u.uid) ? (u.id || u.uid) : '';
+      if (id) return String(id);
+    } catch(_) {}
     return '';
+  }
+  function __isQuestionsDisabled(cat) {
+    return !!cat && String(cat.questionsMode || '').toLowerCase() === 'none';
+  }
+  function __isSpecialRoot(cat) {
+    if (!cat) return false;
+    var isSpec = (cat.examType === 'special' || cat.exam_type === 'special' || String(cat.id || '').startsWith('special_'));
+    return isSpec && (!cat.parentId);
+  }
+  function __collectSubtreeIds(rootId) {
+    rootId = String(rootId || '');
+    var all = Array.isArray(categories) ? categories : [];
+    var byParent = new Map();
+    for (var i = 0; i < all.length; i++) {
+      var c = all[i];
+      var pid = c && c.parentId != null ? String(c.parentId) : null;
+      var id = c && c.id != null ? String(c.id) : null;
+      if (!id) continue;
+      if (!byParent.has(pid)) byParent.set(pid, []);
+      byParent.get(pid).push(id);
+    }
+    var visited = new Set();
+    var q = [rootId];
+    while (q.length) {
+      var cur = q.shift();
+      if (visited.has(cur)) continue;
+      visited.add(cur);
+      var kids = byParent.get(cur) || [];
+      for (var k = 0; k < kids.length; k++) q.push(kids[k]);
+    }
+    return visited;
+  }
+  function __leafCategoriesUnder(rootId) {
+    var subtree = __collectSubtreeIds(rootId);
+    var all = Array.isArray(categories) ? categories : [];
+    var hasChild = new Set();
+    all.forEach(function(c) {
+      if (!c || c.parentId == null) return;
+      var pid = String(c.parentId);
+      if (subtree.has(pid)) hasChild.add(pid);
+    });
+    return all.filter(function(c) {
+      if (!c || c.id == null) return false;
+      var id = String(c.id);
+      if (id === String(rootId)) return false;
+      if (!subtree.has(id)) return false;
+      if (c.deleted === true) return false;
+      if (__isQuestionsDisabled(c)) return false;
+      if (hasChild.has(id)) return false;
+      if (__isSpecialRoot(c)) return false;
+      return true;
+    });
   }
   window.COUPON_REQUIRED_TYPES = new Set(['prokurorluq']);
   try {
@@ -203,18 +254,6 @@
         });
         if (cat && Array.isArray(cat.questions) && cat.questions.length > 0) return cat;
       }
-      const poolCat = categories.find(c => String(c.id) === 'special_prokurorluq' && Array.isArray(c.questions));
-      const poolList = (__WEEKLY_POOL_QUESTIONS && Array.isArray(__WEEKLY_POOL_QUESTIONS)) ? __WEEKLY_POOL_QUESTIONS : (poolCat ? poolCat.questions : null);
-      if (poolList) {
-        const filtered = poolList.filter(q => {
-          const sid = String(q.subjectId || '');
-          const sn = nrm(q.subjectName || '');
-          return (sid === targetId) || (sn === tn) || sn.includes(tn) || keys.some(k => sn.includes(k));
-        });
-        if (filtered.length > 0) {
-          return { id: targetId || 'special_prokurorluq', name: schemaItem.name, parentId: 'special_prokurorluq', questions: filtered };
-        }
-      }
       return null;
     },
 
@@ -297,31 +336,19 @@
       if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
       let schema = [];
       if (type === 'prokurorluq') {
-        const subs = categories.filter(c => c.parentId === 'special_prokurorluq');
+        const subs = __leafCategoriesUnder('special_prokurorluq');
         schema = subs.map(s => ({ id: s.id, name: s.name, count: 6 }));
       } else if (type === 'hakimlik') {
-        const subs = categories.filter(c => c.parentId === 'special_hakimlik');
+        const subs = __leafCategoriesUnder('special_hakimlik');
         schema = subs.map(s => ({ id: s.id, name: s.name, count: 6 }));
       } else if (type === 'vekillik') {
-        const subs = categories.filter(c => c.parentId === 'special_vekillik');
+        const subs = __leafCategoriesUnder('special_vekillik');
         schema = subs.map(s => ({ id: s.id, name: s.name, count: 6 }));
       }
       
       if (!schema || schema.length === 0) {
         return showNotification('Bu imtahan növü üçün sual bölgüsü (sxem) hələ təyin edilməyib.', 'warning');
       }
-
-      try {
-        if (!__WEEKLY_POOL_QUESTIONS) {
-          const poolDoc = await db.collection('categories').doc('special_prokurorluq').get();
-          if (poolDoc.exists) {
-            const d = poolDoc.data();
-            if (d && Array.isArray(d.questions)) {
-              __WEEKLY_POOL_QUESTIONS = d.questions;
-            }
-          }
-        }
-      } catch (_) {}
 
       let examQuestions = [];
       let log = [];
@@ -374,16 +401,16 @@
 
       for (const item of targetSchema) {
         const subCat = this.findCategory(item);
-        if (!subCat || !subCat.questions || subCat.questions.length === 0) {
+        if (!subCat || __isQuestionsDisabled(subCat) || __isSpecialRoot(subCat) || !subCat.questions || subCat.questions.length === 0) {
           if (window.__DEBUG) console.warn(`Category not found or empty: ${item.name}`);
           log.push(`TAPILMADI: ${item.name}`);
           continue;
         }
-        const available = subCat.questions.filter(q => !excludeIds.has(q.id));
+        const available = subCat.questions.filter(q => q && q.deleted !== true && !excludeIds.has(q.id));
         let pool = available;
         if (available.length < item.count) {
           log.push(`XƏBƏRDARLIQ: ${item.name} - Yeni sual çatışmır (${available.length}/${item.count}). İşlənmişlər qarışdırılır.`);
-          pool = subCat.questions;
+          pool = subCat.questions.filter(function(q){ return q && q.deleted !== true; });
         }
         function pickRandomN(arr, n) {
           var a = arr.slice();
@@ -406,32 +433,7 @@
         log.push(`OK: ${item.name} (${selected.length}/${item.count})`);
       }
       if (examQuestions.length === 0) {
-        const poolCat = categories.find(c => String(c.id) === 'special_prokurorluq' && Array.isArray(c.questions));
-        const poolList = (__WEEKLY_POOL_QUESTIONS && Array.isArray(__WEEKLY_POOL_QUESTIONS)) ? __WEEKLY_POOL_QUESTIONS : (poolCat ? poolCat.questions : []);
-        if (poolList && poolList.length > 0) {
-          function pickRandomN(arr, n) {
-            var a = arr.slice();
-            var len = a.length;
-            var m = Math.min(n, len);
-            for (var i = 0; i < m; i++) {
-              var r = i + Math.floor(Math.random() * (len - i));
-              var tmp = a[i];
-              a[i] = a[r];
-              a[r] = tmp;
-            }
-            return a.slice(0, m);
-          }
-          const filteredPool = poolList.filter(q => !excludeIds.has(q.id));
-          const selected80 = pickRandomN(filteredPool.length > 0 ? filteredPool : poolList, 80);
-          selected80.forEach(q => {
-            q._sourceSchemaName = q.subjectName || 'Prokurorluq (Havuz)';
-            q._sourceCategoryId = 'special_prokurorluq';
-          });
-          examQuestions = selected80;
-          log.push(`FALLBACK: Havuzdan seçildi (${examQuestions.length}/80)`);
-        } else {
-          return showNotification('Heç bir sual tapılmadı! Kateqoriyaları yoxlayın.', 'error');
-        }
+        return showNotification('Heç bir sual tapılmadı! Yalnız alt-kateqoriyalardan sual seçilir; root kateqoriya qadağandır.', 'error');
       }
       const draft = {
         id: 'weekly_draft_' + type,
