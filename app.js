@@ -8755,6 +8755,8 @@ function __openFlaggedQuestionModal(payload) {
     });
 }
 
+try { window.__openFlaggedQuestionModal = __openFlaggedQuestionModal; } catch(_) {}
+
 function __makeAdminQuestionId(seed) {
     try {
         if (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
@@ -8904,6 +8906,8 @@ async function __runFlaggedReviewFlow(session) {
     if (Array.isArray(s.__debugLog)) s.__debugLog.push({ t: Date.now(), status: 'error' });
     return { status: 'error', session: s };
 }
+
+try { window.__runFlaggedReviewFlow = __runFlaggedReviewFlow; } catch(_) {}
 
 window.saveAdminQuestions = async function() {
     try { __ensureAdminQuestionIds(); } catch (_) {}
@@ -9751,10 +9755,20 @@ window.showDashboard = function(doPush = true) {
     }
     currentQuiz = null;
 
-    // If it was a private quiz, we should clear the URL and reload to fully reset
     if (activePrivateQuiz || window.location.search.includes('quiz=')) {
-        window.location.href = window.location.origin + window.location.pathname;
-        return;
+        activePrivateQuiz = null;
+        pendingQuizId = null;
+        studentName = '';
+        try { removePrivacyBlur(); } catch (_) {}
+        try {
+            const url = new URL(window.location.href);
+            url.search = '';
+            url.hash = '';
+            window.history.replaceState({ page: 'home' }, '', url.toString());
+        } catch (_) {
+            try { window.history.replaceState({ page: 'home' }, '', window.location.pathname); } catch (_) {}
+        }
+        doPush = false;
     }
     
     if (doPush) {
@@ -9812,16 +9826,8 @@ window.writeAttemptAudit = async function(input) {
         if (!currentUser || !currentUser.id) throw new Error('currentUser is not available');
         input = input || {};
         const fv = firebase.firestore.FieldValue;
-        const batch = db.batch();
         const attemptRef = (input.attemptId ? db.collection('attempts').doc(String(input.attemptId)) : db.collection('attempts').doc());
         const attemptId = String(attemptRef.id);
-        let attemptExists = false;
-        if (input.attemptId) {
-            try {
-                const snap = await attemptRef.get();
-                attemptExists = !!(snap && snap.exists);
-            } catch (_) {}
-        }
         const questionIds = Array.isArray(input.questionIds) ? input.questionIds.map((x) => String(x)) : [];
         const total = (typeof input.total === 'number') ? input.total : questionIds.length;
         const ts = (typeof input.timestamp === 'number') ? input.timestamp : ((typeof input.finishedAt === 'number') ? input.finishedAt : Date.now());
@@ -9850,31 +9856,47 @@ window.writeAttemptAudit = async function(input) {
             createdAt: fv.serverTimestamp(),
             status: 'finished'
         };
-        const pathsUpdated = [];
-        let wroteAttemptDoc = false;
-        if (!attemptExists) {
-            batch.set(attemptRef, attemptData, { merge: false });
-            pathsUpdated.push('attempts/' + attemptId);
-            wroteAttemptDoc = true;
-        }
-        let weeklyIndexUpdated = false;
-        const weeklyIndexSkippedBecauseAdminOnly = !!(input.weeklyExamType && input.weeklyKey && !(currentUser && currentUser.role === 'admin'));
-        if (currentUser && currentUser.role === 'admin' && input.weeklyExamType && input.weeklyKey && typeof fv.arrayUnion === 'function') {
-            const weekKey = String(input.weeklyKey);
-            const weeklyRef = db.collection('weekly_exams').doc('history_' + String(input.weeklyExamType));
-            batch.set(weeklyRef, { ['attempts.' + weekKey]: fv.arrayUnion(attemptId), lastUpdated: fv.serverTimestamp() }, { merge: true });
-            pathsUpdated.push('weekly_exams/history_' + String(input.weeklyExamType) + ' attempts.' + weekKey);
-            weeklyIndexUpdated = true;
-        }
-        let updatedExamHistory = false;
-        if (typeof fv.arrayUnion === 'function') {
-            const userRef = db.collection('exam_history').doc(String(currentUser.id));
-            batch.set(userRef, { userId: String(currentUser.id), attemptIds: fv.arrayUnion(attemptId), updatedAt: fv.serverTimestamp() }, { merge: true });
-            pathsUpdated.push('exam_history/' + String(currentUser.id) + ' attemptIds');
-            updatedExamHistory = true;
-        }
-        await batch.commit();
-        return { ok: true, attemptId: attemptId, deduped: !!attemptExists, wroteAttemptDoc: wroteAttemptDoc, updatedExamHistory: updatedExamHistory, weeklyIndexUpdated: weeklyIndexUpdated, weeklyIndexSkippedBecauseAdminOnly: weeklyIndexSkippedBecauseAdminOnly, pathsUpdated: pathsUpdated };
+        const txRes = await db.runTransaction(async (tx) => {
+            const pathsUpdated = [];
+            let wroteAttemptDoc = false;
+            let attemptExists = false;
+            let weeklyIndexUpdated = false;
+            const weeklyIndexSkippedBecauseAdminOnly = !!(input.weeklyExamType && input.weeklyKey && !(currentUser && currentUser.role === 'admin'));
+
+            const snap = await tx.get(attemptRef);
+            attemptExists = !!(snap && snap.exists);
+            if (!attemptExists) {
+                tx.set(attemptRef, attemptData, { merge: false });
+                pathsUpdated.push('attempts/' + attemptId);
+                wroteAttemptDoc = true;
+            }
+
+            let updatedExamHistory = false;
+            if (typeof fv.arrayUnion === 'function') {
+                const userId = String(currentUser.id);
+                const userRef = db.collection('exam_history').doc(userId);
+                const histSnap = await tx.get(userRef);
+                if (histSnap && histSnap.exists) {
+                    tx.set(userRef, { attemptIds: fv.arrayUnion(attemptId), updatedAt: fv.serverTimestamp() }, { merge: true });
+                } else {
+                    tx.set(userRef, { userId: userId, attemptIds: fv.arrayUnion(attemptId), updatedAt: fv.serverTimestamp() }, { merge: true });
+                }
+                pathsUpdated.push('exam_history/' + userId + ' attemptIds');
+                updatedExamHistory = true;
+            }
+
+            if (currentUser && currentUser.role === 'admin' && input.weeklyExamType && input.weeklyKey && typeof fv.arrayUnion === 'function') {
+                const weekKey = String(input.weeklyKey);
+                const weeklyRef = db.collection('weekly_exams').doc('history_' + String(input.weeklyExamType));
+                tx.set(weeklyRef, { ['attempts.' + weekKey]: fv.arrayUnion(attemptId), lastUpdated: fv.serverTimestamp() }, { merge: true });
+                pathsUpdated.push('weekly_exams/history_' + String(input.weeklyExamType) + ' attempts.' + weekKey);
+                weeklyIndexUpdated = true;
+            }
+
+            return { attemptExists, wroteAttemptDoc, updatedExamHistory, weeklyIndexUpdated, weeklyIndexSkippedBecauseAdminOnly, pathsUpdated };
+        });
+
+        return { ok: true, attemptId: attemptId, deduped: !!(txRes && txRes.attemptExists), wroteAttemptDoc: !!(txRes && txRes.wroteAttemptDoc), updatedExamHistory: !!(txRes && txRes.updatedExamHistory), weeklyIndexUpdated: !!(txRes && txRes.weeklyIndexUpdated), weeklyIndexSkippedBecauseAdminOnly: !!(txRes && txRes.weeklyIndexSkippedBecauseAdminOnly), pathsUpdated: (txRes && txRes.pathsUpdated) ? txRes.pathsUpdated : [] };
     } catch (e) {
         return { ok: false, error: (e && e.message) ? e.message : String(e), errorStack: (e && e.stack) ? String(e.stack) : null };
     }

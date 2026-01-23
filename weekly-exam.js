@@ -126,6 +126,135 @@
       return true;
     });
   }
+
+  function __getFlaggedModalOpener() {
+    try {
+      if (typeof window !== 'undefined' && typeof window.__openFlaggedQuestionModal === 'function') return window.__openFlaggedQuestionModal;
+    } catch(_) {}
+    try {
+      if (typeof __openFlaggedQuestionModal === 'function') return __openFlaggedQuestionModal;
+    } catch(_) {}
+    return null;
+  }
+
+  async function __weeklyFlagReviewFlow(input) {
+    input = input || {};
+    var questions = Array.isArray(input.questions) ? input.questions : [];
+    var openEditor = (input && typeof input.openEditor === 'function') ? input.openEditor : null;
+    var opener = __getFlaggedModalOpener();
+    if (!opener || typeof window.getFlaggedQuestions !== 'function') return { status: 'ok', questions: questions, changed: false };
+    var keptIds = [];
+    var deletedCount = 0;
+    var changed = false;
+
+    for (var safety = 0; safety < 200; safety++) {
+      var flaggedAll = [];
+      try { flaggedAll = window.getFlaggedQuestions(questions) || []; } catch(_) { flaggedAll = []; }
+      var flagged = (Array.isArray(flaggedAll) ? flaggedAll : []).map(function(f){
+        var id = f && f.id != null ? String(f.id) : '';
+        var idx = questions.findIndex(function(q){ return q && String(q.id) === id; });
+        return { id: id, idx: idx, reasons: (f && Array.isArray(f.reasons)) ? f.reasons : [], question: f && f.question ? f.question : null };
+      }).filter(function(f){
+        if (!f.id || f.idx < 0) return false;
+        var q = questions[f.idx] || {};
+        if (q && q._flagReview && q._flagReview.status === 'kept') return false;
+        return true;
+      });
+
+      if (!flagged.length) return { status: 'ok', questions: questions, changed: changed, keptIds: keptIds, deletedCount: deletedCount };
+
+      var cur = flagged[0];
+      var q0 = questions[cur.idx] || {};
+      var res = await opener({
+        id: cur.id,
+        reasons: cur.reasons,
+        question: q0,
+        progressText: '1/' + String(flagged.length)
+      });
+
+      if (!res || res.action === 'cancel') return { status: 'cancel', questions: questions, changed: changed, keptIds: keptIds, deletedCount: deletedCount };
+
+      if (res.action === 'keep') {
+        q0._flagReview = { status: 'kept', reasons: cur.reasons, reviewedAt: Date.now(), by: __getUid() || (currentUser && currentUser.id ? String(currentUser.id) : null) };
+        q0._flagReasons = cur.reasons;
+        keptIds.push(cur.id);
+        changed = true;
+        continue;
+      }
+
+      if (res.action === 'delete') {
+        questions.splice(cur.idx, 1);
+        deletedCount += 1;
+        changed = true;
+        continue;
+      }
+
+      if (res.action === 'edit') {
+        if (openEditor) openEditor(cur.idx);
+        return { status: 'edit', questions: questions, changed: changed, keptIds: keptIds, deletedCount: deletedCount, editIndex: cur.idx };
+      }
+    }
+
+    return { status: 'error', questions: questions, changed: changed, keptIds: keptIds, deletedCount: deletedCount };
+  }
+  window.weeklyDebugLeafStats = async function(rootId, opts) {
+    opts = opts || {};
+    rootId = String(rootId || '');
+    var leaves = __leafCategoriesUnder(rootId);
+    var excludeIds = null;
+    if (Array.isArray(opts.excludeIds)) {
+      excludeIds = new Set(opts.excludeIds.map(function(x){ return String(x); }));
+    }
+    var fetcher = (opts && typeof opts.fetcher === 'function') ? opts.fetcher : null;
+    var rows = [];
+    for (var i = 0; i < leaves.length; i++) {
+      var c = leaves[i] || {};
+      var id = c && c.id != null ? String(c.id) : '';
+      var name = String(c.name || '');
+      var mode = __getQuestionsMode(c);
+      var blockedByRoot = __isSpecialRoot(c);
+      var blockedByNone = mode === 'none';
+      var blocked = blockedByRoot || blockedByNone || __isQuestionsDisabled(c) || c.deleted === true;
+      var allCount = 0;
+      var availCount = 0;
+      var reason = blockedByRoot ? 'special_root' : blockedByNone ? 'mode_none' : blocked ? 'blocked' : 'ok';
+      if (!blocked) {
+        if (mode === 'inline') {
+          var allInline = (Array.isArray(c.questions) ? c.questions : []).filter(function(q){ return q && q.deleted !== true; });
+          allCount = allInline.length;
+          availCount = excludeIds ? allInline.filter(function(q){ return !excludeIds.has(String(q.id)); }).length : allCount;
+          reason = allCount ? 'ok' : 'empty_inline';
+        } else {
+          var raw = [];
+          if (fetcher) {
+            raw = await fetcher(id, c);
+          } else {
+            raw = await __weeklyFetchSubcollectionQuestions(id);
+          }
+          var all = (Array.isArray(raw) ? raw : []).filter(function(q){ return q && q.deleted !== true && q.legacy !== true; });
+          allCount = all.length;
+          availCount = excludeIds ? all.filter(function(q){ return !excludeIds.has(String(q.id)); }).length : allCount;
+          reason = allCount ? 'ok' : 'empty_subcollection';
+        }
+      }
+      rows.push({
+        id: id,
+        name: name,
+        mode: mode,
+        foundCount: availCount,
+        totalCount: allCount,
+        reason: reason
+      });
+    }
+    try {
+      console.log('[weekly-debug] root=' + rootId + ' leaves=' + rows.length);
+      if (typeof console.table === 'function') console.table(rows);
+      else rows.forEach(function(r){ console.log('[weekly-debug]', r); });
+      var sum = rows.reduce(function(acc, r){ return acc + (Number(r.totalCount) || 0); }, 0);
+      console.log('[weekly-debug] totalQuestions=' + sum);
+    } catch(_) {}
+    return rows;
+  };
   window.COUPON_REQUIRED_TYPES = new Set(['prokurorluq']);
   try {
     var __crt = localStorage.getItem('coupon_required_types') || '';
@@ -497,6 +626,23 @@
       if (examQuestions.length === 0) {
         return showNotification('Heç bir sual tapılmadı! Yalnız alt-kateqoriyalardan sual seçilir; root kateqoriya qadağandır.', 'error');
       }
+
+      try {
+        if (typeof window.getFlaggedQuestions === 'function') {
+          var flagged0 = window.getFlaggedQuestions(examQuestions) || [];
+          var map0 = new Map();
+          (Array.isArray(flagged0) ? flagged0 : []).forEach(function(f){
+            if (f && f.id != null && Array.isArray(f.reasons) && f.reasons.length) map0.set(String(f.id), f.reasons);
+          });
+          examQuestions.forEach(function(q){
+            var rid = q && q.id != null ? String(q.id) : '';
+            if (!rid) return;
+            var rs = map0.get(rid);
+            if (rs) q._flagReasons = rs;
+          });
+        }
+      } catch(_) {}
+
       const draft = {
         id: 'weekly_draft_' + type,
         type: type,
@@ -794,6 +940,12 @@
 
     async saveFullEditor(type) {
         try {
+            var draftRef0 = db.collection('weekly_exams').doc('draft_' + type);
+            var existing0 = null;
+            try { existing0 = await draftRef0.get(); } catch(_) { existing0 = null; }
+            var oldQs0 = (existing0 && existing0.exists) ? (existing0.data().questions || []) : [];
+            var oldById0 = new Map((Array.isArray(oldQs0) ? oldQs0 : []).map(function(q){ return [String(q && q.id), q || {}]; }));
+
             const container = document.getElementById('full-editor-questions-list');
             if (!container) return;
             const items = container.querySelectorAll('.manual-question-item');
@@ -830,6 +982,30 @@
                     _sourceCategoryId: item.getAttribute('data-cat-id')
                 });
             });
+
+            questions.forEach(function(q){
+              var old = oldById0.get(String(q && q.id));
+              if (!old) return;
+              if (old._flagReview) q._flagReview = old._flagReview;
+              if (old._flagReasons) q._flagReasons = old._flagReasons;
+            });
+
+            try {
+              if (typeof window.getFlaggedQuestions === 'function') {
+                var flagged1 = window.getFlaggedQuestions(questions) || [];
+                var map1 = new Map();
+                (Array.isArray(flagged1) ? flagged1 : []).forEach(function(f){
+                  if (f && f.id != null && Array.isArray(f.reasons) && f.reasons.length) map1.set(String(f.id), f.reasons);
+                });
+                questions.forEach(function(q){
+                  var rid = q && q.id != null ? String(q.id) : '';
+                  if (!rid) return;
+                  var rs = map1.get(rid);
+                  if (rs) q._flagReasons = rs;
+                  else if (!(q._flagReview && q._flagReview.status === 'kept')) delete q._flagReasons;
+                });
+              }
+            } catch(_) {}
             
             await db.collection('weekly_exams').doc('draft_' + type).update({
                 questions: questions,
@@ -882,11 +1058,40 @@
       if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
       if (!confirm('Sınağı yayımlamaq istədiyinizə əminsiniz?')) return;
       try {
-        const draftDoc = await db.collection('weekly_exams').doc('draft_' + type).get();
+        const draftRef = db.collection('weekly_exams').doc('draft_' + type);
+        const draftDoc = await draftRef.get();
         if (!draftDoc.exists) {
           return showNotification('Qaralama tapılmadı.', 'error');
         }
         const data = draftDoc.data();
+
+        var reviewRes = await __weeklyFlagReviewFlow({
+          type: type,
+          questions: Array.isArray(data.questions) ? data.questions.slice() : [],
+          openEditor: (idx) => {
+            try {
+              const m = document.getElementById('weekly-full-editor-modal');
+              if (m) m.remove();
+            } catch(_) {}
+            this.openFullEditor(type, idx);
+          }
+        });
+
+        if (!reviewRes || reviewRes.status === 'cancel') return;
+        if (reviewRes.status === 'edit') return;
+        if (reviewRes.status === 'error') {
+          showNotification('Şübhəli sual yoxlamasında xəta: təhlükəsizlik limiti doldu.', 'error');
+          return;
+        }
+
+        if (reviewRes.changed) {
+          data.questions = reviewRes.questions;
+          await draftRef.update({
+            questions: data.questions,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
         const weekId = this.getCurrentWeekId();
         const activeRef = db.collection('weekly_exams').doc('active_' + type);
         const activeDoc = await activeRef.get();

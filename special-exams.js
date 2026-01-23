@@ -101,6 +101,59 @@
     return out;
   }
 
+  function __getFlaggedModalOpener() {
+    try {
+      if (typeof window !== 'undefined' && typeof window.__openFlaggedQuestionModal === 'function') return window.__openFlaggedQuestionModal;
+    } catch(_) {}
+    try {
+      if (typeof __openFlaggedQuestionModal === 'function') return __openFlaggedQuestionModal;
+    } catch(_) {}
+    return null;
+  }
+
+  async function __specialFlagReviewFlow(questions) {
+    var opener = __getFlaggedModalOpener();
+    if (!opener || typeof window.getFlaggedQuestions !== 'function') return { status: 'ok', questions: questions, changed: false };
+    questions = Array.isArray(questions) ? questions : [];
+    var changed = false;
+
+    for (var safety = 0; safety < 200; safety++) {
+      var flaggedAll = [];
+      try { flaggedAll = window.getFlaggedQuestions(questions) || []; } catch(_) { flaggedAll = []; }
+      var flagged = (Array.isArray(flaggedAll) ? flaggedAll : []).map(function(f){
+        var id = f && f.id != null ? String(f.id) : '';
+        var idx = questions.findIndex(function(q){ return q && String(q.id) === id; });
+        return { id: id, idx: idx, reasons: (f && Array.isArray(f.reasons)) ? f.reasons : [] };
+      }).filter(function(f){ return f.id && f.idx >= 0; });
+
+      if (!flagged.length) return { status: 'ok', questions: questions, changed: changed };
+
+      var cur = flagged[0];
+      var q0 = questions[cur.idx] || {};
+      var res = await opener({
+        id: cur.id,
+        reasons: cur.reasons,
+        question: q0,
+        progressText: '1/' + String(flagged.length)
+      });
+
+      if (!res || res.action === 'cancel') return { status: 'cancel', questions: questions, changed: changed };
+      if (res.action === 'delete') {
+        questions.splice(cur.idx, 1);
+        changed = true;
+        continue;
+      }
+      if (res.action === 'keep' || res.action === 'edit') {
+        q0._flagReview = { status: 'kept', reasons: cur.reasons, reviewedAt: Date.now(), by: (currentUser && currentUser.id) ? String(currentUser.id) : null };
+        q0._flagReasons = cur.reasons;
+        changed = true;
+        continue;
+      }
+    }
+
+    return { status: 'error', questions: questions, changed: changed };
+  }
+
   // Prokurorluq sınağını istifadəçi tarixçəsinə əsaslanaraq generasiya edir
   window.generateProkurorluqExam = async function() {
     if (!currentUser) {
@@ -167,6 +220,15 @@
     if (examQuestions.length === 0) {
       throw new Error("Sual bazası boşdur və ya bütün sualları işləmisiniz.");
     }
+
+    var reviewRes = await __specialFlagReviewFlow(examQuestions);
+    if (reviewRes && reviewRes.status === 'cancel') {
+      throw new Error('Sınaq yaradılması ləğv edildi.');
+    }
+    if (reviewRes && reviewRes.status === 'error') {
+      throw new Error('Şübhəli sual yoxlamasında xəta baş verdi.');
+    }
+    if (reviewRes && Array.isArray(reviewRes.questions)) examQuestions = reviewRes.questions;
 
     return {
       id: 'generated_prokurorluq',
