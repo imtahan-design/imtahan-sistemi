@@ -846,6 +846,17 @@
                 } catch(_) { cat = null; }
             }
 
+            if (cat) {
+                const qm = String(cat.questionsMode || '').toLowerCase();
+                const isSpec = (cat.examType === 'special' || cat.exam_type === 'special' || String(cat.id || '').startsWith('special_'));
+                const isSpecialRoot = isSpec && !cat.parentId;
+                if (qm === 'none' || isSpecialRoot) {
+                    alert('Bu kateqoriya sual mənbəyi kimi deaktiv edilib.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+            }
+
             if (!cat || !cat.questions || cat.questions.length === 0) {
                 alert('Sual tapılmadı!');
                 window.location.href = 'index.html';
@@ -937,198 +948,200 @@
         }
 
         function finishExam(force = false) {
-            if (!force && !confirm('İmtahanı bitirmək istədiyinizə əminsiniz?')) return;
-            
-            clearInterval(dimQuiz.timerInterval);
-            
-            // Calculate Results
+            try {
+                if (dimQuiz && dimQuiz.__finished) return;
+                if (!force && !confirm('İmtahanı bitirmək istədiyinizə əminsiniz?')) return;
+                if (dimQuiz) dimQuiz.__finished = true;
+            } catch (_) {}
+
+            try { clearInterval(dimQuiz.timerInterval); } catch (_) {}
+
             let correct = 0;
             let wrong = 0;
             let unanswered = 0;
             const optionLabels = ['A', 'B', 'C', 'D', 'E'];
-            
-            const questions = dimQuiz.questions;
-            const answers = dimQuiz.answers;
-            
-            // Calculate stats
-            questions.forEach((q, i) => {
-                const userAns = answers[i];
-                let correctIdx = q.correctIndex;
-                if (correctIdx === undefined) correctIdx = q.correct;
-                
-                if (userAns === null) {
-                    unanswered++;
-                } else if (parseInt(userAns) === parseInt(correctIdx)) {
-                    correct++;
-                } else {
-                    wrong++;
-                }
-            });
 
-            // Container
+            const questions = (dimQuiz && Array.isArray(dimQuiz.questions)) ? dimQuiz.questions : [];
+            const answers = (dimQuiz && Array.isArray(dimQuiz.answers)) ? dimQuiz.answers : [];
+
+            try {
+                questions.forEach((q, i) => {
+                    const userAns = answers[i];
+                    let correctIdx = q && q.correctIndex;
+                    if (correctIdx === undefined && q) correctIdx = q.correct;
+
+                    if (userAns === null || userAns === undefined) {
+                        unanswered++;
+                    } else if (parseInt(userAns) === parseInt(correctIdx)) {
+                        correct++;
+                    } else {
+                        wrong++;
+                    }
+                });
+            } catch (e) {
+                console.error('finishExam stats error:', e);
+            }
+
+            const examInterface = document.getElementById('exam-interface');
+            const resultsInterface = document.getElementById('results-interface');
             const container = document.querySelector('.result-table-container');
-            container.innerHTML = ''; 
-            
-            // 1. Header Section
-            const user = __lsJson('currentUser');
-            const userName = user ? (user.username || user.email) : 'NAMİZƏD';
-            const examTitle = document.getElementById('exam-title').textContent || 'SINAQ İMTAHANI';
-            
-            const now = new Date();
-            const dateStr = `${now.getDate().toString().padStart(2,'0')}.${(now.getMonth()+1).toString().padStart(2,'0')}.${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-
-            const headerHtml = `
-                <div class="dim-protocol-header">
-                    <div class="dim-protocol-title">${examTitle}</div>
-                    <div class="dim-protocol-user">${userName}</div>
-                    <div class="dim-protocol-meta">İmtahanın tarixi və vaxtı: ${dateStr}</div>
-                </div>
-            `;
-            container.innerHTML = headerHtml;
-
-            // 2. Protocol Tables (Chunks of 20)
-            const chunkSize = 20;
-            for (let i = 0; i < questions.length; i += chunkSize) {
-                const chunk = questions.slice(i, i + chunkSize);
-                
-                let tableHtml = `
-                    <div class="dim-protocol-table-wrapper">
-                        <table class="dim-protocol-table">
-                            <!-- Row 1: Numbers -->
-                            <tr>
-                                <td>Sual №</td>
-                `;
-                // Fill cells 1..20
-                for(let j=0; j<chunkSize; j++) {
-                    if (i+j < questions.length) tableHtml += `<td>${i+j+1}</td>`;
-                    else tableHtml += `<td></td>`;
-                }
-                tableHtml += `</tr>`;
-
-                // Row 2: Correct Answers
-                tableHtml += `<tr><td>Doğru cavab</td>`;
-                for(let j=0; j<chunkSize; j++) {
-                    if (i+j < questions.length) {
-                        const q = questions[i+j];
-                        let cIdx = q.correctIndex !== undefined ? q.correctIndex : q.correct;
-                        tableHtml += `<td style="color:red; font-weight:bold;">${optionLabels[cIdx] || ''}</td>`;
-                    } else tableHtml += `<td></td>`;
-                }
-                tableHtml += `</tr>`;
-
-                // Row 3: User Answers
-                tableHtml += `<tr><td>Cavab</td>`;
-                for(let j=0; j<chunkSize; j++) {
-                    if (i+j < questions.length) {
-                        const uAns = answers[i+j];
-                        tableHtml += `<td>${uAns !== null ? optionLabels[uAns] : ''}</td>`;
-                    } else tableHtml += `<td></td>`;
-                }
-                tableHtml += `</tr>`;
-
-                // Row 4: Status (+/-)
-                tableHtml += `<tr><td>Status</td>`; 
-                for(let j=0; j<chunkSize; j++) {
-                    if (i+j < questions.length) {
-                        const q = questions[i+j];
-                        const uAns = answers[i+j];
-                        let cIdx = q.correctIndex !== undefined ? q.correctIndex : q.correct;
-                        
-                        let sym = '';
-                        let cls = '';
-                        if (uAns !== null) {
-                            if (parseInt(uAns) === parseInt(cIdx)) {
-                                sym = '+';
-                                cls = 'status-plus';
-                            } else {
-                                sym = '-';
-                                cls = 'status-minus';
-                            }
-                        }
-                        tableHtml += `<td class="${cls}">${sym}</td>`;
-                    } else tableHtml += `<td></td>`;
-                }
-                tableHtml += `</tr></table></div>`;
-                
-                container.insertAdjacentHTML('beforeend', tableHtml);
-            }
-
-            // Hide Exam, Show Results
-            document.getElementById('exam-interface').classList.add('hidden');
-            document.getElementById('results-interface').classList.remove('hidden');
-            
-            // Remove old header injection if present
-            if(document.getElementById('res-user')) document.getElementById('res-user').textContent = '';
-            if(document.getElementById('res-date')) document.getElementById('res-date').textContent = '';
-
-            // 3. Summary Footer
             const summaryFooter = document.querySelector('.result-summary-footer');
-            if(summaryFooter) {
-                summaryFooter.classList.remove('hidden');
-                summaryFooter.style.display = 'block'; // Ensure block display
-                
-                summaryFooter.innerHTML = `
-                    <div class="result-stats-left">
-                        <div>Doğru cavabların sayı: ${correct}</div>
-                        <div>Yanlış cavabların sayı: ${wrong}</div>
-                        <div>Cavablandırılmayan test tapşırıqlarının sayı: ${unanswered}</div>
-                    </div>
-                    
-                    <div class="result-final-block">
-                        <span class="result-final-text">YEKUN BAL: ${correct}</span>
-                    </div>
 
-                    <div class="result-back-btn-container">
-                         <button class="btn-dim btn-next" onclick="window.location.href='index.html'" style="margin: 0 auto; display:inline-flex;">Əsas Səhifəyə Qayıt</button>
+            try {
+                if (container) container.innerHTML = '';
+
+                const user = __safeJson('currentUser');
+                const userName = user ? (user.username || user.email) : 'NAMİZƏD';
+                const examTitle = (document.getElementById('exam-title') && document.getElementById('exam-title').textContent) ? document.getElementById('exam-title').textContent : 'SINAQ İMTAHANI';
+
+                const now = new Date();
+                const dateStr = `${now.getDate().toString().padStart(2,'0')}.${(now.getMonth()+1).toString().padStart(2,'0')}.${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+
+                const headerHtml = `
+                    <div class="dim-protocol-header">
+                        <div class="dim-protocol-title">${examTitle}</div>
+                        <div class="dim-protocol-user">${userName}</div>
+                        <div class="dim-protocol-meta">İmtahanın tarixi və vaxtı: ${dateStr}</div>
                     </div>
                 `;
+                if (container) container.innerHTML = headerHtml;
+
+                const chunkSize = 20;
+                for (let i = 0; i < questions.length; i += chunkSize) {
+                    const chunk = questions.slice(i, i + chunkSize);
+
+                    let tableHtml = `
+                        <div class="dim-protocol-table-wrapper">
+                            <table class="dim-protocol-table">
+                                <tr>
+                                    <td>Sual №</td>
+                    `;
+                    for(let j=0; j<chunkSize; j++) {
+                        if (i+j < questions.length) tableHtml += `<td>${i+j+1}</td>`;
+                        else tableHtml += `<td></td>`;
+                    }
+                    tableHtml += `</tr>`;
+
+                    tableHtml += `<tr><td>Doğru cavab</td>`;
+                    for(let j=0; j<chunkSize; j++) {
+                        if (i+j < questions.length) {
+                            const q = questions[i+j];
+                            let cIdx = q && (q.correctIndex !== undefined ? q.correctIndex : q.correct);
+                            tableHtml += `<td style="color:red; font-weight:bold;">${optionLabels[cIdx] || ''}</td>`;
+                        } else tableHtml += `<td></td>`;
+                    }
+                    tableHtml += `</tr>`;
+
+                    tableHtml += `<tr><td>Cavab</td>`;
+                    for(let j=0; j<chunkSize; j++) {
+                        if (i+j < questions.length) {
+                            const uAns = answers[i+j];
+                            tableHtml += `<td>${uAns !== null && uAns !== undefined ? optionLabels[uAns] : ''}</td>`;
+                        } else tableHtml += `<td></td>`;
+                    }
+                    tableHtml += `</tr>`;
+
+                    tableHtml += `<tr><td>Status</td>`;
+                    for(let j=0; j<chunkSize; j++) {
+                        if (i+j < questions.length) {
+                            const q = questions[i+j];
+                            const uAns = answers[i+j];
+                            let cIdx = q && (q.correctIndex !== undefined ? q.correctIndex : q.correct);
+
+                            let sym = '';
+                            let cls = '';
+                            if (uAns !== null && uAns !== undefined) {
+                                if (parseInt(uAns) === parseInt(cIdx)) {
+                                    sym = '+';
+                                    cls = 'status-plus';
+                                } else {
+                                    sym = '-';
+                                    cls = 'status-minus';
+                                }
+                            }
+                            tableHtml += `<td class="${cls}">${sym}</td>`;
+                        } else tableHtml += `<td></td>`;
+                    }
+                    tableHtml += `</tr></table></div>`;
+
+                    if (container) container.insertAdjacentHTML('beforeend', tableHtml);
+                }
+
+                if (summaryFooter) {
+                    summaryFooter.classList.remove('hidden');
+                    summaryFooter.style.display = 'block';
+                    summaryFooter.innerHTML = `
+                        <div class="result-stats-left">
+                            <div>Doğru cavabların sayı: ${correct}</div>
+                            <div>Yanlış cavabların sayı: ${wrong}</div>
+                            <div>Cavablandırılmayan test tapşırıqlarının sayı: ${unanswered}</div>
+                        </div>
+                        <div class="result-final-block">
+                            <span class="result-final-text">YEKUN BAL: ${correct}</span>
+                        </div>
+                        <div class="result-back-btn-container">
+                             <button class="btn-dim btn-next" onclick="window.location.href='index.html'" style="margin: 0 auto; display:inline-flex;">Əsas Səhifəyə Qayıt</button>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error('finishExam render error:', e);
+                try {
+                    if (container) container.innerHTML = `<div class="dim-protocol-header"><div class="dim-protocol-title">Nəticə</div><div class="dim-protocol-meta">Nəticə göstərilərkən xəta baş verdi.</div></div>`;
+                } catch (_) {}
+            } finally {
+                try { if (examInterface) examInterface.classList.add('hidden'); } catch (_) {}
+                try { if (resultsInterface) resultsInterface.classList.remove('hidden'); } catch (_) {}
+                try { if(document.getElementById('res-user')) document.getElementById('res-user').textContent = ''; } catch (_) {}
+                try { if(document.getElementById('res-date')) document.getElementById('res-date').textContent = ''; } catch (_) {}
             }
 
-            // Save attempt if user is logged in
-            if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined' && db) {
-                 const catId = String((dimQuiz && dimQuiz.meta && dimQuiz.meta.catId) ? dimQuiz.meta.catId : ((typeof window !== 'undefined' ? window.__ACTIVE_SPECIAL_CATEGORY__ : null) || __safeGet('activeSpecialCategory') || ''));
-                 let examName = document.getElementById('exam-title').textContent;
-                 let weekId = null;
-                 let examType = 'special_exam';
+            try {
+                if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined' && db) {
+                    const catId = String((dimQuiz && dimQuiz.meta && dimQuiz.meta.catId) ? dimQuiz.meta.catId : ((typeof window !== 'undefined' ? window.__ACTIVE_SPECIAL_CATEGORY__ : null) || __safeGet('activeSpecialCategory') || ''));
+                    let examName = (document.getElementById('exam-title') && document.getElementById('exam-title').textContent) ? document.getElementById('exam-title').textContent : '';
+                    let weekId = null;
+                    let examType = 'special_exam';
 
-                 try {
-                     const genData = (dimQuiz && dimQuiz.meta && dimQuiz.meta.exam) ? dimQuiz.meta.exam : ((typeof window !== 'undefined' ? window.__GENERATED_EXAM_DATA__ : null) || __safeJson('generatedExamData') || {});
-                     if (genData && (genData.id === catId || (catId && catId.includes('weekly')))) {
-                         if (genData.name) examName = genData.name;
-                         if (genData.weekId) weekId = genData.weekId;
-                         if (genData.examType) examType = genData.examType;
-                     }
-                 } catch(e) { console.error("Error parsing generated data for save:", e); }
-                 
-                 db.collection('student_attempts').add({
-                     userId: currentUser.id,
-                     categoryId: catId,
-                     examName: examName,
-                     weekId: weekId,
-                     score: correct,
-                     total: dimQuiz.questions.length,
-                     date: firebase.firestore.FieldValue.serverTimestamp(),
-                     type: examType
-                 }).catch(console.error);
-
-                 // Save Exam History for Dynamic Exams (Prevent repeats)
-                 // Also save for Weekly exams to track what user has seen (though weekly is fixed per week)
-                 if (catId && (catId.includes('prokurorluq') || catId.includes('weekly') || catId.includes('generated'))) {
-                     try {
-                         if (questions.length > 0) {
-                             const qIds = questions.map(q => String(q.id));
-                             db.collection('exam_history').add({
-                                 userId: currentUser.id,
-                                 examType: examType || 'prokurorluq',
-                                 questionIds: qIds,
-                                 date: firebase.firestore.FieldValue.serverTimestamp()
-                             }).then(() => console.log("Exam history saved."))
-                              .catch(err => console.error("Error saving exam history:", err));
+                    try {
+                        const genData = (dimQuiz && dimQuiz.meta && dimQuiz.meta.exam) ? dimQuiz.meta.exam : ((typeof window !== 'undefined' ? window.__GENERATED_EXAM_DATA__ : null) || __safeJson('generatedExamData') || {});
+                        if (genData && (genData.id === catId || (catId && catId.includes('weekly')))) {
+                            if (genData.name) examName = genData.name;
+                            if (genData.weekId) weekId = genData.weekId;
+                            if (genData.examType) examType = genData.examType;
                         }
-                    } catch (e) {
-                        console.error("Error processing exam history:", e);
+                    } catch(e) { console.error("Error parsing generated data for save:", e); }
+
+                    db.collection('student_attempts').add({
+                        userId: currentUser.id,
+                        categoryId: catId,
+                        examName: examName,
+                        weekId: weekId,
+                        score: correct,
+                        total: questions.length,
+                        date: firebase.firestore.FieldValue.serverTimestamp(),
+                        type: examType
+                    }).catch(console.error);
+
+                    if (catId && (catId.includes('prokurorluq') || catId.includes('weekly') || catId.includes('generated'))) {
+                        try {
+                            if (questions.length > 0) {
+                                const qIds = questions.map(q => String(q.id));
+                                db.collection('exam_history').add({
+                                    userId: currentUser.id,
+                                    examType: examType || 'prokurorluq',
+                                    questionIds: qIds,
+                                    date: firebase.firestore.FieldValue.serverTimestamp()
+                                }).then(() => console.log("Exam history saved."))
+                                 .catch(err => console.error("Error saving exam history:", err));
+                            }
+                        } catch (e) {
+                            console.error("Error processing exam history:", e);
+                        }
                     }
                 }
+            } catch (e) {
+                console.error('finishExam save error:', e);
             }
         }
         function loadDimQuestion(index) {

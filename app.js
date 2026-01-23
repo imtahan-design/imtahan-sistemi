@@ -542,8 +542,12 @@ async function loadAdminDashboardStats() {
 }
 
  
-// Initialize EmailJS
-emailjs.init("gwXl5HH3P9Bja5iBN");
+try {
+    if (typeof window !== 'undefined' && window.emailjs && typeof window.emailjs.init === 'function') {
+        window.emailjs.init("gwXl5HH3P9Bja5iBN");
+    }
+} catch (e) {
+}
 
 // Global State
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
@@ -2314,7 +2318,8 @@ let verificationCode = null;
 
 async function sendVerificationEmail(email, code, userName) {
     try {
-        await emailjs.send(
+        if (!(typeof window !== 'undefined' && window.emailjs && typeof window.emailjs.send === 'function')) return false;
+        await window.emailjs.send(
             "service_rjwl984",
             "template_y8eq8n8",
             {
@@ -8823,6 +8828,7 @@ async function __runFlaggedReviewFlow(session) {
         const current = flagged[idx];
         const dom = current && current._dom ? current._dom : null;
         const progressText = (idx + 1) + '/' + flagged.length;
+        if (Array.isArray(s.__debugLog)) s.__debugLog.push({ t: Date.now(), status: 'prompt', id: String(current && current.id), reasons: Array.isArray(current && current.reasons) ? current.reasons.slice(0, 6) : [], progress: progressText });
         const res = await openModal({
             id: current.id,
             reasons: current.reasons,
@@ -8915,6 +8921,7 @@ window.saveAdminQuestions = async function() {
     } else {
         window.__FLAG_REVIEW_SESSION__.__newSession = false;
     }
+    if (!Array.isArray(window.__FLAG_REVIEW_SESSION__.__debugLog)) window.__FLAG_REVIEW_SESSION__.__debugLog = [];
     const reviewRes = await __runFlaggedReviewFlow(window.__FLAG_REVIEW_SESSION__);
     if (reviewRes && reviewRes.session) window.__FLAG_REVIEW_SESSION__ = reviewRes.session;
     if (!reviewRes || reviewRes.status === 'cancel') return;
@@ -8984,6 +8991,7 @@ window.saveAdminQuestions = async function() {
     
     // Redaktə vəziyyətini sıfırla
     resetEditingState();
+    try { window.__LAST_FLAG_REVIEW_LOG__ = window.__FLAG_REVIEW_SESSION__ && Array.isArray(window.__FLAG_REVIEW_SESSION__.__debugLog) ? window.__FLAG_REVIEW_SESSION__.__debugLog : []; } catch(_) {}
     window.__FLAG_REVIEW_SESSION__ = null;
 }
 
@@ -9044,7 +9052,7 @@ window.demoValidatorFlagged3Scenario = async function() {
                 const opt = document.createElement('input');
                 opt.type = 'text';
                 opt.className = 'manual-opt';
-                opt.value = (i === 0 ? 'Yalnız demo' : 'Yalnız demo ' + i);
+                opt.value = (i === 0 ? 'Düzgün demo' : 'Yalnız demo ' + i);
                 item.appendChild(opt);
             }
             list.appendChild(item);
@@ -9052,23 +9060,7 @@ window.demoValidatorFlagged3Scenario = async function() {
         }
 
         const id1 = addItem('d1', 'Demo sual 1');
-        const id2 = addItem('d2', 'Demo sual 2');
-        const id3 = addItem('d3', 'Demo sual 3');
 
-        let phase = 1;
-        window.getFlaggedQuestions = function() {
-            if (phase === 1) {
-                return [
-                    { id: id1, reasons: ['demo-flag'], question: {} },
-                    { id: id2, reasons: ['demo-flag'], question: {} },
-                    { id: id3, reasons: ['demo-flag'], question: {} }
-                ];
-            }
-            return [];
-        };
-
-        const actions = ['keep', 'keep', 'edit'];
-        let ai = 0;
         const sessionKey = 'admin_question_save_' + String(demoCatId);
         window.__FLAG_REVIEW_SESSION__ = {
             key: sessionKey,
@@ -9080,19 +9072,38 @@ window.demoValidatorFlagged3Scenario = async function() {
             __resetNoticeShown: true,
             __debugLog: logs,
             __modalOpener: async function(payload) {
-                const act = actions[ai] || 'cancel';
-                ai++;
-                logs.push({ t: Date.now(), status: 'modal', id: String(payload && payload.id), action: act, progress: String(payload && payload.progressText) });
-                return { action: act };
+                logs.push({
+                    t: Date.now(),
+                    status: 'modal_open',
+                    id: String(payload && payload.id),
+                    progress: String(payload && payload.progressText),
+                    reasons: Array.isArray(payload && payload.reasons) ? payload.reasons.slice(0, 6) : []
+                });
+                const p = __openFlaggedQuestionModal(payload);
+                setTimeout(() => {
+                    try {
+                        const m = document.getElementById('flagged-question-modal');
+                        const btn = m && m.querySelector('[data-action="keep-flagged"]');
+                        if (btn) btn.click();
+                    } catch(_) {}
+                }, 40);
+                const res = await p;
+                logs.push({ t: Date.now(), status: 'modal_result', id: String(payload && payload.id), action: String(res && res.action || '') });
+                return res;
             }
         };
 
         await window.saveAdminQuestions();
-        logs.push({ t: Date.now(), status: 'save1_done', next: 'user_edit' });
-
-        phase = 2;
-        await window.saveAdminQuestions();
-        logs.push({ t: Date.now(), status: 'save2_done', next: 'completed' });
+        const last = Array.isArray(window.__LAST_FLAG_REVIEW_LOG__) ? window.__LAST_FLAG_REVIEW_LOG__ : [];
+        const scan = last.filter(x => x && x.status === 'scan').slice(-1)[0] || null;
+        const prompt = last.filter(x => x && x.status === 'prompt').slice(-1)[0] || null;
+        logs.push({
+            t: Date.now(),
+            status: 'done',
+            keptId: String(id1),
+            flaggedCount: scan && typeof scan.flagged === 'number' ? scan.flagged : null,
+            reason0: prompt && Array.isArray(prompt.reasons) && prompt.reasons.length ? String(prompt.reasons[0]) : null
+        });
 
         return logs;
     } finally {
