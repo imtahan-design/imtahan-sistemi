@@ -1604,8 +1604,59 @@ async function syncCategory(catId, includeSubtree = false, opts) {
                         payload.questionsInline = false;
                         payload.questionsCount = computedCount;
                         if (Array.isArray(payload.questions) && payload.questions.length && __shouldWriteQuestions()) {
+                            const expSeen = new Set();
+                            const expectedActiveDocIds = [];
+                            for (let idx = 0; idx < payload.questions.length; idx++) {
+                                const q = payload.questions[idx];
+                                const base = String(q && q.text || '') + '|' + (Array.isArray(q && q.options) ? q.options.join('|') : '') + '|' + String(payload.id);
+                                const sid = __stableHash(base);
+                                const qid = String((q && q.id) || ('q_' + sid));
+                                if (q && !q.id) q.id = qid;
+                                if (expSeen.has(qid)) continue;
+                                expSeen.add(qid);
+                                if (q && (q.deleted === true || q.legacy === true)) continue;
+                                expectedActiveDocIds.push(__makeDocId(payload.id, qid));
+                            }
+                            const expectedActiveCount = expectedActiveDocIds.length;
                             const wroteQs = await __upsertCategoryQuestions(payload, 'category_questions');
                             if (!wroteQs && qCount > 0) throw new Error('subcollection_write_skipped');
+                            if (!(options && options.skipSubcollectionVerify)) {
+                                const qsSnap = await db.collection('category_questions').where('categoryId','==', String(id)).get();
+                                const byDocId = new Map();
+                                let writtenActiveCount = 0;
+                                for (const d of qsSnap.docs) {
+                                    const data = d.data() || {};
+                                    byDocId.set(String(d.id), data);
+                                    if (data.deleted !== true && data.legacy !== true) writtenActiveCount++;
+                                }
+                                let missingActiveCount = 0;
+                                if (expectedActiveCount > 0) {
+                                    for (const docId2 of expectedActiveDocIds) {
+                                        const data2 = byDocId.get(String(docId2));
+                                        if (!data2 || data2.deleted === true || data2.legacy === true) missingActiveCount++;
+                                    }
+                                }
+                                if (missingActiveCount > 0 || writtenActiveCount < expectedActiveCount) {
+                                    try {
+                                        await ref.set({
+                                            lastMigrationRunId: runId,
+                                            lastMigrationAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                            lastMigrationExpectedActiveCount: expectedActiveCount,
+                                            lastMigrationWrittenActiveCount: writtenActiveCount,
+                                            lastMigrationMissingActiveCount: missingActiveCount,
+                                            lastMigrationStatus: 'mismatch'
+                                        }, { merge: true });
+                                    } catch (_) {}
+                                    throw new Error('subcollection_verify_count_mismatch: runId=' + runId + ' expectedActive=' + expectedActiveCount + ' writtenActive=' + writtenActiveCount + ' missingActive=' + missingActiveCount);
+                                }
+                                payload.questionsCount = Math.max(__safeInt(payload.questionsCount) || 0, writtenActiveCount, expectedActiveCount);
+                                payload.lastMigrationRunId = runId;
+                                payload.lastMigrationAt = firebase.firestore.FieldValue.serverTimestamp();
+                                payload.lastMigrationExpectedActiveCount = expectedActiveCount;
+                                payload.lastMigrationWrittenActiveCount = writtenActiveCount;
+                                payload.lastMigrationMissingActiveCount = 0;
+                                payload.lastMigrationStatus = 'ok';
+                            }
                             payload.questions = [];
                         } else {
                             delete payload.questions;
@@ -1695,19 +1746,36 @@ async function fetchCategoryQuestions(catId) {
         if (!db) return [];
         const cat = categories.find(c => String(c.id) === String(catId));
         if (cat && (__isQuestionsDisabled(cat) || __isSpecialRoot(cat))) return [];
-        let attempts = 0;
-        let snap = null;
-        while (attempts < 3) {
+        const snap = await db.collection('category_questions')
+            .where('categoryId','==', String(catId))
+            .get();
+        function __tsMs(v) {
             try {
-                snap = await db.collection('category_questions').where('categoryId','==', String(catId)).orderBy('createdAt','asc').get();
-                break;
-            } catch (err) {
-                attempts++;
-                if (attempts >= 3) throw err;
-                await new Promise(r => setTimeout(r, 300 * attempts));
-            }
+                if (!v) return 0;
+                if (typeof v === 'number') return v;
+                if (typeof v === 'string') {
+                    const t = Date.parse(v);
+                    return Number.isFinite(t) ? t : 0;
+                }
+                if (v && typeof v.toMillis === 'function') return v.toMillis();
+                if (v && typeof v.toDate === 'function') return v.toDate().getTime();
+                if (v && typeof v.seconds === 'number') return (v.seconds * 1000) + Math.floor((v.nanoseconds || 0) / 1e6);
+            } catch (_) {}
+            return 0;
         }
-        const qs = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.deleted !== true && x.legacy !== true);
+        const all = snap.docs.map(d => {
+            const data = d.data() || {};
+            const qid = (data && data.id != null) ? String(data.id) : String(d.id);
+            return { ...data, id: qid };
+        });
+        const qs = all
+            .filter(x => x && x.deleted !== true && x.legacy !== true)
+            .sort(function(a, b){
+                const ta = __tsMs(a && a.createdAt);
+                const tb = __tsMs(b && b.createdAt);
+                if (ta !== tb) return ta - tb;
+                return String((a && a.id) || '').localeCompare(String((b && b.id) || ''));
+            });
         const idxd = qs.map((q, i) => ({ ...q, originalIndex: i }));
         categories = categories.map(c => {
             if (String(c.id) === String(catId)) {
@@ -1732,30 +1800,90 @@ async function fetchCategoryQuestionsPaged(catId, page = 0, pageSize = 100) {
         if (!db) return [];
         const cat = categories.find(c => String(c.id) === String(catId));
         if (cat && (__isQuestionsDisabled(cat) || __isSpecialRoot(cat))) return [];
-        const snap = await db.collection('category_questions')
-            .where('categoryId','==', String(catId))
-            .where('page','==', page)
-            .orderBy('createdAt','asc')
-            .limit(pageSize)
-            .get();
-        const qs = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.deleted !== true && x.legacy !== true);
-        const idxd = qs.map((q, i) => ({ ...q, originalIndex: (page * pageSize) + i }));
+        if (!window.__categoryQuestionsPageState) window.__categoryQuestionsPageState = new Map();
+        const cid = String(catId);
+        if (page === 0) window.__categoryQuestionsPageState.delete(cid);
+        const prevState = window.__categoryQuestionsPageState.get(cid) || { lastDoc: null, done: false, queryMode: 'createdAt' };
+        if (prevState.done) return [];
+
+        let queryMode = String(prevState.queryMode || 'createdAt');
+        let lastDoc = prevState.lastDoc || null;
+        let snap = null;
+        async function __runQuery(mode) {
+            let q = db.collection('category_questions').where('categoryId','==', cid);
+            if (mode === 'createdAt') q = q.orderBy('createdAt', 'asc').orderBy('__name__', 'asc');
+            else q = q.orderBy('__name__', 'asc');
+            q = q.limit(pageSize);
+            if (lastDoc) q = q.startAfter(lastDoc);
+            return await q.get();
+        }
+        try {
+            snap = await __runQuery(queryMode);
+        } catch (_e) {
+            queryMode = 'name';
+            lastDoc = null;
+            window.__categoryQuestionsPageState.set(cid, { lastDoc: null, done: false, queryMode });
+            snap = await __runQuery(queryMode);
+        }
+        if (snap.empty) {
+            window.__categoryQuestionsPageState.set(cid, { lastDoc: lastDoc, done: true, queryMode });
+            return [];
+        }
+        window.__categoryQuestionsPageState.set(cid, { lastDoc: snap.docs[snap.docs.length - 1], done: false, queryMode });
+
+        function __tsMs(v) {
+            try {
+                if (!v) return 0;
+                if (typeof v === 'number') return v;
+                if (typeof v === 'string') {
+                    const t = Date.parse(v);
+                    return Number.isFinite(t) ? t : 0;
+                }
+                if (v && typeof v.toMillis === 'function') return v.toMillis();
+                if (v && typeof v.toDate === 'function') return v.toDate().getTime();
+                if (v && typeof v.seconds === 'number') return (v.seconds * 1000) + Math.floor((v.nanoseconds || 0) / 1e6);
+            } catch (_) {}
+            return 0;
+        }
+        const raw = snap.docs.map(d => {
+            const data = d.data() || {};
+            const qid = (data && data.id != null) ? String(data.id) : String(d.id);
+            return { ...data, id: qid };
+        });
+        const pageItems = raw
+            .filter(x => x && x.deleted !== true && x.legacy !== true)
+            .sort(function(a, b){
+                const ta = __tsMs(a && a.createdAt);
+                const tb = __tsMs(b && b.createdAt);
+                if (ta !== tb) return ta - tb;
+                return String((a && a.id) || '').localeCompare(String((b && b.id) || ''));
+            });
         if (cat) {
             const existing = Array.isArray(cat.questions) ? cat.questions : [];
             const byId = new Map();
             for (const q of existing) {
                 if (q && q.id != null) byId.set(String(q.id), q);
             }
-            for (const q of idxd) {
+            for (const q of pageItems) {
                 if (q && q.id != null) byId.set(String(q.id), q);
             }
-            const merged = Array.from(byId.values()).sort(function(a, b){
-                const ai = (a && typeof a.originalIndex === 'number') ? a.originalIndex : 0;
-                const bi = (b && typeof b.originalIndex === 'number') ? b.originalIndex : 0;
-                return ai - bi;
+            const mergedSorted = Array.from(byId.values()).filter(Boolean).sort(function(a, b){
+                const ta = __tsMs(a && a.createdAt);
+                const tb = __tsMs(b && b.createdAt);
+                if (ta !== tb) return ta - tb;
+                return String((a && a.id) || '').localeCompare(String((b && b.id) || ''));
             });
-            categories = categories.map(c => String(c.id) === String(catId) ? { ...c, questions: merged, questionsCount: (c.questionsCount != null ? c.questionsCount : merged.length) } : c);
+            const reindexed = mergedSorted.map((q, i) => ({ ...q, originalIndex: i }));
+            categories = categories.map(c => String(c.id) === String(catId) ? { ...c, questions: reindexed, questionsCount: (c.questionsCount != null ? c.questionsCount : reindexed.length) } : c);
         }
+        const cat2 = categories.find(c => String(c.id) === String(catId));
+        const pos = new Map();
+        if (cat2 && Array.isArray(cat2.questions)) {
+            for (const q of cat2.questions) {
+                if (q && q.id != null && typeof q.originalIndex === 'number') pos.set(String(q.id), q.originalIndex);
+            }
+        }
+        const idxd = pageItems.map(q => ({ ...q, originalIndex: pos.has(String(q.id)) ? pos.get(String(q.id)) : null }));
         return idxd;
     } catch (e) {
         console.error('fetchCategoryQuestionsPaged error:', e);
@@ -1927,7 +2055,7 @@ async function runDovletQulluguMigration() {
     if (newQuestions.length > 0) {
         targetCat.questions = targetCat.questions.concat(newQuestions);
         if (db) {
-            await db.collection('categories').doc(String(targetCat.id)).set(targetCat);
+            await db.collection('categories').doc(String(targetCat.id)).set(targetCat, { merge: true });
         }
         saveCategories();
         localStorage.setItem('dovlet_qullugu_migration_v3', 'true');
@@ -7904,11 +8032,13 @@ async function openCategory(id) {
             const expected = (cat && cat.questionsCount != null) ? parseInt(cat.questionsCount, 10) : null;
             if (Array.isArray(page0) && page0.length === 0 && Number.isFinite(expected) && expected > 0) {
                 showNotification('Suallar səhifə ilə yüklənmədi, hamısı yüklənir...', 'warning');
-                await fetchCategoryQuestions(id);
+                const all = await fetchCategoryQuestions(id);
+                if (Array.isArray(all) && all.length === 0) showNotification('category declared_without_active', 'error');
             }
         } catch (_) {
             showNotification('Suallar səhifə ilə yüklənmədi, hamısı yüklənir...', 'warning');
-            await fetchCategoryQuestions(id);
+            const all = await fetchCategoryQuestions(id);
+            if (Array.isArray(all) && all.length === 0) showNotification('category declared_without_active', 'error');
         }
         cat = categories.find(c => c.id === id);
     }
@@ -8286,6 +8416,29 @@ window.repairCategoryStorage = async function(catId) {
             }
         }
         if (!qs || qs.length === 0) {
+            const declared = parseInt(data.questionsCount, 10);
+            const mode = String((data.questionsMode || (data.questionsInline === false ? 'subcollection' : 'inline')) || '').toLowerCase();
+            if (mode === 'subcollection' && Number.isFinite(declared) && declared > 0) {
+                const repairRunId = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+                const ok = confirm(`Mənbə sual tapılmadı (inline=0, staging=0). Yalnız metadata düzəlsin? questionsCount 0 ediləcək (runId: ${repairRunId})`);
+                if (ok) {
+                    await catRef.set({
+                        questionsCount: 0,
+                        lastRepairRunId: repairRunId,
+                        lastRepairAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastRepairSource: 'metadata_only',
+                        lastRepairStatus: 'metadata_fixed',
+                        declared_without_active: false
+                    }, { merge: true });
+                    categories = categories.map(function(c){
+                        if (String(c.id) !== cid) return c;
+                        return { ...c, questionsCount: 0 };
+                    });
+                    invalidateCategoriesCache();
+                    showNotification('Metadata düzəldildi: questionsCount=0.', 'success');
+                    return { ok: true, reason: 'metadata_fixed', runId: repairRunId };
+                }
+            }
             showNotification('Düzəliş üçün mənbə sual tapılmadı.', 'error');
             return { ok: false, reason: 'no_source' };
         }
