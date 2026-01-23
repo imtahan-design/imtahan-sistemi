@@ -735,10 +735,16 @@
   };
 
   // Admin sual siyahısında "Daha çox göstər"
-  window.loadMoreAdminQuestions = function() {
-    adminQuestionViewState.topCount += 5;
-    renderQuestions();
-  };
+  if (!(window.loadMoreAdminQuestions && window.loadMoreAdminQuestions.__enhanced === true)) {
+    window.loadMoreAdminQuestions = function(e) {
+      try {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+        if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      } catch (_) {}
+      adminQuestionViewState.topCount += 5;
+      renderQuestions();
+    };
+  }
 
   // Admin: AI ilə sual generasiyası (Gemini)
   window.generateAdminAIQuestions = async function() {

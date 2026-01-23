@@ -8187,9 +8187,10 @@ function renderQuestions() {
         const btnDiv = document.createElement('div');
         btnDiv.className = 'text-center my-4 p-2';
         btnDiv.innerHTML = `
-            <button onclick="loadMoreAdminQuestions()" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition shadow-sm">
+            <button type="button" onclick="loadMoreAdminQuestions(event)" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition shadow-sm">
                 <i class="fas fa-chevron-down"></i> Daha çox yüklə (${loadedCount}/${total})
             </button>
+            <div id="admin-load-more-status" class="text-muted mt-2"></div>
         `;
         list.appendChild(btnDiv);
         return;
@@ -8211,9 +8212,10 @@ function renderQuestions() {
         const btnDiv = document.createElement('div');
         btnDiv.className = 'text-center my-4 p-2';
         btnDiv.innerHTML = `
-            <button onclick="loadMoreAdminQuestions()" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition shadow-sm">
+            <button type="button" onclick="loadMoreAdminQuestions(event)" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition shadow-sm">
                 <i class="fas fa-chevron-down"></i> Daha çox göstər (${remaining} gizli)
             </button>
+            <div id="admin-load-more-status" class="text-muted mt-2"></div>
         `;
         list.appendChild(btnDiv);
     }
@@ -8224,7 +8226,11 @@ function renderQuestions() {
     renderList(bottomChunk);
 }
 
-window.loadMoreAdminQuestions = function() {
+window.loadMoreAdminQuestions = function(e) {
+    try {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+        if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+    } catch (_) {}
     const cat = categories.find(c => c.id === activeCategoryId);
     if (cat) {
         const loaded = Array.isArray(cat.questions) ? cat.questions.length : 0;
@@ -8233,11 +8239,47 @@ window.loadMoreAdminQuestions = function() {
         const mode = __getQuestionsMode(cat);
         const isSub = (cat && cat.questionsInline === false) || mode === 'subcollection';
         if (isSub && loaded < total) {
+            const cid = String(activeCategoryId || '');
+            const st0 = (window.__categoryQuestionsPageState && window.__categoryQuestionsPageState.get && window.__categoryQuestionsPageState.get(cid)) ? window.__categoryQuestionsPageState.get(cid) : null;
+            try {
+                console.log('[admin-load-more] before', {
+                    pageIndex: Math.floor(loaded / 100),
+                    loadedCount: loaded,
+                    totalCount: total,
+                    queryMode: st0 && st0.queryMode ? st0.queryMode : 'createdAt',
+                    hasNextCursor: st0 ? (st0.done !== true) : true,
+                    hasNextCursorDoc: !!(st0 && st0.lastDoc)
+                });
+            } catch (_) {}
             const nextPage = Math.floor(loaded / 100);
-            fetchCategoryQuestionsPaged(activeCategoryId, nextPage, 100).then(function(){
+            fetchCategoryQuestionsPaged(activeCategoryId, nextPage, 100).then(function(got){
+                const cat2 = categories.find(c => c.id === activeCategoryId);
+                const loaded2 = Array.isArray(cat2 && cat2.questions) ? cat2.questions.length : loaded;
+                const st1 = (window.__categoryQuestionsPageState && window.__categoryQuestionsPageState.get && window.__categoryQuestionsPageState.get(cid)) ? window.__categoryQuestionsPageState.get(cid) : null;
+                try {
+                    console.log('[admin-load-more] after', {
+                        pageIndex: nextPage,
+                        loadedCount: loaded2,
+                        totalCount: total,
+                        queryMode: st1 && st1.queryMode ? st1.queryMode : (st0 && st0.queryMode ? st0.queryMode : 'createdAt'),
+                        gotCount: Array.isArray(got) ? got.length : null,
+                        hasNextCursor: st1 ? (st1.done !== true) : null,
+                        hasNextCursorDoc: !!(st1 && st1.lastDoc)
+                    });
+                } catch (_) {}
+                if (!got || got.length === 0) {
+                    const statusEl = document.getElementById('admin-load-more-status');
+                    if (statusEl) statusEl.textContent = 'No more results / query returned empty';
+                    showNotification('No more results / query returned empty', 'warning');
+                } else {
+                    const statusEl = document.getElementById('admin-load-more-status');
+                    if (statusEl) statusEl.textContent = '';
+                }
                 adminQuestionViewState.topCount += 20;
                 renderQuestions();
             }).catch(function(){
+                const statusEl = document.getElementById('admin-load-more-status');
+                if (statusEl) statusEl.textContent = 'No more results / query returned empty';
                 adminQuestionViewState.topCount += 5;
                 renderQuestions();
             });
@@ -8247,6 +8289,7 @@ window.loadMoreAdminQuestions = function() {
     adminQuestionViewState.topCount += 5;
     renderQuestions();
 }
+window.loadMoreAdminQuestions.__enhanced = true;
 
 window.restoreCategoryQuestions = async function(catId) {
     if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu əməliyyat üçün admin icazəsi lazımdır!', 'error');
