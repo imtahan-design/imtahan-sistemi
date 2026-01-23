@@ -8621,53 +8621,86 @@ window.addAdminQuestionForm = function() {
 window.getFlaggedQuestions = function(questions) {
     const flagged = [];
     const arr = Array.isArray(questions) ? questions : [];
-    const prefixes = ['yalnız', 'ancaq', 'istisnasız', 'heç bir halda', 'hec bir halda'];
-    function startsWithAny(s) {
-        const v = String(s || '').toLowerCase().trim();
+
+    function normalize(s) {
+        return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+    function visibleLen(s) {
+        const v = normalize(s);
+        return v.replace(/\s/g, '').length;
+    }
+    const prefixes = [
+        'yalnız', 'yalniz',
+        'ancaq', 'ancag',
+        'istisnasız', 'istisnasiz',
+        'heç bir halda', 'hec bir halda'
+    ];
+    function hasPrefix(s) {
+        const v = normalize(s);
         for (let i = 0; i < prefixes.length; i++) {
-            if (v.startsWith(prefixes[i])) return prefixes[i];
+            if (v.startsWith(prefixes[i])) return true;
         }
-        return '';
+        return false;
     }
-    function median(nums) {
-        const a = (Array.isArray(nums) ? nums : []).filter(n => typeof n === 'number' && isFinite(n)).sort((x, y) => x - y);
-        if (!a.length) return 0;
-        const mid = Math.floor(a.length / 2);
-        return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
-    }
+
     for (let i = 0; i < arr.length; i++) {
         const q = arr[i] || {};
         const rawId = (q.id !== undefined && q.id !== null && String(q.id).trim() !== '') ? q.id : q._qid;
         const id = String(rawId || '').trim();
         if (!id) continue;
-        const opts = Array.isArray(q.options) ? q.options.map(o => String(o || '').trim()).filter(Boolean) : [];
-        let correctIndex = q.correctIndex !== undefined ? q.correctIndex : (q.correct !== undefined ? q.correct : q.answer);
+
+        const rawOpts = Array.isArray(q._rawOptions) ? q._rawOptions : (Array.isArray(q.options) ? q.options : (Array.isArray(q.variants) ? q.variants : []));
+        const opts = Array.isArray(rawOpts) ? rawOpts.map(o => String(o || '').trim()) : [];
+        const cleanOpts = opts.map(o => String(o || '').trim());
+
+        let correctIndex = q._rawCorrectIndex !== undefined ? q._rawCorrectIndex : (q.correctIndex !== undefined ? q.correctIndex : (q.correct !== undefined ? q.correct : q.answer));
         correctIndex = Number.isInteger(correctIndex) ? correctIndex : parseInt(correctIndex, 10);
+
         const reasons = [];
-        if (opts.length >= 2 && Number.isInteger(correctIndex) && correctIndex >= 0 && correctIndex < opts.length) {
-            const correctText = String(opts[correctIndex] || '').trim();
-            const wrongTexts = opts.filter((_, idx) => idx !== correctIndex);
-            const correctPrefix = startsWithAny(correctText);
-            const wrongPrefixes = wrongTexts.map(startsWithAny);
-            const wrongCount = wrongTexts.length;
-            const wrongStartsCount = wrongPrefixes.filter(Boolean).length;
-            if (wrongCount > 0 && wrongStartsCount === wrongCount && !correctPrefix) {
-                const unique = Array.from(new Set(wrongPrefixes.filter(Boolean)));
-                const label = unique.length === 1 ? unique[0] : unique.join('/');
-                reasons.push(`Bütün səhv variantlar '${label}' ilə başlayır, düzgün variant isə yox`);
+        const meta = {};
+
+        if (cleanOpts.length >= 2 && Number.isInteger(correctIndex) && correctIndex >= 0 && correctIndex < cleanOpts.length) {
+            const correctText = cleanOpts[correctIndex] || '';
+            const wrongTexts = cleanOpts.filter((_, idx) => idx !== correctIndex);
+
+            const correctHasPrefix = hasPrefix(correctText);
+            const countWrongPrefix = wrongTexts.reduce((acc, t) => acc + (hasPrefix(t) ? 1 : 0), 0);
+
+            if (countWrongPrefix >= 3 && !correctHasPrefix) {
+                reasons.push('only_prefix_mismatch');
+                meta.only_prefix_mismatch = { countWrongPrefix, correctHasPrefix };
             }
-            const wrongLens = wrongTexts.map(t => String(t || '').length).filter(n => n > 0);
-            const medWrong = median(wrongLens);
-            if (medWrong > 0 && correctText.length > 1.6 * medWrong) {
-                reasons.push('Düzgün cavab digər variantlardan nəzərəçarpacaq dərəcədə uzundur');
+
+            const wrongLens = wrongTexts.map(visibleLen).filter(n => n > 0);
+            const correctLen = visibleLen(correctText);
+            if (wrongLens.length >= 2) {
+                const avgOtherLen = wrongLens.reduce((a, b) => a + b, 0) / wrongLens.length;
+                const ratio = avgOtherLen > 0 ? (correctLen / avgOtherLen) : 0;
+                const threshold = 1.8;
+                const minAvg = 20;
+                if (avgOtherLen >= minAvg && ratio >= threshold) {
+                    reasons.push('answer_length_outlier');
+                    meta.answer_length_outlier = { correctLen, avgOtherLen, ratio, threshold, minAvg };
+                }
             }
         }
+
         if (reasons.length) {
-            flagged.push({ id, reasons, question: q });
+            flagged.push({ id, reasons, meta, question: q });
         }
     }
     return flagged;
 };
+
+window.__isDebugFlagsEnabled = function() {
+    try {
+        const sp = new URLSearchParams(window.location.search || '');
+        return sp.get('debugFlags') === '1';
+    } catch (_) {
+        return false;
+    }
+};
+try { window.__debugFlagsEnabled = window.__isDebugFlagsEnabled; } catch(_) {}
 
 function __openFlaggedQuestionModal(payload) {
     return new Promise((resolve) => {
@@ -8686,7 +8719,18 @@ function __openFlaggedQuestionModal(payload) {
         modal.id = 'flagged-question-modal';
         modal.className = 'fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4';
 
-        const reasonsHtml = reasons.map(r => `<li class="text-sm text-gray-300">${escapeHtml(r)}</li>`).join('');
+        function formatReason(r) {
+            const code = String(r || '').trim();
+            const m = (q && q._flagMeta) ? q._flagMeta : (p && p.meta ? p.meta : {});
+            if (code === 'only_prefix_mismatch') return 'Səhv variantların çoxu “Yalnız/Ancaq/İstisnasız/Heç bir halda…” ilə başlayır, düzgün variant isə yox';
+            if (code === 'answer_length_outlier') {
+                const t = m && m.answer_length_outlier ? m.answer_length_outlier : null;
+                const ratio = t && typeof t.ratio === 'number' ? t.ratio : null;
+                return ratio ? `Düzgün cavab digər variantlardan nəzərəçarpacaq dərəcədə uzundur (${ratio.toFixed(2)}x)` : 'Düzgün cavab digər variantlardan nəzərəçarpacaq dərəcədə uzundur';
+            }
+            return code;
+        }
+        const reasonsHtml = reasons.map(r => `<li class="text-sm text-gray-300">${escapeHtml(formatReason(r))}</li>`).join('');
         const optsHtml = options.map((t, idx) => {
             const isCorrect = idx === correctIndex;
             const rowCls = isCorrect ? 'bg-green-900/30 border-green-600' : 'bg-gray-800 border-gray-700';

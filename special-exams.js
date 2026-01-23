@@ -116,6 +116,13 @@
     if (!opener || typeof window.getFlaggedQuestions !== 'function') return { status: 'ok', questions: questions, changed: false };
     questions = Array.isArray(questions) ? questions : [];
     var changed = false;
+    var deletedCount = 0;
+    var keepCount = 0;
+    var editCount = 0;
+    var dbg = false;
+    try {
+      dbg = !!(window && typeof window.__isDebugFlagsEnabled === 'function' && window.__isDebugFlagsEnabled());
+    } catch(_) { dbg = false; }
 
     for (var safety = 0; safety < 200; safety++) {
       var flaggedAll = [];
@@ -123,16 +130,31 @@
       var flagged = (Array.isArray(flaggedAll) ? flaggedAll : []).map(function(f){
         var id = f && f.id != null ? String(f.id) : '';
         var idx = questions.findIndex(function(q){ return q && String(q.id) === id; });
-        return { id: id, idx: idx, reasons: (f && Array.isArray(f.reasons)) ? f.reasons : [] };
-      }).filter(function(f){ return f.id && f.idx >= 0; });
+        return { id: id, idx: idx, reasons: (f && Array.isArray(f.reasons)) ? f.reasons : [], meta: (f && f.meta) ? f.meta : null };
+      }).filter(function(f){
+        if (!f.id || f.idx < 0) return false;
+        var q = questions[f.idx] || {};
+        var fr = q && q._flagReview ? q._flagReview : null;
+        if (fr && (fr.status === 'kept' || fr.action === 'keep')) return false;
+        return true;
+      });
 
-      if (!flagged.length) return { status: 'ok', questions: questions, changed: changed };
+      if (dbg && safety === 0) {
+        var first = flagged[0] || {};
+        var fr = Array.isArray(first.reasons) ? first.reasons.slice(0, 3) : [];
+        console.log('[debugFlags][special] totalQuestions=' + questions.length + ' flaggedCount=' + flagged.length + ' firstReasons=' + JSON.stringify(fr));
+      }
+      if (!flagged.length) {
+        if (dbg) console.log('[debugFlags][special] resolved totalQuestions=' + questions.length + ' keepCount=' + keepCount + ' deleteCount=' + deletedCount + ' editCount=' + editCount);
+        return { status: 'ok', questions: questions, changed: changed, deletedCount: deletedCount, keepCount: keepCount, editCount: editCount };
+      }
 
       var cur = flagged[0];
       var q0 = questions[cur.idx] || {};
       var res = await opener({
         id: cur.id,
         reasons: cur.reasons,
+        meta: cur.meta,
         question: q0,
         progressText: '1/' + String(flagged.length)
       });
@@ -141,12 +163,31 @@
       if (res.action === 'delete') {
         questions.splice(cur.idx, 1);
         changed = true;
+        deletedCount++;
         continue;
       }
-      if (res.action === 'keep' || res.action === 'edit') {
-        q0._flagReview = { status: 'kept', reasons: cur.reasons, reviewedAt: Date.now(), by: (currentUser && currentUser.id) ? String(currentUser.id) : null };
+      if (res.action === 'keep') {
+        q0._flagReview = { action: 'keep', status: 'kept', reasons: cur.reasons, reviewedAt: Date.now(), updatedAt: Date.now(), by: (currentUser && currentUser.id) ? String(currentUser.id) : null };
         q0._flagReasons = cur.reasons;
         changed = true;
+        keepCount++;
+        continue;
+      }
+      if (res.action === 'edit') {
+        editCount++;
+        try {
+          if (currentUser && currentUser.role === 'admin') {
+            var catId = q0._sourceCategoryId || q0.categoryId || null;
+            if (catId) {
+              window.location.href = 'index.html?page=admin&adminCat=' + encodeURIComponent(String(catId)) + '&editQuestionId=' + encodeURIComponent(String(q0.id || cur.id));
+              return { status: 'edit', questions: questions, changed: changed, id: String(cur.id) };
+            }
+          }
+        } catch(_) {}
+        q0._flagReview = { action: 'keep', status: 'kept', reasons: cur.reasons, reviewedAt: Date.now(), updatedAt: Date.now(), by: (currentUser && currentUser.id) ? String(currentUser.id) : null, via: 'edit' };
+        q0._flagReasons = cur.reasons;
+        changed = true;
+        keepCount++;
         continue;
       }
     }
@@ -224,6 +265,9 @@
     var reviewRes = await __specialFlagReviewFlow(examQuestions);
     if (reviewRes && reviewRes.status === 'cancel') {
       throw new Error('Sınaq yaradılması ləğv edildi.');
+    }
+    if (reviewRes && reviewRes.status === 'edit') {
+      throw new Error('Sual redaktəsi üçün admin panel açıldı.');
     }
     if (reviewRes && reviewRes.status === 'error') {
       throw new Error('Şübhəli sual yoxlamasında xəta baş verdi.');
