@@ -194,6 +194,14 @@ function __isSpecialRoot(cat) {
 function __isQuestionsDisabled(cat) {
     return !!cat && String(cat.questionsMode || '').toLowerCase() === 'none';
 }
+function __getQuestionsMode(cat) {
+    if (!cat) return 'none';
+    var m = String(cat.questionsMode || '').toLowerCase();
+    if (m === 'none' || m === 'inline' || m === 'subcollection') return m;
+    if (__isQuestionsDisabled(cat)) return 'none';
+    if (cat.questionsInline === false) return 'subcollection';
+    return 'inline';
+}
 function __hasChildren(catId) {
     const id = String(catId || '');
     try { return categories.some(c => String(c.parentId) === id); } catch (_) { return false; }
@@ -1242,7 +1250,10 @@ async function syncCategory(catId, includeSubtree = false) {
             return catPart + '_h_' + __stableHash(String(qidValue || ''));
         }
         async function __upsertCategoryQuestions(cat, collectionName){
+            const mode = __getQuestionsMode(cat);
+            if (mode !== 'subcollection') return;
             if (__isQuestionsDisabled(cat)) return;
+            if (__isSpecialRoot(cat)) return;
             if (!Array.isArray(cat.questions)) return;
             let batch = db.batch();
             let count = 0;
@@ -1301,14 +1312,36 @@ async function syncCategory(catId, includeSubtree = false) {
             const cat = categories.find(c => String(c.id) === String(id));
             if (!cat) continue;
             const size = __byteSize(cat);
-            const needsSplit = (Array.isArray(cat.questions) && cat.questions.length > MAX_INLINE_QUESTIONS) || size > MAX_DOC_BYTES;
+            const inferredMode = __isSpecialRoot(cat) ? 'none' : __getQuestionsMode(cat);
+            const splitBySize = (Array.isArray(cat.questions) && cat.questions.length > MAX_INLINE_QUESTIONS) || size > MAX_DOC_BYTES;
+            const effectiveMode = __isSpecialRoot(cat) ? 'none' : (splitBySize ? 'subcollection' : inferredMode);
+            const needsSplit = (effectiveMode === 'subcollection') || splitBySize;
             const sref = db.collection('staging_categories').doc(String(id));
             if (needsSplit) {
                 const safeCat = { ...cat };
                 const qCount = Array.isArray(safeCat.questions) ? safeCat.questions.length : 0;
-                delete safeCat.questions;
-                safeCat.questionsInline = false;
-                safeCat.questionsCount = qCount;
+                let wroteQs = false;
+                if (effectiveMode === 'subcollection' && Array.isArray(safeCat.questions) && safeCat.questions.length) {
+                    await __upsertCategoryQuestions(safeCat, 'staging_category_questions');
+                    wroteQs = true;
+                }
+                if (__isSpecialRoot(safeCat)) {
+                    safeCat.questionsMode = 'none';
+                    safeCat.questionsInline = false;
+                } else if (effectiveMode === 'subcollection') {
+                    safeCat.questionsMode = 'subcollection';
+                    safeCat.questionsInline = false;
+                    safeCat.questionsCount = qCount;
+                } else if (effectiveMode === 'inline') {
+                    safeCat.questionsMode = 'inline';
+                    safeCat.questionsInline = true;
+                    safeCat.questionsCount = qCount;
+                }
+                if (wroteQs) {
+                    safeCat.questions = [];
+                } else {
+                    delete safeCat.questions;
+                }
                 if (__isSpecialRoot(safeCat) && safeCat.deleted === true) {
                     delete safeCat.deleted;
                     safeCat.deleted = false;
@@ -1327,11 +1360,33 @@ async function syncCategory(catId, includeSubtree = false) {
                     count = 0;
                     await __delay(dynamicDelay);
                 }
-                await __upsertCategoryQuestions(cat, 'staging_category_questions');
                 await __delay(0);
                 continue;
             } else {
                 const payload = { ...cat };
+                const qCount = Array.isArray(payload.questions) ? payload.questions.length : 0;
+                if (__isSpecialRoot(payload)) {
+                    payload.questionsMode = 'none';
+                    payload.questionsInline = false;
+                    delete payload.questions;
+                } else {
+                    const mode = __getQuestionsMode(payload);
+                    if (mode === 'inline') {
+                        payload.questionsMode = 'inline';
+                        payload.questionsInline = true;
+                        payload.questionsCount = qCount;
+                    } else if (mode === 'subcollection') {
+                        payload.questionsMode = 'subcollection';
+                        payload.questionsInline = false;
+                        payload.questionsCount = qCount;
+                        if (Array.isArray(payload.questions) && payload.questions.length) {
+                            await __upsertCategoryQuestions(payload, 'staging_category_questions');
+                            payload.questions = [];
+                        } else {
+                            delete payload.questions;
+                        }
+                    }
+                }
                 if (__isSpecialRoot(payload) && payload.deleted === true) {
                     delete payload.deleted;
                     payload.deleted = false;
@@ -1369,14 +1424,36 @@ async function syncCategory(catId, includeSubtree = false) {
             const cat = categories.find(c => String(c.id) === String(id));
             if (!cat) continue;
             const size = __byteSize(cat);
-            const needsSplit = (Array.isArray(cat.questions) && cat.questions.length > MAX_INLINE_QUESTIONS) || size > MAX_DOC_BYTES;
+            const inferredMode = __isSpecialRoot(cat) ? 'none' : __getQuestionsMode(cat);
+            const splitBySize = (Array.isArray(cat.questions) && cat.questions.length > MAX_INLINE_QUESTIONS) || size > MAX_DOC_BYTES;
+            const effectiveMode = __isSpecialRoot(cat) ? 'none' : (splitBySize ? 'subcollection' : inferredMode);
+            const needsSplit = (effectiveMode === 'subcollection') || splitBySize;
             const ref = db.collection('categories').doc(String(id));
             if (needsSplit) {
                 const safeCat = { ...cat };
                 const qCount = Array.isArray(safeCat.questions) ? safeCat.questions.length : 0;
-                delete safeCat.questions;
-                safeCat.questionsInline = false;
-                safeCat.questionsCount = qCount;
+                let wroteQs = false;
+                if (effectiveMode === 'subcollection' && Array.isArray(safeCat.questions) && safeCat.questions.length) {
+                    await __upsertCategoryQuestions(safeCat, 'category_questions');
+                    wroteQs = true;
+                }
+                if (__isSpecialRoot(safeCat)) {
+                    safeCat.questionsMode = 'none';
+                    safeCat.questionsInline = false;
+                } else if (effectiveMode === 'subcollection') {
+                    safeCat.questionsMode = 'subcollection';
+                    safeCat.questionsInline = false;
+                    safeCat.questionsCount = qCount;
+                } else if (effectiveMode === 'inline') {
+                    safeCat.questionsMode = 'inline';
+                    safeCat.questionsInline = true;
+                    safeCat.questionsCount = qCount;
+                }
+                if (wroteQs) {
+                    safeCat.questions = [];
+                } else {
+                    delete safeCat.questions;
+                }
                 if (__isSpecialRoot(safeCat) && safeCat.deleted === true) {
                     delete safeCat.deleted;
                     safeCat.deleted = false;
@@ -1394,11 +1471,33 @@ async function syncCategory(catId, includeSubtree = false) {
                     fCount = 0;
                     await __delay(dynamicDelay);
                 }
-                await __upsertCategoryQuestions(cat, 'category_questions');
                 await __delay(0);
                 continue;
             } else {
                 const payload = { ...cat };
+                const qCount = Array.isArray(payload.questions) ? payload.questions.length : 0;
+                if (__isSpecialRoot(payload)) {
+                    payload.questionsMode = 'none';
+                    payload.questionsInline = false;
+                    delete payload.questions;
+                } else {
+                    const mode = __getQuestionsMode(payload);
+                    if (mode === 'inline') {
+                        payload.questionsMode = 'inline';
+                        payload.questionsInline = true;
+                        payload.questionsCount = qCount;
+                    } else if (mode === 'subcollection') {
+                        payload.questionsMode = 'subcollection';
+                        payload.questionsInline = false;
+                        payload.questionsCount = qCount;
+                        if (Array.isArray(payload.questions) && payload.questions.length) {
+                            await __upsertCategoryQuestions(payload, 'category_questions');
+                            payload.questions = [];
+                        } else {
+                            delete payload.questions;
+                        }
+                    }
+                }
                 if (__isSpecialRoot(payload) && payload.deleted === true) {
                     delete payload.deleted;
                     payload.deleted = false;
@@ -1475,7 +1574,7 @@ async function fetchCategoryQuestions(catId) {
     try {
         if (!db) return [];
         const cat = categories.find(c => String(c.id) === String(catId));
-        if (cat && __isQuestionsDisabled(cat)) return [];
+        if (cat && (__isQuestionsDisabled(cat) || __isSpecialRoot(cat))) return [];
         let attempts = 0;
         let snap = null;
         while (attempts < 3) {
@@ -1512,7 +1611,7 @@ async function fetchCategoryQuestionsPaged(catId, page = 0, pageSize = 100) {
     try {
         if (!db) return [];
         const cat = categories.find(c => String(c.id) === String(catId));
-        if (cat && __isQuestionsDisabled(cat)) return [];
+        if (cat && (__isQuestionsDisabled(cat) || __isSpecialRoot(cat))) return [];
         const snap = await db.collection('category_questions')
             .where('categoryId','==', String(catId))
             .where('page','==', page)
@@ -3293,6 +3392,10 @@ window.addManualOption = function(uniqueId) {
         </button>
     `;
     grid.appendChild(div);
+}
+
+window.addAdminOption = function(uniqueId) {
+    return window.addManualOption(uniqueId);
 }
 
 window.updateOptionValues = function(uniqueId) {
@@ -8129,9 +8232,9 @@ window.generateAdminAIQuestions = async function() {
                         if (q.options && Array.isArray(q.options)) {
                             const firstRadio = lastItem.querySelector('input[type="radio"]');
                             if (firstRadio) {
-                                const uniqueId = firstRadio.name.split('_')[1];
+                                const uniqueId = String(firstRadio.name || '').replace(/^correct_/, '');
                                 while (inputs.length < q.options.length && inputs.length < 10) {
-                                    addAdminOption(uniqueId);
+                                    addManualOption(uniqueId);
                                     inputs = lastItem.querySelectorAll('.manual-opt');
                                 }
                             }
@@ -8419,6 +8522,9 @@ window.showAddQuestionModal = function() {
 window.addAdminQuestionForm = function() {
     const list = document.getElementById('admin-questions-list');
     const uniqueId = 'admin_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    var initialOptionCount = arguments && arguments.length ? parseInt(arguments[0], 10) : 4;
+    if (!Number.isInteger(initialOptionCount) || initialOptionCount < 2) initialOptionCount = 4;
+    initialOptionCount = Math.min(10, initialOptionCount);
     
     const div = document.createElement('div');
     div.className = 'manual-question-item';
@@ -8456,18 +8562,21 @@ window.addAdminQuestionForm = function() {
             <label><i class="fas fa-comment-alt"></i> Sualın İzahı (Opsional)</label>
             <textarea class="manual-q-explanation" placeholder="Sualın izahını daxil edin..."></textarea>
         </div>
-        <div class="manual-options-grid">
+        <div class="manual-options-grid" id="options_grid_${uniqueId}">
             <div class="grid-cols-full bg-warning-light border border-warning-light p-3 rounded-md mb-2 text-warning-dark text-sm flex items-center gap-2">
                 <i class="fas fa-info-circle"></i>
                 <span>Düzgün variantı seçməyi unutmayın!</span>
             </div>
-            ${[0, 1, 2, 3].map(i => `
+            ${Array.from({ length: initialOptionCount }).map((_, i) => `
                 <div class="manual-option-input">
                     <input type="radio" name="correct_${uniqueId}" value="${i}" ${i === 0 ? 'checked' : ''} id="opt_${uniqueId}_${i}">
                     <input type="text" class="manual-opt" placeholder="${String.fromCharCode(65 + i)} variantı">
                 </div>
             `).join('')}
         </div>
+        <button type="button" onclick="addManualOption('${uniqueId}')" class="btn-add-option">
+            <i class="fas fa-plus"></i> Variant Əlavə Et
+        </button>
     `;
     list.appendChild(div);
     list.scrollTop = list.scrollHeight;
@@ -8476,6 +8585,20 @@ window.addAdminQuestionForm = function() {
 window.getFlaggedQuestions = function(questions) {
     const flagged = [];
     const arr = Array.isArray(questions) ? questions : [];
+    const prefixes = ['yalnız', 'ancaq', 'istisnasız', 'heç bir halda', 'hec bir halda'];
+    function startsWithAny(s) {
+        const v = String(s || '').toLowerCase().trim();
+        for (let i = 0; i < prefixes.length; i++) {
+            if (v.startsWith(prefixes[i])) return prefixes[i];
+        }
+        return '';
+    }
+    function median(nums) {
+        const a = (Array.isArray(nums) ? nums : []).filter(n => typeof n === 'number' && isFinite(n)).sort((x, y) => x - y);
+        if (!a.length) return 0;
+        const mid = Math.floor(a.length / 2);
+        return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+    }
     for (let i = 0; i < arr.length; i++) {
         const q = arr[i] || {};
         const rawId = (q.id !== undefined && q.id !== null && String(q.id).trim() !== '') ? q.id : q._qid;
@@ -8488,19 +8611,19 @@ window.getFlaggedQuestions = function(questions) {
         if (opts.length >= 2 && Number.isInteger(correctIndex) && correctIndex >= 0 && correctIndex < opts.length) {
             const correctText = String(opts[correctIndex] || '').trim();
             const wrongTexts = opts.filter((_, idx) => idx !== correctIndex);
-            const yalnizCount = opts.filter(t => String(t || '').toLowerCase().startsWith('yalnız')).length;
-            if (yalnizCount >= Math.max(2, opts.length - 1) && yalnizCount < opts.length) {
-                reasons.push(yalnizCount + " variant 'Yalnız' ilə başlayır, digəri fərqlidir");
-            }
-            const allWrongYalniz = wrongTexts.length > 0 && wrongTexts.every(t => String(t || '').toLowerCase().startsWith('yalnız'));
-            const correctYalniz = correctText.toLowerCase().startsWith('yalnız');
-            if (allWrongYalniz && !correctYalniz) {
-                reasons.push("Bütün səhv variantlar 'Yalnız' ilə başlayır, düzgün variant isə yox");
+            const correctPrefix = startsWithAny(correctText);
+            const wrongPrefixes = wrongTexts.map(startsWithAny);
+            const wrongCount = wrongTexts.length;
+            const wrongStartsCount = wrongPrefixes.filter(Boolean).length;
+            if (wrongCount > 0 && wrongStartsCount === wrongCount && !correctPrefix) {
+                const unique = Array.from(new Set(wrongPrefixes.filter(Boolean)));
+                const label = unique.length === 1 ? unique[0] : unique.join('/');
+                reasons.push(`Bütün səhv variantlar '${label}' ilə başlayır, düzgün variant isə yox`);
             }
             const wrongLens = wrongTexts.map(t => String(t || '').length).filter(n => n > 0);
-            const maxWrongLen = wrongLens.length ? Math.max.apply(null, wrongLens) : 0;
-            if (maxWrongLen > 0 && correctText.length > 2.5 * maxWrongLen) {
-                reasons.push('Düzgün cavab digər variantlardan həddindən artıq uzundur');
+            const medWrong = median(wrongLens);
+            if (medWrong > 0 && correctText.length > 1.6 * medWrong) {
+                reasons.push('Düzgün cavab digər variantlardan nəzərəçarpacaq dərəcədə uzundur');
             }
         }
         if (reasons.length) {
@@ -8633,7 +8756,12 @@ function __collectAdminDraftQuestions() {
         const optionInputs = item.querySelectorAll('.manual-opt');
         const correctRadio = item.querySelector('input[type="radio"]:checked');
         const rawOptions = Array.from(optionInputs).map(opt => String(opt.value || '').trim());
-        const options = rawOptions.filter(Boolean);
+        let lastNonEmpty = -1;
+        for (let i = 0; i < rawOptions.length; i++) {
+            if (rawOptions[i]) lastNonEmpty = i;
+        }
+        const options = rawOptions.slice(0, lastNonEmpty + 1);
+        const hasEmptyWithin = options.some(v => !String(v || '').trim());
         const text = textEl && textEl.value ? String(textEl.value).trim() : '';
         const image = imgEl && imgEl.value ? String(imgEl.value) : '';
         const explanation = expEl && expEl.value ? String(expEl.value).trim() : '';
@@ -8647,7 +8775,8 @@ function __collectAdminDraftQuestions() {
             explanation,
             options,
             _rawOptions: rawOptions,
-            _rawCorrectIndex: correctIndex
+            _rawCorrectIndex: correctIndex,
+            _hasEmptyWithin: hasEmptyWithin
         });
     }
     return drafts;
@@ -8746,6 +8875,11 @@ window.saveAdminQuestions = async function() {
         showNotification('Heç bir sual əlavə edilməyib!', 'error');
         return;
     }
+    const activeCat = categories.find(c => String(c.id) === String(activeCategoryId));
+    if (activeCat && (__isSpecialRoot(activeCat) || __isQuestionsDisabled(activeCat))) {
+        showNotification('Bu kateqoriyada sual əlavə etmək qadağandır.', 'error');
+        return;
+    }
 
     for (const d of drafts) {
         if (!d.text) {
@@ -8758,8 +8892,18 @@ window.saveAdminQuestions = async function() {
             if (d._dom) d._dom.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
+        if (d._hasEmptyWithin) {
+            showNotification('Variantlar boş ola bilməz. Boş variantı silin və ya doldurun.', 'error');
+            if (d._dom) d._dom.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
         if (d._rawCorrectIndex === null || Number.isNaN(d._rawCorrectIndex)) {
             showNotification('Bütün suallar üçün düzgün variantı seçin!', 'error');
+            if (d._dom) d._dom.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+        if (Number.isInteger(d._rawCorrectIndex) && (d._rawCorrectIndex < 0 || d._rawCorrectIndex >= d.options.length)) {
+            showNotification('Düzgün variant boş və ya mövcud deyil. Variantları yoxlayın.', 'error');
             if (d._dom) d._dom.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
@@ -9000,7 +9144,7 @@ window.editCategoryQuestion = function(qId) {
     list.innerHTML = '';
     
     // addAdminQuestionForm() funksiyasının məntiqini istifadə et
-    addAdminQuestionForm();
+    addAdminQuestionForm(Array.isArray(q.options) ? q.options.length : 4);
     const item = list.querySelector('.manual-question-item');
     if (item) item.dataset.questionId = String(q.id);
     
@@ -9022,10 +9166,13 @@ window.editCategoryQuestion = function(qId) {
         dataInput.value = q.image;
     }
     
-    const optionInputs = item.querySelectorAll('.manual-opt');
-    q.options.forEach((opt, i) => {
-        if (optionInputs[i]) optionInputs[i].value = opt;
-    });
+    const uniqueId = String(item.dataset.qid || '');
+    if (uniqueId && Array.isArray(q.options)) {
+        let optionInputs = item.querySelectorAll('.manual-opt');
+        q.options.forEach((opt, i) => {
+            if (optionInputs[i]) optionInputs[i].value = opt;
+        });
+    }
     
     const radios = item.querySelectorAll('input[type="radio"]');
     if (radios[q.correctIndex]) radios[q.correctIndex].checked = true;

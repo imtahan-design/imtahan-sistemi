@@ -25,10 +25,62 @@
   function __isQuestionsDisabled(cat) {
     return !!cat && String(cat.questionsMode || '').toLowerCase() === 'none';
   }
+  function __getQuestionsMode(cat) {
+    if (!cat) return 'none';
+    var m = String(cat.questionsMode || '').toLowerCase();
+    if (m === 'none' || m === 'inline' || m === 'subcollection') return m;
+    if (__isQuestionsDisabled(cat)) return 'none';
+    if (cat.questionsInline === false) return 'subcollection';
+    return 'inline';
+  }
   function __isSpecialRoot(cat) {
     if (!cat) return false;
     var isSpec = (cat.examType === 'special' || cat.exam_type === 'special' || String(cat.id || '').startsWith('special_'));
     return isSpec && (!cat.parentId);
+  }
+  async function __weeklyFetchSubcollectionQuestions(catId) {
+    if (!db) return [];
+    catId = String(catId || '');
+    if (!catId) return [];
+    var snap = null;
+    try {
+      snap = await db.collection('category_questions').where('categoryId','==', catId).orderBy('createdAt','asc').get();
+    } catch (e) {
+      snap = await db.collection('category_questions').where('categoryId','==', catId).get();
+    }
+    var qs = snap.docs.map(function(d){ return { id: d.id, ...d.data() }; })
+      .filter(function(q){ return q && q.deleted !== true && q.legacy !== true; })
+      .map(function(q){
+        var opts = (Array.isArray(q.options) && q.options.length) ? q.options : (Array.isArray(q.variants) ? q.variants : []);
+        var correct = 0;
+        if (typeof q.correctIndex === 'number') correct = q.correctIndex;
+        else if (typeof q.correct === 'number') correct = q.correct;
+        else if (typeof q.answer === 'number') correct = q.answer;
+        return { ...q, options: opts, correctIndex: correct };
+      });
+    return qs;
+  }
+  async function __weeklyGetQuestionsForCategory(cat, excludeIds, cache) {
+    var mode = __getQuestionsMode(cat);
+    var id = cat && cat.id != null ? String(cat.id) : '';
+    if (!cat || !id) return { mode: 'none', all: [], available: [], totalCount: 0, reason: 'missing' };
+    if (__isSpecialRoot(cat)) return { mode: mode, all: [], available: [], totalCount: 0, reason: 'special_root' };
+    if (mode === 'none') return { mode: mode, all: [], available: [], totalCount: 0, reason: 'mode_none' };
+    if (mode === 'inline') {
+      var allInline = (Array.isArray(cat.questions) ? cat.questions : []).filter(function(q){ return q && q.deleted !== true; });
+      var availInline = excludeIds ? allInline.filter(function(q){ return !excludeIds.has(String(q.id)); }) : allInline;
+      return { mode: mode, all: allInline, available: availInline, totalCount: allInline.length, reason: allInline.length ? 'ok' : 'empty_inline' };
+    }
+    if (cache && cache.has(id)) {
+      var cached = cache.get(id) || [];
+      var allCached = cached.filter(function(q){ return q && q.deleted !== true && q.legacy !== true; });
+      var availCached = excludeIds ? allCached.filter(function(q){ return !excludeIds.has(String(q.id)); }) : allCached;
+      return { mode: mode, all: allCached, available: availCached, totalCount: allCached.length, reason: allCached.length ? 'ok' : 'empty_subcollection' };
+    }
+    var all = await __weeklyFetchSubcollectionQuestions(id);
+    if (cache) cache.set(id, all);
+    var avail = excludeIds ? all.filter(function(q){ return !excludeIds.has(String(q.id)); }) : all;
+    return { mode: mode, all: all, available: avail, totalCount: all.length, reason: all.length ? 'ok' : 'empty_subcollection' };
   }
   function __collectSubtreeIds(rootId) {
     rootId = String(rootId || '');
@@ -335,16 +387,10 @@
       if (!db) return showNotification('Verilənlər bazası bağlantısı yoxdur!', 'error');
       if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
       let schema = [];
-      if (type === 'prokurorluq') {
-        const subs = __leafCategoriesUnder('special_prokurorluq');
-        schema = subs.map(s => ({ id: s.id, name: s.name, count: 6 }));
-      } else if (type === 'hakimlik') {
-        const subs = __leafCategoriesUnder('special_hakimlik');
-        schema = subs.map(s => ({ id: s.id, name: s.name, count: 6 }));
-      } else if (type === 'vekillik') {
-        const subs = __leafCategoriesUnder('special_vekillik');
-        schema = subs.map(s => ({ id: s.id, name: s.name, count: 6 }));
-      }
+      var rootId = String(type || '');
+      if (!rootId.startsWith('special_')) rootId = 'special_' + rootId;
+      const subs = __leafCategoriesUnder(rootId);
+      schema = subs.map(s => ({ id: s.id, name: s.name, count: 6 }));
       
       if (!schema || schema.length === 0) {
         return showNotification('Bu imtahan növü üçün sual bölgüsü (sxem) hələ təyin edilməyib.', 'warning');
@@ -352,6 +398,8 @@
 
       let examQuestions = [];
       let log = [];
+      let debug = [];
+      const qCache = new Map();
 
       const excludeIds = new Set();
       try {
@@ -400,17 +448,28 @@
       }
 
       for (const item of targetSchema) {
-        const subCat = this.findCategory(item);
-        if (!subCat || __isQuestionsDisabled(subCat) || __isSpecialRoot(subCat) || !subCat.questions || subCat.questions.length === 0) {
-          if (window.__DEBUG) console.warn(`Category not found or empty: ${item.name}`);
-          log.push(`TAPILMADI: ${item.name}`);
+        const subCat = categories.find(function(c){ return c && String(c.id) === String(item.id); }) || this.findCategory(item);
+        if (!subCat || __isQuestionsDisabled(subCat) || __isSpecialRoot(subCat)) {
+          var entry0 = { id: subCat ? String(subCat.id) : String(item.id || ''), name: item.name, mode: subCat ? __getQuestionsMode(subCat) : 'none', total: 0, available: 0, selected: 0, reason: !subCat ? 'missing' : (__isQuestionsDisabled(subCat) ? 'mode_none' : 'special_root') };
+          debug.push(entry0);
+          log.push(`SKIP: ${entry0.name} (id=${entry0.id} mode=${entry0.mode} reason=${entry0.reason})`);
           continue;
         }
-        const available = subCat.questions.filter(q => q && q.deleted !== true && !excludeIds.has(q.id));
+        const qRes = await __weeklyGetQuestionsForCategory(subCat, excludeIds, qCache);
+        const available = qRes.available || [];
         let pool = available;
         if (available.length < item.count) {
-          log.push(`XƏBƏRDARLIQ: ${item.name} - Yeni sual çatışmır (${available.length}/${item.count}). İşlənmişlər qarışdırılır.`);
-          pool = subCat.questions.filter(function(q){ return q && q.deleted !== true; });
+          var allPool = (qRes.all || []).filter(function(q){ return q && q.deleted !== true && q.legacy !== true; });
+          if (allPool.length > 0) {
+            log.push(`XƏBƏRDARLIQ: ${item.name} (id=${subCat.id} mode=${qRes.mode}) - Yeni sual çatışmır (${available.length}/${item.count}). İşlənmişlər qarışdırılır.`);
+            pool = allPool;
+          }
+        }
+        if (!pool || pool.length === 0) {
+          var entry1 = { id: String(subCat.id), name: item.name, mode: qRes.mode, total: qRes.totalCount, available: available.length, selected: 0, reason: qRes.reason };
+          debug.push(entry1);
+          log.push(`BOŞ: ${entry1.name} (id=${entry1.id} mode=${entry1.mode} total=${entry1.total} available=${entry1.available} reason=${entry1.reason})`);
+          continue;
         }
         function pickRandomN(arr, n) {
           var a = arr.slice();
@@ -428,9 +487,12 @@
         selected.forEach(q => {
           q._sourceSchemaName = item.name; 
           q._sourceCategoryId = subCat.id;
+          q._sourceCategoryMode = __getQuestionsMode(subCat);
         });
         examQuestions = [...examQuestions, ...selected];
-        log.push(`OK: ${item.name} (${selected.length}/${item.count})`);
+        var entry2 = { id: String(subCat.id), name: item.name, mode: __getQuestionsMode(subCat), total: qRes.totalCount, available: available.length, selected: selected.length, reason: 'ok' };
+        debug.push(entry2);
+        log.push(`OK: ${item.name} (id=${entry2.id} mode=${entry2.mode}) (${selected.length}/${item.count})`);
       }
       if (examQuestions.length === 0) {
         return showNotification('Heç bir sual tapılmadı! Yalnız alt-kateqoriyalardan sual seçilir; root kateqoriya qadağandır.', 'error');
@@ -443,7 +505,8 @@
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         createdBy: currentUser.id,
         status: 'draft',
-        log: log
+        log: log,
+        debug: debug
       };
       try {
         await db.collection('weekly_exams').doc('draft_' + type).set(draft);
