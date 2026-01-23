@@ -1187,7 +1187,14 @@ async function saveCategories(syncToDb = false) {
     localStorage.setItem('categories', JSON.stringify(categories));
 }
 
-async function syncCategory(catId, includeSubtree = false) {
+async function syncCategory(catId, includeSubtree = false, opts) {
+    let options = opts || {};
+    let subtree = includeSubtree;
+    if (includeSubtree && typeof includeSubtree === 'object') {
+        options = includeSubtree || {};
+        subtree = !!options.includeSubtree;
+    }
+    let caughtError = null;
     try {
         if (!db) return;
         if (window.OpsLock && window.OpsLock.locks && window.OpsLock.locks.has(String(catId))) { showNotification('Bu kateqoriya üzərində başqa əməliyyat gedir.', 'warning'); return; }
@@ -1195,6 +1202,8 @@ async function syncCategory(catId, includeSubtree = false) {
             const ok = await window.OpsLock.acquire(String(catId));
             if (!ok) return;
         }
+        let dbg = false;
+        try { dbg = !!(window && typeof window.__isDebugFlagsEnabled === 'function' && window.__isDebugFlagsEnabled()); } catch(_) { dbg = false; }
         async function __delay(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
         function showProgressBanner(title){
             let el = document.getElementById('sync-progress-banner');
@@ -1239,6 +1248,11 @@ async function syncCategory(catId, includeSubtree = false) {
             for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
             return Math.abs(h).toString(36);
         }
+        function __newRunId() {
+            const ts = Date.now().toString(36);
+            const rnd = Math.random().toString(36).slice(2, 10);
+            return ts + '_' + rnd;
+        }
         function __docPart(s) {
             const v = String(s == null ? '' : s);
             const cleaned = v.replace(/\//g, '_').replace(/[\u0000-\u001F\u007F]/g, '').trim();
@@ -1253,15 +1267,37 @@ async function syncCategory(catId, includeSubtree = false) {
             if (docId.length <= 900) return docId;
             return catPart + '_h_' + __stableHash(String(qidValue || ''));
         }
+        function __safeInt(v) {
+            const n = parseInt(v, 10);
+            return Number.isFinite(n) ? n : null;
+        }
+        function __computeQuestionsCount(cat, qCount) {
+            const existing = __safeInt(cat && cat.questionsCount);
+            const delta = (options && typeof options.deltaQuestionsCount === 'number' && Number.isFinite(options.deltaQuestionsCount)) ? options.deltaQuestionsCount : null;
+            if (existing == null && delta == null) return qCount;
+            const base = (existing == null) ? 0 : existing;
+            if (delta != null) return Math.max(0, base + delta);
+            if (existing != null) return Math.max(existing, qCount);
+            return qCount;
+        }
+        function __shouldWriteQuestions() {
+            return !(options && options.skipQuestionsWrite);
+        }
         async function __upsertCategoryQuestions(cat, collectionName){
-            const mode = __getQuestionsMode(cat);
-            if (mode !== 'subcollection') return;
             if (__isQuestionsDisabled(cat)) return;
             if (__isSpecialRoot(cat)) return;
             if (!Array.isArray(cat.questions)) return;
+            const cid = String(cat && cat.id != null ? cat.id : '');
+            if (!cid) return false;
+            if (dbg) {
+                try {
+                    console.log('[syncCategory] upsert questions ->', String(collectionName), 'categoryId=', cid, 'count=', cat.questions.length);
+                } catch (_) {}
+            }
             let batch = db.batch();
             let count = 0;
             const seen = new Set();
+            let wroteAny = false;
             for (let idx = 0; idx < cat.questions.length; idx++) {
                 const q = cat.questions[idx];
                 const base = String(q.text || '') + '|' + (Array.isArray(q.options) ? q.options.join('|') : '') + '|' + String(cat.id);
@@ -1275,6 +1311,7 @@ async function syncCategory(catId, includeSubtree = false) {
                 const page = Math.floor(idx / 100);
                 batch.set(ref, { categoryId: String(cat.id), page, createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...q, id: qid }, { merge: true });
                 count++;
+                wroteAny = true;
                 if (count >= 450) {
                     await batch.commit();
                     batch = db.batch();
@@ -1284,9 +1321,14 @@ async function syncCategory(catId, includeSubtree = false) {
             }
             if (count > 0) await batch.commit();
             if (count > 0) await __delay(150);
+            if (dbg) {
+                try { console.log('[syncCategory] upsert questions done ->', String(collectionName), 'categoryId=', cid); } catch (_) {}
+            }
+            return wroteAny;
         }
         const root = categories.find(c => String(c.id) === String(catId));
         if (!root) return;
+        const runId = __newRunId();
         const startAt = performance.now ? performance.now() : Date.now();
         const visited = new Set();
         const queue = [String(catId)];
@@ -1296,7 +1338,7 @@ async function syncCategory(catId, includeSubtree = false) {
             if (visited.has(current)) continue;
             visited.add(current);
             toSync.push(current);
-            if (includeSubtree) {
+            if (subtree) {
                 const children = categories.filter(c => String(c.parentId) === String(current)).map(c => String(c.id));
                 for (const ch of children) {
                     if (!visited.has(ch)) queue.push(ch);
@@ -1324,24 +1366,23 @@ async function syncCategory(catId, includeSubtree = false) {
             if (needsSplit) {
                 const safeCat = { ...cat };
                 const qCount = Array.isArray(safeCat.questions) ? safeCat.questions.length : 0;
+                const computedCount = __computeQuestionsCount(safeCat, qCount);
                 let wroteQs = false;
-                if (effectiveMode === 'subcollection' && Array.isArray(safeCat.questions) && safeCat.questions.length) {
-                    await __upsertCategoryQuestions(safeCat, 'staging_category_questions');
-                    wroteQs = true;
-                }
                 if (__isSpecialRoot(safeCat)) {
                     safeCat.questionsMode = 'none';
                     safeCat.questionsInline = false;
                 } else if (effectiveMode === 'subcollection') {
                     safeCat.questionsMode = 'subcollection';
                     safeCat.questionsInline = false;
-                    safeCat.questionsCount = qCount;
+                    safeCat.questionsCount = computedCount;
                 } else if (effectiveMode === 'inline') {
                     safeCat.questionsMode = 'inline';
                     safeCat.questionsInline = true;
                     safeCat.questionsCount = qCount;
                 }
-                if (wroteQs) {
+                if (effectiveMode === 'subcollection' && Array.isArray(safeCat.questions) && safeCat.questions.length && __shouldWriteQuestions()) {
+                    wroteQs = await __upsertCategoryQuestions(safeCat, 'staging_category_questions');
+                    if (!wroteQs && qCount > 0) throw new Error('subcollection_write_skipped');
                     safeCat.questions = [];
                 } else {
                     delete safeCat.questions;
@@ -1349,6 +1390,11 @@ async function syncCategory(catId, includeSubtree = false) {
                 if (__isSpecialRoot(safeCat) && safeCat.deleted === true) {
                     delete safeCat.deleted;
                     safeCat.deleted = false;
+                }
+                if (dbg) {
+                    try {
+                        console.log('[syncCategory] set -> staging_categories/' + String(id), { mode: String(safeCat.questionsMode || ''), questionsCount: safeCat.questionsCount, wroteQs: !!wroteQs, inlineLen: Array.isArray(safeCat.questions) ? safeCat.questions.length : null });
+                    } catch (_) {}
                 }
                 batch.set(sref, safeCat, { merge: true });
                 count++; written++; batchCount++;
@@ -1369,6 +1415,7 @@ async function syncCategory(catId, includeSubtree = false) {
             } else {
                 const payload = { ...cat };
                 const qCount = Array.isArray(payload.questions) ? payload.questions.length : 0;
+                const computedCount = __computeQuestionsCount(payload, qCount);
                 if (__isSpecialRoot(payload)) {
                     payload.questionsMode = 'none';
                     payload.questionsInline = false;
@@ -1382,9 +1429,10 @@ async function syncCategory(catId, includeSubtree = false) {
                     } else if (mode === 'subcollection') {
                         payload.questionsMode = 'subcollection';
                         payload.questionsInline = false;
-                        payload.questionsCount = qCount;
-                        if (Array.isArray(payload.questions) && payload.questions.length) {
-                            await __upsertCategoryQuestions(payload, 'staging_category_questions');
+                        payload.questionsCount = computedCount;
+                        if (Array.isArray(payload.questions) && payload.questions.length && __shouldWriteQuestions()) {
+                            const wroteQs = await __upsertCategoryQuestions(payload, 'staging_category_questions');
+                            if (!wroteQs && qCount > 0) throw new Error('subcollection_write_skipped');
                             payload.questions = [];
                         } else {
                             delete payload.questions;
@@ -1394,6 +1442,11 @@ async function syncCategory(catId, includeSubtree = false) {
                 if (__isSpecialRoot(payload) && payload.deleted === true) {
                     delete payload.deleted;
                     payload.deleted = false;
+                }
+                if (dbg) {
+                    try {
+                        console.log('[syncCategory] set -> staging_categories/' + String(id), { mode: String(payload.questionsMode || ''), questionsCount: payload.questionsCount, inlineLen: Array.isArray(payload.questions) ? payload.questions.length : null });
+                    } catch (_) {}
                 }
                 batch.set(sref, payload, { merge: true });
                 count++; written++; batchCount++;
@@ -1436,24 +1489,74 @@ async function syncCategory(catId, includeSubtree = false) {
             if (needsSplit) {
                 const safeCat = { ...cat };
                 const qCount = Array.isArray(safeCat.questions) ? safeCat.questions.length : 0;
+                const computedCount = __computeQuestionsCount(safeCat, qCount);
                 let wroteQs = false;
-                if (effectiveMode === 'subcollection' && Array.isArray(safeCat.questions) && safeCat.questions.length) {
-                    await __upsertCategoryQuestions(safeCat, 'category_questions');
-                    wroteQs = true;
-                }
                 if (__isSpecialRoot(safeCat)) {
                     safeCat.questionsMode = 'none';
                     safeCat.questionsInline = false;
                 } else if (effectiveMode === 'subcollection') {
                     safeCat.questionsMode = 'subcollection';
                     safeCat.questionsInline = false;
-                    safeCat.questionsCount = qCount;
+                    safeCat.questionsCount = computedCount;
                 } else if (effectiveMode === 'inline') {
                     safeCat.questionsMode = 'inline';
                     safeCat.questionsInline = true;
                     safeCat.questionsCount = qCount;
                 }
-                if (wroteQs) {
+                if (effectiveMode === 'subcollection' && Array.isArray(safeCat.questions) && safeCat.questions.length && __shouldWriteQuestions()) {
+                    const expSeen = new Set();
+                    const expectedActiveDocIds = [];
+                    for (let idx = 0; idx < safeCat.questions.length; idx++) {
+                        const q = safeCat.questions[idx];
+                        const base = String(q && q.text || '') + '|' + (Array.isArray(q && q.options) ? q.options.join('|') : '') + '|' + String(safeCat.id);
+                        const sid = __stableHash(base);
+                        const qid = String((q && q.id) || ('q_' + sid));
+                        if (q && !q.id) q.id = qid;
+                        if (expSeen.has(qid)) continue;
+                        expSeen.add(qid);
+                        if (q && (q.deleted === true || q.legacy === true)) continue;
+                        expectedActiveDocIds.push(__makeDocId(safeCat.id, qid));
+                    }
+                    const expectedActiveCount = expectedActiveDocIds.length;
+                    wroteQs = await __upsertCategoryQuestions(safeCat, 'category_questions');
+                    if (!wroteQs && qCount > 0) throw new Error('subcollection_write_skipped');
+                    if (!(options && options.skipSubcollectionVerify)) {
+                        const qsSnap = await db.collection('category_questions').where('categoryId','==', String(id)).get();
+                        const byDocId = new Map();
+                        let writtenActiveCount = 0;
+                        for (const d of qsSnap.docs) {
+                            const data = d.data() || {};
+                            byDocId.set(String(d.id), data);
+                            if (data.deleted !== true && data.legacy !== true) writtenActiveCount++;
+                        }
+                        let missingActiveCount = 0;
+                        if (expectedActiveCount > 0) {
+                            for (const docId2 of expectedActiveDocIds) {
+                                const data2 = byDocId.get(String(docId2));
+                                if (!data2 || data2.deleted === true || data2.legacy === true) missingActiveCount++;
+                            }
+                        }
+                        if (missingActiveCount > 0 || writtenActiveCount < expectedActiveCount) {
+                            try {
+                                await ref.set({
+                                    lastMigrationRunId: runId,
+                                    lastMigrationAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    lastMigrationExpectedActiveCount: expectedActiveCount,
+                                    lastMigrationWrittenActiveCount: writtenActiveCount,
+                                    lastMigrationMissingActiveCount: missingActiveCount,
+                                    lastMigrationStatus: 'mismatch'
+                                }, { merge: true });
+                            } catch (_) {}
+                            throw new Error('subcollection_verify_count_mismatch: runId=' + runId + ' expectedActive=' + expectedActiveCount + ' writtenActive=' + writtenActiveCount + ' missingActive=' + missingActiveCount);
+                        }
+                        safeCat.questionsCount = Math.max(__safeInt(safeCat.questionsCount) || 0, writtenActiveCount, expectedActiveCount);
+                        safeCat.lastMigrationRunId = runId;
+                        safeCat.lastMigrationAt = firebase.firestore.FieldValue.serverTimestamp();
+                        safeCat.lastMigrationExpectedActiveCount = expectedActiveCount;
+                        safeCat.lastMigrationWrittenActiveCount = writtenActiveCount;
+                        safeCat.lastMigrationMissingActiveCount = 0;
+                        safeCat.lastMigrationStatus = 'ok';
+                    }
                     safeCat.questions = [];
                 } else {
                     delete safeCat.questions;
@@ -1461,6 +1564,11 @@ async function syncCategory(catId, includeSubtree = false) {
                 if (__isSpecialRoot(safeCat) && safeCat.deleted === true) {
                     delete safeCat.deleted;
                     safeCat.deleted = false;
+                }
+                if (dbg) {
+                    try {
+                        console.log('[syncCategory] set -> categories/' + String(id), { mode: String(safeCat.questionsMode || ''), questionsCount: safeCat.questionsCount, wroteQs: !!wroteQs, inlineLen: Array.isArray(safeCat.questions) ? safeCat.questions.length : null });
+                    } catch (_) {}
                 }
                 fBatch.set(ref, safeCat, { merge: true });
                 fCount++; fWritten++;
@@ -1480,6 +1588,7 @@ async function syncCategory(catId, includeSubtree = false) {
             } else {
                 const payload = { ...cat };
                 const qCount = Array.isArray(payload.questions) ? payload.questions.length : 0;
+                const computedCount = __computeQuestionsCount(payload, qCount);
                 if (__isSpecialRoot(payload)) {
                     payload.questionsMode = 'none';
                     payload.questionsInline = false;
@@ -1493,9 +1602,10 @@ async function syncCategory(catId, includeSubtree = false) {
                     } else if (mode === 'subcollection') {
                         payload.questionsMode = 'subcollection';
                         payload.questionsInline = false;
-                        payload.questionsCount = qCount;
-                        if (Array.isArray(payload.questions) && payload.questions.length) {
-                            await __upsertCategoryQuestions(payload, 'category_questions');
+                        payload.questionsCount = computedCount;
+                        if (Array.isArray(payload.questions) && payload.questions.length && __shouldWriteQuestions()) {
+                            const wroteQs = await __upsertCategoryQuestions(payload, 'category_questions');
+                            if (!wroteQs && qCount > 0) throw new Error('subcollection_write_skipped');
                             payload.questions = [];
                         } else {
                             delete payload.questions;
@@ -1505,6 +1615,11 @@ async function syncCategory(catId, includeSubtree = false) {
                 if (__isSpecialRoot(payload) && payload.deleted === true) {
                     delete payload.deleted;
                     payload.deleted = false;
+                }
+                if (dbg) {
+                    try {
+                        console.log('[syncCategory] set -> categories/' + String(id), { mode: String(payload.questionsMode || ''), questionsCount: payload.questionsCount, inlineLen: Array.isArray(payload.questions) ? payload.questions.length : null });
+                    } catch (_) {}
                 }
                 fBatch.set(ref, payload, { merge: true });
                 fCount++; fWritten++;
@@ -1561,16 +1676,17 @@ async function syncCategory(catId, includeSubtree = false) {
                 peakCommitMs: Math.round(peakCommitMs),
                 batchCount: batchCount,
                 failCount: failCount,
-                includeSubtree: !!includeSubtree,
+                includeSubtree: !!subtree,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
         } catch (_) {}
     } catch (e) {
+        caughtError = e;
         console.error('syncCategory error:', e);
-    }
-    finally {
+    } finally {
         if (window.OpsLock && window.OpsLock.release) window.OpsLock.release(String(catId));
         invalidateCategoriesCache();
+        if (caughtError && options && options.throwOnError) throw caughtError;
     }
 }
 
@@ -1625,13 +1741,29 @@ async function fetchCategoryQuestionsPaged(catId, page = 0, pageSize = 100) {
         const qs = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.deleted !== true && x.legacy !== true);
         const idxd = qs.map((q, i) => ({ ...q, originalIndex: (page * pageSize) + i }));
         if (cat) {
-            const merged = Array.isArray(cat.questions) ? cat.questions.concat(idxd) : idxd;
-            categories = categories.map(c => String(c.id) === String(catId) ? { ...c, questions: merged } : c);
+            const existing = Array.isArray(cat.questions) ? cat.questions : [];
+            const byId = new Map();
+            for (const q of existing) {
+                if (q && q.id != null) byId.set(String(q.id), q);
+            }
+            for (const q of idxd) {
+                if (q && q.id != null) byId.set(String(q.id), q);
+            }
+            const merged = Array.from(byId.values()).sort(function(a, b){
+                const ai = (a && typeof a.originalIndex === 'number') ? a.originalIndex : 0;
+                const bi = (b && typeof b.originalIndex === 'number') ? b.originalIndex : 0;
+                return ai - bi;
+            });
+            categories = categories.map(c => String(c.id) === String(catId) ? { ...c, questions: merged, questionsCount: (c.questionsCount != null ? c.questionsCount : merged.length) } : c);
         }
         return idxd;
     } catch (e) {
         console.error('fetchCategoryQuestionsPaged error:', e);
         showNotification('Sual səhifəsi yüklənmədi.', 'error');
+        if (arguments && arguments.length >= 4) {
+            const opts = arguments[3] || {};
+            if (opts && opts.throwOnError) throw e;
+        }
         return [];
     }
 }
@@ -7768,8 +7900,14 @@ async function openCategory(id) {
     }
     if (!cat.questions || cat.questionsInline === false) {
         try {
-            await fetchCategoryQuestionsPaged(id, 0, 100);
+            const page0 = await fetchCategoryQuestionsPaged(id, 0, 100, { throwOnError: true });
+            const expected = (cat && cat.questionsCount != null) ? parseInt(cat.questionsCount, 10) : null;
+            if (Array.isArray(page0) && page0.length === 0 && Number.isFinite(expected) && expected > 0) {
+                showNotification('Suallar səhifə ilə yüklənmədi, hamısı yüklənir...', 'warning');
+                await fetchCategoryQuestions(id);
+            }
         } catch (_) {
+            showNotification('Suallar səhifə ilə yüklənmədi, hamısı yüklənir...', 'warning');
             await fetchCategoryQuestions(id);
         }
         cat = categories.find(c => c.id === id);
@@ -7819,6 +7957,29 @@ async function openCategory(id) {
                 };
                 titleEl.parentNode && titleEl.parentNode.appendChild(pbtn);
             }
+            let vbtn = document.getElementById('verify-storage-btn');
+            if (!vbtn) {
+                vbtn = document.createElement('button');
+                vbtn.id = 'verify-storage-btn';
+                vbtn.className = 'btn-warning ml-2';
+                vbtn.innerHTML = '<i class="fas fa-search"></i> Yoxla';
+                vbtn.onclick = async function(){
+                    try { await window.verifyCategoryStorage(id); } catch (e) { showNotification('Yoxlama xətası.', 'error'); }
+                };
+                titleEl.parentNode && titleEl.parentNode.appendChild(vbtn);
+            }
+            let rbtn = document.getElementById('repair-storage-btn');
+            if (!rbtn) {
+                rbtn = document.createElement('button');
+                rbtn.id = 'repair-storage-btn';
+                rbtn.className = 'btn-warning ml-2';
+                rbtn.innerHTML = '<i class="fas fa-wrench"></i> Düzəlt';
+                rbtn.onclick = async function(){
+                    if (!confirm('Bu kateqoriya üçün bərpa/düzəliş edilsin?')) return;
+                    try { await window.repairCategoryStorage(id); } catch (e) { showNotification('Düzəliş xətası.', 'error'); }
+                };
+                titleEl.parentNode && titleEl.parentNode.appendChild(rbtn);
+            }
         }
         
         const adminArea = document.querySelector('.admin-panel-area');
@@ -7856,7 +8017,9 @@ function renderQuestions() {
         return;
     }
 
-    const total = cat.questions.length;
+    const loadedCount = cat.questions.length;
+    const declaredTotal = (cat.questionsCount != null) ? parseInt(cat.questionsCount, 10) : loadedCount;
+    const total = (Number.isFinite(declaredTotal) && declaredTotal > loadedCount) ? declaredTotal : loadedCount;
     const topCount = adminQuestionViewState.topCount;
     const bottomCount = 5;
 
@@ -7882,34 +8045,75 @@ function renderQuestions() {
         });
     };
 
-    if (total <= topCount + bottomCount) {
-        // Show all if total is small
-        renderList(cat.questions.map((q, i) => ({...q, originalIndex: i})));
-    } else {
-        // Show top chunk
-        const topChunk = cat.questions.slice(0, topCount).map((q, i) => ({...q, originalIndex: i}));
-        renderList(topChunk);
-
-        // Show "Load More" button if there is a gap
-        if (topCount < total - bottomCount) {
-            const remaining = total - bottomCount - topCount;
-            const btnDiv = document.createElement('div');
-            btnDiv.className = 'text-center my-4 p-2';
-            btnDiv.innerHTML = `
-                <button onclick="loadMoreAdminQuestions()" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition shadow-sm">
-                    <i class="fas fa-chevron-down"></i> Daha çox göstər (${remaining} gizli)
-                </button>
-            `;
-            list.appendChild(btnDiv);
-        }
-
-        // Show bottom chunk
-        const bottomChunk = cat.questions.slice(total - bottomCount).map((q, i) => ({...q, originalIndex: total - bottomCount + i}));
-        renderList(bottomChunk);
+    const mode = __getQuestionsMode(cat);
+    const isSub = (cat && cat.questionsInline === false) || mode === 'subcollection';
+    if (isSub && loadedCount < total) {
+        const toShow = cat.questions.slice(0, Math.min(loadedCount, topCount)).map(function(q, i){
+            const oi = (q && typeof q.originalIndex === 'number') ? q.originalIndex : i;
+            return { ...q, originalIndex: oi };
+        });
+        renderList(toShow);
+        const remaining = total - loadedCount;
+        const btnDiv = document.createElement('div');
+        btnDiv.className = 'text-center my-4 p-2';
+        btnDiv.innerHTML = `
+            <button onclick="loadMoreAdminQuestions()" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition shadow-sm">
+                <i class="fas fa-chevron-down"></i> Daha çox yüklə (${loadedCount}/${total})
+            </button>
+        `;
+        list.appendChild(btnDiv);
+        return;
     }
+    if (loadedCount <= topCount + bottomCount) {
+        renderList(cat.questions.map((q, i) => {
+            const oi = (q && typeof q.originalIndex === 'number') ? q.originalIndex : i;
+            return { ...q, originalIndex: oi };
+        }));
+        return;
+    }
+    const topChunk = cat.questions.slice(0, topCount).map((q, i) => {
+        const oi = (q && typeof q.originalIndex === 'number') ? q.originalIndex : i;
+        return { ...q, originalIndex: oi };
+    });
+    renderList(topChunk);
+    if (topCount < loadedCount - bottomCount) {
+        const remaining = loadedCount - bottomCount - topCount;
+        const btnDiv = document.createElement('div');
+        btnDiv.className = 'text-center my-4 p-2';
+        btnDiv.innerHTML = `
+            <button onclick="loadMoreAdminQuestions()" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition shadow-sm">
+                <i class="fas fa-chevron-down"></i> Daha çox göstər (${remaining} gizli)
+            </button>
+        `;
+        list.appendChild(btnDiv);
+    }
+    const bottomChunk = cat.questions.slice(loadedCount - bottomCount).map((q, i) => {
+        const oi = (q && typeof q.originalIndex === 'number') ? q.originalIndex : (loadedCount - bottomCount + i);
+        return { ...q, originalIndex: oi };
+    });
+    renderList(bottomChunk);
 }
 
 window.loadMoreAdminQuestions = function() {
+    const cat = categories.find(c => c.id === activeCategoryId);
+    if (cat) {
+        const loaded = Array.isArray(cat.questions) ? cat.questions.length : 0;
+        const declaredTotal = (cat.questionsCount != null) ? parseInt(cat.questionsCount, 10) : loaded;
+        const total = (Number.isFinite(declaredTotal) && declaredTotal > loaded) ? declaredTotal : loaded;
+        const mode = __getQuestionsMode(cat);
+        const isSub = (cat && cat.questionsInline === false) || mode === 'subcollection';
+        if (isSub && loaded < total) {
+            const nextPage = Math.floor(loaded / 100);
+            fetchCategoryQuestionsPaged(activeCategoryId, nextPage, 100).then(function(){
+                adminQuestionViewState.topCount += 20;
+                renderQuestions();
+            }).catch(function(){
+                adminQuestionViewState.topCount += 5;
+                renderQuestions();
+            });
+            return;
+        }
+    }
     adminQuestionViewState.topCount += 5;
     renderQuestions();
 }
@@ -7995,6 +8199,182 @@ window.restoreCategoryQuestions = async function(catId) {
         if (window.OpsLock && window.OpsLock.release) window.OpsLock.release(String(catId));
     }
 }
+
+window.verifyCategoryStorage = async function(catId) {
+    try {
+        if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu əməliyyat üçün admin icazəsi lazımdır!', 'error');
+        if (!db) return showNotification('DB yoxdur.', 'error');
+        const cid = String(catId || '');
+        if (!cid) return showNotification('Kateqoriya ID yoxdur.', 'error');
+        const ref = db.collection('categories').doc(cid);
+        const snap = await ref.get();
+        if (!snap.exists) return showNotification('Kateqoriya tapılmadı.', 'error');
+        const data = snap.data() || {};
+        const inlineCount = Array.isArray(data.questions) ? data.questions.length : 0;
+        const declared = parseInt(data.questionsCount, 10);
+        const mode = String((data.questionsMode || (data.questionsInline === false ? 'subcollection' : 'inline')) || '').toLowerCase();
+        const qsSnap = await db.collection('category_questions').where('categoryId','==', cid).get();
+        const all = qsSnap.docs.map(d => d.data() || {});
+        let active = 0;
+        let deleted = 0;
+        let legacy = 0;
+        for (const q of all) {
+            if (q && q.legacy === true) legacy++;
+            if (q && q.deleted === true) deleted++;
+            if (q && q.deleted !== true && q.legacy !== true) active++;
+        }
+        const issues = [];
+        if (mode === 'subcollection' && inlineCount > 0) issues.push('inline_present');
+        if (mode === 'inline' && active > 0) issues.push('sub_present');
+        if (mode === 'subcollection' && Number.isFinite(declared) && active > 0 && declared !== active) issues.push('count_mismatch');
+        if (mode === 'subcollection' && Number.isFinite(declared) && active === 0 && declared > 0) issues.push('declared_without_active');
+        const msg = `Mode=${mode || '-'} | Inline=${inlineCount} | SubActive=${active} | SubAll=${qsSnap.size} | Deleted=${deleted} | Legacy=${legacy} | questionsCount=${Number.isFinite(declared) ? declared : '-'}${issues.length ? (' | Issues=' + issues.join(',')) : ''}`;
+        showNotification(msg, 'success');
+        return { ok: true, mode, inlineCount, subAll: qsSnap.size, subActive: active, deleted, legacy, declared: Number.isFinite(declared) ? declared : null, issues };
+    } catch (e) {
+        console.error('verifyCategoryStorage error:', e);
+        showNotification('Yoxlama zamanı xəta baş verdi.', 'error');
+        return { ok: false, error: e && e.message ? e.message : String(e) };
+    }
+};
+
+window.repairCategoryStorage = async function(catId) {
+    const cid = String(catId || '');
+    try {
+        if (!currentUser || currentUser.role !== 'admin') return showNotification('Bu əməliyyat üçün admin icazəsi lazımdır!', 'error');
+        if (!db) return showNotification('DB yoxdur.', 'error');
+        if (!cid) return showNotification('Kateqoriya ID yoxdur.', 'error');
+        if (window.OpsLock && window.OpsLock.locks && window.OpsLock.locks.has(cid)) { showNotification('Bu kateqoriya üzərində başqa əməliyyat gedir.', 'warning'); return; }
+        if (window.OpsLock && window.OpsLock.acquire) {
+            const ok = await window.OpsLock.acquire(cid);
+            if (!ok) return;
+        }
+        function __stableHash(s) {
+            let h = 0;
+            s = String(s || '');
+            for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
+            return Math.abs(h).toString(36);
+        }
+        function __docPart(s) {
+            const v = String(s == null ? '' : s);
+            const cleaned = v.replace(/\//g, '_').replace(/[\u0000-\u001F\u007F]/g, '').trim();
+            if (!cleaned) return 'x';
+            if (cleaned.length <= 400) return cleaned;
+            return 'h_' + __stableHash(cleaned);
+        }
+        function __makeDocId(catIdValue, qidValue) {
+            const catPart = __docPart(catIdValue);
+            const qPart = __docPart(qidValue);
+            const docId = catPart + '_' + qPart;
+            if (docId.length <= 900) return docId;
+            return catPart + '_h_' + __stableHash(String(qidValue || ''));
+        }
+        const catRef = db.collection('categories').doc(cid);
+        const catSnap = await catRef.get();
+        if (!catSnap.exists) return showNotification('Kateqoriya tapılmadı.', 'error');
+        const data = catSnap.data() || {};
+        const inlineQs = Array.isArray(data.questions) ? data.questions : [];
+        let source = 'none';
+        let qs = inlineQs;
+        if (qs && qs.length > 0) {
+            source = 'inline';
+        } else {
+            const st = await db.collection('staging_category_questions').where('categoryId','==', cid).get();
+            if (!st.empty) {
+                qs = st.docs.map(d => d.data() || {}).filter(Boolean);
+                if (qs.length > 0) source = 'staging';
+            }
+        }
+        if (!qs || qs.length === 0) {
+            showNotification('Düzəliş üçün mənbə sual tapılmadı.', 'error');
+            return { ok: false, reason: 'no_source' };
+        }
+        const seen = new Set();
+        const expectedActiveDocIds = [];
+        let batch = db.batch();
+        let count = 0;
+        let written = 0;
+        for (let idx = 0; idx < qs.length; idx++) {
+            const q = qs[idx];
+            if (!q) continue;
+            const text = String(q.text || q.question || '');
+            const opts = Array.isArray(q.options) ? q.options : (Array.isArray(q.variants) ? q.variants : []);
+            const base = text + '|' + opts.join('|') + '|' + cid;
+            const sid = __stableHash(base);
+            const qid = String(q.id || ('q_' + sid));
+            if (seen.has(qid)) continue;
+            seen.add(qid);
+            const docId = __makeDocId(cid, qid);
+            const ref = db.collection('category_questions').doc(docId);
+            const page = Math.floor(written / 100);
+            batch.set(ref, { categoryId: cid, page, createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...q, id: qid }, { merge: true });
+            if (q.deleted !== true && q.legacy !== true) expectedActiveDocIds.push(docId);
+            written++;
+            count++;
+            if (count >= 450) {
+                await batch.commit();
+                batch = db.batch();
+                count = 0;
+                await new Promise(r => setTimeout(r, 150));
+            }
+        }
+        if (count > 0) {
+            await batch.commit();
+            await new Promise(r => setTimeout(r, 150));
+        }
+        const expectedActiveCount = expectedActiveDocIds.length;
+        const qsSnap2 = await db.collection('category_questions').where('categoryId','==', cid).get();
+        const byDocId2 = new Map();
+        let writtenActiveCount2 = 0;
+        for (const d of qsSnap2.docs) {
+            const data2 = d.data() || {};
+            byDocId2.set(String(d.id), data2);
+            if (data2.deleted !== true && data2.legacy !== true) writtenActiveCount2++;
+        }
+        let missingActiveCount2 = 0;
+        if (expectedActiveCount > 0) {
+            for (const docId2 of expectedActiveDocIds) {
+                const data3 = byDocId2.get(String(docId2));
+                if (!data3 || data3.deleted === true || data3.legacy === true) missingActiveCount2++;
+            }
+        }
+        const repairRunId = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+        try {
+            await catRef.set({
+                lastRepairRunId: repairRunId,
+                lastRepairAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastRepairSource: source,
+                lastRepairExpectedActiveCount: expectedActiveCount,
+                lastRepairWrittenActiveCount: writtenActiveCount2,
+                lastRepairMissingActiveCount: missingActiveCount2,
+                lastRepairStatus: (missingActiveCount2 > 0 || writtenActiveCount2 < expectedActiveCount) ? 'mismatch' : 'ok'
+            }, { merge: true });
+        } catch (_) {}
+        if (missingActiveCount2 > 0 || writtenActiveCount2 < expectedActiveCount) {
+            showNotification(`Düzəliş təsdiqlənmədi: expected=${expectedActiveCount}, active=${writtenActiveCount2}, missing=${missingActiveCount2} (runId: ${repairRunId})`, 'error');
+            return { ok: false, source, written, expectedActiveCount, writtenActiveCount: writtenActiveCount2, missingActiveCount: missingActiveCount2, runId: repairRunId };
+        }
+        const prev = parseInt(data.questionsCount, 10);
+        const nextCount = Number.isFinite(prev) ? Math.max(prev, writtenActiveCount2, expectedActiveCount) : Math.max(writtenActiveCount2, expectedActiveCount);
+        const catUpdate = { questionsMode: 'subcollection', questionsInline: false, questionsCount: nextCount };
+        if (Array.isArray(inlineQs) && inlineQs.length > 0) catUpdate.questions = [];
+        await catRef.set(catUpdate, { merge: true });
+        categories = categories.map(function(c){
+            if (String(c.id) !== cid) return c;
+            return { ...c, questionsMode: 'subcollection', questionsInline: false, questionsCount: nextCount };
+        });
+        invalidateCategoriesCache();
+        try { await fetchCategoryQuestionsPaged(cid, 0, 100); } catch (_) {}
+        showNotification(`Düzəldildi (${source}).`, 'success');
+        return { ok: true, source, written, questionsCount: nextCount };
+    } catch (e) {
+        console.error('repairCategoryStorage error:', e);
+        showNotification('Düzəliş zamanı xəta baş verdi.', 'error');
+        return { ok: false, error: e && e.message ? e.message : String(e) };
+    } finally {
+        if (window.OpsLock && window.OpsLock.release) window.OpsLock.release(cid);
+    }
+};
 
 window.markLegacyCategoryQuestionDocs = async function(catId, opts) {
     const o = opts || {};
@@ -9032,6 +9412,7 @@ window.saveAdminQuestions = async function() {
 
     const cat = categories.find(c => c.id === activeCategoryId);
     if (!cat) return;
+    let successMessage = null;
 
     if (editingQuestionId) {
         // Mövcud sualı yenilə
@@ -9048,7 +9429,7 @@ window.saveAdminQuestions = async function() {
                 ...newQuestionsData[0],
                 id: cat.questions[qIdx].id
             };
-            showNotification('Sual uğurla yeniləndi!', 'success');
+            successMessage = 'Sual uğurla yeniləndi!';
         } else {
             console.error("Editing question not found:", editingQuestionId);
             showNotification('Xəta: Sual tapılmadı!', 'error');
@@ -9061,11 +9442,21 @@ window.saveAdminQuestions = async function() {
                 ...qData
             });
         });
-        showNotification(`${newQuestionsData.length} yeni sual əlavə edildi!`, 'success');
+        successMessage = `${newQuestionsData.length} yeni sual əlavə edildi!`;
     }
 
     saveCategories();
-    await syncCategory(activeCategoryId, !!window.adminSyncIncludeSubtree);
+    try {
+        const m = String((cat && cat.questionsMode) || '').toLowerCase();
+        const isSub = (cat && cat.questionsInline === false) || m === 'subcollection';
+        const delta = editingQuestionId ? 0 : newQuestionsData.length;
+        await syncCategory(activeCategoryId, { includeSubtree: !!window.adminSyncIncludeSubtree, throwOnError: true, source: 'saveAdminQuestions', deltaQuestionsCount: isSub ? delta : null });
+    } catch (e) {
+        console.error('saveAdminQuestions syncCategory error:', e);
+        showNotification('Yadda saxlanılarkən xəta baş verdi. Şəbəkə/İcazə problem ola bilər.', 'error');
+        return;
+    }
+    if (successMessage) showNotification(successMessage, 'success');
     hideAdminQuestionPage();
     
     // Redaktə vəziyyətini sıfırla
@@ -9285,7 +9676,64 @@ window.deleteQuestion = async function(qId) {
         const questionToDelete = cat.questions.find(q => q.id == qId);
         const questionText = questionToDelete ? questionToDelete.text : null;
 
-        // 1. Aktiv kateqoriyadan sil
+        const isSub = (__getQuestionsMode(cat) === 'subcollection') || cat.questionsInline === false;
+        async function __softDeleteSubQ(catIdValue, qIdValue) {
+            try {
+                if (!db) return;
+                const cid = String(catIdValue || '');
+                const qid = String(qIdValue || '');
+                if (!cid || !qid) return;
+                function __stableHash(s) {
+                    let h = 0;
+                    s = String(s || '');
+                    for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
+                    return Math.abs(h).toString(36);
+                }
+                function __docPart(s) {
+                    const v = String(s == null ? '' : s);
+                    const cleaned = v.replace(/\//g, '_').replace(/[\u0000-\u001F\u007F]/g, '').trim();
+                    if (!cleaned) return 'x';
+                    if (cleaned.length <= 400) return cleaned;
+                    return 'h_' + __stableHash(cleaned);
+                }
+                function __makeDocId(catId2, qid2) {
+                    const catPart = __docPart(catId2);
+                    const qPart = __docPart(qid2);
+                    const docId = catPart + '_' + qPart;
+                    if (docId.length <= 900) return docId;
+                    return catPart + '_h_' + __stableHash(String(qid2 || ''));
+                }
+                const expectedId = __makeDocId(cid, qid);
+                await db.collection('category_questions').doc(expectedId).set({
+                    categoryId: cid,
+                    id: qid,
+                    deleted: true,
+                    deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                try {
+                    const snap = await db.collection('category_questions').where('categoryId','==', cid).where('id','==', qid).get();
+                    if (!snap.empty) {
+                        let batch = db.batch();
+                        let count = 0;
+                        for (const d of snap.docs) {
+                            batch.update(d.ref, { deleted: true, deletedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                            count++;
+                            if (count >= 450) {
+                                await batch.commit();
+                                batch = db.batch();
+                                count = 0;
+                            }
+                        }
+                        if (count > 0) await batch.commit();
+                    }
+                } catch (_) {}
+            } catch (_) {}
+        }
+
+        if (isSub) {
+            await __softDeleteSubQ(activeCategoryId, qId);
+        }
+
         cat.questions = cat.questions.filter(q => q.id != qId);
         
         // 2. Ağıllı Silmə: Əgər bu sual eyni adda başqa dublikat kateqoriyalarda da varsa, ordan da sil
@@ -9295,19 +9743,30 @@ window.deleteQuestion = async function(qId) {
                 if (otherCat.name === cat.name && otherCat.parentId === cat.parentId) {
                     const originalCount = otherCat.questions ? otherCat.questions.length : 0;
                     if (otherCat.questions) {
+                        const removed = otherCat.questions.filter(function(q){ return q && q.text === questionText; });
                         otherCat.questions = otherCat.questions.filter(q => q.text !== questionText);
+                        const otherIsSub = (__getQuestionsMode(otherCat) === 'subcollection') || otherCat.questionsInline === false;
+                        if (otherIsSub && removed.length) {
+                            for (const rq of removed) {
+                                if (rq && rq.id != null) await __softDeleteSubQ(otherCat.id, rq.id);
+                            }
+                        }
                     }
                     
                     // Əgər digər kateqoriyada da dəyişiklik oldusa, onu da bazada yenilə
                     if (otherCat.id !== cat.id && (otherCat.questions ? otherCat.questions.length : 0) !== originalCount) {
-                        await syncCategory(otherCat.id, false);
+                        const otherIsSub = (__getQuestionsMode(otherCat) === 'subcollection') || otherCat.questionsInline === false;
+                        const removedCount = Math.max(0, originalCount - (otherCat.questions ? otherCat.questions.length : 0));
+                        await syncCategory(otherCat.id, { includeSubtree: false, source: 'deleteQuestion', deltaQuestionsCount: otherIsSub ? -removedCount : null, skipQuestionsWrite: !!otherIsSub });
                     }
                 }
             }
         }
 
         saveCategories(); 
-        syncCategory(activeCategoryId, false);
+        const mode = __getQuestionsMode(cat);
+        const isSub = (cat && cat.questionsInline === false) || mode === 'subcollection';
+        syncCategory(activeCategoryId, { includeSubtree: false, source: 'deleteQuestion', deltaQuestionsCount: isSub ? -1 : null, skipQuestionsWrite: !!isSub });
         openCategory(activeCategoryId);
     }
 }

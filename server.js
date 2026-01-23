@@ -221,6 +221,11 @@ app.post('/api/admin/update-question', async (req, res) => {
         }
 
         const data = docSnap.data();
+        const mode = String((data && data.questionsMode) || '').toLowerCase();
+        const isSubcollection = mode === 'subcollection' || (data && data.questionsInline === false);
+        if (isSubcollection) {
+            return res.status(400).json({ success: false, message: 'Bu kateqoriya subcollection rejimindədir; inline sual yeniləmə endpoint-i bloklandı.' });
+        }
         const questions = data.questions || [];
 
         if (index < 0 || index >= questions.length) {
@@ -273,6 +278,11 @@ app.post('/api/admin/delete-question', async (req, res) => {
         }
 
         const data = docSnap.data();
+        const mode = String((data && data.questionsMode) || '').toLowerCase();
+        const isSubcollection = mode === 'subcollection' || (data && data.questionsInline === false);
+        if (isSubcollection) {
+            return res.status(400).json({ success: false, message: 'Bu kateqoriya subcollection rejimindədir; inline sual silmə endpoint-i bloklandı.' });
+        }
         const questions = data.questions || [];
 
         if (index < 0 || index >= questions.length) {

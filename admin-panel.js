@@ -262,6 +262,17 @@
       var div = document.createElement('div');
       div.className = 'category-card animate-up';
       div.style.animationDelay = (index * 0.08) + 's';
+      var qCount = 0;
+      try {
+        var inlineFlag = (cat && cat.questionsInline === false) ? false : true;
+        var mode = String((cat && cat.questionsMode) || '').toLowerCase();
+        if (!inlineFlag || mode === 'subcollection') {
+          qCount = (typeof cat.questionsCount === 'number' ? cat.questionsCount : parseInt(cat.questionsCount, 10));
+          if (!Number.isFinite(qCount)) qCount = 0;
+        } else {
+          qCount = (cat.questions ? cat.questions.length : 0);
+        }
+      } catch(_) { qCount = (cat.questions ? cat.questions.length : 0); }
       var icon = 'fa-book';
       var nameLower = (cat.name || '').toLowerCase();
       if (nameLower.indexOf('ingilis') > -1) icon = 'fa-language';
@@ -282,11 +293,11 @@
         +   '</div>' : '')
         + '</div>'
         + '<h3>' + escapeHtml(cat.name || '') + '</h3>'
-        + (hasSub ? '' : '<p>' + (cat.questions ? cat.questions.length : 0) + ' sual</p>')
+        + (hasSub ? '' : '<p>' + qCount + ' sual</p>')
         + (hasSub ? '<p class="text-xs text-primary"><i class="fas fa-folder"></i> Alt bölmələr var</p>' : '')
         + '<div class="category-actions">'
         +   '<button class="btn-secondary" onclick="enterAdminCategory(\'' + cat.id + '\')">Bölməyə Bax</button>'
-        +   '<button class="btn-primary" onclick="openCategoryQuestions(\'' + cat.id + '\')">Suallar (' + (cat.questions ? cat.questions.length : 0) + ')</button>'
+        +   '<button class="btn-primary" onclick="openCategoryQuestions(\'' + cat.id + '\')">Suallar (' + qCount + ')</button>'
         +   (cat.id === 'public_general' ? '<button class="btn-outline" onclick="openGlobalPublicQuestions()"><i class="fas fa-users"></i> Ümumi Suallar</button>' : '')
         + '</div>';
       grid.appendChild(div);
