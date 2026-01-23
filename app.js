@@ -9764,8 +9764,6 @@ window.deleteQuestion = async function(qId) {
         }
 
         saveCategories(); 
-        const mode = __getQuestionsMode(cat);
-        const isSub = (cat && cat.questionsInline === false) || mode === 'subcollection';
         syncCategory(activeCategoryId, { includeSubtree: false, source: 'deleteQuestion', deltaQuestionsCount: isSub ? -1 : null, skipQuestionsWrite: !!isSub });
         openCategory(activeCategoryId);
     }
