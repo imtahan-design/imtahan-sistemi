@@ -4895,8 +4895,8 @@ function preventProtectionKeys(e) {
 }
 
 function removeProtection() {
-    if (window.securityInterval) clearInterval(window.securityInterval);
-    removePrivacyBlur();
+    try { if (window.securityInterval) clearInterval(window.securityInterval); } catch (_) {}
+    try { removePrivacyBlur(); } catch (_) {}
 }
 
 function handleTouchStart(e) {
@@ -4918,7 +4918,9 @@ function applyPrivacyBlur() {
 }
 
 function removePrivacyBlur() {
-    document.getElementById('app').classList.remove('privacy-blur');
+    const appEl = document.getElementById('app');
+    if (!appEl) return;
+    appEl.classList.remove('privacy-blur');
 }
 
 function createWatermark() {
@@ -5348,8 +5350,30 @@ async function renderHistory() {
             const snapshot = await db.collection('attempts')
                 .where('userId', '==', currentUser.id)
                 .get();
-            history = snapshot.docs.map(doc => doc.data())
-                .sort((a, b) => b.timestamp - a.timestamp)
+            history = snapshot.docs.map(doc => ({ __id: doc.id, ...(doc.data() || {}) }))
+                .map((a) => {
+                    const out = a || {};
+                    let ts = out.timestamp;
+                    if (typeof ts !== 'number') ts = out.finishedAt;
+                    if (typeof ts !== 'number') {
+                        const ca = out.createdAt;
+                        if (ca && typeof ca.toDate === 'function') ts = ca.toDate().getTime();
+                        else if (ca && typeof ca.seconds === 'number') ts = ca.seconds * 1000;
+                    }
+                    if (typeof ts !== 'number') ts = 0;
+                    out.__sortTs = ts;
+                    if (!out.__id && out.id) out.__id = out.id;
+
+                    if (typeof out.total !== 'number') {
+                        if (Array.isArray(out.questionIds)) out.total = out.questionIds.length;
+                        else if (Array.isArray(out.answers)) out.total = out.answers.length;
+                        else out.total = 0;
+                    }
+                    if (typeof out.unanswered !== 'number') out.unanswered = (typeof out.blankCount === 'number') ? out.blankCount : 0;
+                    if (typeof out.wrong !== 'number') out.wrong = (typeof out.wrongCount === 'number') ? out.wrongCount : null;
+                    return out;
+                })
+                .sort((a, b) => (b.__sortTs || 0) - (a.__sortTs || 0))
                 .slice(0, 20);
         } catch (e) {
             console.error("Firebase history error:", e);
@@ -5368,7 +5392,7 @@ async function renderHistory() {
 
     let totalAccuracy = 0;
     history.forEach(attempt => {
-        const date = new Date(attempt.timestamp).toLocaleDateString('az-AZ', {
+        const date = new Date(attempt.__sortTs || attempt.timestamp || attempt.finishedAt || Date.now()).toLocaleDateString('az-AZ', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
@@ -5376,20 +5400,27 @@ async function renderHistory() {
             minute: '2-digit'
         });
         
-        const accuracy = Math.round((attempt.score / attempt.total) * 100);
+        const total = (typeof attempt.total === 'number') ? attempt.total : 0;
+        const score = (typeof attempt.score === 'number') ? attempt.score : Number(attempt.score || 0);
+        const accuracy = total > 0 ? Math.round((score / total) * 100) : 0;
         totalAccuracy += accuracy;
         
         const badgeClass = accuracy >= 80 ? 'accuracy-high' : (accuracy >= 50 ? 'accuracy-mid' : 'accuracy-low');
         
         const tr = document.createElement('tr');
-        const unanswered = attempt.unanswered !== undefined ? attempt.unanswered : 0;
-        const wrong = attempt.wrong !== undefined ? attempt.wrong : (attempt.total - attempt.score - unanswered);
+        const unanswered = (typeof attempt.unanswered === 'number') ? attempt.unanswered : 0;
+        const wrong = (typeof attempt.wrong === 'number') ? attempt.wrong : (total - score - unanswered);
+        let categoryName = attempt.categoryName || attempt.examName || attempt.examId || attempt.rootId || '';
+        if (!categoryName) {
+            const shortId = attempt.__id ? String(attempt.__id).slice(0, 8) : '';
+            categoryName = shortId ? ('Attempt #' + shortId) : 'Attempt';
+        }
         
         tr.innerHTML = `
-            <td>${escapeHtml(attempt.categoryName || '')}</td>
+            <td>${escapeHtml(categoryName)}</td>
             <td>${date}</td>
             <td><span class="accuracy-badge ${badgeClass}">${accuracy}%</span></td>
-            <td>${attempt.score} / ${wrong} / ${unanswered}</td>
+            <td>${score} / ${wrong} / ${unanswered}</td>
         `;
         tableBody.appendChild(tr);
     });
@@ -9773,6 +9804,81 @@ function saveAttemptLocal(attempt) {
     history.unshift(attempt); // Add to beginning
     localStorage.setItem(`history_${currentUser.id}`, JSON.stringify(history.slice(0, 50))); // Keep last 50
 }
+
+window.writeAttemptAudit = async function(input) {
+    try {
+        if (!db) throw new Error('db is not available');
+        if (!firebase || !firebase.firestore || !firebase.firestore.FieldValue) throw new Error('firebase firestore is not available');
+        if (!currentUser || !currentUser.id) throw new Error('currentUser is not available');
+        input = input || {};
+        const fv = firebase.firestore.FieldValue;
+        const batch = db.batch();
+        const attemptRef = (input.attemptId ? db.collection('attempts').doc(String(input.attemptId)) : db.collection('attempts').doc());
+        const attemptId = String(attemptRef.id);
+        let attemptExists = false;
+        if (input.attemptId) {
+            try {
+                const snap = await attemptRef.get();
+                attemptExists = !!(snap && snap.exists);
+            } catch (_) {}
+        }
+        const questionIds = Array.isArray(input.questionIds) ? input.questionIds.map((x) => String(x)) : [];
+        const total = (typeof input.total === 'number') ? input.total : questionIds.length;
+        const ts = (typeof input.timestamp === 'number') ? input.timestamp : ((typeof input.finishedAt === 'number') ? input.finishedAt : Date.now());
+        const examName = input.examName ? String(input.examName) : null;
+        const attemptData = {
+            userId: String(currentUser.id),
+            examType: input.examType ? String(input.examType) : null,
+            rootId: input.rootId ? String(input.rootId) : null,
+            examId: input.examId ? String(input.examId) : null,
+            examName: examName,
+            categoryName: input.categoryName ? String(input.categoryName) : examName,
+            weeklyExamType: input.weeklyExamType ? String(input.weeklyExamType) : null,
+            weeklyKey: input.weeklyKey ? String(input.weeklyKey) : null,
+            questionIds: questionIds,
+            answers: Array.isArray(input.answers) ? input.answers : (input.answers || null),
+            score: typeof input.score === 'number' ? input.score : Number(input.score || 0),
+            correctCount: typeof input.correctCount === 'number' ? input.correctCount : Number(input.correctCount || 0),
+            wrongCount: typeof input.wrongCount === 'number' ? input.wrongCount : Number(input.wrongCount || 0),
+            blankCount: typeof input.blankCount === 'number' ? input.blankCount : Number(input.blankCount || 0),
+            total: total,
+            wrong: typeof input.wrongCount === 'number' ? input.wrongCount : Number(input.wrongCount || 0),
+            unanswered: typeof input.blankCount === 'number' ? input.blankCount : Number(input.blankCount || 0),
+            timestamp: ts,
+            startedAt: input.startedAt || null,
+            finishedAt: input.finishedAt || null,
+            createdAt: fv.serverTimestamp(),
+            status: 'finished'
+        };
+        const pathsUpdated = [];
+        let wroteAttemptDoc = false;
+        if (!attemptExists) {
+            batch.set(attemptRef, attemptData, { merge: false });
+            pathsUpdated.push('attempts/' + attemptId);
+            wroteAttemptDoc = true;
+        }
+        let weeklyIndexUpdated = false;
+        const weeklyIndexSkippedBecauseAdminOnly = !!(input.weeklyExamType && input.weeklyKey && !(currentUser && currentUser.role === 'admin'));
+        if (currentUser && currentUser.role === 'admin' && input.weeklyExamType && input.weeklyKey && typeof fv.arrayUnion === 'function') {
+            const weekKey = String(input.weeklyKey);
+            const weeklyRef = db.collection('weekly_exams').doc('history_' + String(input.weeklyExamType));
+            batch.set(weeklyRef, { ['attempts.' + weekKey]: fv.arrayUnion(attemptId), lastUpdated: fv.serverTimestamp() }, { merge: true });
+            pathsUpdated.push('weekly_exams/history_' + String(input.weeklyExamType) + ' attempts.' + weekKey);
+            weeklyIndexUpdated = true;
+        }
+        let updatedExamHistory = false;
+        if (typeof fv.arrayUnion === 'function') {
+            const userRef = db.collection('exam_history').doc(String(currentUser.id));
+            batch.set(userRef, { userId: String(currentUser.id), attemptIds: fv.arrayUnion(attemptId), updatedAt: fv.serverTimestamp() }, { merge: true });
+            pathsUpdated.push('exam_history/' + String(currentUser.id) + ' attemptIds');
+            updatedExamHistory = true;
+        }
+        await batch.commit();
+        return { ok: true, attemptId: attemptId, deduped: !!attemptExists, wroteAttemptDoc: wroteAttemptDoc, updatedExamHistory: updatedExamHistory, weeklyIndexUpdated: weeklyIndexUpdated, weeklyIndexSkippedBecauseAdminOnly: weeklyIndexSkippedBecauseAdminOnly, pathsUpdated: pathsUpdated };
+    } catch (e) {
+        return { ok: false, error: (e && e.message) ? e.message : String(e), errorStack: (e && e.stack) ? String(e.stack) : null };
+    }
+};
 
 // --- Utils ---
 window.closeModal = function(id) {

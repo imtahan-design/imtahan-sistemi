@@ -650,7 +650,7 @@
             </div>
 
             <div class="dim-sidebar-footer">
-                <button class="btn-dim btn-finish" onclick="finishExam()"><i class="fas fa-check-circle"></i> İmtahanı Bitir</button>
+                <button id="btn-finish-exam" class="btn-dim btn-finish" onclick="finishExam()"><i class="fas fa-check-circle"></i> İmtahanı Bitir</button>
             </div>
         </div>
 
@@ -752,6 +752,40 @@
                 return null;
             }
         }
+        function __auditDebugEnabled() {
+            try { if (typeof window !== 'undefined' && window.__DEBUG_AUDIT_SAVE) return true; } catch (_) {}
+            try {
+                const sp = new URLSearchParams(window.location.search || '');
+                if (String(sp.get('debugAudit') || '') === '1') return true;
+            } catch (_) {}
+            try { return String(__safeGet('audit_debug') || '').trim() === '1'; } catch (_) { return false; }
+        }
+        function __showAuditSaveError(err, meta) {
+            try { window.__lastAuditSaveError = { err: err, meta: meta, at: Date.now() }; } catch (_) {}
+            try {
+                const msg = (meta && meta.message) ? String(meta.message) : 'Audit save failed';
+                const stack = (err && err.stack) ? String(err.stack) : String(err && err.errorStack ? err.errorStack : (err && err.error ? err.error : err));
+                if (typeof showNotification === 'function') showNotification(msg, 'error');
+                const box = document.createElement('div');
+                box.style.marginTop = '12px';
+                box.style.padding = '12px';
+                box.style.border = '1px solid #ef4444';
+                box.style.background = '#fee2e2';
+                box.style.color = '#7f1d1d';
+                box.style.borderRadius = '8px';
+                box.style.textAlign = 'left';
+                box.innerHTML = `<div style="font-weight:800;margin-bottom:6px;">Yadda saxlama xətası</div><pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;font-size:12px;line-height:1.3;">${escapeHtml(stack || msg)}</pre>`;
+                const host = document.querySelector('.result-summary-footer') || document.querySelector('.result-table-container') || document.body;
+                host.appendChild(box);
+                try {
+                    if (typeof window !== 'undefined') window.__finishInProgress = false;
+                    const btn = document.getElementById('btn-finish-exam');
+                    if (btn) btn.disabled = false;
+                } catch (_) {}
+            } catch (e) {
+                try { alert('Yadda saxlama xətası: ' + ((e && e.message) ? e.message : String(e))); } catch (_) {}
+            }
+        }
 
         let dimQuiz = {
             questions: [],
@@ -765,9 +799,11 @@
 
         async function initDimExam() {
             let weeklyExamType = null;
+            let sessionId = null;
             try {
                 const sp = new URLSearchParams(window.location.search || '');
                 weeklyExamType = sp.get('weeklyExamType');
+                sessionId = sp.get('sessionId');
             } catch(_) { weeklyExamType = null; }
 
             let catId = null;
@@ -894,6 +930,29 @@
             dimQuiz.answers = new Array(dimQuiz.questions.length).fill(null);
             dimQuiz.flags = new Array(dimQuiz.questions.length).fill(false);
             dimQuiz.duration = (cat.time || 90) * 60; // minutes to seconds
+            dimQuiz.startTime = Date.now();
+            try {
+                let sid = sessionId ? String(sessionId) : '';
+                if (!sid) {
+                    try {
+                        if (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function') sid = crypto.randomUUID();
+                    } catch (_) {}
+                }
+                if (!sid) sid = String(Date.now()) + '_' + Math.random().toString(16).slice(2);
+                dimQuiz.sessionId = sid;
+                try {
+                    const u = __safeJson('currentUser') || (typeof currentUser !== 'undefined' ? currentUser : null);
+                    const uid = u && (u.id || u.uid) ? String(u.id || u.uid) : '';
+                    dimQuiz.userId = uid || null;
+                } catch (_) {}
+                try {
+                    const url = new URL(window.location.href);
+                    if (!url.searchParams.get('sessionId')) {
+                        url.searchParams.set('sessionId', sid);
+                        window.history.replaceState(window.history.state || {}, '', url.toString());
+                    }
+                } catch (_) {}
+            } catch (_) {}
 
             renderPalette();
             loadDimQuestion(0);
@@ -952,6 +1011,12 @@
                 if (dimQuiz && dimQuiz.__finished) return;
                 if (!force && !confirm('İmtahanı bitirmək istədiyinizə əminsiniz?')) return;
                 if (dimQuiz) dimQuiz.__finished = true;
+            } catch (_) {}
+            try {
+                if (typeof window !== 'undefined' && window.__finishInProgress) return;
+                if (typeof window !== 'undefined') window.__finishInProgress = true;
+                const btn = document.getElementById('btn-finish-exam');
+                if (btn) btn.disabled = true;
             } catch (_) {}
 
             try { clearInterval(dimQuiz.timerInterval); } catch (_) {}
@@ -1123,25 +1188,70 @@
                         type: examType
                     }).catch(console.error);
 
-                    if (catId && (catId.includes('prokurorluq') || catId.includes('weekly') || catId.includes('generated'))) {
-                        try {
-                            if (questions.length > 0) {
-                                const qIds = questions.map(q => String(q.id));
-                                db.collection('exam_history').add({
-                                    userId: currentUser.id,
-                                    examType: examType || 'prokurorluq',
-                                    questionIds: qIds,
-                                    date: firebase.firestore.FieldValue.serverTimestamp()
-                                }).then(() => console.log("Exam history saved."))
-                                 .catch(err => console.error("Error saving exam history:", err));
-                            }
-                        } catch (e) {
-                            console.error("Error processing exam history:", e);
+                    try {
+                        const metaExam = (dimQuiz && dimQuiz.meta && dimQuiz.meta.exam) ? dimQuiz.meta.exam : {};
+                        const weeklyExamType = (dimQuiz && dimQuiz.meta && dimQuiz.meta.weeklyExamType) ? String(dimQuiz.meta.weeklyExamType) : null;
+                        const isSpecial = !!(metaExam && (metaExam.examType === 'special' || metaExam.exam_type === 'special' || metaExam.isSpecial)) || String(catId || '').startsWith('special_');
+                        const auditExamType = weeklyExamType ? 'weekly' : (isSpecial ? 'special' : 'public');
+                        const rootId = (metaExam && metaExam.rootId) ? String(metaExam.rootId) : (metaExam && metaExam.id) ? String(metaExam.id) : String(catId || '');
+                        const examId = weeklyExamType ? ('active_' + weeklyExamType) : String(catId || '');
+                        const finishedAt = Date.now();
+                        const qIds = questions.map(q => String(q && q.id)).filter(Boolean);
+                        if (typeof window !== 'undefined' && typeof window.writeAttemptAudit === 'function') {
+                            const userId = (typeof currentUser !== 'undefined' && currentUser && (currentUser.id || currentUser.uid)) ? String(currentUser.id || currentUser.uid) : (dimQuiz && dimQuiz.userId ? String(dimQuiz.userId) : '');
+                            const sid = (dimQuiz && dimQuiz.sessionId) ? String(dimQuiz.sessionId) : '';
+                            const wk = weekId ? String(weekId) : 'na';
+                            const attemptId = (userId ? (userId + '_') : '') + String(auditExamType || 'na') + '_' + wk + '_' + (sid || 'na');
+                            try { dimQuiz.attemptId = attemptId; } catch (_) {}
+                            window.writeAttemptAudit({
+                                attemptId: attemptId,
+                                examType: auditExamType,
+                                rootId: rootId,
+                                examId: examId,
+                                examName: examName,
+                                weeklyExamType: weeklyExamType,
+                                weeklyKey: weekId,
+                                questionIds: qIds,
+                                answers: answers,
+                                score: correct,
+                                correctCount: correct,
+                                wrongCount: wrong,
+                                blankCount: unanswered,
+                                startedAt: (dimQuiz && dimQuiz.startTime) ? dimQuiz.startTime : null,
+                                finishedAt: finishedAt
+                            }).then((res) => {
+                                if (res && res.ok) {
+                                    if (__auditDebugEnabled()) {
+                                        console.info('[audit]', {
+                                            attemptId: res.attemptId,
+                                            wroteAttemptDoc: !!res.wroteAttemptDoc,
+                                            updatedExamHistory: !!res.updatedExamHistory,
+                                            weeklyIndexSkippedBecauseAdminOnly: !!res.weeklyIndexSkippedBecauseAdminOnly,
+                                            weeklyIndexUpdated: !!res.weeklyIndexUpdated,
+                                            userId: userId || null,
+                                            examType: auditExamType || null,
+                                            weeklyKey: weekId || null,
+                                            deduped: !!(res.deduped || res.alreadyExists)
+                                        });
+                                    }
+                                    console.log("Exam history saved (audit-ready). attemptId=" + res.attemptId);
+                                } else {
+                                    console.error('Audit attempt save failed:', res);
+                                    __showAuditSaveError(res, { message: 'save failed', weekKey: weekId, weeklyExamType: weeklyExamType });
+                                }
+                            }).catch((err) => {
+                                console.error('Audit attempt save error:', err);
+                                __showAuditSaveError(err, { message: 'save failed', weekKey: weekId, weeklyExamType: weeklyExamType });
+                            });
                         }
+                    } catch (e) {
+                        console.error('Audit save setup error:', e);
+                        __showAuditSaveError(e, { message: 'save failed (setup)' });
                     }
                 }
             } catch (e) {
                 console.error('finishExam save error:', e);
+                __showAuditSaveError(e, { message: 'save failed (finishExam)' });
             }
         }
         function loadDimQuestion(index) {
