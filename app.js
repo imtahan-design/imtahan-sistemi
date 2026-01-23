@@ -2139,6 +2139,9 @@ function updateUI() {
     
     // Check if we are in a private quiz link
     const isPrivateQuiz = new URLSearchParams(window.location.search).has('quiz');
+    const pathname = String((window.location && window.location.pathname) || '');
+    const search = String((window.location && window.location.search) || '');
+    const isExamView = pathname.includes('dim_view.html') || search.includes('sessionId=');
     
     if (currentUser) {
         document.body.classList.remove('role-student', 'role-teacher', 'role-admin', 'role-moderator');
@@ -2212,8 +2215,8 @@ function updateUI() {
                                 (!quizSection || quizSection.classList.contains('hidden'));
 
             if (isAuthPage || noSectionOpen) {
-                if (typeof window.showDashboard === 'function') {
-                    window.showDashboard();
+                if (!isExamView && typeof window.showDashboard === 'function') {
+                    try { window.showDashboard(); } catch (err) { console.warn('showDashboard skipped', err); }
                 }
             }
         }
@@ -2241,8 +2244,8 @@ function updateUI() {
         const page = urlParams.get('page');
         
         if (!isPrivateQuiz && !hasAuthMode && !hasCatParam && page !== 'login' && page !== 'register') {
-            if (typeof window.showDashboard === 'function') {
-                window.showDashboard();
+            if (!isExamView && typeof window.showDashboard === 'function') {
+                try { window.showDashboard(); } catch (err) { console.warn('showDashboard skipped', err); }
             }
         }
     }
@@ -10445,44 +10448,50 @@ window.copyPublicQuizLink = function() {
 };
 
 window.showDashboard = function(doPush = true) {
-    removeProtection();
-    // If a quiz is in progress, stop the timer
-    if (currentQuiz && currentQuiz.timer) {
-        clearInterval(currentQuiz.timer);
-    }
-    currentQuiz = null;
-
-    if (activePrivateQuiz || window.location.search.includes('quiz=')) {
-        activePrivateQuiz = null;
-        pendingQuizId = null;
-        studentName = '';
-        try { removePrivacyBlur(); } catch (_) {}
-        try {
-            const url = new URL(window.location.href);
-            url.search = '';
-            url.hash = '';
-            window.history.replaceState({ page: 'home' }, '', url.toString());
-        } catch (_) {
-            try { window.history.replaceState({ page: 'home' }, '', window.location.pathname); } catch (_) {}
+    try {
+        try { removeProtection(); } catch (err) { console.warn('showDashboard skipped', err); }
+        if (currentQuiz && currentQuiz.timer) {
+            clearInterval(currentQuiz.timer);
         }
-        doPush = false;
-    }
-    
-    if (doPush) {
-        // URL-dəki bütün parametrləri sil və ana səhifəyə (root) qaytar
-        window.history.pushState({ page: 'home' }, '', window.location.pathname);
-    }
+        currentQuiz = null;
 
-    activePrivateQuiz = null;
-    studentName = '';
-    
-    hideAllSections();
-    const chatSec = document.getElementById('admin-chat-section');
-    if (chatSec) chatSec.classList.add('hidden'); // Explicitly hide to be safe
+        if (activePrivateQuiz || window.location.search.includes('quiz=')) {
+            activePrivateQuiz = null;
+            pendingQuizId = null;
+            studentName = '';
+            try { removePrivacyBlur(); } catch (err) { console.warn('showDashboard skipped', err); }
+            try {
+                const url = new URL(window.location.href);
+                url.search = '';
+                url.hash = '';
+                window.history.replaceState({ page: 'home' }, '', url.toString());
+            } catch (err) {
+                console.warn('showDashboard skipped', err);
+                try { window.history.replaceState({ page: 'home' }, '', window.location.pathname); } catch (err2) { console.warn('showDashboard skipped', err2); }
+            }
+            doPush = false;
+        }
+        
+        if (doPush) {
+            window.history.pushState({ page: 'home' }, '', window.location.pathname);
+        }
 
-    document.getElementById('dashboard-section').classList.remove('hidden');
-    currentParentId = null;
-    renderCategories();
+        activePrivateQuiz = null;
+        studentName = '';
+        
+        try { hideAllSections(); } catch (err) { console.warn('showDashboard skipped', err); }
+        const chatSec = document.getElementById('admin-chat-section');
+        if (chatSec) chatSec.classList.add('hidden');
+
+        const dash = document.getElementById('dashboard-section');
+        if (dash) dash.classList.remove('hidden');
+        currentParentId = null;
+        if (dash && typeof renderCategories === 'function') {
+            try { renderCategories(); } catch (err) { console.warn('showDashboard skipped', err); }
+        }
+    } catch (e) {
+        console.warn('showDashboard skipped', e);
+    }
 }
 
 async function saveStudentAttempt(attempt) {
