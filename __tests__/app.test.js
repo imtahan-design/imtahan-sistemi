@@ -688,6 +688,37 @@ test('weekly quota mapping ambiguous label requires selection before writing', a
   expect(calls[0]).toEqual({ rootId: 'special_prokurorluq', entries: { 'Cinayət Məcəlləsi': 'leaf2' } });
 });
 
+test('weekly quota mapping invalid catId is auto-corrected by root-scoped name match', async () => {
+  const weeklyJs = fs.readFileSync(path.join(__dirname, '..', 'weekly-exam.js'), 'utf8');
+  const cats = [
+    { id: 'special_prokurorluq', examType: 'special', parentId: null, questionsMode: 'none', name: 'ProkRoot' },
+    { id: 'police_new', examType: 'special', parentId: 'special_prokurorluq', questionsMode: 'all', name: 'Polis haqqında qanun' }
+  ];
+  const ctx = loadWeeklyLeafHelper(weeklyJs, cats);
+
+  const calls = [];
+  const writeEntries = async (rootId, entries) => {
+    calls.push({ rootId, entries });
+    return true;
+  };
+
+  const res = await ctx.__weeklyPrepareQuotaMapping({
+    rootId: 'special_prokurorluq',
+    schema: [{ name: 'Polis haqqında qanun', count: 1 }],
+    nameToCatId: { 'Polis haqqında qanun': 'police_old_deleted' },
+    writeEntries
+  });
+
+  expect(res && res.status).toBe('ok');
+  expect(Array.isArray(res.invalidExisting)).toBe(true);
+  expect(res.invalidExisting.length).toBe(1);
+  expect(res.invalidExisting[0]).toEqual(expect.objectContaining({ label: 'Polis haqqında qanun', catId: 'police_old_deleted' }));
+  expect(res.wrote).toBe(true);
+  expect(calls.length).toBe(1);
+  expect(calls[0]).toEqual({ rootId: 'special_prokurorluq', entries: { 'Polis haqqında qanun': 'police_new' } });
+  expect(res.nameToCatId).toEqual({ 'Polis haqqında qanun': 'police_new' });
+});
+
 test('transaction writes for audit attempts', async () => {
   const appJs = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
 

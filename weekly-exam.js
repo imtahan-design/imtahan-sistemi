@@ -281,6 +281,13 @@
     var leaves = __leafCategoriesUnder(rootId);
     var direct = leaves.filter(function(c){ return c && String(c.parentId || '') === rootId; });
     var pool = direct.length ? direct : leaves;
+    var poolById = new Map();
+    for (var pi = 0; pi < pool.length; pi++) {
+      var pc = pool[pi] || {};
+      if (!pc || pc.id == null) continue;
+      var pid = String(pc.id);
+      if (pid && !poolById.has(pid)) poolById.set(pid, pc);
+    }
 
     var normToCats = new Map();
     for (var i = 0; i < pool.length; i++) {
@@ -293,8 +300,40 @@
     }
 
     var existingNormKeys = new Set();
+    var invalidExisting = [];
+    var nameToCatIdValid = null;
     if (nameToCatId && typeof nameToCatId === 'object') {
+      nameToCatIdValid = {};
       Object.keys(nameToCatId).forEach(function(k){
+        var rawId = nameToCatId[k];
+        var cid = rawId != null ? String(rawId) : '';
+        var ok = false;
+        var reason = '';
+        if (!cid) {
+          reason = 'empty_id';
+        } else if (!poolById.has(cid)) {
+          reason = 'not_in_root_leaf_pool';
+        } else {
+          var cc = poolById.get(cid) || {};
+          var expectSpecial = String(rootId || '').indexOf('special_') === 0;
+          var et = (cc.examType == null || cc.examType === '') ? 'special' : String(cc.examType);
+          if (expectSpecial && et !== 'special') {
+            reason = 'examType_mismatch';
+          } else if (direct.length && String(cc.parentId || '') !== rootId) {
+            reason = 'parent_mismatch';
+          } else {
+            ok = true;
+          }
+        }
+        if (ok) {
+          nameToCatIdValid[k] = cid;
+        } else {
+          invalidExisting.push({ label: String(k || ''), catId: cid, reason: reason || 'invalid' });
+        }
+      });
+      nameToCatId = nameToCatIdValid;
+      if (!Object.keys(nameToCatIdValid).length) nameToCatId = null;
+      Object.keys(nameToCatIdValid).forEach(function(k){
         var nk = __normalizeCatName(k);
         if (nk) existingNormKeys.add(nk);
       });
@@ -368,6 +407,7 @@
       status: 'ok',
       rootId: rootId,
       nameToCatId: mergedMap,
+      invalidExisting: invalidExisting,
       missing: missing,
       ambiguous: ambiguous,
       autoEntries: autoEntries,
@@ -1024,6 +1064,7 @@
           var pickedByCat = new Map();
           var fallbackByCat = new Map();
           var shortage = [];
+          var quotaDebugRows0 = [];
           var qCache0 = new Map();
           for (var i0 = 0; i0 < schema0.length; i0++) {
             var it0 = schema0[i0] || {};
@@ -1032,24 +1073,55 @@
             if (!catId0 || need0 <= 0) continue;
             var all0 = qCache0.has(catId0) ? (qCache0.get(catId0) || []) : await __weeklyFetchSubcollectionQuestions(catId0);
             qCache0.set(catId0, all0);
-            var pool0 = (Array.isArray(all0) ? all0 : []).filter(function(q){
+            var active0 = (Array.isArray(all0) ? all0 : []).filter(function(q){
               if (!q || q.deleted === true || q.legacy === true) return false;
               var qid = q.id != null ? String(q.id) : '';
+              if (!qid) return false;
+              return true;
+            });
+            var excludedByCooldownCount0 = active0.reduce(function(acc, q){
+              var qid = q && q.id != null ? String(q.id) : '';
+              if (!qid) return acc;
+              return acc + (excludeIds0.has(qid) ? 1 : 0);
+            }, 0);
+            var pool0 = active0.filter(function(q){
+              var qid = q && q.id != null ? String(q.id) : '';
               if (!qid) return false;
               if (selectedIds0.has(qid)) return false;
               return true;
             });
             pool0.sort(__prokSortQuestions);
             var allowed0 = pool0.filter(function(q){ return !excludeIds0.has(String(q.id)); });
+            var availableCount0 = allowed0.length;
+            var shortageCount0 = Math.max(0, need0 - availableCount0);
             var picked0 = allowed0.slice(0, need0);
             picked0.forEach(function(q){ selectedIds0.add(String(q.id)); });
             pickedByCat.set(catId0, picked0);
-            if (picked0.length < need0) {
-              shortage.push({ catId: catId0, name: String(it0.name || ''), missing: (need0 - picked0.length) });
+            quotaDebugRows0.push({
+              label: String(it0.name || ''),
+              resolvedCatId: catId0,
+              activeQuestionCount: active0.length,
+              excludedByCooldownCount: excludedByCooldownCount0,
+              availableCount: availableCount0,
+              quota: need0,
+              shortage: shortageCount0
+            });
+            if (shortageCount0 > 0) {
+              shortage.push({ catId: catId0, name: String(it0.name || ''), missing: shortageCount0 });
               var rest0 = pool0.filter(function(q){ return picked0.indexOf(q) < 0; });
               fallbackByCat.set(catId0, rest0);
             }
           }
+
+          try {
+            if (currentUser && currentUser.role === 'admin') {
+              console.groupCollapsed('[weekly-quota] prokurorluq summary');
+              if (prep0 && Array.isArray(prep0.invalidExisting) && prep0.invalidExisting.length) console.log('[weekly-quota] invalidExisting', prep0.invalidExisting);
+              if (prep0 && prep0.wrote) console.log('[weekly-quota] mapping updated', { autoEntries: prep0.autoEntries, chosenEntries: prep0.chosenEntries });
+              console.table(quotaDebugRows0);
+              console.groupEnd();
+            }
+          } catch (_) {}
 
           if (shortage.length) {
             var msg0 = shortage.map(function(s){ return String(s.name || s.catId) + ' (+' + String(s.missing) + ')'; }).join('\n');
@@ -1116,6 +1188,7 @@
             type: type,
             exam_type: 'special',
             questions: examQuestions0,
+            quotaDebugRows: quotaDebugRows0,
             quotaMissingCats: missing0.map(function(m){ return { name: String(m && m.name || ''), mappedCatId: m && m.mappedCatId ? String(m.mappedCatId) : null, count: Number(m && m.count) || 0 }; }),
             quotaMissingTotal: Number(missingTotal0) || 0,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
