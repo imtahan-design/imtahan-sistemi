@@ -797,6 +797,77 @@
             duration: 0
         };
 
+        async function __flushSessionAnswerWrites(force) {
+            try {
+                if (!dimQuiz || !dimQuiz.__sessionEnforced || !dimQuiz.sessionId) return;
+                if (typeof db === 'undefined' || !db) return;
+                if (!firebase || !firebase.firestore || !firebase.firestore.FieldValue || !firebase.firestore.FieldValue.serverTimestamp) return;
+                const pending = dimQuiz.__pendingAnswerWrites || {};
+                const keys = Object.keys(pending);
+                if (keys.length === 0) return;
+                if (!force && dimQuiz.__answerWriteTimer) return;
+                const ts = firebase.firestore.FieldValue.serverTimestamp();
+                const update = {
+                    updatedAt: ts,
+                    lastAnswerAt: ts,
+                    answeredCount: (dimQuiz.__answersById && typeof dimQuiz.__answersById === 'object') ? Object.keys(dimQuiz.__answersById).length : null
+                };
+                keys.forEach((qid) => {
+                    const idx = pending[qid];
+                    if (idx === null || idx === undefined) return;
+                    update['answers.' + String(qid)] = { choiceIndex: Number(idx), updatedAt: ts };
+                });
+                try { delete update.answeredCount; } catch (_) {}
+                try {
+                    if (dimQuiz.__answersById && typeof dimQuiz.__answersById === 'object') {
+                        update.answeredCount = Object.keys(dimQuiz.__answersById).length;
+                    }
+                } catch (_) {}
+                dimQuiz.__pendingAnswerWrites = {};
+                try {
+                    if (dimQuiz.__answerWriteTimer) clearTimeout(dimQuiz.__answerWriteTimer);
+                } catch (_) {}
+                dimQuiz.__answerWriteTimer = null;
+                await db.collection('exam_sessions').doc(String(dimQuiz.sessionId)).update(update);
+            } catch (e) {
+                try { console.warn('session answer flush failed:', e && e.message ? e.message : e); } catch (_) {}
+            }
+        }
+
+        function __queueSessionAnswerWrite(questionId, choiceIndex) {
+            try {
+                if (!dimQuiz || !dimQuiz.__sessionEnforced || !dimQuiz.sessionId) return;
+                if (typeof db === 'undefined' || !db) return;
+                if (!questionId) return;
+                if (!dimQuiz.__pendingAnswerWrites) dimQuiz.__pendingAnswerWrites = {};
+                dimQuiz.__pendingAnswerWrites[String(questionId)] = Number(choiceIndex);
+                try { if (dimQuiz.__answerWriteTimer) clearTimeout(dimQuiz.__answerWriteTimer); } catch (_) {}
+                dimQuiz.__answerWriteTimer = setTimeout(() => {
+                    __flushSessionAnswerWrites(false);
+                }, 300);
+            } catch (_) {}
+        }
+
+        function __applySessionAnswersToState(sessionData) {
+            try {
+                if (!dimQuiz || !Array.isArray(dimQuiz.questions) || !Array.isArray(dimQuiz.answers)) return;
+                const raw = (sessionData && sessionData.answers && typeof sessionData.answers === 'object') ? sessionData.answers : null;
+                if (!raw) return;
+                if (!dimQuiz.__answersById || typeof dimQuiz.__answersById !== 'object') dimQuiz.__answersById = {};
+                dimQuiz.questions.forEach((q, i) => {
+                    const qid = q && q.id != null ? String(q.id) : '';
+                    if (!qid) return;
+                    const v = raw[qid];
+                    let idx = null;
+                    if (v && typeof v === 'object' && v.choiceIndex !== undefined && v.choiceIndex !== null) idx = Number(v.choiceIndex);
+                    else if (typeof v === 'number') idx = Number(v);
+                    if (idx === null || isNaN(idx)) return;
+                    dimQuiz.__answersById[qid] = idx;
+                    if (i >= 0 && i < dimQuiz.answers.length) dimQuiz.answers[i] = idx;
+                });
+            } catch (_) {}
+        }
+
         function __fatalExam(msg) {
             try {
                 const ls = document.getElementById('loading-screen');
@@ -1087,8 +1158,18 @@
             
             dimQuiz.answers = new Array(dimQuiz.questions.length).fill(null);
             dimQuiz.flags = new Array(dimQuiz.questions.length).fill(false);
+            dimQuiz.__answersById = {};
             dimQuiz.duration = (cat.time || 90) * 60; // minutes to seconds
             if (!dimQuiz.startTime) dimQuiz.startTime = Date.now();
+
+            if (dimQuiz.__sessionEnforced && dimQuiz.sessionId && typeof db !== 'undefined' && db) {
+                try {
+                    const sSnap = await db.collection('exam_sessions').doc(String(dimQuiz.sessionId)).get();
+                    if (sSnap && sSnap.exists) {
+                        __applySessionAnswersToState(sSnap.data() || {});
+                    }
+                } catch (_) {}
+            }
 
             renderPalette();
             loadDimQuestion(0);
@@ -1161,6 +1242,13 @@
                 if (dimQuiz && dimQuiz.__sessionEnforced && dimQuiz.sessionId && typeof db !== 'undefined' && db) {
                     const u = await __getAuthUser();
                     if (!u || !u.uid) throw new Error('Zəhmət olmasa hesabla daxil olun');
+                    await __flushSessionAnswerWrites(true);
+                    try {
+                        const preSnap = await db.collection('exam_sessions').doc(String(dimQuiz.sessionId)).get();
+                        if (preSnap && preSnap.exists) {
+                            __applySessionAnswersToState(preSnap.data() || {});
+                        }
+                    } catch (_) {}
                     await db.runTransaction(async (t) => {
                         const sRef = db.collection('exam_sessions').doc(String(dimQuiz.sessionId));
                         const sSnap = await t.get(sRef);
@@ -1492,6 +1580,15 @@
             });
             
             updatePaletteStyles();
+            try {
+                const q = dimQuiz && Array.isArray(dimQuiz.questions) ? dimQuiz.questions[dimQuiz.currentIndex] : null;
+                const qid = q && q.id != null ? String(q.id) : '';
+                if (qid) {
+                    if (!dimQuiz.__answersById || typeof dimQuiz.__answersById !== 'object') dimQuiz.__answersById = {};
+                    dimQuiz.__answersById[qid] = Number(optIdx);
+                    __queueSessionAnswerWrite(qid, Number(optIdx));
+                }
+            } catch (_) {}
         }
 
         function prevQuestion() {
