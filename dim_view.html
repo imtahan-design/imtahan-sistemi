@@ -1318,6 +1318,16 @@
                         const preSnap = await db.collection('exam_sessions').doc(String(dimQuiz.sessionId)).get();
                         if (preSnap && preSnap.exists) {
                             __applySessionAnswersToState(preSnap.data() || {});
+                            try {
+                                if (__debugSessionEnabled()) {
+                                    const d0 = preSnap.data() || {};
+                                    __dbgSession('finish.preSession', {
+                                        sessionId: String(dimQuiz.sessionId),
+                                        status: d0 && d0.status != null ? String(d0.status) : null,
+                                        locked: d0 && d0.locked === true
+                                    });
+                                }
+                            } catch (_) {}
                         }
                     } catch (_) {}
                     await db.runTransaction(async (t) => {
@@ -1340,6 +1350,19 @@
                         code: e && e.code ? String(e.code) : null,
                         name: e && e.name ? String(e.name) : null
                     });
+                } catch (_) {}
+                try {
+                    if (__debugSessionEnabled() && dimQuiz && dimQuiz.__sessionEnforced && dimQuiz.sessionId && typeof db !== 'undefined' && db) {
+                        const postSnap = await db.collection('exam_sessions').doc(String(dimQuiz.sessionId)).get();
+                        if (postSnap && postSnap.exists) {
+                            const d1 = postSnap.data() || {};
+                            __dbgSession('finish.postSession', {
+                                sessionId: String(dimQuiz.sessionId),
+                                status: d1 && d1.status != null ? String(d1.status) : null,
+                                locked: d1 && d1.locked === true
+                            });
+                        }
+                    }
                 } catch (_) {}
                 try { if (dimQuiz) dimQuiz.__finished = false; } catch (_) {}
                 try { if (typeof window !== 'undefined') window.__finishInProgress = false; } catch (_) {}
