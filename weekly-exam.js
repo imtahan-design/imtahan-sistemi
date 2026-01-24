@@ -156,12 +156,53 @@
     ];
   }
 
+  var __prokQuotaMapCache = null;
+  var __prokQuotaMapCacheAt = 0;
+  async function __loadProkQuotaMap() {
+    try {
+      if (!db) return null;
+      var now = Date.now();
+      if (__prokQuotaMapCache && (now - __prokQuotaMapCacheAt) < 300000) return __prokQuotaMapCache;
+      var snap = await db.collection('settings').doc('weekly_quota_maps').get();
+      var data = (snap && snap.exists) ? (snap.data() || {}) : {};
+      var m = (data && data.prokurorluqNameToCatId && typeof data.prokurorluqNameToCatId === 'object') ? data.prokurorluqNameToCatId : null;
+      __prokQuotaMapCache = m;
+      __prokQuotaMapCacheAt = now;
+      return m;
+    } catch (_) {
+      return null;
+    }
+  }
+
   function __prokResolveSchemaIds(schema, opts) {
     opts = opts || {};
     var rootId = String(opts.rootId || 'special_prokurorluq');
+    var idMapRaw = (opts && opts.prokurorluqNameToCatId && typeof opts.prokurorluqNameToCatId === 'object') ? opts.prokurorluqNameToCatId : null;
+    var idMapNorm = new Map();
+    try {
+      if (idMapRaw) {
+        Object.keys(idMapRaw).forEach(function(k){
+          var nk = __normalizeCatName(k);
+          if (!nk) return;
+          if (idMapNorm.has(nk)) return;
+          var v = idMapRaw[k];
+          var sid = v != null ? String(v) : '';
+          if (!sid) return;
+          idMapNorm.set(nk, sid);
+        });
+      }
+    } catch (_) {}
+
     var leaves = __leafCategoriesUnder(rootId);
     var direct = leaves.filter(function(c){ return c && String(c.parentId || '') === rootId; });
     var pool1 = direct.length ? direct : leaves;
+    var byId = new Map();
+    for (var ii = 0; ii < pool1.length; ii++) {
+      var cc = pool1[ii] || {};
+      if (!cc || cc.id == null) continue;
+      var cid = String(cc.id);
+      if (cid && !byId.has(cid)) byId.set(cid, cc);
+    }
     var byNorm = new Map();
     for (var i = 0; i < pool1.length; i++) {
       var c = pool1[i] || {};
@@ -172,10 +213,25 @@
     var out = [];
     for (var j = 0; j < schema.length; j++) {
       var s = schema[j] || {};
-      var n2 = __normalizeCatName(s.name);
+      var rawLabel = String(s.name || '');
+      var mappedId = '';
+      try {
+        if (idMapRaw && rawLabel && idMapRaw[rawLabel] != null) mappedId = String(idMapRaw[rawLabel]);
+      } catch (_) {}
+      if (!mappedId) {
+        var nk2 = __normalizeCatName(rawLabel);
+        mappedId = nk2 ? (idMapNorm.get(nk2) || '') : '';
+      }
+      if (mappedId) {
+        var cById = byId.get(String(mappedId)) || null;
+        if (cById && cById.id != null) out.push({ id: String(cById.id), name: String(cById.name || rawLabel || ''), count: Number(s.count) || 0 });
+        else out.push({ id: null, name: rawLabel, count: Number(s.count) || 0, missing: true, mappedCatId: String(mappedId) });
+        continue;
+      }
+      var n2 = __normalizeCatName(rawLabel);
       var c2 = byNorm.get(n2) || null;
-      if (c2 && c2.id != null) out.push({ id: String(c2.id), name: String(c2.name || s.name || ''), count: Number(s.count) || 0 });
-      else out.push({ id: null, name: String(s.name || ''), count: Number(s.count) || 0, missing: true });
+      if (c2 && c2.id != null) out.push({ id: String(c2.id), name: String(c2.name || rawLabel || ''), count: Number(s.count) || 0 });
+      else out.push({ id: null, name: rawLabel, count: Number(s.count) || 0, missing: true });
     }
     return out;
   }
@@ -675,10 +731,38 @@
       if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
       if (String(type) === 'prokurorluq') {
         try {
-          var schema0 = __prokResolveSchemaIds(__prokQuotaSchema(), { rootId: 'special_prokurorluq' });
-          var missingCats = schema0.filter(function(s){ return s && s.missing; }).map(function(s){ return String(s.name || '').trim(); }).filter(function(s){ return s; });
-          if (missingCats.length) {
-            showNotification('Kvota mapping üçün kateqoriyalar tapılmadı: ' + missingCats.join(', '), 'error');
+          var quotaMap0 = await __loadProkQuotaMap();
+          var schemaRaw0 = __prokResolveSchemaIds(__prokQuotaSchema(), { rootId: 'special_prokurorluq', prokurorluqNameToCatId: quotaMap0 });
+          var missing0 = schemaRaw0.filter(function(s){ return s && s.missing; });
+          if (missing0.length) {
+            var missLines0 = missing0.map(function(m){
+              var nm = String(m.name || '').trim();
+              var cid = m && m.mappedCatId ? String(m.mappedCatId) : '';
+              var cnt = Number(m.count) || 0;
+              return nm + (cid ? (' -> ' + cid) : '') + (cnt ? (' (+' + String(cnt) + ')') : '');
+            }).join('\n');
+            showNotification('Kvota mappingdə çatışmayan kateqoriya var: ' + missing0.map(function(m){ return String(m.name || '').trim(); }).filter(Boolean).join(', '), 'warning');
+            try { alert('Kvota mappingdə çatışmayan kateqoriya var:\n' + missLines0); } catch (_) {}
+            try { window.__lastWeeklyProkMissingCats = missing0; } catch (_) {}
+          }
+          var missingTotal0 = missing0.reduce(function(acc, m){ return acc + (Number(m && m.count) || 0); }, 0);
+          var schema0 = schemaRaw0.filter(function(s){ return s && !s.missing && s.id && (Number(s.count) || 0) > 0; }).map(function(s){ return { id: String(s.id), name: String(s.name || ''), count: Number(s.count) || 0 }; });
+          if (missingTotal0 > 0 && schema0.length) {
+            var order0 = schema0.slice().sort(function(a, b){ return (Number(b.count) || 0) - (Number(a.count) || 0); });
+            var remain0 = missingTotal0;
+            for (var r0 = 0; r0 < 200 && remain0 > 0; r0++) {
+              var idx0 = r0 % order0.length;
+              order0[idx0].count += 1;
+              remain0 -= 1;
+            }
+            schema0 = order0;
+          }
+          var sum0 = schema0.reduce(function(acc, s){ return acc + (Number(s && s.count) || 0); }, 0);
+          if (sum0 !== 80 && schema0.length) {
+            schema0[0].count += (80 - sum0);
+          }
+          if (!schema0.length) {
+            showNotification('Kvota mapping üçün kateqoriya tapılmadı.', 'error');
             return;
           }
 
@@ -791,6 +875,8 @@
             type: type,
             exam_type: 'special',
             questions: examQuestions0,
+            quotaMissingCats: missing0.map(function(m){ return { name: String(m && m.name || ''), mappedCatId: m && m.mappedCatId ? String(m.mappedCatId) : null, count: Number(m && m.count) || 0 }; }),
+            quotaMissingTotal: Number(missingTotal0) || 0,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             createdBy: currentUser.id,
             status: 'draft',
@@ -989,13 +1075,25 @@
         btn.disabled = true;
       }
       try {
-        const snapshot = await db.collection('weekly_exams')
-          .where('status', '==', 'archived')
-          .where('type', '==', type)
-          .orderBy('archivedAt', 'desc')
-          .limit(20)
-          .get();
-        if (snapshot.empty) {
+        var docs = [];
+        try {
+          var fp = (firebase && firebase.firestore && firebase.firestore.FieldPath && typeof firebase.firestore.FieldPath.documentId === 'function')
+            ? firebase.firestore.FieldPath.documentId()
+            : '__name__';
+          var snap0 = await db.collection('weekly_exams').orderBy(fp, 'desc').limit(120).get();
+          docs = (snap0 && snap0.docs) ? snap0.docs.slice() : [];
+        } catch (_) {
+          docs = [];
+        }
+        docs = (Array.isArray(docs) ? docs : []).filter(function(d){
+          try {
+            var data = d && typeof d.data === 'function' ? (d.data() || {}) : {};
+            return String(data.status || '') === 'archived' && String(data.type || '') === String(type || '');
+          } catch (_) {
+            return false;
+          }
+        }).slice(0, 20);
+        if (!docs.length) {
           showNotification('Arxivdə sınaq tapılmadı.', 'info');
           if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
           return;
@@ -1005,7 +1103,7 @@
         modal = document.createElement('div');
         modal.id = 'weekly-archives-modal';
         modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 overflow-y-auto p-4 flex items-center justify-center';
-        const listHtml = snapshot.docs.map(doc => {
+        const listHtml = docs.map(doc => {
           const data = doc.data();
           const date = data.archivedAt ? data.archivedAt.toDate().toLocaleDateString() : 'N/A';
           return `
