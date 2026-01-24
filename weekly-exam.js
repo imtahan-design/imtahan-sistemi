@@ -194,6 +194,20 @@
     }
     return { attempted: true, wrote: wrote, skipped: skipped, error: null };
   }
+
+  async function __weeklyCountCategoryQuestions(catId) {
+    if (!db) return null;
+    catId = String(catId || '');
+    if (!catId) return null;
+    try {
+      var snap = await db.collection('category_questions').where('categoryId', '==', catId).get();
+      if (!snap) return 0;
+      if (typeof snap.size === 'number') return snap.size;
+      return Array.isArray(snap.docs) ? snap.docs.length : 0;
+    } catch (_) {
+      return null;
+    }
+  }
   function __collectSubtreeIds(rootId) {
     rootId = String(rootId || '');
     var all = Array.isArray(categories) ? categories : [];
@@ -1200,6 +1214,9 @@
             var docInlineCount0 = 0;
             var usedSource0 = subCount0 ? 'category_questions' : (subRawCount0 > 0 ? 'category_questions(filtered_empty)' : 'empty_subcollection');
             var all0 = subQs0;
+            var backfillRes0 = null;
+            var postBackfillCount0 = null;
+            var postBackfillMismatch0 = null;
 
             if (!subCount0) {
               var inlineSrcQs0 = [];
@@ -1219,9 +1236,16 @@
                 fallbackInlineCats0.push({ catId: catId0, name: String(it0.name || ''), inlineCount: all0.length });
                 try {
                   if (currentUser && currentUser.role === 'admin') {
-                    var backfillRes0 = await __weeklyBackfillInlineToCategoryQuestions(catId0, all0);
+                    backfillRes0 = await __weeklyBackfillInlineToCategoryQuestions(catId0, all0);
                     if (backfillRes0 && backfillRes0.attempted) {
                       usedSource0 += backfillRes0.error ? (' + backfill_error') : (' + backfill_ok');
+                    }
+                    postBackfillCount0 = await __weeklyCountCategoryQuestions(catId0);
+                    if (typeof postBackfillCount0 === 'number') {
+                      postBackfillMismatch0 = (postBackfillCount0 !== all0.length);
+                      if (postBackfillMismatch0) {
+                        console.warn('[weekly-quota] backfill mismatch', { catId: catId0, label: String(it0.name || ''), inlineCount: all0.length, categoryQuestionsCount: postBackfillCount0 });
+                      }
                     }
                   }
                 } catch (_) {}
@@ -1264,6 +1288,11 @@
               subcollectionLegacyCount: subLegacyCount0,
               inlineCountInMemory: memInlineCount0,
               inlineCountInDoc: docInlineCount0,
+              backfillCreatedCount: backfillRes0 && backfillRes0.attempted ? (Number(backfillRes0.wrote) || 0) : 0,
+              backfillSkippedCount: backfillRes0 && backfillRes0.attempted ? (Number(backfillRes0.skipped) || 0) : 0,
+              backfillError: backfillRes0 && backfillRes0.error ? String(backfillRes0.error) : '',
+              postBackfillCategoryQuestionsCount: (typeof postBackfillCount0 === 'number') ? postBackfillCount0 : null,
+              postBackfillMismatch: (typeof postBackfillMismatch0 === 'boolean') ? postBackfillMismatch0 : null,
               activeQuestionCount: active0.length,
               excludedByCooldownCount: excludedByCooldownCount0,
               availableCount: availableCount0,
