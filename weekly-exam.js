@@ -48,7 +48,17 @@
     } catch (e) {
       snap = await db.collection('category_questions').where('categoryId','==', catId).get();
     }
-    var qs = snap.docs.map(function(d){ return { id: d.id, ...d.data() }; })
+    var rawCount = 0;
+    var deletedCount = 0;
+    var legacyCount = 0;
+    try { rawCount = snap && typeof snap.size === 'number' ? snap.size : (snap && snap.docs ? snap.docs.length : 0); } catch (_) { rawCount = 0; }
+    var raw = snap.docs.map(function(d){ return { id: d.id, ...d.data() }; });
+    for (var i = 0; i < raw.length; i++) {
+      var q0 = raw[i] || {};
+      if (q0 && q0.deleted === true) deletedCount += 1;
+      if (q0 && q0.legacy === true) legacyCount += 1;
+    }
+    var qs = raw
       .filter(function(q){ return q && q.deleted !== true && q.legacy !== true; })
       .map(function(q){
         var opts = (Array.isArray(q.options) && q.options.length) ? q.options : (Array.isArray(q.variants) ? q.variants : []);
@@ -58,6 +68,7 @@
         else if (typeof q.answer === 'number') correct = q.answer;
         return { ...q, options: opts, correctIndex: correct };
       });
+    try { qs.__meta = { rawCount: rawCount, deletedCount: deletedCount, legacyCount: legacyCount, filteredCount: qs.length }; } catch (_) {}
     return qs;
   }
   async function __weeklyGetQuestionsForCategory(cat, excludeIds, cache) {
@@ -81,6 +92,107 @@
     if (cache) cache.set(id, all);
     var avail = excludeIds ? all.filter(function(q){ return !excludeIds.has(String(q.id)); }) : all;
     return { mode: mode, all: all, available: avail, totalCount: all.length, reason: all.length ? 'ok' : 'empty_subcollection' };
+  }
+
+  function __hash32(s) {
+    s = String(s || '');
+    var h = 2166136261;
+    for (var i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    return h >>> 0;
+  }
+
+  function __safeDocId(s, maxLen) {
+    s = String(s || '');
+    s = s.replace(/[^a-zA-Z0-9_\-]+/g, '_');
+    s = s.replace(/_+/g, '_');
+    s = s.replace(/^_+|_+$/g, '');
+    maxLen = Number(maxLen) || 200;
+    if (s.length <= maxLen) return s || ('x_' + String(__hash32(s)));
+    var cut = s.slice(0, Math.max(10, maxLen - 11));
+    return cut + '_' + String(__hash32(s));
+  }
+
+  function __coerceQuestion(q, fallbackKey) {
+    q = q || {};
+    var opts = (Array.isArray(q.options) && q.options.length) ? q.options : (Array.isArray(q.variants) ? q.variants : []);
+    var correct = 0;
+    if (typeof q.correctIndex === 'number') correct = q.correctIndex;
+    else if (typeof q.correct === 'number') correct = q.correct;
+    else if (typeof q.answer === 'number') correct = q.answer;
+    var id = q.id != null ? String(q.id) : '';
+    if (!id) {
+      var seed = String(fallbackKey || '') + '|' + String(q.text || q.question || '') + '|' + String(opts.join('||'));
+      id = 'inline_' + String(__hash32(seed));
+    }
+    return Object.assign({}, q, { id: id, options: opts, correctIndex: correct });
+  }
+
+  async function __weeklyFetchCategoryDocInlineQuestions(catId) {
+    if (!db) return { exists: false, questions: [], questionsMode: null };
+    catId = String(catId || '');
+    if (!catId) return { exists: false, questions: [], questionsMode: null };
+    try {
+      var snap = await db.collection('categories').doc(catId).get();
+      if (!snap || !snap.exists) return { exists: false, questions: [], questionsMode: null };
+      var data = snap.data ? (snap.data() || {}) : {};
+      var qs = Array.isArray(data.questions) ? data.questions : [];
+      var mode = data.questionsMode != null ? String(data.questionsMode) : null;
+      return { exists: true, questions: qs, questionsMode: mode };
+    } catch (_) {
+      return { exists: false, questions: [], questionsMode: null };
+    }
+  }
+
+  async function __weeklyBackfillInlineToCategoryQuestions(catId, inlineQuestions) {
+    if (!db) return { attempted: false, wrote: 0, skipped: 0, error: null };
+    catId = String(catId || '');
+    var qs = Array.isArray(inlineQuestions) ? inlineQuestions : [];
+    if (!catId || !qs.length) return { attempted: false, wrote: 0, skipped: 0, error: null };
+    var fv = null;
+    try { fv = firebase && firebase.firestore && firebase.firestore.FieldValue ? firebase.firestore.FieldValue : null; } catch (_) {}
+    var wrote = 0;
+    var skipped = 0;
+    var MAX = 120;
+    for (var off = 0; off < qs.length; off += MAX) {
+      var chunk = qs.slice(off, off + MAX).map(function(q, idx){ return __coerceQuestion(q, catId + ':' + String(off + idx)); });
+      try {
+        await db.runTransaction(async function(tx) {
+          var reads = [];
+          for (var i = 0; i < chunk.length; i++) {
+            var q = chunk[i] || {};
+            var qid = q && q.id != null ? String(q.id) : '';
+            var docId = __safeDocId(catId + '__' + qid, 220);
+            var ref = db.collection('category_questions').doc(docId);
+            reads.push({ ref: ref, q: q });
+          }
+          for (var r = 0; r < reads.length; r++) {
+            var rr = reads[r];
+            var snap = await tx.get(rr.ref);
+            if (snap && snap.exists) {
+              skipped += 1;
+              continue;
+            }
+            var q0 = rr.q || {};
+            var text = q0.text != null ? String(q0.text) : (q0.question != null ? String(q0.question) : '');
+            var payload = {
+              categoryId: catId,
+              text: text,
+              options: Array.isArray(q0.options) ? q0.options : [],
+              correctIndex: (typeof q0.correctIndex === 'number') ? q0.correctIndex : 0
+            };
+            if (fv && typeof fv.serverTimestamp === 'function') payload.createdAt = fv.serverTimestamp();
+            tx.set(rr.ref, payload);
+            wrote += 1;
+          }
+        });
+      } catch (e) {
+        return { attempted: true, wrote: wrote, skipped: skipped, error: e && e.message ? String(e.message) : String(e) };
+      }
+    }
+    return { attempted: true, wrote: wrote, skipped: skipped, error: null };
   }
   function __collectSubtreeIds(rootId) {
     rootId = String(rootId || '');
@@ -1065,13 +1177,57 @@
           var fallbackByCat = new Map();
           var shortage = [];
           var quotaDebugRows0 = [];
+          var fallbackInlineCats0 = [];
           var qCache0 = new Map();
           for (var i0 = 0; i0 < schema0.length; i0++) {
             var it0 = schema0[i0] || {};
             var catId0 = String(it0.id || '');
             var need0 = Number(it0.count) || 0;
             if (!catId0 || need0 <= 0) continue;
-            var all0 = qCache0.has(catId0) ? (qCache0.get(catId0) || []) : await __weeklyFetchSubcollectionQuestions(catId0);
+            var mode0 = 'subcollection';
+            var catObj0 = (Array.isArray(categories) ? categories : []).find(function(c){ return c && String(c.id) === catId0; }) || null;
+            try { mode0 = __getQuestionsMode(catObj0); } catch (_) { mode0 = 'subcollection'; }
+
+            var subQs0 = qCache0.has(catId0) ? (qCache0.get(catId0) || []) : await __weeklyFetchSubcollectionQuestions(catId0);
+            var subCount0 = Array.isArray(subQs0) ? subQs0.length : 0;
+            var subMeta0 = null;
+            try { subMeta0 = subQs0 && subQs0.__meta ? subQs0.__meta : null; } catch (_) { subMeta0 = null; }
+            var subRawCount0 = subMeta0 && typeof subMeta0.rawCount === 'number' ? subMeta0.rawCount : subCount0;
+            var subDeletedCount0 = subMeta0 && typeof subMeta0.deletedCount === 'number' ? subMeta0.deletedCount : 0;
+            var subLegacyCount0 = subMeta0 && typeof subMeta0.legacyCount === 'number' ? subMeta0.legacyCount : 0;
+            var memInline0 = (Array.isArray(catObj0 && catObj0.questions) ? catObj0.questions : []);
+            var memInlineCount0 = memInline0.length;
+            var docInlineCount0 = 0;
+            var usedSource0 = subCount0 ? 'category_questions' : (subRawCount0 > 0 ? 'category_questions(filtered_empty)' : 'empty_subcollection');
+            var all0 = subQs0;
+
+            if (!subCount0) {
+              var inlineSrcQs0 = [];
+              if (memInlineCount0) {
+                inlineSrcQs0 = memInline0;
+              } else {
+                var docRes0 = await __weeklyFetchCategoryDocInlineQuestions(catId0);
+                if (docRes0 && docRes0.exists && Array.isArray(docRes0.questions) && docRes0.questions.length) {
+                  inlineSrcQs0 = docRes0.questions;
+                  docInlineCount0 = docRes0.questions.length;
+                }
+              }
+              if (inlineSrcQs0.length) {
+                usedSource0 = memInlineCount0 ? 'categories.questions(memory)' : 'categories.questions(fetched)';
+                all0 = inlineSrcQs0.map(function(q, idx){ return __coerceQuestion(q, catId0 + ':' + String(idx)); })
+                  .filter(function(q){ return q && q.deleted !== true && q.legacy !== true; });
+                fallbackInlineCats0.push({ catId: catId0, name: String(it0.name || ''), inlineCount: all0.length });
+                try {
+                  if (currentUser && currentUser.role === 'admin') {
+                    var backfillRes0 = await __weeklyBackfillInlineToCategoryQuestions(catId0, all0);
+                    if (backfillRes0 && backfillRes0.attempted) {
+                      usedSource0 += backfillRes0.error ? (' + backfill_error') : (' + backfill_ok');
+                    }
+                  }
+                } catch (_) {}
+              }
+            }
+
             qCache0.set(catId0, all0);
             var active0 = (Array.isArray(all0) ? all0 : []).filter(function(q){
               if (!q || q.deleted === true || q.legacy === true) return false;
@@ -1100,6 +1256,14 @@
             quotaDebugRows0.push({
               label: String(it0.name || ''),
               resolvedCatId: catId0,
+              source: usedSource0,
+              mode: mode0,
+              subcollectionRawCount: subRawCount0,
+              subcollectionCount: subCount0,
+              subcollectionDeletedCount: subDeletedCount0,
+              subcollectionLegacyCount: subLegacyCount0,
+              inlineCountInMemory: memInlineCount0,
+              inlineCountInDoc: docInlineCount0,
               activeQuestionCount: active0.length,
               excludedByCooldownCount: excludedByCooldownCount0,
               availableCount: availableCount0,
@@ -1122,6 +1286,13 @@
               console.groupEnd();
             }
           } catch (_) {}
+
+          if (fallbackInlineCats0.length) {
+            var linesF0 = fallbackInlineCats0.map(function(x){
+              return String(x.name || x.catId) + ' (' + String(x.inlineCount) + ')';
+            }).join('\n');
+            showNotification('Bəzi kateqoriyalarda suallar categories.questions içindədir; category_questions boşdur. Backfill tövsiyə olunur:\n' + linesF0, 'warning');
+          }
 
           if (shortage.length) {
             var msg0 = shortage.map(function(s){ return String(s.name || s.catId) + ' (+' + String(s.missing) + ')'; }).join('\n');
