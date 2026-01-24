@@ -381,8 +381,8 @@
     }
     if (!doc) throw new Error('Kupon tapılmadı');
     const couponDocId = doc.id;
-    const newSessionRef = db.collection('exam_sessions').doc();
-    const newSessionId = String(newSessionRef.id);
+    const seedSessionRef = db.collection('exam_sessions').doc();
+    const seedSessionId = String(seedSessionRef.id);
     const inferredExamType = (function(){
       var x = String(examId || '');
       if (x.indexOf('active_') === 0) return x.slice('active_'.length);
@@ -401,49 +401,28 @@
       if (now < s) throw new Error('Kupon hələ aktiv deyil');
       if (now > e) throw new Error('Kuponun müddəti bitib');
       var sid = (d && d.usedSessionId != null) ? String(d.usedSessionId) : '';
-      var sessionRef = null;
       if (d.usedBy) {
         if (String(d.usedBy) !== String(uid)) throw new Error('Kupon artıq istifadə olunub');
-        if (!sid) sid = newSessionId;
-        sessionRef = db.collection('exam_sessions').doc(String(sid));
-        const sessSnap = await t.get(sessionRef);
-        if (sessSnap && sessSnap.exists) {
-          var sd = sessSnap.data() || {};
-          if (String(sd.userId || '') !== String(uid)) throw new Error('Sessiya icazəsizdir');
-          if (String(sd.status || '') === 'finished' || sd.locked === true) throw new Error('Sessiya artıq tamamlanıb');
-          var exp0 = sd.expiresAt && typeof sd.expiresAt.toDate === 'function' ? sd.expiresAt.toDate() : new Date(sd.expiresAt || 0);
-          if (!isNaN(exp0.getTime()) && now > exp0) throw new Error('Sessiyanın müddəti bitib');
-          if (String(sd.examId || '') !== String(examId)) throw new Error('Sessiya bu imtahana uyğun deyil');
-          return { status: 'ok', couponDocId: couponDocId, sessionId: String(sid) };
-        }
-        var createdAt0 = (firebase && firebase.firestore && firebase.firestore.FieldValue && firebase.firestore.FieldValue.serverTimestamp) ? firebase.firestore.FieldValue.serverTimestamp() : null;
-        var startedAt0 = createdAt0;
-        var expiresAt0 = d.endTime || null;
-        t.set(sessionRef, {
-          sessionId: String(sid),
-          userId: String(uid),
-          couponCode: String(code),
-          couponDocId: String(couponDocId),
-          examId: String(examId),
-          examType: inferredExamType,
-          status: 'active',
-          locked: false,
-          startedAt: startedAt0,
-          finishedAt: null,
-          expiresAt: expiresAt0,
-          createdAt: createdAt0
-        }, { merge: true });
+        if (!sid) sid = seedSessionId;
         if (!d.usedSessionId) {
           t.set(ref, { usedSessionId: String(sid) }, { merge: true });
         }
-        return { status: 'ok', couponDocId: couponDocId, sessionId: String(sid) };
+        return { status: 'ok', couponDocId: couponDocId, sessionId: String(sid), endTime: d.endTime || null };
       }
 
-      sid = newSessionId;
-      sessionRef = newSessionRef;
+      if (!sid) sid = seedSessionId;
       var ts0 = (firebase && firebase.firestore && firebase.firestore.FieldValue && firebase.firestore.FieldValue.serverTimestamp) ? firebase.firestore.FieldValue.serverTimestamp() : null;
       t.update(ref, { usedBy: String(uid), usedSessionId: String(sid), usedAt: ts0 });
-      t.set(sessionRef, {
+      return { status: 'ok', couponDocId: couponDocId, sessionId: String(sid), endTime: d.endTime || null };
+    });
+    if (!res || !res.status) return { status: 'ok', couponDocId: couponDocId, sessionId: null };
+    var sid = res && res.sessionId != null ? String(res.sessionId) : '';
+    if (!sid) return { status: 'ok', couponDocId: couponDocId, sessionId: null };
+    const sessionRef = db.collection('exam_sessions').doc(String(sid));
+    var ts1 = (firebase && firebase.firestore && firebase.firestore.FieldValue && firebase.firestore.FieldValue.serverTimestamp) ? firebase.firestore.FieldValue.serverTimestamp() : null;
+    var expiresAt0 = (res && res.endTime !== undefined) ? res.endTime : null;
+    try {
+      await sessionRef.set({
         sessionId: String(sid),
         userId: String(uid),
         couponCode: String(code),
@@ -452,15 +431,32 @@
         examType: inferredExamType,
         status: 'active',
         locked: false,
-        startedAt: ts0,
+        startedAt: ts1,
         finishedAt: null,
-        expiresAt: d.endTime || null,
-        createdAt: ts0
+        expiresAt: expiresAt0,
+        createdAt: ts1
       }, { merge: false });
       return { status: 'ok', couponDocId: couponDocId, sessionId: String(sid) };
-    });
-    if (res && res.status) return res;
-    return { status: 'ok', couponDocId: couponDocId, sessionId: null };
+    } catch(e) {
+      try {
+        const sessSnap2 = await sessionRef.get();
+        if (sessSnap2 && sessSnap2.exists) {
+          const now2 = new Date();
+          var sd2 = sessSnap2.data() || {};
+          if (String(sd2.userId || '') !== String(uid)) throw new Error('Sessiya icazəsizdir');
+          if (String(sd2.status || '') === 'finished' || sd2.locked === true) throw new Error('Sessiya artıq tamamlanıb');
+          var exp2 = sd2.expiresAt && typeof sd2.expiresAt.toDate === 'function' ? sd2.expiresAt.toDate() : new Date(sd2.expiresAt || 0);
+          if (!isNaN(exp2.getTime()) && now2 > exp2) throw new Error('Sessiyanın müddəti bitib');
+          if (String(sd2.examId || '') !== String(examId)) throw new Error('Sessiya bu imtahana uyğun deyil');
+          return { status: 'ok', couponDocId: couponDocId, sessionId: String(sid) };
+        }
+      } catch(e2) {
+        if (e2 && e2.message) throw e2;
+      }
+      if (e && e.message) throw e;
+      throw new Error('Sessiya yaradıla bilmədi');
+    }
+    return { status: 'ok', couponDocId: couponDocId, sessionId: String(sid) };
   };
   window.markCouponUsed = async function(code, examId, couponDocId) {
     if (!db) throw new Error('Verilənlər bazası bağlantısı yoxdur');
