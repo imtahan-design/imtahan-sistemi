@@ -485,7 +485,8 @@ test('migration persists root sanitization and legacy docs payload', async () =>
 function loadWeeklyLeafHelper(weeklyJsText, categoriesList) {
   const ctx = { categories: categoriesList, console: console, window: {} };
   vm.createContext(ctx);
-  ['__isQuestionsDisabled', '__isSpecialRoot', '__getQuestionsMode', '__collectSubtreeIds', '__leafCategoriesUnder', 'weeklyDebugLeafStats'].forEach((fn) => {
+  ctx.__weeklyQuotaMapCache = {};
+  ['__isQuestionsDisabled', '__isSpecialRoot', '__getQuestionsMode', '__collectSubtreeIds', '__leafCategoriesUnder', '__normalizeCatName', '__weeklyPrepareQuotaMapping', 'weeklyDebugLeafStats'].forEach((fn) => {
     vm.runInContext(extractFunctionSource(weeklyJsText, fn), ctx);
   });
   return ctx;
@@ -537,10 +538,154 @@ test('leaf-only selection', () => {
   expect(leaves.sort()).toEqual(['leaf', 'leaf2'].sort());
 });
 
+test('leaf selection is scoped by examType for special roots', () => {
+  const weeklyJs = fs.readFileSync(path.join(__dirname, '..', 'weekly-exam.js'), 'utf8');
+  const cats = [
+    { id: 'special_prokurorluq', examType: 'special', parentId: null, questionsMode: 'all' },
+    { id: 'ok1', examType: 'special', parentId: 'special_prokurorluq', questionsMode: 'all' },
+    { id: 'bad1', examType: 'general', parentId: 'special_prokurorluq', questionsMode: 'all' }
+  ];
+  const ctx = loadWeeklyLeafHelper(weeklyJs, cats);
+  const leaves = ctx.__leafCategoriesUnder('special_prokurorluq').map((c) => String(c.id));
+  expect(leaves.sort()).toEqual(['ok1'].sort());
+});
+
+test('weekly findCategory never matches by name without root scope', () => {
+  const weeklyJs = fs.readFileSync(path.join(__dirname, '..', 'weekly-exam.js'), 'utf8');
+  const methodSrc = extractMethodSource(weeklyJs, 'findCategory');
+  const cats = [
+    { id: 'special_prokurorluq', examType: 'special', parentId: null, questionsMode: 'none', name: 'ProkRoot' },
+    { id: 'special_hakimlik', examType: 'special', parentId: null, questionsMode: 'none', name: 'HakimRoot' },
+    { id: 'p_cm', examType: 'special', parentId: 'special_prokurorluq', questionsMode: 'all', name: 'Cinayət Məcəlləsi' },
+    { id: 'h_cm', examType: 'special', parentId: 'special_hakimlik', questionsMode: 'all', name: 'Cinayət Məcəlləsi' }
+  ];
+  const ctx = { categories: cats, window: { categories: cats }, console: console };
+  vm.createContext(ctx);
+  ['__isQuestionsDisabled', '__isSpecialRoot', '__collectSubtreeIds', '__leafCategoriesUnder'].forEach((fn) => {
+    vm.runInContext(extractFunctionSource(weeklyJs, fn), ctx);
+  });
+  vm.runInContext('var WeeklyExamSystem = { ' + methodSrc + ' };', ctx);
+
+  expect(ctx.WeeklyExamSystem.findCategory({ name: 'Cinayət Məcəlləsi' })).toBe(null);
+  const h = ctx.WeeklyExamSystem.findCategory({ name: 'Cinayət Məcəlləsi', rootId: 'special_hakimlik' });
+  expect(h && String(h.id)).toBe('h_cm');
+});
+
 test('weekly generator does not read prokurorluq root questions', () => {
   const weeklyJs = fs.readFileSync(path.join(__dirname, '..', 'weekly-exam.js'), 'utf8');
   expect(/db\.collection\(['"]categories['"]\)\.doc\(['"]special_prokurorluq['"]\)/.test(weeklyJs)).toBe(false);
   expect(/__WEEKLY_POOL_QUESTIONS/.test(weeklyJs)).toBe(false);
+});
+
+test('weekly quota mapping auto-resolve is scoped by rootId', async () => {
+  const weeklyJs = fs.readFileSync(path.join(__dirname, '..', 'weekly-exam.js'), 'utf8');
+  const cats = [
+    { id: 'special_prokurorluq', examType: 'special', parentId: null, questionsMode: 'none', name: 'ProkRoot' },
+    { id: 'special_hakimlik', examType: 'special', parentId: null, questionsMode: 'none', name: 'HakimRoot' },
+    { id: 'p_cm', examType: 'special', parentId: 'special_prokurorluq', questionsMode: 'all', name: 'Cinayət Məcəlləsi' },
+    { id: 'h_cm', examType: 'special', parentId: 'special_hakimlik', questionsMode: 'all', name: 'Cinayət Məcəlləsi' }
+  ];
+  const ctx = loadWeeklyLeafHelper(weeklyJs, cats);
+
+  const res = await ctx.__weeklyPrepareQuotaMapping({
+    rootId: 'special_hakimlik',
+    schema: [{ name: 'Cinayət Məcəlləsi', count: 5 }],
+    nameToCatId: null
+  });
+
+  expect(res && res.status).toBe('ok');
+  expect(res.autoEntries).toEqual({ 'Cinayət Məcəlləsi': 'h_cm' });
+});
+
+test('weekly quota mapping missing label prevents writes unless confirmed', async () => {
+  const weeklyJs = fs.readFileSync(path.join(__dirname, '..', 'weekly-exam.js'), 'utf8');
+  const cats = [
+    { id: 'special_prokurorluq', examType: 'special', parentId: null, questionsMode: 'none', name: 'ProkRoot' },
+    { id: 'cm', examType: 'special', parentId: 'special_prokurorluq', questionsMode: 'all', name: 'Cinayət Məcəlləsi' }
+  ];
+  const ctx = loadWeeklyLeafHelper(weeklyJs, cats);
+
+  const calls = [];
+  const writeEntries = async (rootId, entries) => {
+    calls.push({ rootId, entries });
+    return true;
+  };
+
+  const schema = [
+    { name: 'Cinayət Məcəlləsi', count: 5 },
+    { name: 'Yoxdur Label', count: 2 }
+  ];
+
+  const a = await ctx.__weeklyPrepareQuotaMapping({
+    rootId: 'special_prokurorluq',
+    schema,
+    nameToCatId: null,
+    writeEntries
+  });
+  expect(a && a.status).toBe('abort');
+  expect(a.reason).toBe('missing');
+  expect(calls.length).toBe(0);
+
+  const b = await ctx.__weeklyPrepareQuotaMapping({
+    rootId: 'special_prokurorluq',
+    schema,
+    nameToCatId: null,
+    writeEntries,
+    confirmContinueMissing: async () => false
+  });
+  expect(b && b.status).toBe('abort');
+  expect(b.reason).toBe('missing_cancel');
+  expect(calls.length).toBe(0);
+
+  const c = await ctx.__weeklyPrepareQuotaMapping({
+    rootId: 'special_prokurorluq',
+    schema,
+    nameToCatId: null,
+    writeEntries,
+    confirmContinueMissing: async () => true
+  });
+  expect(c && c.status).toBe('ok');
+  expect(c.continueMissing).toBe(true);
+  expect(calls.length).toBe(1);
+  expect(calls[0]).toEqual({ rootId: 'special_prokurorluq', entries: { 'Cinayət Məcəlləsi': 'cm' } });
+});
+
+test('weekly quota mapping ambiguous label requires selection before writing', async () => {
+  const weeklyJs = fs.readFileSync(path.join(__dirname, '..', 'weekly-exam.js'), 'utf8');
+  const cats = [
+    { id: 'special_prokurorluq', examType: 'special', parentId: null, questionsMode: 'none', name: 'ProkRoot' },
+    { id: 'leaf1', examType: 'special', parentId: 'special_prokurorluq', questionsMode: 'all', name: 'Cinayət Məcəlləsi' },
+    { id: 'leaf2', examType: 'special', parentId: 'special_prokurorluq', questionsMode: 'all', name: 'Cinayət Məcəlləsi' }
+  ];
+  const ctx = loadWeeklyLeafHelper(weeklyJs, cats);
+
+  const calls = [];
+  const writeEntries = async (rootId, entries) => {
+    calls.push({ rootId, entries });
+    return true;
+  };
+
+  const a = await ctx.__weeklyPrepareQuotaMapping({
+    rootId: 'special_prokurorluq',
+    schema: [{ name: 'Cinayət Məcəlləsi', count: 5 }],
+    nameToCatId: null,
+    writeEntries
+  });
+  expect(a && a.status).toBe('abort');
+  expect(a.reason).toBe('ambiguous');
+  expect(calls.length).toBe(0);
+
+  const b = await ctx.__weeklyPrepareQuotaMapping({
+    rootId: 'special_prokurorluq',
+    schema: [{ name: 'Cinayət Məcəlləsi', count: 5 }],
+    nameToCatId: null,
+    writeEntries,
+    chooseAmbiguous: async () => ({ 'Cinayət Məcəlləsi': 'leaf2' })
+  });
+  expect(b && b.status).toBe('ok');
+  expect(b.chosenEntries).toEqual({ 'Cinayət Məcəlləsi': 'leaf2' });
+  expect(calls.length).toBe(1);
+  expect(calls[0]).toEqual({ rootId: 'special_prokurorluq', entries: { 'Cinayət Məcəlləsi': 'leaf2' } });
 });
 
 test('transaction writes for audit attempts', async () => {

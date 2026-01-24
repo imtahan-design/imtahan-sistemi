@@ -108,6 +108,8 @@
   function __leafCategoriesUnder(rootId) {
     var subtree = __collectSubtreeIds(rootId);
     var all = Array.isArray(categories) ? categories : [];
+    var rootStr = String(rootId || '');
+    var expectSpecial = rootStr.indexOf('special_') === 0;
     var hasChild = new Set();
     all.forEach(function(c) {
       if (!c || c.parentId == null) return;
@@ -119,6 +121,10 @@
       var id = String(c.id);
       if (id === String(rootId)) return false;
       if (!subtree.has(id)) return false;
+      if (expectSpecial) {
+        var et = (c.examType == null || c.examType === '') ? 'special' : String(c.examType);
+        if (et !== 'special') return false;
+      }
       if (c.deleted === true) return false;
       if (__isQuestionsDisabled(c)) return false;
       if (hasChild.has(id)) return false;
@@ -156,51 +162,227 @@
     ];
   }
 
-  var __prokQuotaMapCache = null;
-  var __prokQuotaMapCacheAt = 0;
-  async function __loadProkQuotaMap() {
+  var __weeklyQuotaMapCache = {};
+  async function __loadWeeklyQuotaMap(rootId) {
+    rootId = String(rootId || '');
     try {
       if (!db) return null;
       var now = Date.now();
-      if (__prokQuotaMapCache && (now - __prokQuotaMapCacheAt) < 300000) return __prokQuotaMapCache;
+      var hit = __weeklyQuotaMapCache[rootId] || null;
+      if (hit && hit.map && (now - hit.at) < 300000) return hit.map;
       var snap = await db.collection('settings').doc('weekly_quota_maps').get();
       var data = (snap && snap.exists) ? (snap.data() || {}) : {};
-      var m = (data && data.prokurorluqNameToCatId && typeof data.prokurorluqNameToCatId === 'object') ? data.prokurorluqNameToCatId : null;
-      __prokQuotaMapCache = m;
-      __prokQuotaMapCacheAt = now;
+      var m = null;
+      try {
+        if (data && data.quotaMapsByRootId && typeof data.quotaMapsByRootId === 'object') {
+          var node = data.quotaMapsByRootId[rootId] || null;
+          if (node && node.nameToCatId && typeof node.nameToCatId === 'object') m = node.nameToCatId;
+        }
+      } catch (_) { m = null; }
+      if (!m && rootId === 'special_prokurorluq') {
+        m = (data && data.prokurorluqNameToCatId && typeof data.prokurorluqNameToCatId === 'object') ? data.prokurorluqNameToCatId : null;
+      }
+      __weeklyQuotaMapCache[rootId] = { map: m, at: now };
       return m;
     } catch (_) {
       return null;
     }
   }
 
-  async function __upsertProkQuotaMapEntry(name, catId, existingMap) {
-    name = String(name || '').trim();
-    catId = catId != null ? String(catId) : '';
-    if (!name || !catId) return existingMap && typeof existingMap === 'object' ? existingMap : null;
-    var current = (existingMap && typeof existingMap === 'object') ? existingMap : (__prokQuotaMapCache && typeof __prokQuotaMapCache === 'object' ? __prokQuotaMapCache : null);
+  async function __mergeWeeklyQuotaMapEntries(rootId, entries) {
+    rootId = String(rootId || '');
     try {
-      if (current && current[name] != null && String(current[name]) === catId) return current;
-    } catch (_) {}
-    try {
-      if (!db) return current;
-      await db.collection('settings').doc('weekly_quota_maps').set({
-        prokurorluqNameToCatId: (function(){ var o = {}; o[name] = catId; return o; })()
-      }, { merge: true });
-      var next = current && typeof current === 'object' ? Object.assign({}, current) : {};
-      next[name] = catId;
-      __prokQuotaMapCache = next;
-      __prokQuotaMapCacheAt = Date.now();
-      return next;
+      if (!db) return false;
+      if (!entries || typeof entries !== 'object') return false;
+      var keys = Object.keys(entries);
+      if (!keys.length) return false;
+      var payload = { quotaMapsByRootId: {} };
+      payload.quotaMapsByRootId[rootId] = { nameToCatId: entries };
+      await db.collection('settings').doc('weekly_quota_maps').set(payload, { merge: true });
+      return true;
     } catch (_) {
-      return current;
+      return false;
     }
+  }
+
+  async function __weeklyChooseAmbiguousMappingUI(input) {
+    input = input || {};
+    var rootId = String(input.rootId || '');
+    var items = Array.isArray(input.items) ? input.items : [];
+    if (!items.length) return {};
+
+    return await new Promise(function(resolve) {
+      var modal = document.createElement('div');
+      modal.id = 'weekly-ambiguous-mapping-modal';
+      modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 overflow-y-auto p-4 flex items-center justify-center';
+      var rows = items.map(function(it, idx){
+        var label = String(it && it.label || '');
+        var opts = Array.isArray(it && it.options) ? it.options : [];
+        var optHtml = opts.map(function(o){
+          var id = o && o.id != null ? String(o.id) : '';
+          var name = String(o && o.name || '');
+          return '<option value="' + escapeHtml(id) + '">' + escapeHtml(name + ' (' + id + ')') + '</option>';
+        }).join('');
+        return '<div class="bg-gray-800 p-4 rounded-lg border border-gray-700 mb-3">'
+          + '<div class="text-sm text-gray-200 font-semibold mb-2">' + escapeHtml(label) + '</div>'
+          + '<select data-idx="' + String(idx) + '" class="w-full p-2 rounded bg-gray-900 text-gray-100 border border-gray-700">' + optHtml + '</select>'
+          + '</div>';
+      }).join('');
+      modal.innerHTML = ''
+        + '<div class="bg-gray-900 w-full max-w-2xl rounded-xl shadow-2xl border border-gray-700">'
+        + '  <div class="p-5 border-b border-gray-800 flex justify-between items-center">'
+        + '    <div>'
+        + '      <h3 class="text-lg font-bold text-white">Ambiguous kvota mapping</h3>'
+        + '      <div class="text-xs text-gray-400 mt-1">Root: ' + escapeHtml(rootId) + '</div>'
+        + '    </div>'
+        + '    <button id="weekly-ambig-close" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>'
+        + '  </div>'
+        + '  <div class="p-5">' + rows + '</div>'
+        + '  <div class="p-5 border-t border-gray-800 flex justify-end gap-3">'
+        + '    <button id="weekly-ambig-cancel" class="py-2 px-4 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded">Ləğv et</button>'
+        + '    <button id="weekly-ambig-save" class="py-2 px-4 bg-blue-700 hover:bg-blue-600 text-white rounded">Seç və davam et</button>'
+        + '  </div>'
+        + '</div>';
+      document.body.appendChild(modal);
+
+      function cleanup(val) {
+        try { modal.remove(); } catch(_) {}
+        resolve(val);
+      }
+      var closeBtn = modal.querySelector('#weekly-ambig-close');
+      var cancelBtn = modal.querySelector('#weekly-ambig-cancel');
+      var saveBtn = modal.querySelector('#weekly-ambig-save');
+      if (closeBtn) closeBtn.onclick = function(){ cleanup(null); };
+      if (cancelBtn) cancelBtn.onclick = function(){ cleanup(null); };
+      if (saveBtn) saveBtn.onclick = function(){
+        var out = {};
+        for (var i = 0; i < items.length; i++) {
+          var sel = modal.querySelector('select[data-idx="' + String(i) + '"]');
+          var val = sel ? String(sel.value || '') : '';
+          if (!val) continue;
+          var label = String(items[i] && items[i].label || '');
+          if (label) out[label] = val;
+        }
+        cleanup(out);
+      };
+    });
+  }
+
+  async function __weeklyPrepareQuotaMapping(input) {
+    input = input || {};
+    var rootId = String(input.rootId || '');
+    if (!rootId || rootId.indexOf('special_') !== 0) return { status: 'abort', reason: 'missing_root' };
+    var schema = Array.isArray(input.schema) ? input.schema : [];
+    var nameToCatId = (input.nameToCatId && typeof input.nameToCatId === 'object') ? input.nameToCatId : null;
+    var confirmContinueMissing = (typeof input.confirmContinueMissing === 'function') ? input.confirmContinueMissing : null;
+    var chooseAmbiguous = (typeof input.chooseAmbiguous === 'function') ? input.chooseAmbiguous : null;
+    var writeEntries = (typeof input.writeEntries === 'function') ? input.writeEntries : null;
+
+    var leaves = __leafCategoriesUnder(rootId);
+    var direct = leaves.filter(function(c){ return c && String(c.parentId || '') === rootId; });
+    var pool = direct.length ? direct : leaves;
+
+    var normToCats = new Map();
+    for (var i = 0; i < pool.length; i++) {
+      var c = pool[i] || {};
+      if (!c || c.id == null) continue;
+      var nn = __normalizeCatName(c.name);
+      if (!nn) continue;
+      if (!normToCats.has(nn)) normToCats.set(nn, []);
+      normToCats.get(nn).push({ id: String(c.id), name: String(c.name || '') });
+    }
+
+    var existingNormKeys = new Set();
+    if (nameToCatId && typeof nameToCatId === 'object') {
+      Object.keys(nameToCatId).forEach(function(k){
+        var nk = __normalizeCatName(k);
+        if (nk) existingNormKeys.add(nk);
+      });
+    }
+
+    var autoEntries = {};
+    var missing = [];
+    var ambiguous = [];
+
+    for (var s = 0; s < schema.length; s++) {
+      var it = schema[s] || {};
+      var label = String(it.name || '');
+      if (!label) continue;
+      var hasDirect = nameToCatId && typeof nameToCatId === 'object' && nameToCatId[label] != null;
+      if (hasDirect) continue;
+      var nl = __normalizeCatName(label);
+      if (nl && existingNormKeys.has(nl)) continue;
+      var candidates = nl ? (normToCats.get(nl) || []) : [];
+      if (candidates.length === 1) {
+        autoEntries[label] = String(candidates[0].id);
+      } else if (!candidates.length) {
+        missing.push({ label: label, count: Number(it.count) || 0 });
+      } else {
+        ambiguous.push({ label: label, count: Number(it.count) || 0, options: candidates.slice() });
+      }
+    }
+
+    var chosenEntries = {};
+    if (ambiguous.length) {
+      if (!chooseAmbiguous) return { status: 'abort', reason: 'ambiguous', ambiguous: ambiguous };
+      var picked = await chooseAmbiguous({ rootId: rootId, items: ambiguous }) || null;
+      if (!picked || typeof picked !== 'object') return { status: 'abort', reason: 'ambiguous_cancel', ambiguous: ambiguous };
+      for (var a = 0; a < ambiguous.length; a++) {
+        var row = ambiguous[a] || {};
+        var lbl = String(row.label || '');
+        var val = picked[lbl] != null ? String(picked[lbl]) : '';
+        if (!val) return { status: 'abort', reason: 'ambiguous_incomplete', ambiguous: ambiguous };
+        var ok = false;
+        var opts = Array.isArray(row.options) ? row.options : [];
+        for (var oi = 0; oi < opts.length; oi++) {
+          var o = opts[oi] || {};
+          if (String(o.id) === val) { ok = true; break; }
+        }
+        if (!ok) return { status: 'abort', reason: 'ambiguous_invalid', ambiguous: ambiguous };
+        chosenEntries[lbl] = val;
+      }
+    }
+
+    var willWriteEntries = Object.keys(autoEntries).length || Object.keys(chosenEntries).length;
+    var continueMissing = false;
+    if (missing.length) {
+      if (!confirmContinueMissing) return { status: 'abort', reason: 'missing', missing: missing };
+      continueMissing = !!(await confirmContinueMissing({ rootId: rootId, missing: missing, ambiguous: ambiguous }));
+      if (!continueMissing) return { status: 'abort', reason: 'missing_cancel', missing: missing };
+    }
+
+    var mergedMap = nameToCatId && typeof nameToCatId === 'object' ? Object.assign({}, nameToCatId) : {};
+    var toWrite = Object.assign({}, autoEntries, chosenEntries);
+    var wrote = false;
+    if (willWriteEntries && (missing.length === 0 || continueMissing)) {
+      if (writeEntries) {
+        wrote = await writeEntries(rootId, toWrite);
+        if (wrote) {
+          mergedMap = Object.assign({}, mergedMap, toWrite);
+          __weeklyQuotaMapCache[rootId] = { map: mergedMap, at: Date.now() };
+        }
+      }
+    }
+
+    return {
+      status: 'ok',
+      rootId: rootId,
+      nameToCatId: mergedMap,
+      missing: missing,
+      ambiguous: ambiguous,
+      autoEntries: autoEntries,
+      chosenEntries: chosenEntries,
+      continueMissing: continueMissing,
+      wrote: wrote
+    };
   }
 
   function __prokResolveSchemaIds(schema, opts) {
     opts = opts || {};
     var rootId = String(opts.rootId || 'special_prokurorluq');
-    var idMapRaw = (opts && opts.prokurorluqNameToCatId && typeof opts.prokurorluqNameToCatId === 'object') ? opts.prokurorluqNameToCatId : null;
+    var idMapRaw = (opts && opts.nameToCatId && typeof opts.nameToCatId === 'object') ? opts.nameToCatId
+      : (opts && opts.prokurorluqNameToCatId && typeof opts.prokurorluqNameToCatId === 'object') ? opts.prokurorluqNameToCatId
+      : null;
     var idMapNorm = new Map();
     try {
       if (idMapRaw) {
@@ -645,6 +827,7 @@
   const WeeklyExamSystem = {
     findCategory(schemaItem) {
       if (!window.categories || !Array.isArray(window.categories)) return null;
+      schemaItem = schemaItem || {};
       const targetName = (schemaItem.name || '').trim().toLowerCase();
       const targetId = String(schemaItem.id || '');
       const nrm = function(s) {
@@ -655,24 +838,29 @@
       const keys = Array.isArray(schemaItem.keys) ? schemaItem.keys.map(nrm) : [];
       let cat = null;
       if (targetId) {
-        cat = categories.find(c => String(c.id) === targetId);
-        if (cat && Array.isArray(cat.questions) && cat.questions.length > 0) return cat;
+        cat = categories.find(c => String(c.id) === targetId) || null;
+        if (cat) return cat;
       }
-      if (!cat) {
-        cat = categories.find(c => {
-          const cn = c.name ? nrm(c.name) : '';
-          return c.parentId && String(c.parentId).startsWith('special_') && (cn === tn || keys.some(k => cn.includes(k)));
-        });
-        if (cat && Array.isArray(cat.questions) && cat.questions.length > 0) return cat;
-      }
-      if (!cat) {
-        cat = categories.find(c => {
-          const cn = c.name ? nrm(c.name) : '';
-          return cn === tn || keys.some(k => cn.includes(k));
-        });
-        if (cat && Array.isArray(cat.questions) && cat.questions.length > 0) return cat;
-      }
-      return null;
+      var rootId = '';
+      try {
+        if (schemaItem.rootId) rootId = String(schemaItem.rootId || '');
+        else if (schemaItem.type) {
+          var t = String(schemaItem.type || '');
+          rootId = t.indexOf('special_') === 0 ? t : ('special_' + t);
+        } else if (schemaItem.parentId && String(schemaItem.parentId || '').indexOf('special_') === 0) {
+          rootId = String(schemaItem.parentId || '');
+        }
+      } catch (_) { rootId = ''; }
+      if (!rootId) return null;
+      var scope = __leafCategoriesUnder(rootId);
+      cat = scope.find(function(c){
+        var cn = c && c.name ? nrm(c.name) : '';
+        if (!cn) return false;
+        if (tn && cn === tn) return true;
+        if (keys.length && keys.some(function(k){ return k && cn.indexOf(k) >= 0; })) return true;
+        return false;
+      }) || null;
+      return cat;
     },
 
     // Admin: İdarəetmə pəncərəsini açır (Yarat, Baxış, Yayımla, Arxiv)
@@ -754,20 +942,49 @@
       if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
       if (String(type) === 'prokurorluq') {
         try {
-          var quotaMap0 = await __loadProkQuotaMap();
-          quotaMap0 = await __upsertProkQuotaMapEntry('Əməliyyat axtarış fəaliyyəti haqqında qanun', '1769183607574', quotaMap0);
-          var schemaRaw0 = __prokResolveSchemaIds(__prokQuotaSchema(), { rootId: 'special_prokurorluq', prokurorluqNameToCatId: quotaMap0 });
+          var rootId0 = 'special_prokurorluq';
+          var schemaDef0 = __prokQuotaSchema();
+          if (!rootId0 || String(rootId0).indexOf('special_') !== 0) {
+            showNotification('RootId tapılmadı (deterministic olmalıdır).', 'error');
+            return;
+          }
+          var quotaMap0 = await __loadWeeklyQuotaMap(rootId0);
+          var prep0 = await __weeklyPrepareQuotaMapping({
+            rootId: rootId0,
+            schema: schemaDef0,
+            nameToCatId: quotaMap0,
+            writeEntries: __mergeWeeklyQuotaMapEntries,
+            chooseAmbiguous: __weeklyChooseAmbiguousMappingUI,
+            confirmContinueMissing: function(info) {
+              info = info || {};
+              var miss = Array.isArray(info.missing) ? info.missing : [];
+              var lines = miss.map(function(m){
+                var lbl = String(m && m.label || '').trim();
+                var cnt = Number(m && m.count) || 0;
+                return lbl + (cnt ? (' (+' + String(cnt) + ')') : '');
+              }).join('\n');
+              showNotification('Kvota mappingdə çatışmayan schema label var. Davam etməzdən əvvəl təsdiq lazımdır.', 'error');
+              return confirm('Kvota mappingdə çatışmayan schema label var (draft yazılmayacaq):\n\n' + lines + '\n\nDavam etsəniz, bu label-lərin kvotası digər kateqoriyalara bölüşdürüləcək.\nDavam edilsin?');
+            }
+          });
+          if (!prep0 || prep0.status !== 'ok') {
+            if (prep0 && (prep0.reason === 'ambiguous' || prep0.reason === 'ambiguous_cancel' || prep0.reason === 'ambiguous_incomplete')) {
+              showNotification('Ambiguous schema label var. Seçim edilmədən davam etmək olmaz.', 'error');
+            } else if (prep0 && (prep0.reason === 'missing' || prep0.reason === 'missing_cancel')) {
+              showNotification('Kvota mapping çatışmır. Təsdiq edilmədən davam etmək olmaz.', 'error');
+            } else if (prep0 && prep0.reason === 'missing_root') {
+              showNotification('RootId tapılmadı (deterministic olmalıdır).', 'error');
+            } else {
+              showNotification('Kvota mapping hazırlanarkən xəta baş verdi.', 'error');
+            }
+            return;
+          }
+          quotaMap0 = prep0 && prep0.nameToCatId ? prep0.nameToCatId : quotaMap0;
+          var schemaRaw0 = __prokResolveSchemaIds(schemaDef0, { rootId: rootId0, nameToCatId: quotaMap0 });
           var missing0 = schemaRaw0.filter(function(s){ return s && s.missing; });
-          if (missing0.length) {
-            var missLines0 = missing0.map(function(m){
-              var nm = String(m.name || '').trim();
-              var cid = m && m.mappedCatId ? String(m.mappedCatId) : '';
-              var cnt = Number(m.count) || 0;
-              return nm + (cid ? (' -> ' + cid) : '') + (cnt ? (' (+' + String(cnt) + ')') : '');
-            }).join('\n');
-            showNotification('Kvota mappingdə çatışmayan kateqoriya var: ' + missing0.map(function(m){ return String(m.name || '').trim(); }).filter(Boolean).join(', '), 'warning');
-            try { alert('Kvota mappingdə çatışmayan kateqoriya var:\n' + missLines0); } catch (_) {}
-            try { window.__lastWeeklyProkMissingCats = missing0; } catch (_) {}
+          if (missing0.length && !(prep0 && prep0.continueMissing)) {
+            showNotification('Kvota mapping çatışmır. Təsdiq edilmədən davam etmək olmaz.', 'error');
+            return;
           }
           var missingTotal0 = missing0.reduce(function(acc, m){ return acc + (Number(m && m.count) || 0); }, 0);
           var schema0 = schemaRaw0.filter(function(s){ return s && !s.missing && s.id && (Number(s.count) || 0) > 0; }).map(function(s){ return { id: String(s.id), name: String(s.name || ''), count: Number(s.count) || 0 }; });
