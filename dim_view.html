@@ -831,7 +831,14 @@
                     const docRef = db.collection('weekly_exams').doc('active_' + String(weeklyExamType));
                     const doc = await docRef.get();
                     if (!doc.exists) throw new Error("Bu kateqoriya üçün hələlik aktiv sınaq yoxdur.");
-                    const data = doc.data() || {};
+                    let data = doc.data() || {};
+                    if (String(weeklyExamType) === 'prokurorluq' && data && data.activeDocId) {
+                        const activeId = String(data.activeDocId || '');
+                        if (!activeId) throw new Error("Bu kateqoriya üçün hələlik aktiv sınaq yoxdur.");
+                        const activeDoc = await db.collection('weekly_exams').doc(activeId).get();
+                        if (!activeDoc.exists) throw new Error("Bu kateqoriya üçün hələlik aktiv sınaq yoxdur.");
+                        data = activeDoc.data() || {};
+                    }
                     cat = {
                         id: catId,
                         name: data.name || 'Həftəlik Sınaq',

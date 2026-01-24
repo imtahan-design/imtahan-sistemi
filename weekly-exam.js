@@ -127,6 +127,87 @@
     });
   }
 
+  function __normalizeCatName(name) {
+    name = String(name || '');
+    try { name = name.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch(_) {}
+    name = name.toLowerCase();
+    name = name.replace(/[\s\.\,\;\:\(\)\[\]\{\}\-–—_]+/g, ' ');
+    name = name.replace(/\s+/g, ' ').trim();
+    return name;
+  }
+
+  function __prokQuotaSchema() {
+    return [
+      { name: 'Cinayət Məcəlləsi', count: 20 },
+      { name: 'Cinayət Prosessual Məcəllə', count: 20 },
+      { name: 'Konstitusiya', count: 6 },
+      { name: 'Normativ Hüquqi Aktlar', count: 2 },
+      { name: 'İnzibati Xətalar Məcəlləsi', count: 5 },
+      { name: 'Mülki Məcəllə', count: 2 },
+      { name: 'Mülki Prosessual Məcəllə', count: 2 },
+      { name: 'Əmək Məcəlləsi', count: 1 },
+      { name: 'Prokurorluq haqqında', count: 8 },
+      { name: 'Prokurorluq orqanlarında qulluq keçmə', count: 6 },
+      { name: 'Korrupsiya', count: 3 },
+      { name: 'Polis haqqında qanun', count: 1 },
+      { name: 'Əməliyyat-axtarış fəaliyyəti haqqında', count: 2 },
+      { name: 'Məhkəmələr və Hakimlər haqqında', count: 1 },
+      { name: 'Vəkillər və Vəkillik', count: 1 }
+    ];
+  }
+
+  function __prokResolveSchemaIds(schema, opts) {
+    opts = opts || {};
+    var rootId = String(opts.rootId || 'special_prokurorluq');
+    var leaves = __leafCategoriesUnder(rootId);
+    var direct = leaves.filter(function(c){ return c && String(c.parentId || '') === rootId; });
+    var pool1 = direct.length ? direct : leaves;
+    var byNorm = new Map();
+    for (var i = 0; i < pool1.length; i++) {
+      var c = pool1[i] || {};
+      var n = __normalizeCatName(c.name);
+      if (!n) continue;
+      if (!byNorm.has(n)) byNorm.set(n, c);
+    }
+    var out = [];
+    for (var j = 0; j < schema.length; j++) {
+      var s = schema[j] || {};
+      var n2 = __normalizeCatName(s.name);
+      var c2 = byNorm.get(n2) || null;
+      if (c2 && c2.id != null) out.push({ id: String(c2.id), name: String(c2.name || s.name || ''), count: Number(s.count) || 0 });
+      else out.push({ id: null, name: String(s.name || ''), count: Number(s.count) || 0, missing: true });
+    }
+    return out;
+  }
+
+  function __toMillis(v) {
+    if (v == null) return null;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string') {
+      var n = Number(v);
+      return isNaN(n) ? null : n;
+    }
+    try { if (typeof v.toMillis === 'function') return v.toMillis(); } catch(_) {}
+    try { if (typeof v.toDate === 'function') return v.toDate().getTime(); } catch(_) {}
+    return null;
+  }
+
+  function __prokSortQuestions(a, b) {
+    var aUsed = __toMillis(a && a.lastUsedAt);
+    var bUsed = __toMillis(b && b.lastUsedAt);
+    var aFresh = (aUsed == null);
+    var bFresh = (bUsed == null);
+    if (aFresh !== bFresh) return aFresh ? -1 : 1;
+    if (aUsed != null && bUsed != null && aUsed !== bUsed) return aUsed - bUsed;
+    var aCount = (a && typeof a.usedCount === 'number') ? a.usedCount : Number(a && a.usedCount || 0);
+    var bCount = (b && typeof b.usedCount === 'number') ? b.usedCount : Number(b && b.usedCount || 0);
+    if (aCount !== bCount) return aCount - bCount;
+    var aCreated = __toMillis(a && a.createdAt);
+    var bCreated = __toMillis(b && b.createdAt);
+    if (aCreated != null && bCreated != null && aCreated !== bCreated) return aCreated - bCreated;
+    return String(a && a.id || '').localeCompare(String(b && b.id || ''));
+  }
+
   function __getFlaggedModalOpener() {
     try {
       if (typeof window !== 'undefined' && typeof window.__openFlaggedQuestionModal === 'function') return window.__openFlaggedQuestionModal;
@@ -523,7 +604,7 @@
             <div class="mt-8 p-4 rounded-lg bg-blue-900/20 border border-blue-800/30 flex items-start gap-4">
               <i class="fas fa-info-circle text-blue-400 mt-1"></i>
               <div class="text-sm text-gray-300">
-                <strong class="text-blue-300">Məlumat:</strong> Yeni sınaq yaradarkən sistem avtomatik olaraq son 2 həftənin suallarını istisna edir və bazadan təsadüfi suallar seçir. Yayımlamadan öncə "Baxış" edərək sualları dəyişdirə bilərsiniz.
+                <strong class="text-blue-300">Məlumat:</strong> Yeni sınaq yaradarkən sistem avtomatik olaraq son 4 yayımlamada istifadə olunan sualları istisna edir (cooldown=4) və bazadan suallar seçir. Yayımlamadan öncə "Baxış" edərək sualları dəyişdirə bilərsiniz.
               </div>
             </div>
           </div>
@@ -532,10 +613,146 @@
       document.body.appendChild(modal);
     },
 
-    // Admin: Qaralama yaradır (Son 2 həftəni istisna)
+    // Admin: Qaralama yaradır (Cooldown=4)
     async generateDraft(type = 'prokurorluq') {
       if (!db) return showNotification('Verilənlər bazası bağlantısı yoxdur!', 'error');
       if (!currentUser || currentUser.role !== 'admin') return showNotification('İcazə yoxdur!', 'error');
+      if (String(type) === 'prokurorluq') {
+        try {
+          var schema0 = __prokResolveSchemaIds(__prokQuotaSchema(), { rootId: 'special_prokurorluq' });
+          var missingCats = schema0.filter(function(s){ return s && s.missing; }).map(function(s){ return String(s.name || '').trim(); }).filter(function(s){ return s; });
+          if (missingCats.length) {
+            showNotification('Kvota mapping üçün kateqoriyalar tapılmadı: ' + missingCats.join(', '), 'error');
+            return;
+          }
+
+          var excludeIds0 = new Set();
+          try {
+            var usageDoc = await db.collection('weekly_exams').doc('usage_prokurorluq').get();
+            if (usageDoc && usageDoc.exists) {
+              var usage = usageDoc.data() || {};
+              var recent = Array.isArray(usage.recentPublishes) ? usage.recentPublishes : [];
+              recent.slice(-4).forEach(function(p){
+                var ids = p && Array.isArray(p.questionIds) ? p.questionIds : [];
+                ids.forEach(function(id){ excludeIds0.add(String(id)); });
+              });
+            }
+          } catch (e0) { console.error(e0); }
+
+          var selectedIds0 = new Set();
+          var pickedByCat = new Map();
+          var fallbackByCat = new Map();
+          var shortage = [];
+          var qCache0 = new Map();
+          for (var i0 = 0; i0 < schema0.length; i0++) {
+            var it0 = schema0[i0] || {};
+            var catId0 = String(it0.id || '');
+            var need0 = Number(it0.count) || 0;
+            if (!catId0 || need0 <= 0) continue;
+            var all0 = qCache0.has(catId0) ? (qCache0.get(catId0) || []) : await __weeklyFetchSubcollectionQuestions(catId0);
+            qCache0.set(catId0, all0);
+            var pool0 = (Array.isArray(all0) ? all0 : []).filter(function(q){
+              if (!q || q.deleted === true || q.legacy === true) return false;
+              var qid = q.id != null ? String(q.id) : '';
+              if (!qid) return false;
+              if (selectedIds0.has(qid)) return false;
+              return true;
+            });
+            pool0.sort(__prokSortQuestions);
+            var allowed0 = pool0.filter(function(q){ return !excludeIds0.has(String(q.id)); });
+            var picked0 = allowed0.slice(0, need0);
+            picked0.forEach(function(q){ selectedIds0.add(String(q.id)); });
+            pickedByCat.set(catId0, picked0);
+            if (picked0.length < need0) {
+              shortage.push({ catId: catId0, name: String(it0.name || ''), missing: (need0 - picked0.length) });
+              var rest0 = pool0.filter(function(q){ return picked0.indexOf(q) < 0; });
+              fallbackByCat.set(catId0, rest0);
+            }
+          }
+
+          if (shortage.length) {
+            var msg0 = shortage.map(function(s){ return String(s.name || s.catId) + ' (+' + String(s.missing) + ')'; }).join('\n');
+            var ok0 = confirm('Bu kateqoriyada yeni sual qalmayıb, təkrar istifadə olunacaq:\n' + msg0 + '\n\nDavam edilsin?');
+            if (!ok0) {
+              showNotification('Proses dayandırıldı. Heç nə yazılmadı.', 'info');
+              return;
+            }
+          }
+
+          for (var si0 = 0; si0 < shortage.length; si0++) {
+            var s0 = shortage[si0] || {};
+            var catId1 = String(s0.catId || '');
+            var miss1 = Number(s0.missing) || 0;
+            if (!catId1 || miss1 <= 0) continue;
+            var fb0 = (fallbackByCat.get(catId1) || []).filter(function(q){ return q && q.id != null && !selectedIds0.has(String(q.id)); });
+            fb0.sort(__prokSortQuestions);
+            var add0 = fb0.slice(0, miss1);
+            add0.forEach(function(q){ selectedIds0.add(String(q.id)); });
+            var prev0 = pickedByCat.get(catId1) || [];
+            pickedByCat.set(catId1, prev0.concat(add0));
+          }
+
+          var examQuestions0 = [];
+          for (var i1 = 0; i1 < schema0.length; i1++) {
+            var it1 = schema0[i1] || {};
+            var catId2 = String(it1.id || '');
+            var picked1 = pickedByCat.get(catId2) || [];
+            var catObj1 = (Array.isArray(categories) ? categories : []).find(function(c){ return c && String(c.id) === catId2; }) || null;
+            var mode1 = catObj1 ? __getQuestionsMode(catObj1) : 'subcollection';
+            for (var q1 = 0; q1 < picked1.length; q1++) {
+              var qq1 = picked1[q1] || {};
+              qq1._sourceSchemaName = String(it1.name || '');
+              qq1._sourceCategoryId = catId2;
+              qq1._sourceCategoryMode = mode1;
+              examQuestions0.push(qq1);
+            }
+          }
+
+          if (examQuestions0.length !== 80) {
+            showNotification('Kvota tam dolmadı: ' + String(examQuestions0.length) + '/80', 'error');
+            return;
+          }
+
+          try {
+            if (typeof window.getFlaggedQuestions === 'function') {
+              var flagged00 = window.getFlaggedQuestions(examQuestions0) || [];
+              var map00 = new Map();
+              (Array.isArray(flagged00) ? flagged00 : []).forEach(function(f){
+                if (f && f.id != null && Array.isArray(f.reasons) && f.reasons.length) map00.set(String(f.id), f.reasons);
+              });
+              examQuestions0.forEach(function(q){
+                var rid = q && q.id != null ? String(q.id) : '';
+                if (!rid) return;
+                var rs = map00.get(rid);
+                if (rs) q._flagReasons = rs;
+              });
+            }
+          } catch(_) {}
+
+          var nonce0 = 'prok_' + String(Date.now()) + '_' + String(Math.random()).slice(2);
+          const draft0 = {
+            id: 'weekly_draft_' + type,
+            type: type,
+            exam_type: 'special',
+            questions: examQuestions0,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdBy: currentUser.id,
+            status: 'draft',
+            publishNonce: nonce0,
+            modelVersion: 2
+          };
+          await db.collection('weekly_exams').doc('draft_' + type).set(draft0, { merge: true });
+          const managerModal0 = document.getElementById('weekly-manager-modal');
+          if (managerModal0) managerModal0.remove();
+          showNotification('Qaralama yaradıldı! (80 sual).', 'success');
+          this.openFullEditor(type);
+          return;
+        } catch (e1) {
+          console.error(e1);
+          showNotification('Qaralama yaradılarkən xəta: ' + (e1 && e1.message ? e1.message : String(e1)), 'error');
+          return;
+        }
+      }
       let schema = [];
       var rootId = String(type || '');
       if (!rootId.startsWith('special_')) rootId = 'special_' + rootId;
@@ -1114,6 +1331,148 @@
         }
 
         const weekId = this.getCurrentWeekId();
+        if (String(type) === 'prokurorluq') {
+          var fv0 = firebase && firebase.firestore && firebase.firestore.FieldValue ? firebase.firestore.FieldValue : null;
+          if (!fv0) throw new Error('Firestore FieldValue yoxdur');
+          var typeName0 = 'Prokurorluq';
+          var publishNonce0 = data && data.publishNonce ? String(data.publishNonce) : '';
+          if (!publishNonce0) {
+            publishNonce0 = 'prok_' + String(Date.now()) + '_' + String(Math.random()).slice(2);
+            try {
+              await draftRef.set({ publishNonce: publishNonce0, updatedAt: fv0.serverTimestamp() }, { merge: true });
+              data.publishNonce = publishNonce0;
+            } catch(_) {}
+          }
+          var examDocId0 = 'weekly_prokurorluq_' + publishNonce0;
+          var lockDocId0 = 'publish_lock_prokurorluq_' + publishNonce0;
+          var examRef0 = db.collection('weekly_exams').doc(examDocId0);
+          var lockRef0 = db.collection('weekly_exams').doc(lockDocId0);
+          var pointerRef0 = db.collection('weekly_exams').doc('active_prokurorluq');
+          var usageRef0 = db.collection('weekly_exams').doc('usage_prokurorluq');
+          var historyRef0 = db.collection('weekly_exams').doc('history_prokurorluq');
+          var questionIds0 = (Array.isArray(data.questions) ? data.questions : []).map(function(q){ return q && q.id != null ? String(q.id) : ''; }).filter(function(x){ return x; });
+
+          var txRes0 = await db.runTransaction(async function(t) {
+            const lockSnap = await t.get(lockRef0);
+            const draftSnap = await t.get(draftRef);
+            const pointerSnap = await t.get(pointerRef0);
+            const usageSnap = await t.get(usageRef0);
+            const historySnap = await t.get(historyRef0);
+
+            var oldActiveRef0 = null;
+            var oldActiveSnap0 = null;
+            if (pointerSnap && pointerSnap.exists) {
+              var pd0 = pointerSnap.data ? (pointerSnap.data() || {}) : (pointerSnap._data || {});
+              var oldId0 = pd0 && pd0.activeDocId ? String(pd0.activeDocId) : '';
+              if (oldId0) {
+                oldActiveRef0 = db.collection('weekly_exams').doc(oldId0);
+                oldActiveSnap0 = await t.get(oldActiveRef0);
+              }
+            }
+
+            if (lockSnap && lockSnap.exists) {
+              var ld0 = lockSnap.data ? (lockSnap.data() || {}) : (lockSnap._data || {});
+              return { deduped: true, examDocId: ld0 && ld0.examDocId ? String(ld0.examDocId) : examDocId0 };
+            }
+
+            if (!draftSnap || !draftSnap.exists) throw new Error('Qaralama tapılmadı');
+            var dd0 = draftSnap.data ? (draftSnap.data() || {}) : (draftSnap._data || {});
+            if (String(dd0.status || '') === 'published' && dd0.publishedExamDocId) {
+              return { deduped: true, examDocId: String(dd0.publishedExamDocId) };
+            }
+
+            var ts0 = fv0.serverTimestamp();
+            if (oldActiveRef0 && oldActiveSnap0 && oldActiveSnap0.exists) {
+              var od0 = oldActiveSnap0.data ? (oldActiveSnap0.data() || {}) : (oldActiveSnap0._data || {});
+              if (String(od0.status || '') === 'active') {
+                t.set(oldActiveRef0, { status: 'inactive', inactivatedAt: ts0, replacedBy: examRef0.id }, { merge: true });
+              }
+            }
+
+            t.set(examRef0, {
+              ...data,
+              publishedAt: ts0,
+              weekId: weekId,
+              status: 'active',
+              isSpecial: true,
+              exam_type: 'special',
+              type: 'prokurorluq',
+              publishNonce: publishNonce0,
+              sourceDraftId: String(draftRef.id),
+              name: `Həftəlik Sınaq - ${typeName0} (${weekId})`,
+              description: `${typeName0} üzrə həftəlik rəsmi sınaq imtahanı`
+            }, { merge: false });
+
+            t.set(pointerRef0, {
+              kind: 'weekly_active_pointer',
+              type: 'prokurorluq',
+              activeDocId: examRef0.id,
+              weekId: weekId,
+              updatedAt: ts0
+            }, { merge: true });
+
+            t.set(lockRef0, {
+              kind: 'weekly_publish_lock',
+              type: 'prokurorluq',
+              publishNonce: publishNonce0,
+              examDocId: examRef0.id,
+              weekId: weekId,
+              createdAt: ts0
+            }, { merge: true });
+
+            t.set(draftRef, {
+              status: 'published',
+              publishedAt: ts0,
+              publishedWeekId: weekId,
+              publishedExamDocId: examRef0.id,
+              publishedNonce: publishNonce0
+            }, { merge: true });
+
+            var recent0 = [];
+            if (usageSnap && usageSnap.exists) {
+              var ud0 = usageSnap.data ? (usageSnap.data() || {}) : (usageSnap._data || {});
+              if (Array.isArray(ud0.recentPublishes)) recent0 = ud0.recentPublishes.slice();
+            }
+            recent0 = Array.isArray(recent0) ? recent0 : [];
+            if (recent0.length > 3) recent0 = recent0.slice(-3);
+            recent0.push({ publishNonce: publishNonce0, weekId: weekId, questionIds: questionIds0, publishedAtMs: Date.now() });
+            t.set(usageRef0, { cooldown: 4, recentPublishes: recent0, updatedAt: ts0 }, { merge: true });
+
+            var history0 = {};
+            if (historySnap && historySnap.exists) {
+              var hd0 = historySnap.data ? (historySnap.data() || {}) : (historySnap._data || {});
+              history0 = hd0 && hd0.history ? hd0.history : {};
+            }
+            if (!history0 || typeof history0 !== 'object') history0 = {};
+            history0[weekId] = questionIds0;
+            var keys0 = Object.keys(history0).sort();
+            if (keys0.length > 4) {
+              var newHistory0 = {};
+              keys0.slice(-4).forEach(function(k){ newHistory0[k] = history0[k]; });
+              history0 = newHistory0;
+            }
+            t.set(historyRef0, { history: history0, lastUpdated: ts0 }, { merge: true });
+
+            if (questionIds0.length) {
+              for (var qi0 = 0; qi0 < questionIds0.length; qi0++) {
+                var qid0 = questionIds0[qi0];
+                var qRef0 = db.collection('category_questions').doc(String(qid0));
+                var patch0 = { lastUsedAt: ts0, lastUsedWeeklyKey: weekId, lastUsedWeeklyNonce: publishNonce0 };
+                if (typeof fv0.increment === 'function') patch0.usedCount = fv0.increment(1);
+                t.set(qRef0, patch0, { merge: true });
+              }
+            }
+
+            return { deduped: false, examDocId: examRef0.id };
+          });
+
+          const review0 = document.getElementById('weekly-review-modal');
+          if (review0) review0.remove();
+          const editor0 = document.getElementById('weekly-full-editor-modal');
+          if (editor0) editor0.remove();
+          showNotification(`Həftəlik sınaq (${weekId}) uğurla yayımlandı!`, 'success');
+          return txRes0;
+        }
         const activeRef = db.collection('weekly_exams').doc('active_' + type);
         const activeDoc = await activeRef.get();
         if (activeDoc.exists) {
