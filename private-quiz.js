@@ -141,41 +141,60 @@
     const reader = new FileReader();
     reader.onload = function(e) {
       const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const MAX_SIZE = 800;
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height *= MAX_SIZE / width;
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width *= MAX_SIZE / height;
-            height = MAX_SIZE;
+      img.onload = async function() {
+        const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+        let blob = null;
+        try {
+          blob = await __imageToCompressedBlob({ img, maxSize: 1600, mimeType: 'image/webp', quality: 0.8 });
+        } catch (_e) {
+          blob = null;
+        }
+        if (!blob) {
+          try {
+            blob = await __imageToCompressedBlob({ img, maxSize: 1600, mimeType: 'image/jpeg', quality: 0.8 });
+          } catch (_e) {
+            blob = null;
           }
         }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(img, 0, 0, width, height);
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
-        let preview = document.getElementById(`preview_${index}`);
-        if (compressedBase64.length > 30 * 1024) {
-          const ultraCompressed = canvas.toDataURL('image/jpeg', 0.3);
-          document.getElementById(`data_${index}`).value = ultraCompressed;
-          preview.querySelector('img').src = ultraCompressed;
-        } else {
-          document.getElementById(`data_${index}`).value = compressedBase64;
-          preview.querySelector('img').src = compressedBase64;
+        if (!blob) {
+          showNotification('Şəkil emal edilə bilmədi. Zəhmət olmasa yenidən cəhd edin.', 'error');
+          if (input) input.value = '';
+          return;
         }
-        preview.classList.remove('hidden');
-        document.getElementById(`label_${index}`).classList.add('hidden');
-        if (input) input.value = '';
+        if (blob.size > MAX_UPLOAD_BYTES) {
+          let qNum = null;
+          try {
+            const safeId = String(index).replace(/"/g, '\\"');
+            const item = document.querySelector(`.manual-question-item[data-id="${safeId}"]`);
+            if (item) {
+              const all = Array.from(document.querySelectorAll('.manual-question-item'));
+              const idx = all.indexOf(item);
+              if (idx >= 0) qNum = idx + 1;
+            }
+          } catch (_e) {}
+          const prefix = qNum ? `Sual ${qNum}: ` : '';
+          showNotification(`${prefix}Şəkil 2MB limitini keçir. Zəhmət olmasa şəkli kiçildib yenidən yükləyin.`, 'error');
+          if (input) input.value = '';
+          const label = document.getElementById(`label_${index}`);
+          if (label) label.classList.remove('hidden');
+          return;
+        }
+        const readerBlob = new FileReader();
+        readerBlob.onload = function(ev) {
+          const compressedBase64 = ev.target.result;
+          const preview = document.getElementById(`preview_${index}`);
+          const dataEl = document.getElementById(`data_${index}`);
+          const label = document.getElementById(`label_${index}`);
+          if (dataEl) dataEl.value = compressedBase64;
+          if (preview) {
+            const imgEl = preview.querySelector('img');
+            if (imgEl) imgEl.src = compressedBase64;
+            preview.classList.remove('hidden');
+          }
+          if (label) label.classList.add('hidden');
+          if (input) input.value = '';
+        };
+        readerBlob.readAsDataURL(blob);
       };
       img.src = e.target.result;
     };
@@ -628,6 +647,174 @@
     return (match && match[2].length === 11) ? match[2] : null;
   }
 
+  function __getStorageService() {
+    try {
+      if (typeof firebase === 'undefined') return null;
+      if (typeof firebase.storage !== 'function') return null;
+      return firebase.storage();
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function __isDataUrlImage(value) {
+    return typeof value === 'string' && value.startsWith('data:image/');
+  }
+
+  function __randomId() {
+    return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
+  }
+
+  function __imageToCompressedBlob({ img, maxSize, mimeType, quality }) {
+    return new Promise((resolve, reject) => {
+      try {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const MAX = maxSize || 1600;
+        if (width > height) {
+          if (width > MAX) {
+            height = Math.round(height * (MAX / width));
+            width = MAX;
+          }
+        } else {
+          if (height > MAX) {
+            width = Math.round(width * (MAX / height));
+            height = MAX;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        const q = typeof quality === 'number' ? quality : 0.8;
+        const mt = mimeType || 'image/webp';
+        if (typeof canvas.toBlob === 'function') {
+          canvas.toBlob((blob) => {
+            if (blob) return resolve(blob);
+            try {
+              const dataUrl = canvas.toDataURL(mt, q);
+              fetch(dataUrl).then(r => r.blob()).then(resolve).catch(reject);
+            } catch (e) {
+              reject(e);
+            }
+          }, mt, q);
+        } else {
+          const dataUrl = canvas.toDataURL(mt, q);
+          fetch(dataUrl).then(r => r.blob()).then(resolve).catch(reject);
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+  async function __dataUrlToCompressedBlob(dataUrl, opts) {
+    opts = opts || {};
+    const img = new Image();
+    const blob = await new Promise((resolve, reject) => {
+      img.onload = () => resolve(__imageToCompressedBlob({
+        img,
+        maxSize: opts.maxSize || 1600,
+        mimeType: opts.mimeType || 'image/webp',
+        quality: (typeof opts.quality === 'number' ? opts.quality : 0.8)
+      }));
+      img.onerror = () => reject(new Error('image_load_failed'));
+      img.src = dataUrl;
+    });
+    return await blob;
+  }
+
+  async function __uploadPrivateQuizImage({ storage, teacherId, quizId, questionIndex, dataUrl }) {
+    const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+    let blob = await __dataUrlToCompressedBlob(dataUrl, { maxSize: 1600, quality: 0.8, mimeType: 'image/webp' });
+    let contentType = blob && blob.type ? blob.type : 'image/webp';
+    if (!String(contentType || '').startsWith('image/')) {
+      const res = await fetch(dataUrl);
+      blob = await res.blob();
+      contentType = blob && blob.type ? blob.type : 'image/jpeg';
+    }
+    if (blob && typeof blob.size === 'number' && blob.size > MAX_UPLOAD_BYTES) {
+      throw new Error(`IMG_TOO_LARGE:${questionIndex}`);
+    }
+    const ext = contentType === 'image/png' ? 'png' : (contentType === 'image/webp' ? 'webp' : 'jpg');
+    const filename = `q${questionIndex}_${Date.now()}_${__randomId()}.${ext}`;
+    const path = `private_quiz_images/${teacherId}/${quizId}/${filename}`;
+    const ref = storage.ref().child(path);
+    await ref.put(blob, { contentType, cacheControl: 'public, max-age=31536000, immutable' });
+    return await ref.getDownloadURL();
+  }
+
+  async function __uploadQuestionImagesInPlace({ questions, teacherId, quizId, onProgress }) {
+    const storage = __getStorageService();
+    if (!storage) return { total: 0, uploaded: 0 };
+    const targets = [];
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i] || {};
+      if (__isDataUrlImage(q.image)) targets.push(i);
+    }
+    const total = targets.length;
+    let done = 0;
+    if (typeof onProgress === 'function') onProgress(0, total);
+    const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+    const prepared = {};
+    for (let i = 0; i < targets.length; i++) {
+      const idx = targets[i];
+      const dataUrl = questions[idx] && questions[idx].image ? questions[idx].image : '';
+      let blob = null;
+      let contentType = 'image/webp';
+      try {
+        blob = await __dataUrlToCompressedBlob(dataUrl, { maxSize: 1600, quality: 0.8, mimeType: 'image/webp' });
+        contentType = blob && blob.type ? blob.type : 'image/webp';
+      } catch (_e) {
+        try {
+          const res = await fetch(dataUrl);
+          blob = await res.blob();
+          contentType = blob && blob.type ? blob.type : 'image/jpeg';
+        } catch (_e2) {
+          blob = null;
+        }
+      }
+      if (!blob) {
+        prepared[idx] = { skip: true };
+        continue;
+      }
+      if (!String(contentType || '').startsWith('image/')) contentType = 'image/jpeg';
+      if (blob && typeof blob.size === 'number' && blob.size > MAX_UPLOAD_BYTES) {
+        throw new Error(`IMG_TOO_LARGE:${idx}`);
+      }
+      prepared[idx] = { blob, contentType };
+    }
+    const CONCURRENCY = 3;
+    let uploaded = 0;
+    for (let start = 0; start < targets.length; start += CONCURRENCY) {
+      const batch = targets.slice(start, start + CONCURRENCY);
+      await Promise.all(batch.map(async (idx) => {
+        const prep = prepared[idx] || {};
+        if (prep.skip === true) {
+          done += 1;
+          if (typeof onProgress === 'function') onProgress(done, total);
+          return;
+        }
+        const blob = prep.blob;
+        const contentType = prep.contentType;
+        const ext = contentType === 'image/png' ? 'png' : (contentType === 'image/webp' ? 'webp' : 'jpg');
+        const filename = `q${idx}_${Date.now()}_${__randomId()}.${ext}`;
+        const path = `private_quiz_images/${teacherId}/${quizId}/${filename}`;
+        const ref = storage.ref().child(path);
+        await ref.put(blob, { contentType, cacheControl: 'public, max-age=31536000, immutable' });
+        const url = await ref.getDownloadURL();
+        if (url) questions[idx].image = url;
+        uploaded += 1;
+        done += 1;
+        if (typeof onProgress === 'function') onProgress(done, total);
+      }));
+    }
+    return { total, uploaded };
+  }
+
   window.savePrivateQuizFinal = async function() {
     const editingId = document.getElementById('editing-quiz-id').value;
     const title = document.getElementById('private-quiz-title').value;
@@ -636,6 +823,7 @@
     const defaultTime = parseInt(document.getElementById('private-quiz-default-time').value) || 45;
     const autoFillEnabled = document.getElementById('auto-variants-toggle') ? document.getElementById('auto-variants-toggle').checked : false;
     if (!title || !password) return showNotification('Zəhmət olmasa testin adını və şifrəsini daxil edin.', 'error');
+    if (!currentUser || !currentUser.id) return showNotification('Bu əməliyyat üçün hesabınıza daxil olun.', 'error');
     const questionItems = document.querySelectorAll('.manual-question-item');
     const questions = [];
     const variantLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -689,7 +877,33 @@
       quizData.createdAt = new Date().toISOString();
       quizData.isActive = true;
     }
+    const saveBtn = document.querySelector('.save-quiz-btn');
+    const prevBtnHtml = saveBtn ? saveBtn.innerHTML : '';
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yadda saxlanılır...';
+    }
     try {
+      const quizId = editingId
+        ? editingId
+        : (db ? db.collection('private_quizzes').doc().id : ('priv_' + Date.now()));
+
+      if (db && __getStorageService()) {
+        const stats = await __uploadQuestionImagesInPlace({
+          questions: quizData.questions,
+          teacherId: currentUser.id,
+          quizId,
+          onProgress: (done, total) => {
+            if (!saveBtn) return;
+            if (!total) return;
+            saveBtn.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> Şəkillər yüklənir (${done}/${total})`;
+          }
+        });
+        if (saveBtn && stats && stats.total > 0) {
+          saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yadda saxlanılır...';
+        }
+      }
+
       if (editingId) {
         if (db) {
           await db.collection('private_quizzes').doc(editingId).update(quizData);
@@ -701,10 +915,17 @@
         showNotification('Özəl test uğurla yeniləndi!', 'success');
       } else {
         if (db) {
-          const docRef = await db.collection('private_quizzes').add(quizData);
-          quizData.id = docRef.id;
+          await db.runTransaction(async (tx) => {
+            const ref = db.collection('private_quizzes').doc(quizId);
+            const snap = await tx.get(ref);
+            if (snap.exists) {
+              throw new Error('Bu test artıq mövcuddur. Zəhmət olmasa yenidən cəhd edin.');
+            }
+            tx.set(ref, quizData);
+          });
+          quizData.id = quizId;
         } else {
-          quizData.id = 'priv_' + Date.now();
+          quizData.id = quizId;
         }
         privateQuizzes.push(quizData);
         showNotification('Özəl test uğurla yaradıldı!', 'success');
@@ -712,7 +933,20 @@
       localStorage.setItem('privateQuizzes', JSON.stringify(privateQuizzes));
       showTeacherDashboard();
     } catch (e) {
-      showNotification('Xəta: ' + e.message, 'error');
+      const msg = e && e.message ? String(e.message) : '';
+      const m = msg.match(/^IMG_TOO_LARGE:(\d+)/);
+      if (m) {
+        const qIdx = parseInt(m[1], 10);
+        const label = Number.isFinite(qIdx) ? (qIdx + 1) : '';
+        showNotification(`Sual ${label}: Şəkil 2MB limitini keçir. Zəhmət olmasa ölçünü azaldın.`, 'error');
+        return;
+      }
+      showNotification('Xəta: ' + msg, 'error');
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = prevBtnHtml || '<i class="fas fa-save"></i> Testi Yadda Saxla və Link Yarat';
+      }
     }
   };
 
@@ -862,16 +1096,17 @@
     for (let i = 0; i < arr.length; i++) {
       const q = arr[i] || {};
       const text = typeof q.text === 'string' ? q.text.trim() : '';
+      const image = typeof q.image === 'string' ? q.image.trim() : (typeof q.img === 'string' ? q.img.trim() : '');
       const opts = Array.isArray(q.options) ? q.options.map(o => String(o || '').trim()).filter(o => o) : [];
       let correct = q.correctIndex !== undefined ? q.correctIndex : (q.correct !== undefined ? q.correct : q.answer);
-      if (!text || opts.length < 2) {
+      if ((!text && !image) || opts.length < 2) {
         warnings.push(i + 1);
         continue;
       }
       if (!Number.isInteger(correct) || correct < 0 || correct >= opts.length) {
         correct = 0;
       }
-      result.push({ text, options: opts, correctIndex: correct });
+      result.push({ text, options: opts, correctIndex: correct, image: image || null });
     }
     return { questions: result, warnings };
   }
@@ -889,6 +1124,7 @@
         const raw = JSON.parse(e.target.result);
         const { questions, warnings } = softValidateQuestions(raw);
         if (!Array.isArray(questions) || questions.length === 0) throw new Error('Düzgün sual formatı deyil.');
+        if (!currentUser || !currentUser.id) throw new Error('Bu əməliyyat üçün hesabınıza daxil olun.');
         const newQuiz = {
           teacherId: currentUser.id,
           authorName: `${currentUser.name || ''} ${currentUser.surname || ''}`.trim() || currentUser.username || 'Naməlum',
@@ -902,8 +1138,22 @@
         const h = hashPassword(password);
         if (h) newQuiz.passwordHash = h;
         if (db) {
-          const docRef = await db.collection('private_quizzes').add(newQuiz);
+          const docRef = db.collection('private_quizzes').doc();
           newQuiz.id = docRef.id;
+          if (__getStorageService()) {
+            await __uploadQuestionImagesInPlace({
+              questions: newQuiz.questions,
+              teacherId: currentUser.id,
+              quizId: newQuiz.id
+            });
+          }
+          await db.runTransaction(async (tx) => {
+            const snap = await tx.get(docRef);
+            if (snap.exists) {
+              throw new Error('Bu test artıq mövcuddur. Zəhmət olmasa yenidən cəhd edin.');
+            }
+            tx.set(docRef, newQuiz);
+          });
         } else {
           newQuiz.id = 'priv_' + Date.now();
         }
@@ -918,7 +1168,15 @@
         document.getElementById('private-quiz-password').value = '';
         document.getElementById('private-quiz-file').value = '';
       } catch (error) {
-        showNotification('Xəta: ' + error.message, 'error');
+        const msg = error && error.message ? String(error.message) : '';
+        const m = msg.match(/^IMG_TOO_LARGE:(\d+)/);
+        if (m) {
+          const qIdx = parseInt(m[1], 10);
+          const label = Number.isFinite(qIdx) ? (qIdx + 1) : '';
+          showNotification(`Sual ${label}: Şəkil 2MB limitini keçir. Zəhmət olmasa ölçünü azaldın.`, 'error');
+          return;
+        }
+        showNotification('Xəta: ' + msg, 'error');
       }
     };
     reader.readAsText(fileInput.files[0]);

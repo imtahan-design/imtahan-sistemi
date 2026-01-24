@@ -5792,31 +5792,36 @@ function renderCategories() {
 const WeeklyExamManager_DEPRECATED = {
     // Helper to fuzzy find category - Prioritizes Special Categories
     findCategory(schemaItem) {
-        // 1. Try to find exact name match in Special Categories first
-        let cat = categories.find(c => c.name.toLowerCase() === schemaItem.name.toLowerCase() && c.parentId && c.parentId.startsWith('special_'));
-        
-        // 2. If not found, try exact name in ANY category
-        if (!cat) {
-            cat = categories.find(c => c.name.toLowerCase() === schemaItem.name.toLowerCase());
-        }
-
-        // 3. If not found, try keys in Special Categories
-        if (!cat && schemaItem.keys) {
-            for (const key of schemaItem.keys) {
-                cat = categories.find(c => c.name.toLowerCase().includes(key) && c.parentId && c.parentId.startsWith('special_'));
-                if (cat) break;
+        schemaItem = schemaItem || {};
+        const targetId = String(schemaItem.id || '');
+        if (targetId) return categories.find(c => c && String(c.id) === targetId) || null;
+        const nrm = function(s) {
+            try { return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
+            catch(_) { return (s || '').toString().toLowerCase().trim(); }
+        };
+        const tn = nrm(schemaItem.name || '');
+        const keys = Array.isArray(schemaItem.keys) ? schemaItem.keys.map(nrm) : [];
+        let rootId = '';
+        try {
+            if (schemaItem.rootId) rootId = String(schemaItem.rootId || '');
+            else if (schemaItem.type) rootId = String(schemaItem.type || '').startsWith('special_') ? String(schemaItem.type || '') : ('special_' + String(schemaItem.type || ''));
+        } catch(_) { rootId = ''; }
+        if (!rootId) return null;
+        const expectSpecial = rootId.startsWith('special_');
+        return categories.find(c => {
+            if (!c || c.id == null) return false;
+            if (expectSpecial) {
+                const et = (c.examType == null || c.examType === '') ? 'special' : String(c.examType);
+                if (et !== 'special') return false;
             }
-        }
-
-        // 4. If not found, try keys in ANY category
-        if (!cat && schemaItem.keys) {
-            for (const key of schemaItem.keys) {
-                cat = categories.find(c => c.name.toLowerCase().includes(key));
-                if (cat) break;
-            }
-        }
-        
-        return cat;
+            try {
+                if (typeof __isUnderRoot === 'function' && !__isUnderRoot(String(c.id), rootId)) return false;
+            } catch(_) { return false; }
+            const cn = c.name ? nrm(c.name) : '';
+            if (tn && cn === tn) return true;
+            if (keys.length && keys.some(k => k && cn.includes(k))) return true;
+            return false;
+        }) || null;
     },
 
     openManagerModal() {
