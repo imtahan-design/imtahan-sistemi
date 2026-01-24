@@ -797,6 +797,33 @@
             duration: 0
         };
 
+        function __debugSessionEnabled() {
+            try {
+                const sp = new URLSearchParams(window.location.search || '');
+                return String(sp.get('debugSession') || '') === '1';
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function __dbgSession(tag, data) {
+            try {
+                if (!__debugSessionEnabled()) return;
+                if (data === undefined) console.log('[debugSession]', String(tag || ''));
+                else console.log('[debugSession]', String(tag || ''), data);
+            } catch (_) {}
+        }
+
+        function __answerKey(qid) {
+            const s = String(qid || '');
+            try {
+                const b64 = btoa(unescape(encodeURIComponent(s)));
+                return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+            } catch (_) {
+                return s.replace(/[./]/g, '_');
+            }
+        }
+
         async function __flushSessionAnswerWrites(force) {
             try {
                 if (!dimQuiz || !dimQuiz.__sessionEnforced || !dimQuiz.sessionId) return;
@@ -805,17 +832,21 @@
                 const pending = dimQuiz.__pendingAnswerWrites || {};
                 const keys = Object.keys(pending);
                 if (keys.length === 0) return;
-                if (!force && dimQuiz.__answerWriteTimer) return;
+                if (!force && dimQuiz.__answerWriteInFlight) return;
+                dimQuiz.__answerWriteInFlight = true;
                 const ts = firebase.firestore.FieldValue.serverTimestamp();
                 const update = {
                     updatedAt: ts,
                     lastAnswerAt: ts,
                     answeredCount: (dimQuiz.__answersById && typeof dimQuiz.__answersById === 'object') ? Object.keys(dimQuiz.__answersById).length : null
                 };
-                keys.forEach((qid) => {
-                    const idx = pending[qid];
+                keys.forEach((safeKey) => {
+                    const entry = pending[safeKey];
+                    if (!entry) return;
+                    const idx = entry.choiceIndex;
+                    const rawQid = entry.qid;
                     if (idx === null || idx === undefined) return;
-                    update['answers.' + String(qid)] = { choiceIndex: Number(idx), updatedAt: ts };
+                    update['answersMap.' + String(safeKey)] = { qid: String(rawQid || ''), choiceIndex: Number(idx), updatedAt: ts };
                 });
                 try { delete update.answeredCount; } catch (_) {}
                 try {
@@ -828,9 +859,23 @@
                     if (dimQuiz.__answerWriteTimer) clearTimeout(dimQuiz.__answerWriteTimer);
                 } catch (_) {}
                 dimQuiz.__answerWriteTimer = null;
+                __dbgSession('flushAnswersMap.update', {
+                    sessionId: String(dimQuiz.sessionId),
+                    pendingCount: keys.length,
+                    safeKeysSample: keys.slice(0, 10),
+                    updateKeys: Object.keys(update)
+                });
                 await db.collection('exam_sessions').doc(String(dimQuiz.sessionId)).update(update);
+                __dbgSession('flushAnswersMap.ok', { sessionId: String(dimQuiz.sessionId), wrote: keys.length });
             } catch (e) {
+                __dbgSession('flushAnswersMap.err', {
+                    message: e && e.message ? String(e.message) : String(e),
+                    code: e && e.code ? String(e.code) : null,
+                    name: e && e.name ? String(e.name) : null
+                });
                 try { console.warn('session answer flush failed:', e && e.message ? e.message : e); } catch (_) {}
+            } finally {
+                try { if (dimQuiz) dimQuiz.__answerWriteInFlight = false; } catch (_) {}
             }
         }
 
@@ -840,7 +885,9 @@
                 if (typeof db === 'undefined' || !db) return;
                 if (!questionId) return;
                 if (!dimQuiz.__pendingAnswerWrites) dimQuiz.__pendingAnswerWrites = {};
-                dimQuiz.__pendingAnswerWrites[String(questionId)] = Number(choiceIndex);
+                const rawQid = String(questionId);
+                const safeKey = __answerKey(rawQid);
+                dimQuiz.__pendingAnswerWrites[String(safeKey)] = { qid: rawQid, choiceIndex: Number(choiceIndex) };
                 try { if (dimQuiz.__answerWriteTimer) clearTimeout(dimQuiz.__answerWriteTimer); } catch (_) {}
                 dimQuiz.__answerWriteTimer = setTimeout(() => {
                     __flushSessionAnswerWrites(false);
@@ -851,13 +898,15 @@
         function __applySessionAnswersToState(sessionData) {
             try {
                 if (!dimQuiz || !Array.isArray(dimQuiz.questions) || !Array.isArray(dimQuiz.answers)) return;
-                const raw = (sessionData && sessionData.answers && typeof sessionData.answers === 'object') ? sessionData.answers : null;
-                if (!raw) return;
+                const rawMap = (sessionData && sessionData.answersMap && typeof sessionData.answersMap === 'object') ? sessionData.answersMap : null;
+                const rawLegacy = (!rawMap && sessionData && sessionData.answers && typeof sessionData.answers === 'object') ? sessionData.answers : null;
+                if (!rawMap && !rawLegacy) return;
                 if (!dimQuiz.__answersById || typeof dimQuiz.__answersById !== 'object') dimQuiz.__answersById = {};
                 dimQuiz.questions.forEach((q, i) => {
                     const qid = q && q.id != null ? String(q.id) : '';
                     if (!qid) return;
-                    const v = raw[qid];
+                    const safeKey = __answerKey(qid);
+                    const v = rawMap ? rawMap[safeKey] : (rawLegacy ? rawLegacy[qid] : null);
                     let idx = null;
                     if (v && typeof v === 'object' && v.choiceIndex !== undefined && v.choiceIndex !== null) idx = Number(v.choiceIndex);
                     else if (typeof v === 'number') idx = Number(v);
@@ -1166,7 +1215,29 @@
                 try {
                     const sSnap = await db.collection('exam_sessions').doc(String(dimQuiz.sessionId)).get();
                     if (sSnap && sSnap.exists) {
-                        __applySessionAnswersToState(sSnap.data() || {});
+                        const sd0 = sSnap.data() || {};
+                        try {
+                            if (__debugSessionEnabled()) {
+                                const rawMap0 = (sd0 && sd0.answersMap && typeof sd0.answersMap === 'object') ? sd0.answersMap : null;
+                                const keys0 = rawMap0 ? Object.keys(rawMap0) : [];
+                                __dbgSession('restore.session', {
+                                    sessionId: String(dimQuiz.sessionId),
+                                    answersMapCount: keys0.length,
+                                    answersMapSample: keys0.slice(0, 10)
+                                });
+                                const qs = Array.isArray(dimQuiz.questions) ? dimQuiz.questions : [];
+                                const samples = [];
+                                for (let i = 0; i < Math.min(5, qs.length); i++) {
+                                    const q = qs[i];
+                                    const rawQid = q && q.id != null ? String(q.id) : '';
+                                    const sk = __answerKey(rawQid);
+                                    const found = !!(rawMap0 && rawMap0[sk]);
+                                    samples.push({ i: i, qid: rawQid, safeKey: sk, found: found });
+                                }
+                                __dbgSession('restore.firstQuestions', samples);
+                            }
+                        } catch (_) {}
+                        __applySessionAnswersToState(sd0);
                     }
                 } catch (_) {}
             }
@@ -1586,6 +1657,7 @@
                 if (qid) {
                     if (!dimQuiz.__answersById || typeof dimQuiz.__answersById !== 'object') dimQuiz.__answersById = {};
                     dimQuiz.__answersById[qid] = Number(optIdx);
+                    __dbgSession('select', { index: Number(dimQuiz.currentIndex), qid: qid, safeKey: __answerKey(qid), choiceIndex: Number(optIdx) });
                     __queueSessionAnswerWrite(qid, Number(optIdx));
                 }
             } catch (_) {}
