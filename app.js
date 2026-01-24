@@ -10526,6 +10526,8 @@ function saveAttemptLocal(attempt) {
 }
 
 window.writeAttemptAudit = async function(input) {
+    let attemptId = null;
+    let pathsIntended = [];
     try {
         if (!db) throw new Error('db is not available');
         if (!firebase || !firebase.firestore || !firebase.firestore.FieldValue) throw new Error('firebase firestore is not available');
@@ -10533,7 +10535,7 @@ window.writeAttemptAudit = async function(input) {
         input = input || {};
         const fv = firebase.firestore.FieldValue;
         const attemptRef = (input.attemptId ? db.collection('attempts').doc(String(input.attemptId)) : db.collection('attempts').doc());
-        const attemptId = String(attemptRef.id);
+        attemptId = String(attemptRef.id);
         const questionIds = Array.isArray(input.questionIds) ? input.questionIds.map((x) => String(x)) : [];
         const total = (typeof input.total === 'number') ? input.total : questionIds.length;
         const ts = (typeof input.timestamp === 'number') ? input.timestamp : ((typeof input.finishedAt === 'number') ? input.finishedAt : Date.now());
@@ -10562,6 +10564,13 @@ window.writeAttemptAudit = async function(input) {
             createdAt: fv.serverTimestamp(),
             status: 'finished'
         };
+        const userId = String(currentUser.id);
+        pathsIntended = ['attempts/' + attemptId, 'exam_history/' + userId];
+        try {
+            if (currentUser && currentUser.role === 'admin' && input.weeklyExamType && input.weeklyKey) {
+                pathsIntended.push('weekly_exams/history_' + String(input.weeklyExamType));
+            }
+        } catch (_) {}
         const txRes = await db.runTransaction(async (tx) => {
             const pathsUpdated = [];
             let wroteAttemptDoc = false;
@@ -10570,7 +10579,6 @@ window.writeAttemptAudit = async function(input) {
             const weeklyIndexSkippedBecauseAdminOnly = !!(input.weeklyExamType && input.weeklyKey && !(currentUser && currentUser.role === 'admin'));
 
             let updatedExamHistory = false;
-            const userId = String(currentUser.id);
             const userRef = db.collection('exam_history').doc(userId);
             const needExamHistoryUpdate = (typeof fv.arrayUnion === 'function');
             const readPromises = [];
@@ -10610,7 +10618,7 @@ window.writeAttemptAudit = async function(input) {
 
         return { ok: true, attemptId: attemptId, deduped: !!(txRes && txRes.attemptExists), wroteAttemptDoc: !!(txRes && txRes.wroteAttemptDoc), updatedExamHistory: !!(txRes && txRes.updatedExamHistory), weeklyIndexUpdated: !!(txRes && txRes.weeklyIndexUpdated), weeklyIndexSkippedBecauseAdminOnly: !!(txRes && txRes.weeklyIndexSkippedBecauseAdminOnly), pathsUpdated: (txRes && txRes.pathsUpdated) ? txRes.pathsUpdated : [] };
     } catch (e) {
-        return { ok: false, error: (e && e.message) ? e.message : String(e), errorStack: (e && e.stack) ? String(e.stack) : null };
+        return { ok: false, attemptId: attemptId, pathsIntended: pathsIntended, error: (e && e.message) ? e.message : String(e), errorCode: (e && e.code) ? String(e.code) : null, errorStack: (e && e.stack) ? String(e.stack) : null };
     }
 };
 
