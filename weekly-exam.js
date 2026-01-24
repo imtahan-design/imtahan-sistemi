@@ -150,7 +150,7 @@
       { name: 'Prokurorluq orqanlarında qulluq keçmə', count: 6 },
       { name: 'Korrupsiya', count: 3 },
       { name: 'Polis haqqında qanun', count: 1 },
-      { name: 'Əməliyyat-axtarış fəaliyyəti haqqında', count: 2 },
+      { name: 'Əməliyyat axtarış fəaliyyəti haqqında qanun', count: 2 },
       { name: 'Məhkəmələr və Hakimlər haqqında', count: 1 },
       { name: 'Vəkillər və Vəkillik', count: 1 }
     ];
@@ -171,6 +171,29 @@
       return m;
     } catch (_) {
       return null;
+    }
+  }
+
+  async function __upsertProkQuotaMapEntry(name, catId, existingMap) {
+    name = String(name || '').trim();
+    catId = catId != null ? String(catId) : '';
+    if (!name || !catId) return existingMap && typeof existingMap === 'object' ? existingMap : null;
+    var current = (existingMap && typeof existingMap === 'object') ? existingMap : (__prokQuotaMapCache && typeof __prokQuotaMapCache === 'object' ? __prokQuotaMapCache : null);
+    try {
+      if (current && current[name] != null && String(current[name]) === catId) return current;
+    } catch (_) {}
+    try {
+      if (!db) return current;
+      await db.collection('settings').doc('weekly_quota_maps').set({
+        prokurorluqNameToCatId: (function(){ var o = {}; o[name] = catId; return o; })()
+      }, { merge: true });
+      var next = current && typeof current === 'object' ? Object.assign({}, current) : {};
+      next[name] = catId;
+      __prokQuotaMapCache = next;
+      __prokQuotaMapCacheAt = Date.now();
+      return next;
+    } catch (_) {
+      return current;
     }
   }
 
@@ -732,6 +755,7 @@
       if (String(type) === 'prokurorluq') {
         try {
           var quotaMap0 = await __loadProkQuotaMap();
+          quotaMap0 = await __upsertProkQuotaMapEntry('Əməliyyat axtarış fəaliyyəti haqqında qanun', '1769183607574', quotaMap0);
           var schemaRaw0 = __prokResolveSchemaIds(__prokQuotaSchema(), { rootId: 'special_prokurorluq', prokurorluqNameToCatId: quotaMap0 });
           var missing0 = schemaRaw0.filter(function(s){ return s && s.missing; });
           if (missing0.length) {
