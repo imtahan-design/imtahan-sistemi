@@ -633,6 +633,112 @@ test('transaction writes for audit attempts', async () => {
   expect(userSet.data.attemptIds).toEqual({ __op: 'arrayUnion', v: res.attemptId });
 });
 
+test('coupon validation creates bound exam session', async () => {
+  const weeklyJs = fs.readFileSync(path.join(__dirname, '..', 'weekly-exam.js'), 'utf8');
+
+  const calls = { ops: [] };
+  const store = new Map();
+  let autoId = 0;
+  function makeDocRef(collectionName, docId) {
+    const key = collectionName + '/' + docId;
+    return {
+      collectionName,
+      id: docId,
+      get: async () => ({ exists: store.has(key), id: docId, data: () => store.get(key) }),
+      update: async (data) => {
+        calls.ops.push({ kind: 'update', collectionName, docId, data });
+        const prev = store.get(key) || {};
+        store.set(key, { ...prev, ...data });
+      },
+      set: async (data, options) => {
+        calls.ops.push({ kind: 'set', collectionName, docId, data, options });
+        const prev = store.get(key) || {};
+        const merge = options && options.merge === true;
+        store.set(key, merge ? { ...prev, ...data } : data);
+      }
+    };
+  }
+
+  const dbStub = {
+    collection: (name) => ({
+      doc: (id) => {
+        if (id) return makeDocRef(name, String(id));
+        autoId += 1;
+        return makeDocRef(name, 'auto_' + autoId);
+      },
+      where: () => ({ limit: () => ({ get: async () => ({ empty: true, docs: [] }) }) })
+    }),
+    runTransaction: async (fn) => {
+      const pending = [];
+      const tx = {
+        get: async (ref) => {
+          calls.ops.push({ kind: 'get', ref: { collectionName: ref.collectionName, id: ref.id } });
+          const key = ref.collectionName + '/' + ref.id;
+          return { exists: store.has(key), data: () => store.get(key) };
+        },
+        set: (ref, data, options) => pending.push({ kind: 'set', ref, data, options }),
+        update: (ref, data) => pending.push({ kind: 'update', ref, data })
+      };
+      const res = await fn(tx);
+      pending.forEach((op) => {
+        const key = op.ref.collectionName + '/' + op.ref.id;
+        const prev = store.get(key) || {};
+        if (op.kind === 'set') {
+          const merge = op.options && op.options.merge === true;
+          store.set(key, merge ? { ...prev, ...op.data } : op.data);
+        } else if (op.kind === 'update') {
+          store.set(key, { ...prev, ...op.data });
+        }
+      });
+      return res;
+    }
+  };
+
+  const now = Date.now();
+  const startTime = { toDate: () => new Date(now - 60 * 1000) };
+  const endTime = { toDate: () => new Date(now + 60 * 60 * 1000) };
+  store.set('exam_coupons/PROK12345', {
+    code: 'PROK12345',
+    examId: 'active_prokurorluq',
+    startTime,
+    endTime,
+    usedBy: null,
+    usedSessionId: null
+  });
+
+  const firebaseStub = { firestore: { FieldValue: { serverTimestamp: () => 'ts' } } };
+  const ctx = { window: {}, console: console, db: dbStub, firebase: firebaseStub, currentUser: { id: 'u1' } };
+  vm.createContext(ctx);
+  vm.runInContext(weeklyJs, ctx);
+
+  const res1 = await ctx.window.validateCoupon('PROK12345', 'active_prokurorluq');
+  expect(res1 && res1.status).toBe('ok');
+  expect(typeof res1.sessionId).toBe('string');
+  expect(res1.sessionId.length).toBeGreaterThan(5);
+
+  const coupon = store.get('exam_coupons/PROK12345');
+  expect(coupon.usedBy).toBe('u1');
+  expect(coupon.usedSessionId).toBe(res1.sessionId);
+
+  const sess = store.get('exam_sessions/' + res1.sessionId);
+  expect(sess).toEqual(
+    expect.objectContaining({
+      sessionId: res1.sessionId,
+      userId: 'u1',
+      couponCode: 'PROK12345',
+      couponDocId: 'PROK12345',
+      examId: 'active_prokurorluq',
+      examType: 'prokurorluq',
+      status: 'active',
+      locked: false
+    })
+  );
+
+  const res2 = await ctx.window.validateCoupon('PROK12345', 'active_prokurorluq');
+  expect(res2 && res2.status).toBe('ok');
+  expect(res2.sessionId).toBe(res1.sessionId);
+});
+
 test('weekly publish blocks when flagged review is canceled', async () => {
   const weeklyJs = fs.readFileSync(path.join(__dirname, '..', 'weekly-exam.js'), 'utf8');
   const methodSrc = extractMethodSource(weeklyJs, 'publishExam');

@@ -797,14 +797,115 @@
             duration: 0
         };
 
+        function __fatalExam(msg) {
+            try {
+                const ls = document.getElementById('loading-screen');
+                if (ls) {
+                    ls.innerHTML = `
+                      <div style="max-width:720px;padding:24px;text-align:center;">
+                        <div style="font-size:18px;font-weight:800;color:#111;margin-bottom:8px;">Giriş rədd edildi</div>
+                        <div style="color:#444;line-height:1.5;">${escapeHtml(String(msg || 'Xəta baş verdi'))}</div>
+                        <div style="margin-top:16px;">
+                          <a href="index.html" style="color:#2563eb;text-decoration:underline;">Əsas səhifəyə qayıt</a>
+                        </div>
+                      </div>
+                    `;
+                }
+            } catch (_) {}
+            try {
+                const ex = document.getElementById('exam-interface');
+                if (ex) ex.classList.add('hidden');
+            } catch (_) {}
+            try {
+                const rs = document.getElementById('results-interface');
+                if (rs) rs.classList.add('hidden');
+            } catch (_) {}
+            throw new Error(String(msg || 'blocked'));
+        }
+
+        function __seedFromString(str) {
+            let h = 2166136261;
+            const s = String(str || '');
+            for (let i = 0; i < s.length; i++) {
+                h ^= s.charCodeAt(i);
+                h = Math.imul(h, 16777619);
+            }
+            return (h >>> 0);
+        }
+
+        function __mulberry32(seed) {
+            let a = (seed >>> 0) || 1;
+            return function() {
+                a |= 0;
+                a = (a + 0x6D2B79F5) | 0;
+                let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        function __shuffleDeterministic(arr, seedStr) {
+            const out = Array.isArray(arr) ? arr.slice() : [];
+            const rnd = __mulberry32(__seedFromString(seedStr));
+            for (let i = out.length - 1; i > 0; i--) {
+                const j = Math.floor(rnd() * (i + 1));
+                const tmp = out[i];
+                out[i] = out[j];
+                out[j] = tmp;
+            }
+            return out;
+        }
+
+        async function __getAuthUser() {
+            try {
+                if (!firebase || !firebase.auth) return null;
+                const auth = firebase.auth();
+                if (auth && auth.currentUser) return auth.currentUser;
+                return await new Promise((resolve) => {
+                    let unsub = null;
+                    try {
+                        unsub = auth.onAuthStateChanged((u) => {
+                            try { if (unsub) unsub(); } catch (_) {}
+                            resolve(u || null);
+                        }, () => {
+                            try { if (unsub) unsub(); } catch (_) {}
+                            resolve(null);
+                        });
+                    } catch (_) {
+                        resolve(null);
+                    }
+                });
+            } catch (_) {
+                return null;
+            }
+        }
+
         async function initDimExam() {
             let weeklyExamType = null;
             let sessionId = null;
+            let guardedSession = null;
             try {
                 const sp = new URLSearchParams(window.location.search || '');
                 weeklyExamType = sp.get('weeklyExamType');
                 sessionId = sp.get('sessionId');
             } catch(_) { weeklyExamType = null; }
+
+            let __couponRequiredWeekly = false;
+            try {
+                const s = new Set(['prokurorluq']);
+                try {
+                    const raw = localStorage.getItem('coupon_required_types') || '';
+                    if (raw && typeof raw === 'string') {
+                        raw.split(',').map(v => String(v || '').trim()).filter(Boolean).forEach(v => s.add(v));
+                    }
+                } catch (_) {}
+                try {
+                    if (Array.isArray(window.COUPON_REQUIRED_TYPES_EXTRA)) {
+                        window.COUPON_REQUIRED_TYPES_EXTRA.map(v => String(v || '').trim()).filter(Boolean).forEach(v => s.add(v));
+                    }
+                } catch (_) {}
+                if (weeklyExamType && s.has(String(weeklyExamType))) __couponRequiredWeekly = true;
+            } catch (_) {}
 
             let catId = null;
             if (weeklyExamType) {
@@ -818,6 +919,53 @@
                 return;
             }
 
+            if (__couponRequiredWeekly && !sessionId) {
+                __fatalExam('Bu imtahan kuponla açılır. Kuponu daxil edib imtahana yenidən başlayın.');
+                return;
+            }
+
+            if (sessionId) {
+                try {
+                    if (!db) __fatalExam('Verilənlər bazası ilə əlaqə yoxdur');
+                    const u = await __getAuthUser();
+                    if (!u || !u.uid) __fatalExam('Zəhmət olmasa hesabla daxil olun');
+                    const sRef = db.collection('exam_sessions').doc(String(sessionId));
+                    const sSnap = await sRef.get();
+                    if (!sSnap.exists) __fatalExam('Sessiya tapılmadı');
+                    const sd = sSnap.data() || {};
+                    if (String(sd.userId || '') !== String(u.uid)) __fatalExam('Sessiya icazəsizdir');
+                    if (String(sd.status || '') === 'finished' || sd.locked === true) __fatalExam('Sessiya artıq tamamlanıb');
+                    const exp = sd.expiresAt && typeof sd.expiresAt.toDate === 'function' ? sd.expiresAt.toDate() : new Date(sd.expiresAt || 0);
+                    if (!isNaN(exp.getTime()) && Date.now() > exp.getTime()) __fatalExam('Sessiyanın müddəti bitib');
+                    guardedSession = sd;
+                    dimQuiz.__sessionEnforced = true;
+                    dimQuiz.sessionId = String(sessionId);
+                    dimQuiz.userId = String(u.uid);
+                    try {
+                        const startedAt = sd.startedAt && typeof sd.startedAt.toDate === 'function' ? sd.startedAt.toDate() : new Date(sd.startedAt || 0);
+                        if (!isNaN(startedAt.getTime()) && startedAt.getTime() > 0) dimQuiz.startTime = startedAt.getTime();
+                    } catch (_) {}
+                } catch (e) {
+                    try { __fatalExam(e && e.message ? e.message : 'Sessiya xətası'); } catch (_) {}
+                    return;
+                }
+            } else {
+                dimQuiz.__sessionEnforced = false;
+                try {
+                    let sid = '';
+                    try {
+                        if (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function') sid = crypto.randomUUID();
+                    } catch (_) {}
+                    if (!sid) sid = String(Date.now()) + '_' + Math.random().toString(16).slice(2);
+                    dimQuiz.sessionId = sid;
+                } catch (_) {}
+                try {
+                    const u = __safeJson('currentUser') || (typeof currentUser !== 'undefined' ? currentUser : null);
+                    const uid = u && (u.id || u.uid) ? String(u.id || u.uid) : '';
+                    dimQuiz.userId = uid || null;
+                } catch (_) {}
+            }
+
             // Load Category
             let cat = null;
 
@@ -828,6 +976,9 @@
                     return;
                 }
                 try {
+                    if (guardedSession && String(guardedSession.examId || '') && String(guardedSession.examId || '') !== ('active_' + String(weeklyExamType))) {
+                        __fatalExam('Sessiya bu imtahana uyğun deyil');
+                    }
                     const docRef = db.collection('weekly_exams').doc('active_' + String(weeklyExamType));
                     const doc = await docRef.get();
                     if (!doc.exists) throw new Error("Bu kateqoriya üçün hələlik aktiv sınaq yoxdur.");
@@ -929,7 +1080,7 @@
             
             // Shuffle if Weekly Exam (User request: same questions but random order for each user)
             if (catId && catId.includes('weekly')) {
-                 processedQuestions = processedQuestions.sort(() => 0.5 - Math.random());
+                 processedQuestions = dimQuiz.__sessionEnforced ? __shuffleDeterministic(processedQuestions, String(dimQuiz.sessionId || '')) : processedQuestions.sort(() => 0.5 - Math.random());
             }
 
             dimQuiz.questions = processedQuestions;
@@ -937,29 +1088,7 @@
             dimQuiz.answers = new Array(dimQuiz.questions.length).fill(null);
             dimQuiz.flags = new Array(dimQuiz.questions.length).fill(false);
             dimQuiz.duration = (cat.time || 90) * 60; // minutes to seconds
-            dimQuiz.startTime = Date.now();
-            try {
-                let sid = sessionId ? String(sessionId) : '';
-                if (!sid) {
-                    try {
-                        if (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function') sid = crypto.randomUUID();
-                    } catch (_) {}
-                }
-                if (!sid) sid = String(Date.now()) + '_' + Math.random().toString(16).slice(2);
-                dimQuiz.sessionId = sid;
-                try {
-                    const u = __safeJson('currentUser') || (typeof currentUser !== 'undefined' ? currentUser : null);
-                    const uid = u && (u.id || u.uid) ? String(u.id || u.uid) : '';
-                    dimQuiz.userId = uid || null;
-                } catch (_) {}
-                try {
-                    const url = new URL(window.location.href);
-                    if (!url.searchParams.get('sessionId')) {
-                        url.searchParams.set('sessionId', sid);
-                        window.history.replaceState(window.history.state || {}, '', url.toString());
-                    }
-                } catch (_) {}
-            } catch (_) {}
+            if (!dimQuiz.startTime) dimQuiz.startTime = Date.now();
 
             renderPalette();
             loadDimQuestion(0);
@@ -1013,7 +1142,7 @@
             return t.trim();
         }
 
-        function finishExam(force = false) {
+        async function finishExam(force = false) {
             try {
                 if (dimQuiz && dimQuiz.__finished) return;
                 if (!force && !confirm('İmtahanı bitirmək istədiyinizə əminsiniz?')) return;
@@ -1027,6 +1156,33 @@
             } catch (_) {}
 
             try { clearInterval(dimQuiz.timerInterval); } catch (_) {}
+
+            try {
+                if (dimQuiz && dimQuiz.__sessionEnforced && dimQuiz.sessionId && typeof db !== 'undefined' && db) {
+                    const u = await __getAuthUser();
+                    if (!u || !u.uid) throw new Error('Zəhmət olmasa hesabla daxil olun');
+                    await db.runTransaction(async (t) => {
+                        const sRef = db.collection('exam_sessions').doc(String(dimQuiz.sessionId));
+                        const sSnap = await t.get(sRef);
+                        if (!sSnap.exists) throw new Error('Sessiya tapılmadı');
+                        const sd = sSnap.data() || {};
+                        if (String(sd.userId || '') !== String(u.uid)) throw new Error('Sessiya icazəsizdir');
+                        if (String(sd.status || '') === 'finished' || sd.locked === true) throw new Error('Sessiya artıq tamamlanıb');
+                        const exp = sd.expiresAt && typeof sd.expiresAt.toDate === 'function' ? sd.expiresAt.toDate() : new Date(sd.expiresAt || 0);
+                        if (!isNaN(exp.getTime()) && Date.now() > exp.getTime()) throw new Error('Sessiyanın müddəti bitib');
+                        t.update(sRef, { status: 'finished', locked: true, finishedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    });
+                }
+            } catch (e) {
+                try { if (dimQuiz) dimQuiz.__finished = false; } catch (_) {}
+                try { if (typeof window !== 'undefined') window.__finishInProgress = false; } catch (_) {}
+                try {
+                    const btn = document.getElementById('btn-finish-exam');
+                    if (btn) btn.disabled = false;
+                } catch (_) {}
+                try { alert(e && e.message ? e.message : 'Sessiya bağlanmadı'); } catch (_) {}
+                return;
+            }
 
             let correct = 0;
             let wrong = 0;
@@ -1352,26 +1508,24 @@
         }
 
         function startTimer() {
-            let timeLeft = dimQuiz.duration;
             const display = document.getElementById('timer-display');
-            
-            dimQuiz.timerInterval = setInterval(() => {
-                timeLeft--;
+            const startedAt = (dimQuiz && dimQuiz.startTime) ? Number(dimQuiz.startTime) : Date.now();
+            const tick = () => {
+                const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+                const timeLeft = Math.max(0, (Number(dimQuiz.duration) || 0) - elapsed);
                 if (timeLeft <= 0) {
-                    clearInterval(dimQuiz.timerInterval);
+                    try { clearInterval(dimQuiz.timerInterval); } catch (_) {}
                     finishExam(true);
                     return;
                 }
-                
                 const h = Math.floor(timeLeft / 3600);
                 const m = Math.floor((timeLeft % 3600) / 60);
                 const s = timeLeft % 60;
-                
                 display.textContent = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-                
-                // Warning color
                 if (timeLeft < 300) display.style.color = 'red';
-            }, 1000);
+            };
+            tick();
+            dimQuiz.timerInterval = setInterval(tick, 1000);
         }
 
 

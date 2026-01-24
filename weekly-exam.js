@@ -381,6 +381,13 @@
     }
     if (!doc) throw new Error('Kupon tapılmadı');
     const couponDocId = doc.id;
+    const newSessionRef = db.collection('exam_sessions').doc();
+    const newSessionId = String(newSessionRef.id);
+    const inferredExamType = (function(){
+      var x = String(examId || '');
+      if (x.indexOf('active_') === 0) return x.slice('active_'.length);
+      return x || null;
+    })();
     const res = await db.runTransaction(async function(t) {
       const ref = db.collection('exam_coupons').doc(couponDocId);
       const snap = await t.get(ref);
@@ -393,14 +400,67 @@
       if (isNaN(s.getTime()) || isNaN(e.getTime())) throw new Error('Kupon tarix intervalı düzgün deyil');
       if (now < s) throw new Error('Kupon hələ aktiv deyil');
       if (now > e) throw new Error('Kuponun müddəti bitib');
+      var sid = (d && d.usedSessionId != null) ? String(d.usedSessionId) : '';
+      var sessionRef = null;
       if (d.usedBy) {
-        if (String(d.usedBy) === String(uid)) return { status: 'ok', couponDocId: couponDocId };
-        throw new Error('Kupon artıq istifadə olunub');
+        if (String(d.usedBy) !== String(uid)) throw new Error('Kupon artıq istifadə olunub');
+        if (!sid) sid = newSessionId;
+        sessionRef = db.collection('exam_sessions').doc(String(sid));
+        const sessSnap = await t.get(sessionRef);
+        if (sessSnap && sessSnap.exists) {
+          var sd = sessSnap.data() || {};
+          if (String(sd.userId || '') !== String(uid)) throw new Error('Sessiya icazəsizdir');
+          if (String(sd.status || '') === 'finished' || sd.locked === true) throw new Error('Sessiya artıq tamamlanıb');
+          var exp0 = sd.expiresAt && typeof sd.expiresAt.toDate === 'function' ? sd.expiresAt.toDate() : new Date(sd.expiresAt || 0);
+          if (!isNaN(exp0.getTime()) && now > exp0) throw new Error('Sessiyanın müddəti bitib');
+          if (String(sd.examId || '') !== String(examId)) throw new Error('Sessiya bu imtahana uyğun deyil');
+          return { status: 'ok', couponDocId: couponDocId, sessionId: String(sid) };
+        }
+        var createdAt0 = (firebase && firebase.firestore && firebase.firestore.FieldValue && firebase.firestore.FieldValue.serverTimestamp) ? firebase.firestore.FieldValue.serverTimestamp() : null;
+        var startedAt0 = createdAt0;
+        var expiresAt0 = d.endTime || null;
+        t.set(sessionRef, {
+          sessionId: String(sid),
+          userId: String(uid),
+          couponCode: String(code),
+          couponDocId: String(couponDocId),
+          examId: String(examId),
+          examType: inferredExamType,
+          status: 'active',
+          locked: false,
+          startedAt: startedAt0,
+          finishedAt: null,
+          expiresAt: expiresAt0,
+          createdAt: createdAt0
+        }, { merge: true });
+        if (!d.usedSessionId) {
+          t.set(ref, { usedSessionId: String(sid) }, { merge: true });
+        }
+        return { status: 'ok', couponDocId: couponDocId, sessionId: String(sid) };
       }
-      return { status: 'ok', couponDocId: couponDocId };
+
+      sid = newSessionId;
+      sessionRef = newSessionRef;
+      var ts0 = (firebase && firebase.firestore && firebase.firestore.FieldValue && firebase.firestore.FieldValue.serverTimestamp) ? firebase.firestore.FieldValue.serverTimestamp() : null;
+      t.update(ref, { usedBy: String(uid), usedSessionId: String(sid), usedAt: ts0 });
+      t.set(sessionRef, {
+        sessionId: String(sid),
+        userId: String(uid),
+        couponCode: String(code),
+        couponDocId: String(couponDocId),
+        examId: String(examId),
+        examType: inferredExamType,
+        status: 'active',
+        locked: false,
+        startedAt: ts0,
+        finishedAt: null,
+        expiresAt: d.endTime || null,
+        createdAt: ts0
+      }, { merge: false });
+      return { status: 'ok', couponDocId: couponDocId, sessionId: String(sid) };
     });
     if (res && res.status) return res;
-    return { status: 'ok', couponDocId: couponDocId };
+    return { status: 'ok', couponDocId: couponDocId, sessionId: null };
   };
   window.markCouponUsed = async function(code, examId, couponDocId) {
     if (!db) throw new Error('Verilənlər bazası bağlantısı yoxdur');
@@ -490,7 +550,7 @@
         const result = await window.validateCoupon(code, examId);
         if (result && result.status === 'ok') {
           document.getElementById('coupon-modal').remove();
-          if (typeof onSuccess === 'function') onSuccess({ code: code, examId: examId, couponDocId: result && result.couponDocId ? result.couponDocId : null });
+          if (typeof onSuccess === 'function') onSuccess({ code: code, examId: examId, couponDocId: result && result.couponDocId ? result.couponDocId : null, sessionId: result && result.sessionId ? String(result.sessionId) : null });
           return;
         }
         throw new Error('Kupon yoxlama xətası');
@@ -1667,10 +1727,13 @@
       if (!doc.exists) {
         throw new Error("Bu kateqoriya üçün hələlik aktiv sınaq yoxdur. Admin sınağı yayımladıqdan sonra cəhd edin.");
       }
-      if (couponInfo && couponInfo.code && typeof window.markCouponUsed === 'function') {
-        await window.markCouponUsed(couponInfo.code, couponInfo.examId || ('active_' + String(examType)), couponInfo.couponDocId || null);
+      var url = 'dim_view.html?weeklyExamType=' + encodeURIComponent(String(examType || ''));
+      if (couponInfo && couponInfo.sessionId) {
+        url += '&sessionId=' + encodeURIComponent(String(couponInfo.sessionId));
+      } else if (couponInfo && couponInfo.code) {
+        throw new Error('Sessiya yaradılmadı. Zəhmət olmasa yenidən cəhd edin.');
       }
-      window.location.href = 'dim_view.html?weeklyExamType=' + encodeURIComponent(String(examType || ''));
+      window.location.href = url;
     } catch (e) {
       console.error("Weekly Exam Error:", e);
       alert(e.message);
